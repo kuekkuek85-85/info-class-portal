@@ -25,6 +25,8 @@ interface LessonData {
     lessonNo: number;
     title: string;
     moodCheckEnabled: boolean;
+    game: Content;
+    gameExplainer: Content;
     progress: Content;
     assessment: Content;
     video: Content;
@@ -50,6 +52,9 @@ export default function LessonPage() {
   const [loadError, setLoadError] = useState("");
   const [phase, setPhase] = useState<LessonPhase>("waiting");
   const [closed, setClosed] = useState(false);
+  const [showExplainer, setShowExplainer] = useState(false);
+  const previousPhase = useRef<LessonPhase>("waiting");
+  const explainerShown = useRef(false);
 
   const [mood, setMood] = useState("");
   const [moodReason, setMoodReason] = useState("");
@@ -82,6 +87,7 @@ export default function LessonPage() {
       const payload = result as LessonData;
       setData(payload);
       setPhase(payload.session.phase);
+      previousPhase.current = payload.session.phase;
       setClosed(payload.session.closed);
       setMood(payload.mood?.mood ?? "");
       setMoodReason(payload.mood?.reason ?? "");
@@ -112,7 +118,17 @@ export default function LessonPage() {
       const response = await fetch("/api/student/phase");
       const result = await response.json();
       if (cancelled || !result.ok) return;
-      setPhase(result.phase as LessonPhase);
+
+      const next = result.phase as LessonPhase;
+      // 대기(게임)에서 수업으로 넘어가는 순간 한 번만 원리 설명을 띄운다.
+      // 게임으로만 끝나면 남는 게 없다.
+      if (previousPhase.current === "waiting" && next !== "waiting" && !explainerShown.current) {
+        explainerShown.current = true;
+        setShowExplainer(true);
+      }
+      previousPhase.current = next;
+
+      setPhase(next);
       setClosed(Boolean(result.closed));
     }
 
@@ -220,12 +236,39 @@ export default function LessonPage() {
           </p>
         )}
 
-        {phase === "waiting" && (
-          <Placeholder
-            title="잠시만 기다려 주세요"
-            description="선생님이 시작하면 화면이 저절로 바뀝니다."
-          />
-        )}
+        {phase === "waiting" &&
+          (session.game.url ? (
+            /*
+              먼저 온 학생이 5분을 기다리기도 한다 (태블릿 부팅, 주소 오타).
+              그 시간에 게임을 띄운다. 수업이 시작되면 화면이 저절로 넘어가므로
+              학생이 게임을 끄고 나올 필요가 없다.
+            */
+            <section className="flex flex-col gap-4">
+              <div className="block bg-lime">
+                <h2 className="t-headline">{session.game.heading || "기다리는 동안"}</h2>
+                {session.game.body && (
+                  <p className="t-body mt-2 whitespace-pre-wrap">{session.game.body}</p>
+                )}
+                <p className="t-body-sm mt-3">
+                  선생님이 수업을 시작하면 이 화면은 저절로 넘어가요.
+                </p>
+              </div>
+
+              <div className="overflow-hidden rounded-lg border border-line">
+                <iframe
+                  src={session.game.url}
+                  title={session.game.heading || "대기 중 게임"}
+                  className="h-[70vh] w-full"
+                  allow="fullscreen"
+                />
+              </div>
+            </section>
+          ) : (
+            <Placeholder
+              title="잠시만 기다려 주세요"
+              description="선생님이 시작하면 화면이 저절로 바뀝니다."
+            />
+          ))}
 
         {phase === "done" && (
           <Placeholder title="오늘 수업 끝!" description="고생했어요. 태블릿을 정리해 주세요." />
@@ -357,6 +400,71 @@ export default function LessonPage() {
           </section>
         )}
       </main>
+
+      {/* 게임으로만 끝나지 않게 — 수업이 시작되는 순간 원리를 한 번 짚어 준다 */}
+      {showExplainer && (
+        <ExplainerModal
+          content={session.gameExplainer}
+          onClose={() => setShowExplainer(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ExplainerModal({ content, onClose }: { content: Content; onClose: () => void }) {
+  const hasAnything =
+    content.heading || content.body || content.cards?.length || content.tabs?.length;
+  if (!hasAnything) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="explainer-title"
+    >
+      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-lg bg-canvas p-6 sm:rounded-lg">
+        <p className="t-eyebrow">방금 한 게임의 원리</p>
+        <h2 id="explainer-title" className="t-display mt-2">
+          {content.heading}
+        </h2>
+
+        {content.body && <p className="t-body-lg mt-4 whitespace-pre-wrap">{content.body}</p>}
+
+        {content.cards && content.cards.length > 0 && (
+          <div className="mt-5 flex flex-col gap-3">
+            {content.cards.map((card, index) => (
+              <article
+                key={index}
+                className={`block ${["bg-lime", "bg-mint", "bg-cream", "bg-lilac"][index % 4]}`}
+              >
+                <header className="flex flex-wrap items-baseline gap-x-3">
+                  {card.badge && (
+                    <span className="rounded-full bg-ink px-3 py-1 text-sm font-semibold text-canvas">
+                      {card.badge}
+                    </span>
+                  )}
+                  <h3 className="t-card-title">{card.title}</h3>
+                </header>
+                {card.lines.length > 0 && (
+                  <ul className="mt-3 flex flex-col gap-2">
+                    {card.lines.map((line, i) => (
+                      <li key={i} className="t-body-lg">
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
+
+        <button type="button" onClick={onClose} className="pill pill-primary pill-block mt-6">
+          알겠어요, 수업 시작!
+        </button>
+      </div>
     </div>
   );
 }

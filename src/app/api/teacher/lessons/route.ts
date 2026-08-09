@@ -75,6 +75,8 @@ function normalize(body: LessonInput) {
     lessonNo: Number(body.lessonNo),
     title: (body.title ?? "").trim(),
     moodCheckEnabled: body.moodCheckEnabled !== false,
+    game: normalizeContent(body.game),
+    gameExplainer: normalizeContent(body.gameExplainer),
     progress: normalizeContent(body.progress),
     assessment: normalizeContent(body.assessment),
     video: normalizeContent(body.video),

@@ -371,6 +371,8 @@ export async function syncScheduledSessions(plan: LessonPlan): Promise<number> {
 export function snapshotOf(plan: LessonPlan) {
   return {
     moodCheckEnabled: plan.moodCheckEnabled,
+    game: plan.game,
+    gameExplainer: plan.gameExplainer,
     progress: plan.progress,
     assessment: plan.assessment,
     video: plan.video,

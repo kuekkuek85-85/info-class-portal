@@ -107,6 +107,15 @@ export interface LessonPlan {
   lessonNo: number;
   title: string;
   moodCheckEnabled: boolean;
+  /**
+   * 대기 시간에 띄우는 미니게임.
+   *
+   * 태블릿이 늦게 켜지거나 주소를 잘못 쳐서 학생마다 도착 시각이 5분씩 벌어진다.
+   * 먼저 온 학생의 그 시간을 그냥 버리지 않으려는 것이다.
+   */
+  game: PhaseContent;
+  /** 수업을 시작할 때 띄우는 "방금 그 게임의 원리" 팝업. 게임으로만 끝나지 않게 한다. */
+  gameExplainer: PhaseContent;
   progress: PhaseContent;
   assessment: PhaseContent;
   video: PhaseContent;
@@ -135,6 +144,8 @@ export interface ClassSession {
   /** 수업 코드. 숫자 2자리 문자열 (예: "47") */
   code: string;
   moodCheckEnabled: boolean;
+  game: PhaseContent;
+  gameExplainer: PhaseContent;
   progress: PhaseContent;
   assessment: PhaseContent;
   video: PhaseContent;

@@ -19,6 +19,8 @@ interface Plan {
   lessonNo: number;
   title: string;
   moodCheckEnabled: boolean;
+  game: PhaseContent;
+  gameExplainer: PhaseContent;
   progress: PhaseContent;
   assessment: PhaseContent;
   video: PhaseContent;
@@ -32,6 +34,8 @@ const EMPTY: Draft = {
   lessonNo: 1,
   title: "",
   moodCheckEnabled: true,
+  game: emptyPhaseContent(),
+  gameExplainer: emptyPhaseContent(),
   progress: emptyPhaseContent(),
   assessment: emptyPhaseContent(),
   video: emptyPhaseContent(),
@@ -89,6 +93,8 @@ function Lessons() {
   function edit(plan: Plan) {
     setDraft({
       ...plan,
+      game: plan.game ?? emptyPhaseContent(),
+      gameExplainer: plan.gameExplainer ?? emptyPhaseContent(),
       progress: plan.progress ?? emptyPhaseContent(),
       assessment: plan.assessment ?? emptyPhaseContent(),
       video: plan.video ?? emptyPhaseContent(),
@@ -130,6 +136,20 @@ function Lessons() {
           화면은 <b>대시보드에서 선생님이 넘긴 단계</b>만 보여줍니다.
         </p>
 
+        <ContentEditor
+          label="대기 중 게임"
+          hint="태블릿이 늦게 켜지거나 주소를 잘못 친 학생을 기다리는 동안 띄웁니다. 주소를 비우면 '잠시만 기다려 주세요'만 나옵니다."
+          value={draft.game}
+          onChange={(game) => setDraft({ ...draft, game })}
+          urlPlaceholder="https://... (게임 주소)"
+        />
+        <ContentEditor
+          label="게임 원리 설명 (팝업)"
+          hint="선생님이 수업을 시작하는 순간 학생 화면에 한 번 뜹니다. 게임으로만 끝나지 않게 하는 장치입니다."
+          value={draft.gameExplainer}
+          onChange={(gameExplainer) => setDraft({ ...draft, gameExplainer })}
+          urlPlaceholder="(보통 비워 둡니다)"
+        />
         <ContentEditor
           label="진도 안내"
           hint="이번 단원에서 무엇을 배우는지. URL을 넣으면 슬라이드가 학생 화면에 표시됩니다."

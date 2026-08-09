@@ -117,6 +117,8 @@ export async function POST(request: Request) {
           : {
               // 아직 차시 계획이 없는 회차는 빈 껍데기로 만들어 두고 나중에 배정한다
               moodCheckEnabled: true,
+              game: emptyPhaseContent(),
+              gameExplainer: emptyPhaseContent(),
               progress: emptyPhaseContent(),
               assessment: emptyPhaseContent(),
               video: emptyPhaseContent(),
