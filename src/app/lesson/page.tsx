@@ -197,21 +197,17 @@ export default function LessonPage() {
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="sticky top-0 z-10 border-b border-line bg-background/95 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">
+            <p className="t-body-sm truncate font-bold">
               {session.lessonNo}차시 · {session.title}
             </p>
-            <p className="text-xs text-muted">
-              1학년 {me.classNo}반 {me.name || "(임시 번호)"} · 지금은{" "}
-              <span className="font-medium text-accent">{PHASE_LABELS[phase]}</span>
+            <p className="t-caption mt-0.5">
+              1학년 {me.classNo}반 {me.name || "(임시 번호)"} · {PHASE_LABELS[phase]}
             </p>
           </div>
-          <Link
-            href="/lesson/history"
-            className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs"
-          >
+          <Link href="/lesson/history" className="pill pill-secondary t-body-sm shrink-0">
             내 기록
           </Link>
         </div>
@@ -219,7 +215,7 @@ export default function LessonPage() {
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-5">
         {closed && (
-          <p className="mb-4 rounded-xl border border-line bg-card px-4 py-3 text-center text-sm text-muted">
+          <p className="mb-5 rounded-md bg-surface px-4 py-3 text-center t-body-sm">
             이 수업은 끝났어요. 내가 쓴 것은 볼 수 있지만 더 저장되지는 않아요.
           </p>
         )}
@@ -258,14 +254,12 @@ export default function LessonPage() {
           시청 중에 생각할 질문만 크게 보여준다. 화면을 꽉 채워 다른 데로 눈이 가지 않게 한다.
         */}
         {phase === "video" && (
-          <section className="flex flex-col gap-5">
-            <div className="rounded-2xl border-2 border-accent bg-accent/10 px-6 py-8 text-center">
-              <p className="text-3xl font-bold">📺 영상 시청 중</p>
-              <p className="mt-2 text-base text-muted">
-                앞 화면을 봐 주세요. 태블릿은 잠시 내려놓아도 됩니다.
-              </p>
+          <section className="flex flex-col gap-6">
+            <div className="block bg-navy text-center text-inverse-ink">
+              <p className="t-display">📺 영상 시청 중</p>
+              <p className="t-body-lg mt-3">앞 화면을 봐 주세요. 태블릿은 잠시 내려놓아도 됩니다.</p>
               {session.video.body && (
-                <p className="mt-4 whitespace-pre-wrap text-left text-sm leading-relaxed text-muted">
+                <p className="t-body-sm mt-5 whitespace-pre-wrap text-left opacity-80">
                   {session.video.body}
                 </p>
               )}
@@ -273,15 +267,10 @@ export default function LessonPage() {
 
             {session.reflectionQuestions.length > 0 && (
               <div className="flex flex-col gap-3">
-                <h2 className="text-center text-base font-semibold text-muted">
-                  영상을 보면서 이 질문들을 생각해 보세요
-                </h2>
+                <h2 className="t-eyebrow text-center">영상을 보면서 생각할 것</h2>
                 {session.reflectionQuestions.map((question, index) => (
-                  <div
-                    key={index}
-                    className="rounded-2xl border border-line bg-card px-5 py-4 text-xl font-medium leading-relaxed"
-                  >
-                    <span className="mr-2 text-accent">{index + 1}.</span>
+                  <div key={index} className="block bg-lime t-subhead">
+                    <span className="mr-2 font-bold">{index + 1}.</span>
                     {question}
                   </div>
                 ))}
@@ -291,21 +280,18 @@ export default function LessonPage() {
         )}
 
         {phase === "reflection" && (
-          <section className="flex flex-col gap-5">
+          <section className="flex flex-col gap-6">
             <div>
-              <h2 className="text-lg font-semibold">오늘의 성찰</h2>
-              <p className="mt-1 text-sm text-muted">
+              <h2 className="t-display">오늘의 성찰</h2>
+              <p className="t-body mt-2">
                 {total}개 질문에 모두 답해 주세요. ({answered}/{total} 작성)
               </p>
             </div>
 
             {session.reflectionQuestions.map((question, index) => (
-              <div key={index} className="flex flex-col gap-2">
-                <label
-                  htmlFor={`answer-${index}`}
-                  className="rounded-xl border border-line bg-card px-4 py-3 text-base leading-relaxed"
-                >
-                  <span className="mr-1 font-semibold text-accent">{index + 1}.</span>
+              <div key={index} className="flex flex-col gap-3">
+                <label htmlFor={`answer-${index}`} className="block bg-cream t-subhead">
+                  <span className="mr-2 font-bold">{index + 1}.</span>
                   {question}
                 </label>
                 <textarea
@@ -320,50 +306,45 @@ export default function LessonPage() {
                   maxLength={1000}
                   disabled={closed}
                   placeholder="여기에 적어 주세요"
-                  className="w-full rounded-xl border border-line bg-card px-3 py-3 text-base leading-relaxed outline-none focus:border-accent disabled:opacity-60"
+                  className="field disabled:opacity-60"
                 />
               </div>
             ))}
 
-            <div className="flex items-center justify-between text-xs text-muted">
-              <span aria-live="polite">
-                {reflectionState === "saving" && "저장 중…"}
-                {reflectionState === "saved" && "자동 저장됨"}
-                {reflectionState === "done" && "제출 완료"}
-                {reflectionState === "idle" && "쓰는 동안 자동으로 저장돼요"}
-              </span>
-            </div>
+            <span className="t-caption" aria-live="polite">
+              {reflectionState === "saving" && "저장 중…"}
+              {reflectionState === "saved" && "자동 저장됨"}
+              {reflectionState === "done" && "제출 완료"}
+              {reflectionState === "idle" && "쓰는 동안 자동으로 저장돼요"}
+            </span>
 
             <button
               type="button"
               onClick={() => saveReflection(answers, true)}
               disabled={answered === 0 || reflectionState === "saving" || closed}
-              className="h-14 rounded-2xl bg-accent text-lg font-semibold text-white transition active:scale-95 disabled:opacity-40"
+              className="pill pill-primary pill-block"
             >
               {reflectionState === "done" ? "다시 제출하기" : "제출하기"}
             </button>
 
             {answered < total && answered > 0 && (
-              <p className="text-center text-xs text-muted">
+              <p className="t-body-sm text-center">
                 아직 답하지 않은 질문이 {total - answered}개 있어요.
               </p>
             )}
 
             {session.reflectionPublic && data.peers.length > 0 && (
-              <section className="mt-4 flex flex-col gap-2">
-                <h3 className="text-sm font-semibold">친구들의 성찰</h3>
-                <ul className="flex flex-col gap-2">
+              <section className="mt-2 flex flex-col gap-3">
+                <h3 className="t-eyebrow">친구들의 성찰</h3>
+                <ul className="flex flex-col gap-3">
                   {data.peers.map((peer, index) => (
-                    <li
-                      key={index}
-                      className="rounded-xl border border-line bg-card px-3 py-2 text-sm"
-                    >
-                      <span className="font-medium">{peer.name}</span>
+                    <li key={index} className="card">
+                      <span className="t-body-sm font-bold">{peer.name}</span>
                       {peer.answers.map(
                         (answer, i) =>
                           answer.trim() && (
-                            <p key={i} className="mt-1 whitespace-pre-wrap leading-relaxed">
-                              <span className="text-muted">{i + 1}. </span>
+                            <p key={i} className="t-body mt-2 whitespace-pre-wrap">
+                              <span className="font-bold">{i + 1}. </span>
                               {answer}
                             </p>
                           ),
@@ -382,9 +363,9 @@ export default function LessonPage() {
 
 function Placeholder({ title, description }: { title: string; description: string }) {
   return (
-    <section className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-card px-6 py-16 text-center">
-      <h2 className="text-xl font-semibold">{title}</h2>
-      <p className="text-sm text-muted">{description}</p>
+    <section className="block flex flex-col items-center justify-center gap-3 bg-lilac py-20 text-center">
+      <h2 className="t-display">{title}</h2>
+      <p className="t-body-lg">{description}</p>
     </section>
   );
 }

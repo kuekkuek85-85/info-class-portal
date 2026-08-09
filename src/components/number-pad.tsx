@@ -18,9 +18,9 @@ const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
 export function NumberPad({ onDigit, onBackspace, disabled }: NumberPadProps) {
   const keyClass =
-    "h-16 rounded-2xl border border-line bg-card text-2xl font-semibold " +
-    "active:scale-95 transition disabled:opacity-40 " +
-    "hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+    "h-16 rounded-full border border-line bg-canvas text-2xl font-semibold text-ink " +
+    "transition active:scale-95 disabled:opacity-35 hover:bg-surface " +
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
 
   return (
     <div className="grid grid-cols-3 gap-3" role="group" aria-label="숫자 입력">
@@ -41,7 +41,7 @@ export function NumberPad({ onDigit, onBackspace, disabled }: NumberPadProps) {
       </button>
       <button
         type="button"
-        className={`${keyClass} text-lg`}
+        className={`${keyClass} text-base`}
         disabled={disabled}
         onClick={onBackspace}
         aria-label="지우기"
@@ -59,10 +59,10 @@ export function DigitDisplay({ value, length }: { value: string; length: number 
       {Array.from({ length }).map((_, index) => (
         <div
           key={index}
-          className={`flex h-16 w-12 items-center justify-center rounded-xl border-2 text-3xl font-bold ${
+          className={`flex h-16 w-12 items-center justify-center rounded-md text-3xl font-bold ${
             value[index]
-              ? "border-accent bg-card"
-              : "border-dashed border-line text-transparent"
+              ? "border-2 border-ink bg-canvas text-ink"
+              : "border border-dashed border-line text-transparent"
           }`}
         >
           {value[index] ?? "0"}

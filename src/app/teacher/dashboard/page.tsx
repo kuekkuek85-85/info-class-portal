@@ -174,10 +174,10 @@ function Dashboard() {
       {session && (
         <>
           {/* 수업 코드 — 칠판에 적어야 하므로 크게 */}
-          <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-card px-5 py-4">
+          <section className="block flex flex-wrap items-center justify-between gap-4 bg-lime">
             <div>
-              <p className="text-xs text-muted">수업 코드</p>
-              <p className="text-5xl font-black tracking-widest tabular-nums">{session.code}</p>
+              <p className="t-eyebrow">수업 코드</p>
+              <p className="text-6xl font-black tracking-widest tabular-nums">{session.code}</p>
               <p className="mt-1 text-xs text-muted">
                 {session.classNo}반 · {describePeriod(session.date, session.period)} ·{" "}
                 {session.lessonNo}차시
@@ -195,7 +195,7 @@ function Dashboard() {
                 type="button"
                 onClick={() => patchSession({ status: "active" })}
                 disabled={session.status === "active"}
-                className="rounded-lg border border-line px-3 py-2 text-sm disabled:opacity-40"
+                className="pill pill-secondary t-body-sm"
               >
                 수업 시작
               </button>
@@ -203,11 +203,11 @@ function Dashboard() {
                 type="button"
                 onClick={() => patchSession({ status: "ended" })}
                 disabled={session.status === "ended"}
-                className="rounded-lg border border-line px-3 py-2 text-sm disabled:opacity-40"
+                className="pill pill-secondary t-body-sm"
               >
                 수업 종료 (코드 만료)
               </button>
-              <label className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm">
+              <label className="pill pill-secondary t-body-sm cursor-pointer">
                 <input
                   type="checkbox"
                   checked={session.reflectionPublic}
@@ -219,33 +219,30 @@ function Dashboard() {
           </section>
 
           {/* 학생 화면은 여기서 정한 단계만 보여준다. 학생은 스스로 옮길 수 없다. */}
-          <section className="flex flex-col gap-3 rounded-2xl border border-line bg-card px-5 py-4">
+          <section className="card flex flex-col gap-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-sm font-semibold">
-                수업 진행 — 지금 학생 화면:{" "}
-                <span className="text-accent">{PHASE_LABELS[session.phase]}</span>
+              <h2 className="t-body font-bold">
+                수업 진행 — 지금 학생 화면: {PHASE_LABELS[session.phase]}
               </h2>
-              <p className="text-xs text-muted">누르면 학생 태블릿이 4초 안에 따라옵니다</p>
+              <p className="t-caption">누르면 학생 태블릿이 4초 안에 따라옵니다</p>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {LESSON_PHASES.filter(
-                (item) => item !== "mood" || session.moodCheckEnabled,
-              ).map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => patchSession({ phase: item })}
-                  aria-current={session.phase === item ? "true" : undefined}
-                  className={`rounded-xl px-4 py-2.5 text-sm font-medium transition ${
-                    session.phase === item
-                      ? "bg-accent text-white"
-                      : "border border-line hover:border-accent"
-                  }`}
-                >
-                  {PHASE_LABELS[item]}
-                </button>
-              ))}
+              {LESSON_PHASES.filter((item) => item !== "mood" || session.moodCheckEnabled).map(
+                (item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => patchSession({ phase: item })}
+                    aria-current={session.phase === item ? "true" : undefined}
+                    className={`pill t-body-sm ${
+                      session.phase === item ? "pill-primary" : "pill-secondary"
+                    }`}
+                  >
+                    {PHASE_LABELS[item]}
+                  </button>
+                ),
+              )}
             </div>
 
             {session.phase === "video" && (
@@ -263,7 +260,7 @@ function Dashboard() {
                 type="button"
                 onClick={() => patchSession({ phase: neighbourPhase(session, -1) })}
                 disabled={session.phase === "waiting"}
-                className="rounded-lg border border-line px-4 py-2 text-sm disabled:opacity-40"
+                className="pill pill-secondary"
               >
                 ← 이전 단계
               </button>
@@ -271,7 +268,7 @@ function Dashboard() {
                 type="button"
                 onClick={() => patchSession({ phase: neighbourPhase(session, 1) })}
                 disabled={session.phase === "done"}
-                className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+                className="pill pill-primary"
               >
                 다음 단계 →
               </button>

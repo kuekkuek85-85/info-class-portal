@@ -5,8 +5,9 @@ import { MOOD_NOTICE, MOOD_OPTIONS, QUADRANTS, type Quadrant } from "@/lib/mood"
 /**
  * 무드미터 4사분면 감정 선택.
  *
- * 가로축은 기분(불쾌↔쾌), 세로축은 기운(낮음↔높음)이다. 사분면 색은 무드미터 관례를 따른다.
- * 16개를 한 화면에 펼쳐 스크롤 없이 한 번에 고르게 했다 — 30분 수업의 도입 활동이다.
+ * 가로축은 기분(불쾌↔쾌), 세로축은 기운(낮음↔높음)이다. 사분면 색은 무드미터 관례를 따르되,
+ * 디자인 시스템의 파스텔 면으로 톤을 맞췄다 — 여기서 색은 장식이 아니라 축을 읽는 단서다.
+ * 16개를 한 화면에 펼쳐 스크롤 없이 한 번에 고르게 했다.
  */
 
 const ORDER: Quadrant[][] = [
@@ -37,24 +38,22 @@ export function MoodPicker({
   disabled,
 }: MoodPickerProps) {
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <div>
-        <h2 className="text-lg font-semibold">오늘 기분은 어때요?</h2>
-        <p className="mt-1 text-sm text-muted">
-          위로 갈수록 기운이 높고, 오른쪽으로 갈수록 기분이 좋아요.
-        </p>
+        <h2 className="t-display">오늘 기분은 어때요?</h2>
+        <p className="t-body mt-2">위로 갈수록 기운이 높고, 오른쪽으로 갈수록 기분이 좋아요.</p>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         {ORDER.map((row, rowIndex) => (
-          <div key={rowIndex} className="grid grid-cols-2 gap-2">
+          <div key={rowIndex} className="grid grid-cols-2 gap-3">
             {row.map((quadrant) => (
               <fieldset
                 key={quadrant}
-                className={`rounded-2xl border p-2 ${QUADRANTS[quadrant].className}`}
+                className={`rounded-lg p-3 ${QUADRANTS[quadrant].className}`}
               >
                 <legend className="sr-only">{QUADRANTS[quadrant].description}</legend>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-2 gap-2">
                   {MOOD_OPTIONS.filter((option) => option.quadrant === quadrant).map((option) => {
                     const selected = value === option.key;
                     return (
@@ -64,10 +63,8 @@ export function MoodPicker({
                         aria-pressed={selected}
                         disabled={disabled}
                         onClick={() => onChange(option.key)}
-                        className={`h-14 rounded-xl px-1 text-sm font-medium transition active:scale-95 disabled:opacity-60 ${
-                          selected
-                            ? "bg-foreground text-background"
-                            : "bg-white/70 text-zinc-800 dark:bg-black/30 dark:text-zinc-100"
+                        className={`h-14 rounded-full px-1 text-base font-semibold transition active:scale-95 disabled:opacity-50 ${
+                          selected ? "bg-ink text-canvas" : "bg-canvas text-ink"
                         }`}
                       >
                         {option.label}
@@ -81,8 +78,8 @@ export function MoodPicker({
         ))}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="mood-reason" className="text-sm font-medium">
+      <div className="flex flex-col gap-3">
+        <label htmlFor="mood-reason" className="t-body font-bold">
           왜 그런 기분인지 한 줄로 적어 주세요
         </label>
         <textarea
@@ -93,13 +90,15 @@ export function MoodPicker({
           maxLength={200}
           disabled={disabled}
           placeholder="예) 어제 잠을 못 자서 피곤해요"
-          className="w-full rounded-xl border border-line bg-card px-3 py-2 text-base outline-none focus:border-accent disabled:opacity-60"
+          className="field disabled:opacity-60"
         />
 
         {/* PRD 5.3 — 상설 안내. 감정 입력칸 옆에 항상 표시한다. */}
-        <ul className="rounded-xl border border-line bg-card px-3 py-2 text-xs leading-relaxed text-muted">
+        <ul className="rounded-md bg-surface px-4 py-3">
           {MOOD_NOTICE.map((line) => (
-            <li key={line}>· {line}</li>
+            <li key={line} className="t-body-sm">
+              · {line}
+            </li>
           ))}
         </ul>
       </div>
@@ -108,7 +107,7 @@ export function MoodPicker({
         type="button"
         onClick={onSubmit}
         disabled={!value || saving || disabled}
-        className="h-14 rounded-2xl bg-accent text-lg font-semibold text-white transition active:scale-95 disabled:opacity-40"
+        className="pill pill-primary pill-block"
       >
         {saving ? "저장 중…" : saved ? "저장했어요 · 다시 저장" : "기분 저장하기"}
       </button>

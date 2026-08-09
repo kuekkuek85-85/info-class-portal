@@ -135,14 +135,14 @@ export default function EntryPage() {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-5 py-8">
       <header className="text-center">
-        <h1 className="text-2xl font-bold">정보 수업</h1>
-        <p className="mt-1 text-sm text-muted">장평중학교 1학년</p>
+        <p className="t-eyebrow">장평중학교 1학년</p>
+        <h1 className="t-display mt-1">정보 수업</h1>
       </header>
 
       {step === "code" && (
         <section className="flex flex-col gap-5">
-          <h2 className="text-center text-lg font-semibold">
-            칠판에 있는 <span className="text-accent">수업 코드</span>를 눌러 주세요
+          <h2 className="t-subhead text-center">
+            칠판에 있는 <b className="font-bold">수업 코드</b>를 눌러 주세요
           </h2>
           <DigitDisplay value={code} length={length} />
           <NumberPad onDigit={pushDigit} onBackspace={popDigit} disabled={busy} />
@@ -152,20 +152,20 @@ export default function EntryPage() {
       {step === "studentId" && (
         <section className="flex flex-col gap-5">
           {codeInfo && (
-            <p className="rounded-xl bg-card border border-line px-4 py-3 text-center text-sm">
-              <span className="font-semibold">1학년 {codeInfo.classNo}반</span> · {codeInfo.lessonNo}
-              차시 {codeInfo.title}
+            <p className="block bg-lime t-body-sm text-center">
+              <b className="font-bold">1학년 {codeInfo.classNo}반</b> · {codeInfo.lessonNo}차시{" "}
+              {codeInfo.title}
             </p>
           )}
-          <h2 className="text-center text-lg font-semibold">
-            <span className="text-accent">학번 5자리</span>를 눌러 주세요
+          <h2 className="t-subhead text-center">
+            <b className="font-bold">학번 5자리</b>를 눌러 주세요
           </h2>
-          <p className="text-center text-sm text-muted">예) 1학년 2반 9번 → 10209</p>
+          <p className="t-body-sm text-center">예) 1학년 2반 9번 → 10209</p>
           <DigitDisplay value={studentId} length={length} />
           <NumberPad onDigit={pushDigit} onBackspace={popDigit} disabled={busy} />
           <button
             type="button"
-            className="text-sm text-muted underline underline-offset-4"
+            className="pill pill-ghost t-body-sm self-center"
             onClick={() => {
               setStep("code");
               setCode("");
@@ -180,25 +180,25 @@ export default function EntryPage() {
 
       {step === "confirm" && identified && (
         <section
-          className="flex flex-col gap-5 rounded-2xl border border-line bg-card p-6 text-center"
+          className="block flex flex-col gap-5 bg-cream text-center"
           role="dialog"
           aria-modal="true"
           aria-labelledby="confirm-title"
         >
-          <h2 id="confirm-title" className="text-xl font-semibold leading-relaxed">
+          <h2 id="confirm-title" className="t-headline leading-relaxed">
             {identified.description}
             <br />
             {identified.temporary ? (
-              <span className="text-muted">임시 번호로 들어갑니다</span>
+              <span className="font-normal">임시 번호로 들어갑니다</span>
             ) : (
               <>
-                <span className="text-accent">{identified.name}</span> 학생 맞나요?
+                {identified.name} 학생 맞나요?
               </>
             )}
           </h2>
 
           {identified.temporary && (
-            <p className="text-sm text-muted">
+            <p className="t-body-sm">
               명단에 없는 번호예요. 우선 수업에 들어가고, 수업이 끝나면 선생님께 알려 주세요.
             </p>
           )}
@@ -206,7 +206,7 @@ export default function EntryPage() {
           <div className="flex flex-col gap-3">
             <button
               type="button"
-              className="h-14 rounded-2xl bg-accent text-lg font-semibold text-white active:scale-95 transition disabled:opacity-50"
+              className="pill pill-primary pill-block"
               onClick={confirmYes}
               disabled={busy}
             >
@@ -214,7 +214,7 @@ export default function EntryPage() {
             </button>
             <button
               type="button"
-              className="h-14 rounded-2xl border border-line text-lg font-medium active:scale-95 transition disabled:opacity-50"
+              className="pill pill-secondary pill-block"
               onClick={confirmNo}
               disabled={busy}
             >
@@ -225,16 +225,13 @@ export default function EntryPage() {
       )}
 
       {error && (
-        <p
-          className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-center text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-200"
-          role="alert"
-        >
+        <p className="block bg-pink t-body-sm text-center" role="alert">
           {error}
         </p>
       )}
 
-      <footer className="mt-auto pt-6 text-center text-xs text-muted">
-        잘 안 되면 손을 들어 선생님께 알려 주세요.
+      <footer className="mt-auto pt-6 text-center">
+        <span className="t-caption">잘 안 되면 손을 들어 선생님께 알려 주세요</span>
       </footer>
     </main>
   );

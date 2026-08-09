@@ -1,58 +1,230 @@
 @import "tailwindcss";
 
 /*
- * 웹폰트를 쓰지 않는다. 28명이 동시에 접속하는 30분 수업에서 폰트 다운로드는
- * 그대로 첫 화면 지연이 된다. 시스템 한글 폰트로 충분하다. (PRD 1 설계 제약)
+ * Figma 마케팅 디자인 시스템 적용 (DESIGN-figma).
+ *
+ * 흑백 기조 위에 파스텔 색 블록을 얹는 구조다. 그림자를 쓰지 않고 색면과 굵기로 위계를 만든다.
+ *
+ * 두 가지는 원문과 다르게 간다.
+ *  · 폰트: figmaSans/Inter 는 한글이 없다. 웹폰트를 얹으면 28명 동시 접속에서 첫 화면이
+ *    그만큼 늦어진다 (PRD 1 설계 제약). 시스템 한글 폰트를 쓰되 크기·굵기·자간 체계만 따른다.
+ *  · 다크 모드: 원문에 다크 테마가 없다. 교실 태블릿이 다크로 잡히면 파스텔 블록이 무너지므로
+ *    라이트로 고정한다. dark: 유틸리티가 OS 설정만으로 켜지지 않도록 variant 를 클래스 기반으로 바꾼다.
  */
-:root {
-  --background: #ffffff;
-  --foreground: #18181b;
-  --muted: #71717a;
-  --card: #ffffff;
-  --border: #e4e4e7;
-  --accent: #2563eb;
-}
+@custom-variant dark (&:where(.dark, .dark *));
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0b0b0f;
-    --foreground: #f4f4f5;
-    --muted: #a1a1aa;
-    --card: #17171c;
-    --border: #2a2a32;
-    --accent: #60a5fa;
-  }
+:root {
+  color-scheme: light;
+
+  --ink: #000000;
+  --canvas: #ffffff;
+  --inverse-canvas: #000000;
+  --inverse-ink: #ffffff;
+  --hairline: #e6e6e6;
+  --hairline-soft: #f1f1f1;
+  --surface-soft: #f7f7f5;
+
+  --block-lime: #dceeb1;
+  --block-lilac: #c5b0f4;
+  --block-cream: #f4ecd6;
+  --block-pink: #efd4d4;
+  --block-mint: #c8e6cd;
+  --block-coral: #f3c9b6;
+  --block-navy: #1f1d3d;
+
+  --accent-magenta: #ff3d8b;
+  --success: #1ea64a;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-card: var(--card);
-  --color-line: var(--border);
-  --color-accent: var(--accent);
+  --color-ink: var(--ink);
+  --color-canvas: var(--canvas);
+  --color-inverse-canvas: var(--inverse-canvas);
+  --color-inverse-ink: var(--inverse-ink);
+  --color-line: var(--hairline);
+  --color-line-soft: var(--hairline-soft);
+  --color-surface: var(--surface-soft);
+
+  --color-lime: var(--block-lime);
+  --color-lilac: var(--block-lilac);
+  --color-cream: var(--block-cream);
+  --color-pink: var(--block-pink);
+  --color-mint: var(--block-mint);
+  --color-coral: var(--block-coral);
+  --color-navy: var(--block-navy);
+  --color-magenta: var(--accent-magenta);
+  --color-success: var(--success);
+
+  /* 기존 마크업이 쓰던 이름은 새 토큰으로 이어 붙인다 */
+  --color-background: var(--canvas);
+  --color-foreground: var(--ink);
+  --color-muted: var(--ink);
+  --color-card: var(--canvas);
+  --color-accent: var(--ink);
+
+  --radius-md: 8px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+
   --font-sans:
     -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI",
     "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--canvas);
+  color: var(--ink);
   font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
   -webkit-text-size-adjust: 100%;
 }
 
-/* 학생 화면 입력은 숫자 위주다. 태블릿에서 자동 확대·자동 교정이 끼어들지 않게 한다. */
+/*
+ * 타이포 역할.
+ *
+ * 원문은 굵기 320~700 사이를 잘게 쓰지만 한글 시스템 폰트는 가변 축이 없어 400/500/700 로만
+ * 떨어진다. 위계는 굵기 대신 크기와 자간으로 만든다. 음수 자간도 한글에서는 크게 주면
+ * 읽기 어려워지므로 큰 글자에만 소폭 적용한다.
+ */
+.t-display {
+  font-size: clamp(2rem, 7vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+.t-headline {
+  font-size: 1.625rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+.t-subhead {
+  font-size: 1.375rem;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+}
+.t-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.t-body-lg {
+  font-size: 1.25rem;
+  line-height: 1.45;
+}
+.t-body {
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+.t-body-sm {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+/* 모노는 분류 표시에만. 본문에 쓰지 않는다. */
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.t-caption {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+}
+
+/* 모든 CTA 는 알약. 사각 버튼은 쓰지 않는다. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 50px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  padding: 0.75rem 1.5rem;
+  min-height: 44px;
+  transition: transform 0.12s ease, background-color 0.12s ease;
+}
+.pill:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.pill:disabled {
+  opacity: 0.35;
+}
+
+.pill-primary {
+  background: var(--ink);
+  color: var(--canvas);
+}
+.pill-secondary {
+  background: var(--canvas);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+}
+.pill-ghost {
+  background: transparent;
+  color: var(--ink);
+}
+
+/* 큰 동작 — 학생 화면의 제출 버튼처럼 화면 폭을 다 쓰는 것 */
+.pill-block {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  font-size: 1.25rem;
+  min-height: 56px;
+}
+
+/* 색면이 깊이를 대신한다. 그림자를 얹지 않는다. */
+.block {
+  border-radius: 24px;
+  padding: 1.5rem;
+}
+@media (min-width: 640px) {
+  .block {
+    padding: 2rem;
+  }
+}
+
+.card {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: 24px;
+  padding: 1.5rem;
+}
+
+.field {
+  width: 100%;
+  background: var(--canvas);
+  color: var(--ink);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 0.75rem 0.875rem;
+  font-size: 1.125rem;
+  line-height: 1.5;
+  min-height: 48px;
+  outline: none;
+}
+.field:focus-visible {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
+}
+
 input,
 textarea,
 button,
 select {
   font-family: inherit;
-  font-size: 1rem;
 }
 
-/* 숫자 입력칸의 스피너를 없앤다 — 학번·코드 입력에서 실수로 값이 바뀌는 것을 막는다 */
+/* 학생 화면 입력은 숫자 위주다. 스피너가 있으면 실수로 값이 바뀐다. */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;

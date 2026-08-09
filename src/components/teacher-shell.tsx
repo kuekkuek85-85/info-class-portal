@@ -50,22 +50,18 @@ export function TeacherShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="border-b border-line bg-card">
+      <header className="border-b border-line bg-canvas">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-bold">정보 수업 포털</span>
-            <span className="text-xs text-muted">{me.name || me.email}</span>
+          <div className="flex items-baseline gap-3">
+            <span className="t-body font-bold">정보 수업 포털</span>
+            <span className="t-caption">{me.name || me.email}</span>
           </div>
-          <button
-            type="button"
-            onClick={logout}
-            className="rounded-lg border border-line px-3 py-1.5 text-xs"
-          >
+          <button type="button" onClick={logout} className="pill pill-secondary t-body-sm">
             로그아웃
           </button>
         </div>
 
-        <nav className="mx-auto flex w-full max-w-6xl gap-1 overflow-x-auto px-4 pb-2">
+        <nav className="mx-auto flex w-full max-w-6xl gap-2 overflow-x-auto px-4 pb-3">
           {NAV.map((item) => {
             const active = pathname === item.href;
             return (
@@ -73,9 +69,7 @@ export function TeacherShell({ children }: { children: ReactNode }) {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`shrink-0 rounded-lg px-3 py-1.5 text-sm ${
-                  active ? "bg-accent text-white" : "text-muted hover:bg-background"
-                }`}
+                className={`pill t-body-sm shrink-0 ${active ? "pill-primary" : "pill-secondary"}`}
               >
                 {item.label}
               </Link>
@@ -84,7 +78,7 @@ export function TeacherShell({ children }: { children: ReactNode }) {
         </nav>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
     </div>
   );
 }

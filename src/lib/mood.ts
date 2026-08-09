@@ -17,6 +17,12 @@ export interface MoodOption {
   arousal: number;
 }
 
+/**
+ * 사분면 색.
+ *
+ * 무드미터 관례(빨·노·파·초)를 지키되 디자인 시스템의 파스텔 면으로 톤을 맞췄다.
+ * 여기서 색은 장식이 아니라 축을 읽는 단서라서, 임의로 바꾸면 무드미터가 아니게 된다.
+ */
 export const QUADRANTS: Record<
   Quadrant,
   { label: string; description: string; className: string; dotClassName: string }
@@ -24,26 +30,26 @@ export const QUADRANTS: Record<
   red: {
     label: "빨강",
     description: "기운은 높은데 기분은 나쁨",
-    className: "bg-rose-50 border-rose-200 dark:bg-rose-950/40 dark:border-rose-900",
-    dotClassName: "bg-rose-500",
+    className: "bg-pink",
+    dotClassName: "bg-[#efd4d4]",
   },
   yellow: {
     label: "노랑",
     description: "기운도 높고 기분도 좋음",
-    className: "bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-900",
-    dotClassName: "bg-amber-400",
+    className: "bg-cream",
+    dotClassName: "bg-[#f4ecd6]",
   },
   blue: {
     label: "파랑",
     description: "기운도 낮고 기분도 나쁨",
-    className: "bg-sky-50 border-sky-200 dark:bg-sky-950/40 dark:border-sky-900",
-    dotClassName: "bg-sky-500",
+    className: "bg-lilac",
+    dotClassName: "bg-[#c5b0f4]",
   },
   green: {
     label: "초록",
     description: "기운은 낮지만 기분은 좋음",
-    className: "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900",
-    dotClassName: "bg-emerald-500",
+    className: "bg-mint",
+    dotClassName: "bg-[#c8e6cd]",
   },
 };
 
