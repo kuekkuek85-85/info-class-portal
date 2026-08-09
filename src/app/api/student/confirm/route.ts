@@ -2,6 +2,7 @@ import { fail, guard, ok, readJson } from "@/lib/api";
 import {
   getSession,
   getStudent,
+  isSessionClosed,
   recordAttendance,
   setSessionStatus,
   upsertStudents,
@@ -24,8 +25,10 @@ export async function POST(request: Request) {
     const parsed = parseStudentId(body?.studentId ?? "");
     if (!parsed) return fail("invalid_input");
 
+    // identify 와 마찬가지로 자동 만료를 여기서 다시 검사한다. 확인 팝업 앞에서 머무는 동안
+    // 교시가 끝났다면 출석을 새로 기록해서는 안 된다.
     const session = await getSession(codeToken.sessionId);
-    if (!session || session.status === "ended") return fail("session_expired");
+    if (!session || isSessionClosed(session)) return fail("session_expired");
     if (parsed.classNo !== session.classNo) return fail("class_mismatch");
 
     let name = "";

@@ -1,5 +1,5 @@
 import { deviceKey, fail, guard, networkKey, ok, rateLimit, readJson } from "@/lib/api";
-import { getSession, getStudent } from "@/lib/db";
+import { getSession, getStudent, isSessionClosed } from "@/lib/db";
 import { readCodeToken } from "@/lib/session";
 import { describeStudentId, parseStudentId } from "@/lib/student-id";
 
@@ -29,8 +29,10 @@ export async function POST(request: Request) {
       return fail("invalid_input", "학번은 숫자 5자리예요. 예) 10101");
     }
 
+    // 코드 토큰은 10분간 살아 있다. 그 사이 교시가 끝났을 수 있으므로 여기서 다시 검사한다.
+    // status 만 보면 자동 만료를 통과해 버린다.
     const session = await getSession(codeToken.sessionId);
-    if (!session || session.status === "ended") return fail("session_expired");
+    if (!session || isSessionClosed(session)) return fail("session_expired");
 
     // 반 불일치 차단 — 다른 반 코드를 알아내도 소용없게 만든다 (PRD 3.1)
     if (parsed.classNo !== session.classNo) {

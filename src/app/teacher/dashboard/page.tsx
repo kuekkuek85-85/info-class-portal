@@ -135,34 +135,35 @@ function Dashboard() {
 
       {sessions.length > 0 && (
         <section className="flex flex-wrap gap-2">
-          {sessions.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                setSessionId(item.id);
-                setNoteDraft(null);
-              }}
-              className={`rounded-xl border px-4 py-3 text-left transition ${
-                sessionId === item.id
-                  ? "border-accent bg-accent/10"
-                  : "border-line bg-card hover:border-accent"
-              }`}
-            >
-              <p className="text-sm font-semibold">
-                {item.period}교시 · {item.classNo}반
-              </p>
-              <p className="text-xs text-muted">
-                {periodTime(item.date, item.period)
-                  ? `${periodTime(item.date, item.period)!.start}~${periodTime(item.date, item.period)!.end} · `
-                  : ""}
-                {item.lessonNo}차시 {item.title}
-              </p>
-              <p className="mt-1 text-xs">
-                <StatusBadge status={item.status} />
-              </p>
-            </button>
-          ))}
+          {sessions.map((item) => {
+            const time = periodTime(item.date, item.period);
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setSessionId(item.id);
+                  setNoteDraft(null);
+                }}
+                className={`rounded-xl border px-4 py-3 text-left transition ${
+                  sessionId === item.id
+                    ? "border-accent bg-accent/10"
+                    : "border-line bg-card hover:border-accent"
+                }`}
+              >
+                <p className="text-sm font-semibold">
+                  {item.period}교시 · {item.classNo}반
+                </p>
+                <p className="text-xs text-muted">
+                  {time ? `${time.start}~${time.end} · ` : ""}
+                  {item.lessonNo}차시 {item.title}
+                </p>
+                <p className="mt-1 text-xs">
+                  <StatusBadge status={item.status} />
+                </p>
+              </button>
+            );
+          })}
         </section>
       )}
 
@@ -177,8 +178,11 @@ function Dashboard() {
                 {session.classNo}반 · {describePeriod(session.date, session.period)} ·{" "}
                 {session.lessonNo}차시
               </p>
+              {/* 시각표를 아는 날짜에만 자동 만료가 걸린다. 안내와 실제 동작이 어긋나면 안 된다. */}
               <p className="mt-1 text-xs text-muted">
-                교시가 끝나고 10분 뒤 코드가 저절로 만료됩니다.
+                {periodTime(session.date, session.period)
+                  ? "교시가 끝나고 10분 뒤 코드가 저절로 만료됩니다."
+                  : "이 날짜는 시각표가 없어 자동 만료되지 않습니다. 수업 종료를 눌러 주세요."}
               </p>
             </div>
 

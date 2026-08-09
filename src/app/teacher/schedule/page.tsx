@@ -110,7 +110,9 @@ function Schedule() {
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">시간표</h2>
 
-        {slots.map((slot, index) => (
+        {slots.map((slot, index) => {
+          const time = periodTime(startDate, slot.period);
+          return (
           <div key={index} className="flex flex-wrap items-end gap-3 rounded-xl border border-line bg-card px-4 py-3">
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-muted">반</span>
@@ -155,9 +157,7 @@ function Schedule() {
             </label>
 
             <span className="pb-2 text-xs text-muted">
-              {periodTime(startDate, slot.period)
-                ? `${periodTime(startDate, slot.period)!.start}~${periodTime(startDate, slot.period)!.end}`
-                : ""}
+              {time ? `${time.start}~${time.end}` : ""}
             </span>
 
             <button
@@ -169,7 +169,8 @@ function Schedule() {
               삭제
             </button>
           </div>
-        ))}
+          );
+        })}
 
         <button
           type="button"
