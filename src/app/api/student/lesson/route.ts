@@ -70,7 +70,9 @@ export async function GET() {
         moodCheckEnabled: session.moodCheckEnabled,
         progress: present(session.progress),
         assessment: present(session.assessment),
-        video: present(session.video),
+        // 영상 주소는 학생에게 내려보내지 않는다. 전자칠판으로 같이 보는 구조라
+        // 태블릿에 주소가 있으면 각자 다른 지점을 보거나 유튜브로 빠져나간다 (PRD 3.2).
+        video: { heading: session.video?.heading ?? "", body: session.video?.body ?? "", url: "" },
         reflectionQuestions: questions,
         reflectionPublic: session.reflectionPublic,
         date: session.date,

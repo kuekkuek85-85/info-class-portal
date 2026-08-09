@@ -257,7 +257,43 @@ export default function LessonPage() {
         {phase === "assessment" && (
           <ContentView content={session.assessment} fallback="평가 안내" />
         )}
-        {phase === "video" && <ContentView content={session.video} fallback="영상 시청" tall />}
+
+        {/*
+          영상은 교실 앞 전자칠판으로 다 같이 본다. 태블릿에는 영상을 띄우지 않고,
+          시청 중에 생각할 질문만 크게 보여준다. 화면을 꽉 채워 다른 데로 눈이 가지 않게 한다.
+        */}
+        {phase === "video" && (
+          <section className="flex flex-col gap-5">
+            <div className="rounded-2xl border-2 border-accent bg-accent/10 px-6 py-8 text-center">
+              <p className="text-3xl font-bold">📺 영상 시청 중</p>
+              <p className="mt-2 text-base text-muted">
+                앞 화면을 봐 주세요. 태블릿은 잠시 내려놓아도 됩니다.
+              </p>
+              {session.video.body && (
+                <p className="mt-4 whitespace-pre-wrap text-left text-sm leading-relaxed text-muted">
+                  {session.video.body}
+                </p>
+              )}
+            </div>
+
+            {session.reflectionQuestions.length > 0 && (
+              <div className="flex flex-col gap-3">
+                <h2 className="text-center text-base font-semibold text-muted">
+                  영상을 보면서 이 질문들을 생각해 보세요
+                </h2>
+                {session.reflectionQuestions.map((question, index) => (
+                  <div
+                    key={index}
+                    className="rounded-2xl border border-line bg-card px-5 py-4 text-xl font-medium leading-relaxed"
+                  >
+                    <span className="mr-2 text-accent">{index + 1}.</span>
+                    {question}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {phase === "reflection" && (
           <section className="flex flex-col gap-5">

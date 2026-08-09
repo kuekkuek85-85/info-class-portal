@@ -248,6 +248,16 @@ function Dashboard() {
               ))}
             </div>
 
+            {session.phase === "video" && (
+              <p className="rounded-lg border border-line bg-background px-3 py-2 text-xs text-muted">
+                학생 태블릿에는 &ldquo;영상 시청 중&rdquo; 안내와 성찰 질문만 떠 있습니다. 영상은{" "}
+                <a href="/teacher/screen" className="font-medium text-accent underline">
+                  영상 재생
+                </a>{" "}
+                화면에서 전자칠판으로 틀어 주세요.
+              </p>
+            )}
+
             <div className="flex gap-2">
               <button
                 type="button"

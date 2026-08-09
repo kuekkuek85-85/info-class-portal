@@ -10,6 +10,7 @@ import { signOutGoogle } from "@/lib/firebase-client";
 
 const NAV = [
   { href: "/teacher/dashboard", label: "대시보드" },
+  { href: "/teacher/screen", label: "영상 재생" },
   { href: "/teacher/board", label: "공유 화면" },
   { href: "/teacher/lessons", label: "차시" },
   { href: "/teacher/schedule", label: "시간표" },
