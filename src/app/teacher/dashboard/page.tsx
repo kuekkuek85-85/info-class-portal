@@ -5,6 +5,7 @@ import { useState } from "react";
 import { TeacherShell } from "@/components/teacher-shell";
 import { formatDateKorean, formatTimeKST, todayKST } from "@/lib/datetime";
 import { QUADRANTS, type Quadrant } from "@/lib/mood";
+import { describePeriod, periodTime } from "@/lib/timetable";
 import { usePolled } from "@/lib/use-polled";
 
 /**
@@ -152,6 +153,9 @@ function Dashboard() {
                 {item.period}교시 · {item.classNo}반
               </p>
               <p className="text-xs text-muted">
+                {periodTime(item.date, item.period)
+                  ? `${periodTime(item.date, item.period)!.start}~${periodTime(item.date, item.period)!.end} · `
+                  : ""}
                 {item.lessonNo}차시 {item.title}
               </p>
               <p className="mt-1 text-xs">
@@ -170,7 +174,11 @@ function Dashboard() {
               <p className="text-xs text-muted">수업 코드</p>
               <p className="text-5xl font-black tracking-widest tabular-nums">{session.code}</p>
               <p className="mt-1 text-xs text-muted">
-                {session.classNo}반 · {session.period}교시 · {session.lessonNo}차시
+                {session.classNo}반 · {describePeriod(session.date, session.period)} ·{" "}
+                {session.lessonNo}차시
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                교시가 끝나고 10분 뒤 코드가 저절로 만료됩니다.
               </p>
             </div>
 

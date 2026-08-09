@@ -3,6 +3,7 @@ import {
   getMoodEntry,
   getReflection,
   getSession,
+  isSessionClosed,
   listReflections,
   studentNameMap,
 } from "@/lib/db";
@@ -47,9 +48,9 @@ export async function GET() {
       me: { studentId: me.studentId, name: me.name, classNo: me.classNo },
       session: {
         id: session.id,
-        // 교사가 수업을 종료하면 더 이상 쓸 수 없다. 화면을 튕겨내지는 않는다 —
+        // 교사가 종료했거나 교시가 끝나면 더 이상 쓸 수 없다. 화면을 튕겨내지는 않는다 —
         // 자기가 쓴 것은 계속 볼 수 있어야 하고, 갑자기 첫 화면으로 돌아가면 학생이 당황한다.
-        closed: session.status === "ended",
+        closed: isSessionClosed(session),
         lessonNo: session.lessonNo,
         title: session.title,
         slideUrl: session.slideUrl,

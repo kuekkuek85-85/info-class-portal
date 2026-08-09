@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { TeacherShell } from "@/components/teacher-shell";
 import { todayKST } from "@/lib/datetime";
+import { periodTime, scheduleFor } from "@/lib/timetable";
 
 /**
  * 시간표 → 학기 전체 세션 자동 생성 (PRD 4).
@@ -20,6 +21,17 @@ interface Slot {
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
+/**
+ * 2학기 월요일 시간표. 나머지 요일은 줄을 추가해 채운다.
+ * 처음 열었을 때 빈 화면이 아니라 실제 시간표가 들어 있어야 첫날 준비가 빠르다.
+ */
+const DEFAULT_SLOTS: Slot[] = [
+  { classNo: 1, weekday: 1, period: 2 },
+  { classNo: 4, weekday: 1, period: 3 },
+  { classNo: 2, weekday: 1, period: 5 },
+  { classNo: 3, weekday: 1, period: 6 },
+];
+
 export default function SchedulePage() {
   return (
     <TeacherShell>
@@ -31,7 +43,7 @@ export default function SchedulePage() {
 function Schedule() {
   const [startDate, setStartDate] = useState(todayKST());
   const [endDate, setEndDate] = useState("2026-12-31");
-  const [slots, setSlots] = useState<Slot[]>([{ classNo: 1, weekday: 1, period: 1 }]);
+  const [slots, setSlots] = useState<Slot[]>(DEFAULT_SLOTS);
   const [result, setResult] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -66,6 +78,12 @@ function Schedule() {
           반별 요일·교시를 등록하면 기간 안의 모든 수업이 한 번에 만들어집니다. 이미 있는
           (날짜·교시·반)은 건너뜁니다.
         </p>
+        {scheduleFor(startDate) && (
+          <p className="mt-2 text-xs text-muted">
+            {startDate} 은 <b>{scheduleFor(startDate)!.label}</b> 적용 기간입니다
+            ({scheduleFor(startDate)!.from} ~ {scheduleFor(startDate)!.to}).
+          </p>
+        )}
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -135,6 +153,12 @@ function Schedule() {
                 className="w-24 rounded-lg border border-line bg-background px-3 py-2"
               />
             </label>
+
+            <span className="pb-2 text-xs text-muted">
+              {periodTime(startDate, slot.period)
+                ? `${periodTime(startDate, slot.period)!.start}~${periodTime(startDate, slot.period)!.end}`
+                : ""}
+            </span>
 
             <button
               type="button"

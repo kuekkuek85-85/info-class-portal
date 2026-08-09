@@ -4,6 +4,7 @@ import { FieldPath, type Query } from "firebase-admin/firestore";
 
 import { db } from "./firebase-admin";
 import { todayKST } from "./datetime";
+import { isPeriodOver } from "./timetable";
 import type {
   Attendance,
   ClassNo,
@@ -158,6 +159,14 @@ export async function deleteLessonPlan(id: string): Promise<void> {
 
 // ------------------------------------------------------------------- 세션
 
+/**
+ * 이 세션이 닫혔는가 — 교사가 종료했거나, 시각표상 그 교시가 끝났거나.
+ * 학생 쓰기 API가 공통으로 쓴다.
+ */
+export function isSessionClosed(session: ClassSession, now: Date = new Date()): boolean {
+  return session.status === "ended" || isPeriodOver(session.date, session.period, now);
+}
+
 export async function getSession(id: string): Promise<ClassSession | null> {
   const doc = await db().collection(COLLECTIONS.classSessions).doc(id).get();
   return doc.exists ? withId<ClassSession>(doc) : null;
@@ -186,7 +195,8 @@ export async function listAllSessions(): Promise<ClassSession[]> {
  * 수업 코드로 오늘 세션을 찾는다.
  *
  * 코드는 (날짜, 교시, 반)에 묶이므로 날짜까지 함께 조건에 넣는다. 어제 코드로는 들어올 수 없다.
- * 종료된 세션은 제외한다 — 교시 종료 시 만료 (PRD 8 확정 사항).
+ * 교시 종료 시 만료된다 (PRD 8 확정 사항) — 교사가 종료를 누른 세션과, 시각표상 이미 끝난
+ * 교시를 모두 제외한다. 교사가 버튼 누르는 것을 깜빡해도 코드가 하교 후까지 살아 있지 않다.
  */
 export async function findSessionByCode(
   code: string,
@@ -198,7 +208,9 @@ export async function findSessionByCode(
       .where("date", "==", date)
       .where("code", "==", code),
   );
-  const usable = sessions.filter((s) => s.status !== "ended");
+  const usable = sessions.filter(
+    (s) => s.status !== "ended" && !isPeriodOver(s.date, s.period),
+  );
   return usable[0] ?? null;
 }
 
