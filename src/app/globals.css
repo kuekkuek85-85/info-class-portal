@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+/*
+ * 웹폰트를 쓰지 않는다. 28명이 동시에 접속하는 30분 수업에서 폰트 다운로드는
+ * 그대로 첫 화면 지연이 된다. 시스템 한글 폰트로 충분하다. (PRD 1 설계 제약)
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #18181b;
+  --muted: #71717a;
+  --card: #ffffff;
+  --border: #e4e4e7;
+  --accent: #2563eb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b0b0f;
+    --foreground: #f4f4f5;
+    --muted: #a1a1aa;
+    --card: #17171c;
+    --border: #2a2a32;
+    --accent: #60a5fa;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-card: var(--card);
+  --color-line: var(--border);
+  --color-accent: var(--accent);
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI",
+    "Malgun Gothic", "Noto Sans KR", sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* 학생 화면 입력은 숫자 위주다. 태블릿에서 자동 확대·자동 교정이 끼어들지 않게 한다. */
+input,
+textarea,
+button,
+select {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+/* 숫자 입력칸의 스피너를 없앤다 — 학번·코드 입력에서 실수로 값이 바뀌는 것을 막는다 */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

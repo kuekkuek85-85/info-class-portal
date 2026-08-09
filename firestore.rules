@@ -1,0 +1,16 @@
+rules_version = '2';
+
+// 클라이언트의 Firestore 직접 접근을 전면 차단한다.
+//
+// 학생 브라우저는 Firebase SDK를 아예 로드하지 않고, 교사 화면도 데이터는 서버
+// Route Handler를 거친다. 서버는 Admin SDK를 쓰므로 이 규칙의 영향을 받지 않는다.
+//
+// 이 규칙 덕분에 "명렬표 112명이 클라이언트로 통째로 내려가는" 경로가 존재하지 않는다.
+// 규칙을 여는 순간 그 보장이 사라지므로, 열어야 할 이유가 생기면 먼저 다시 검토할 것.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
