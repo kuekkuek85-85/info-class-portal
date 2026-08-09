@@ -16,7 +16,9 @@ import type { ClassNo } from "./types";
 export const STUDENT_ID_LENGTH = 5;
 export const GRADE = 1;
 export const MAX_CLASS_NO = 4;
-/** 이 번호 이상은 임시 번호로 취급한다 */
+/** 한 반 정원 상한. 실제는 28명이지만 전입 여유로 30까지 받는다. */
+export const MAX_STUDENT_NUMBER = 30;
+/** 이 번호 이상은 임시 번호로 취급한다 (90번대) */
 export const TEMPORARY_NUMBER_MIN = 90;
 
 export interface ParsedStudentId {
@@ -38,14 +40,17 @@ export function parseStudentId(raw: string): ParsedStudentId | null {
 
   if (grade !== GRADE) return null;
   if (classNo < 1 || classNo > MAX_CLASS_NO) return null;
-  if (number < 1) return null;
+
+  // 1~30은 정상 번호, 90~99는 임시 번호. 그 사이(31~89)는 오타로 보고 거부한다.
+  const temporary = number >= TEMPORARY_NUMBER_MIN;
+  if (!temporary && (number < 1 || number > MAX_STUDENT_NUMBER)) return null;
 
   return {
     studentId: value,
     grade,
     classNo: classNo as ClassNo,
     number,
-    temporary: number >= TEMPORARY_NUMBER_MIN,
+    temporary,
   };
 }
 

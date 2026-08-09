@@ -1,5 +1,5 @@
-import { clientKey, fail, guard, ok, rateLimit, readJson } from "@/lib/api";
-import { findSessionByCode, setSessionStatus } from "@/lib/db";
+import { deviceKey, fail, guard, networkKey, ok, rateLimit, readJson } from "@/lib/api";
+import { findSessionByCode } from "@/lib/db";
 import { createCodeToken } from "@/lib/session";
 
 /**
@@ -11,7 +11,12 @@ import { createCodeToken } from "@/lib/session";
  */
 export async function POST(request: Request) {
   return guard(async () => {
-    if (!rateLimit(clientKey(request, "code"), 30, 60_000)) {
+    // 기기별로 센다 — 교실 전체가 한 IP로 나가므로 IP로 세면 옆자리 학생까지 막힌다.
+    if (!rateLimit(await deviceKey("code"), 12, 60_000)) {
+      return fail("too_many_attempts");
+    }
+    // 네트워크 단위 백스톱. 28명이 각자 몇 번 눌러도 걸리지 않을 만큼 넉넉히.
+    if (!rateLimit(networkKey(request, "code"), 600, 60_000)) {
       return fail("too_many_attempts");
     }
 
@@ -24,11 +29,9 @@ export async function POST(request: Request) {
     const session = await findSessionByCode(code);
     if (!session) return fail("code_not_found");
 
-    // 첫 학생이 들어오는 순간 세션을 시작 상태로 바꾼다. 스냅샷은 생성 시점에 이미 고정되어 있다.
-    if (session.status === "scheduled") {
-      await setSessionStatus(session.id, "active");
-    }
-
+    // 여기서는 세션 상태를 바꾸지 않는다. 코드를 맞히기만 한 요청(아직 학생인지 모른다)이
+    // 수업을 시작 상태로 만들면, 코드를 찍어 맞힌 것만으로 차시 스냅샷이 고정된다.
+    // 실제 시작 처리는 학생 인증이 끝나는 /api/student/confirm 에서 한다.
     await createCodeToken({ sessionId: session.id, classNo: session.classNo });
 
     return ok({

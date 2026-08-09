@@ -22,6 +22,8 @@ interface MoodPickerProps {
   onSubmit: () => void;
   saving: boolean;
   saved: boolean;
+  /** 수업이 끝난 뒤에는 읽기만 된다 */
+  disabled?: boolean;
 }
 
 export function MoodPicker({
@@ -32,6 +34,7 @@ export function MoodPicker({
   onSubmit,
   saving,
   saved,
+  disabled,
 }: MoodPickerProps) {
   return (
     <div className="flex flex-col gap-5">
@@ -59,8 +62,9 @@ export function MoodPicker({
                         key={option.key}
                         type="button"
                         aria-pressed={selected}
+                        disabled={disabled}
                         onClick={() => onChange(option.key)}
-                        className={`h-14 rounded-xl px-1 text-sm font-medium transition active:scale-95 ${
+                        className={`h-14 rounded-xl px-1 text-sm font-medium transition active:scale-95 disabled:opacity-60 ${
                           selected
                             ? "bg-foreground text-background"
                             : "bg-white/70 text-zinc-800 dark:bg-black/30 dark:text-zinc-100"
@@ -87,8 +91,9 @@ export function MoodPicker({
           onChange={(event) => onReasonChange(event.target.value)}
           rows={2}
           maxLength={200}
+          disabled={disabled}
           placeholder="예) 어제 잠을 못 자서 피곤해요"
-          className="w-full rounded-xl border border-line bg-card px-3 py-2 text-base outline-none focus:border-accent"
+          className="w-full rounded-xl border border-line bg-card px-3 py-2 text-base outline-none focus:border-accent disabled:opacity-60"
         />
 
         {/* PRD 5.3 — 상설 안내. 감정 입력칸 옆에 항상 표시한다. */}
@@ -102,7 +107,7 @@ export function MoodPicker({
       <button
         type="button"
         onClick={onSubmit}
-        disabled={!value || saving}
+        disabled={!value || saving || disabled}
         className="h-14 rounded-2xl bg-accent text-lg font-semibold text-white transition active:scale-95 disabled:opacity-40"
       >
         {saving ? "저장 중…" : saved ? "저장했어요 · 다시 저장" : "기분 저장하기"}

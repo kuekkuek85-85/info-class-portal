@@ -19,6 +19,8 @@ interface LessonData {
   me: { studentId: string; name: string; classNo: number };
   session: {
     id: string;
+    /** 교사가 수업을 종료했는가. 종료 후에는 읽기만 된다. */
+    closed: boolean;
     lessonNo: number;
     title: string;
     slideUrl: string;
@@ -54,6 +56,8 @@ export default function LessonPage() {
   );
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaved = useRef("");
+  /** 한 번 제출했으면 이후 자동저장도 초안이 아니다. 제출 상태가 되돌아가면 안 된다. */
+  const submitted = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,7 +81,10 @@ export default function LessonPage() {
       setMoodSaved(Boolean(payload.mood));
       setReflection(payload.reflection?.content ?? "");
       lastSaved.current = payload.reflection?.content ?? "";
-      if (payload.reflection && !payload.reflection.draft) setReflectionState("done");
+      if (payload.reflection && !payload.reflection.draft) {
+        submitted.current = true;
+        setReflectionState("done");
+      }
       // 슬라이드가 없는 차시면 바로 할 일이 있는 탭으로 보낸다
       if (!payload.session.slideUrl) {
         setTab(payload.session.moodCheckEnabled ? "mood" : "reflection");
@@ -90,17 +97,26 @@ export default function LessonPage() {
     };
   }, [router]);
 
-  const saveReflection = useCallback(async (content: string, draft: boolean) => {
+  const saveReflection = useCallback(async (content: string, submit: boolean) => {
+    // 예약된 자동저장을 먼저 취소한다. 제출 직후 늦게 도착한 임시저장이
+    // 제출 완료 상태를 초안으로 되돌리는 것을 막는다.
+    if (autosaveTimer.current) {
+      clearTimeout(autosaveTimer.current);
+      autosaveTimer.current = null;
+    }
+    if (submit) submitted.current = true;
+
     setReflectionState("saving");
     const response = await fetch("/api/student/reflection", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, draft }),
+      body: JSON.stringify({ content, draft: !submitted.current }),
     });
     const result = await response.json();
+
     if (result.ok) {
       lastSaved.current = content;
-      setReflectionState(draft ? "saved" : "done");
+      setReflectionState(result.draft ? "saved" : "done");
     } else {
       setReflectionState("idle");
     }
@@ -108,12 +124,12 @@ export default function LessonPage() {
 
   // 입력 중 자동 임시저장 (PRD 3.4)
   useEffect(() => {
-    if (!data) return;
+    if (!data || data.session.closed) return;
     if (reflection === lastSaved.current) return;
 
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     autosaveTimer.current = setTimeout(() => {
-      void saveReflection(reflection, true);
+      void saveReflection(reflection, false);
     }, AUTOSAVE_DELAY_MS);
 
     return () => {
@@ -198,6 +214,12 @@ export default function LessonPage() {
       </header>
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-5">
+        {session.closed && (
+          <p className="mb-4 rounded-xl border border-line bg-card px-4 py-3 text-center text-sm text-muted">
+            이 수업은 끝났어요. 내가 쓴 것은 볼 수 있지만 더 저장되지는 않아요.
+          </p>
+        )}
+
         {tab === "slide" && session.slideUrl && (
           <section className="flex flex-col gap-3">
             {/*
@@ -232,6 +254,7 @@ export default function LessonPage() {
             onSubmit={submitMood}
             saving={moodSaving}
             saved={moodSaved}
+            disabled={session.closed}
           />
         )}
 
@@ -249,8 +272,9 @@ export default function LessonPage() {
               onChange={(event) => setReflection(event.target.value)}
               rows={6}
               maxLength={1000}
+              disabled={session.closed}
               placeholder="여기에 적어 주세요"
-              className="w-full rounded-xl border border-line bg-card px-3 py-3 text-base leading-relaxed outline-none focus:border-accent"
+              className="w-full rounded-xl border border-line bg-card px-3 py-3 text-base leading-relaxed outline-none focus:border-accent disabled:opacity-60"
             />
 
             <div className="flex items-center justify-between text-xs text-muted">
@@ -265,8 +289,8 @@ export default function LessonPage() {
 
             <button
               type="button"
-              onClick={() => saveReflection(reflection, false)}
-              disabled={!reflection.trim() || reflectionState === "saving"}
+              onClick={() => saveReflection(reflection, true)}
+              disabled={!reflection.trim() || reflectionState === "saving" || session.closed}
               className="h-14 rounded-2xl bg-accent text-lg font-semibold text-white transition active:scale-95 disabled:opacity-40"
             >
               {reflectionState === "done" ? "다시 제출하기" : "제출하기"}

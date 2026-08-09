@@ -1,10 +1,9 @@
 import { fail, guard, ok, readJson } from "@/lib/api";
 import {
-  allocateCode,
   createSession,
   deleteSession,
-  findSessionSlot,
   getLessonPlan,
+  reserveCode,
   getSession,
   listAllSessions,
   listSessionsByDate,
@@ -65,12 +64,7 @@ export async function POST(request: Request) {
     const plan = await getLessonPlan(body.lessonPlanId);
     if (!plan) return fail("not_found", "차시 계획을 찾을 수 없습니다.");
 
-    const duplicate = await findSessionSlot(date, period, classNo);
-    if (duplicate) {
-      return fail("invalid_input", `${date} ${period}교시 ${classNo}반 수업이 이미 있습니다.`);
-    }
-
-    const code = await allocateCode(date);
+    const code = await reserveCode(date);
     const session = await createSession({
       lessonPlanId: plan.id,
       classNo,
@@ -89,6 +83,11 @@ export async function POST(request: Request) {
       startedAt: null,
       endedAt: null,
     });
+
+    // 문서 ID가 (날짜, 교시, 반)이라 중복은 Firestore가 거부한다
+    if (!session) {
+      return fail("invalid_input", `${date} ${period}교시 ${classNo}반 수업이 이미 있습니다.`);
+    }
 
     return ok({ session });
   });

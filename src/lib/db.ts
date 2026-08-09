@@ -29,10 +29,18 @@ export const COLLECTIONS = {
   attendance: "attendance",
   moodEntries: "moodEntries",
   reflections: "reflections",
+  codeReservations: "codeReservations",
   meta: "meta",
 } as const;
 
 const PURGE_LOG_DOC = "purgeLog";
+
+/** 이미 존재하는 문서에 create()를 호출했을 때 Firestore가 주는 코드 */
+const ALREADY_EXISTS = 6;
+
+function isAlreadyExists(error: unknown): boolean {
+  return typeof error === "object" && error !== null && (error as { code?: number }).code === ALREADY_EXISTS;
+}
 
 /** 세션 × 학생 조합당 문서 하나. 중복 기록을 구조적으로 막는다. */
 export function entryId(sessionId: string, studentId: string): string {
@@ -194,30 +202,83 @@ export async function findSessionByCode(
   return usable[0] ?? null;
 }
 
-/** 같은 날 중복 없는 2자리 코드를 뽑는다. 다음 날에는 재사용 가능. */
-export async function allocateCode(date: string): Promise<string> {
-  const sessions = await listSessionsByDate(date);
-  const used = new Set(sessions.map((s) => s.code));
+/**
+ * 같은 날 중복 없는 2자리 코드를 **원자적으로** 예약한다. 다음 날에는 재사용 가능.
+ *
+ * 조회 후 배정하는 방식은 두 세션을 거의 동시에 만들 때 같은 코드를 내줄 수 있다.
+ * 그러면 findSessionByCode()가 둘 중 하나만 반환하고, 다른 반 학생 전원이 반 불일치로 막힌다.
+ * 예약 문서 ID를 `날짜__코드`로 고정하고 create()로 만들어 Firestore가 중복을 거부하게 한다.
+ */
+export async function reserveCode(date: string): Promise<string> {
+  const existing = await db()
+    .collection(COLLECTIONS.codeReservations)
+    .where("date", "==", date)
+    .get();
+  const used = new Set(existing.docs.map((doc) => doc.data().code as string));
 
   const candidates: string[] = [];
   for (let n = 10; n <= 99; n += 1) {
     const code = String(n);
     if (!used.has(code)) candidates.push(code);
   }
-  if (candidates.length === 0) {
-    throw new Error(`${date}에 발급 가능한 수업 코드가 없습니다.`);
+  // 뒤에서부터 순서대로 주면 코드를 추측하기 쉬워지므로 섞는다
+  for (let i = candidates.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
   }
-  return candidates[Math.floor(Math.random() * candidates.length)];
+
+  for (const code of candidates) {
+    try {
+      await db()
+        .collection(COLLECTIONS.codeReservations)
+        .doc(codeReservationId(date, code))
+        .create({ date, code, createdAt: Date.now() });
+      return code;
+    } catch (error) {
+      // 그 사이 다른 요청이 먼저 가져갔다면 다음 후보로
+      if (isAlreadyExists(error)) continue;
+      throw error;
+    }
+  }
+
+  throw new Error(`${date}에 발급 가능한 수업 코드가 없습니다.`);
 }
 
+function codeReservationId(date: string, code: string): string {
+  return `${date}__${code}`;
+}
+
+async function releaseCode(date: string, code: string): Promise<void> {
+  await db().collection(COLLECTIONS.codeReservations).doc(codeReservationId(date, code)).delete();
+}
+
+/** 세션 문서 ID. (날짜, 교시, 반)이 곧 식별자라 중복 생성이 Firestore 단계에서 막힌다. */
+export function sessionDocId(date: string, period: number, classNo: ClassNo): string {
+  return `${date}__${period}__${classNo}`;
+}
+
+/** 같은 (날짜, 교시, 반) 세션이 이미 있으면 null을 반환한다. 코드 예약도 함께 되돌린다. */
 export async function createSession(
   input: Omit<ClassSession, "id" | "createdAt">,
-): Promise<ClassSession> {
+): Promise<ClassSession | null> {
   const now = Date.now();
-  const ref = await db()
-    .collection(COLLECTIONS.classSessions)
-    .add({ ...input, createdAt: now });
-  return { id: ref.id, ...input, createdAt: now };
+  const id = sessionDocId(input.date, input.period, input.classNo);
+
+  try {
+    await db()
+      .collection(COLLECTIONS.classSessions)
+      .doc(id)
+      .create({ ...input, createdAt: now });
+  } catch (error) {
+    if (isAlreadyExists(error)) {
+      // 이 세션 때문에 잡아둔 코드를 놓아준다. 안 그러면 90개가 조용히 말라붙는다.
+      await releaseCode(input.date, input.code).catch(() => undefined);
+      return null;
+    }
+    throw error;
+  }
+
+  return { id, ...input, createdAt: now };
 }
 
 export async function updateSession(
@@ -228,7 +289,11 @@ export async function updateSession(
 }
 
 export async function deleteSession(id: string): Promise<void> {
+  const session = await getSession(id);
   await db().collection(COLLECTIONS.classSessions).doc(id).delete();
+
+  // 코드 예약을 함께 풀어 같은 날 다시 쓸 수 있게 한다
+  if (session) await releaseCode(session.date, session.code).catch(() => undefined);
 }
 
 export async function setSessionStatus(id: string, status: SessionStatus): Promise<void> {
@@ -272,22 +337,6 @@ export async function syncScheduledSessions(plan: LessonPlan): Promise<number> {
   }
   await batch.commit();
   return snap.size;
-}
-
-/** 같은 (날짜, 교시, 반) 세션이 이미 있는지 — 시간표 일괄 생성 시 중복 방지 */
-export async function findSessionSlot(
-  date: string,
-  period: number,
-  classNo: ClassNo,
-): Promise<ClassSession | null> {
-  const sessions = await collectAll<ClassSession>(
-    db()
-      .collection(COLLECTIONS.classSessions)
-      .where("date", "==", date)
-      .where("classNo", "==", classNo)
-      .where("period", "==", period),
-  );
-  return sessions[0] ?? null;
 }
 
 // ------------------------------------------------------------------- 출석
@@ -379,7 +428,13 @@ export async function upsertReflection(
   const now = Date.now();
   const createdAt = existing.exists ? (existing.data()?.createdAt ?? now) : now;
 
-  const doc = { ...input, createdAt, updatedAt: now };
+  // 한 번 제출한 글은 다시 초안으로 내려가지 않는다.
+  // 제출 버튼을 누른 직후 늦게 도착한 자동 임시저장이 "제출 완료"를 지워 버리면,
+  // 교사 화면에는 계속 "작성 중"으로 남는다.
+  const alreadySubmitted = existing.exists && existing.data()?.draft === false;
+  const draft = alreadySubmitted ? false : input.draft;
+
+  const doc = { ...input, draft, createdAt, updatedAt: now };
   await ref.set(doc, { merge: true });
   return { id, ...doc };
 }

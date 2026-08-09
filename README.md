@@ -120,17 +120,25 @@ npx vercel --prod # 운영
 ## 5. 데이터 구조
 
 ```
-students        학번(문서ID) · 이름 · 반 · 번호 · 임시여부
-lessonPlans     차시번호 · 제목 · 슬라이드URL · 성찰질문 · 감정체크여부   ← 반과 무관, 4반 공용
-classSessions   lessonPlanId · 반 · 날짜 · 교시 · 수업코드 · 스냅샷 · 교사메모
-attendance      학번 · sessionId · 접속시각                              ← 출석
-moodEntries     학번 · sessionId · 감정 · valence/arousal · 이유 · 확인여부
-reflections     학번 · sessionId · 내용 · draft
-meta/purgeLog   마지막 일괄 삭제 일자
+students          학번(문서ID) · 이름 · 반 · 번호 · 임시여부
+lessonPlans       차시번호 · 제목 · 슬라이드URL · 성찰질문 · 감정체크여부  ← 반과 무관, 4반 공용
+classSessions     문서ID = 날짜__교시__반 · 수업코드 · 스냅샷 · 교사메모
+codeReservations  문서ID = 날짜__코드                        ← 코드 중복 발급 방지
+attendance        학번 · sessionId · 접속시각                 ← 출석
+moodEntries       학번 · sessionId · 감정 · valence/arousal · 이유 · 확인여부
+reflections       학번 · sessionId · 내용 · draft
+meta/purgeLog     마지막 일괄 삭제 일자
 ```
 
 활동 기록에는 **학번만** 저장한다. 이름은 `students`에만 있고 화면에 보여줄 때만 조인하므로,
 기록 데이터가 유출되어도 숫자만 남는다.
+
+**문서 ID로 중복을 막는다.** 세션 ID가 `날짜__교시__반`, 코드 예약 ID가 `날짜__코드`라서,
+두 요청이 동시에 들어와도 Firestore가 뒤엣것을 거부한다. 조회 후 배정하는 방식이면 같은 날 두 반에
+같은 코드가 나갈 수 있고, 그러면 한쪽 반 학생 전원이 반 불일치로 막힌다.
+
+**학번 범위**: 정상 `01~30`번(정원 28명 + 전입 여유), 임시 `90~99`번. 그 사이(31~89)는 오타로
+보고 거부한다.
 
 ---
 

@@ -1,4 +1,4 @@
-import { clientKey, fail, guard, ok, rateLimit, readJson } from "@/lib/api";
+import { deviceKey, fail, guard, networkKey, ok, rateLimit, readJson } from "@/lib/api";
 import { getSession, getStudent } from "@/lib/db";
 import { readCodeToken } from "@/lib/session";
 import { describeStudentId, parseStudentId } from "@/lib/student-id";
@@ -11,7 +11,11 @@ import { describeStudentId, parseStudentId } from "@/lib/student-id";
  */
 export async function POST(request: Request) {
   return guard(async () => {
-    if (!rateLimit(clientKey(request, "identify"), 60, 60_000)) {
+    // 한 기기가 학번을 훑어 이름을 모으는 것을 늦춘다. 정상 학생은 1~2회면 끝난다.
+    if (!rateLimit(await deviceKey("identify"), 15, 60_000)) {
+      return fail("too_many_attempts");
+    }
+    if (!rateLimit(networkKey(request, "identify"), 600, 60_000)) {
       return fail("too_many_attempts");
     }
 

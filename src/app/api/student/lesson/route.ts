@@ -32,7 +32,9 @@ export async function GET() {
     let peers: { name: string; content: string }[] = [];
     if (session.reflectionPublic) {
       const rows = (await listReflections(session.id)).filter(
-        (row) => row.content.trim() && row.studentId !== me.studentId,
+        // 제출한 글만 보여준다. draft는 아직 쓰는 중인 자동 임시저장본이라,
+        // 고치다 만 문장이 실명과 함께 반 전체에 뜨면 안 된다.
+        (row) => !row.draft && row.content.trim() && row.studentId !== me.studentId,
       );
       const names = await studentNameMap(rows.map((row) => row.studentId));
       peers = rows.map((row) => ({
@@ -45,6 +47,9 @@ export async function GET() {
       me: { studentId: me.studentId, name: me.name, classNo: me.classNo },
       session: {
         id: session.id,
+        // 교사가 수업을 종료하면 더 이상 쓸 수 없다. 화면을 튕겨내지는 않는다 —
+        // 자기가 쓴 것은 계속 볼 수 있어야 하고, 갑자기 첫 화면으로 돌아가면 학생이 당황한다.
+        closed: session.status === "ended",
         lessonNo: session.lessonNo,
         title: session.title,
         slideUrl: session.slideUrl,

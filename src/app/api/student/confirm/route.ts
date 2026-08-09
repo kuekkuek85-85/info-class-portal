@@ -1,5 +1,11 @@
 import { fail, guard, ok, readJson } from "@/lib/api";
-import { getSession, getStudent, recordAttendance, upsertStudents } from "@/lib/db";
+import {
+  getSession,
+  getStudent,
+  recordAttendance,
+  setSessionStatus,
+  upsertStudents,
+} from "@/lib/db";
 import { createStudentSession, readCodeToken } from "@/lib/session";
 import { parseStudentId } from "@/lib/student-id";
 
@@ -38,6 +44,12 @@ export async function POST(request: Request) {
       const student = await getStudent(parsed.studentId);
       if (!student) return fail("student_not_found");
       name = student.name;
+    }
+
+    // 실제 학생이 인증을 마친 시점에 수업을 시작 상태로 올린다. 이 시점부터 차시 계획을
+    // 고쳐도 이 세션의 스냅샷은 바뀌지 않는다 (PRD 5.1).
+    if (session.status === "scheduled") {
+      await setSessionStatus(session.id, "active");
     }
 
     // 출석은 인증 완료 시각으로 확정한다. 감정 응답 여부는 출석 요건이 아니다 (PRD 3.3)

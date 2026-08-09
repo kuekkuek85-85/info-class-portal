@@ -20,6 +20,10 @@ export async function PUT(request: Request) {
 
     const session = await getSession(me.sessionId);
     if (!session) return fail("session_expired");
+    // 교시가 끝난 뒤에는 기록을 바꿀 수 없다. 코드 만료와 같은 시점이다 (PRD 8).
+    if (session.status === "ended") {
+      return fail("session_expired", "수업이 끝나서 저장할 수 없어요.");
+    }
 
     const saved = await upsertReflection({
       studentId: me.studentId,

@@ -1,6 +1,6 @@
 import { fail, guard, ok, readJson } from "@/lib/api";
 import { datesForWeekday, isDateKey } from "@/lib/datetime";
-import { createSession, listLessonPlans, listSessionsByDate } from "@/lib/db";
+import { createSession, listLessonPlans, listSessionsByDate, reserveCode } from "@/lib/db";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
 import type { ClassNo, TimetableSlot } from "@/lib/types";
 
@@ -66,35 +66,19 @@ export async function POST(request: Request) {
     const plans = await listLessonPlans();
     const planByLessonNo = new Map(plans.map((plan) => [plan.lessonNo, plan]));
 
-    // 날짜별로 이미 쓰인 코드를 모아 둔다. 커밋 전인 것끼리도 겹치면 안 되므로 메모리에서 관리한다.
-    const usedCodesByDate = new Map<string, Set<string>>();
-    const dates = [...new Set(planned.map((p) => p.date))];
+    // 이미 있는 (날짜, 교시, 반)은 코드를 예약하기 전에 걸러낸다. 최종 방어는 createSession의
+    // 문서 ID 중복 거부이고, 이 조회는 쓸데없는 코드 예약을 줄이기 위한 것이다.
     const existingSlots = new Set<string>();
-
-    for (const date of dates) {
-      const existing = await listSessionsByDate(date);
-      usedCodesByDate.set(date, new Set(existing.map((s) => s.code)));
-      for (const s of existing) existingSlots.add(`${s.date}|${s.period}|${s.classNo}`);
-    }
-
-    function nextCode(date: string): string | null {
-      const used = usedCodesByDate.get(date) ?? new Set<string>();
-      const candidates: string[] = [];
-      for (let n = 10; n <= 99; n += 1) {
-        const code = String(n);
-        if (!used.has(code)) candidates.push(code);
+    for (const date of [...new Set(planned.map((p) => p.date))]) {
+      for (const s of await listSessionsByDate(date)) {
+        existingSlots.add(`${s.date}|${s.period}|${s.classNo}`);
       }
-      if (candidates.length === 0) return null;
-
-      const code = candidates[Math.floor(Math.random() * candidates.length)];
-      used.add(code);
-      usedCodesByDate.set(date, used);
-      return code;
     }
 
     const lessonCounter = new Map<ClassNo, number>();
     let created = 0;
     let skipped = 0;
+    let codeExhausted = 0;
 
     for (const item of planned) {
       const nth = (lessonCounter.get(item.classNo) ?? 0) + 1;
@@ -106,14 +90,17 @@ export async function POST(request: Request) {
         continue;
       }
 
-      const code = nextCode(item.date);
-      if (!code) {
-        skipped += 1;
+      let code: string;
+      try {
+        code = await reserveCode(item.date);
+      } catch {
+        // 그날 90개를 다 썼다 — 하루 12차시 규모에서는 사실상 일어나지 않는다
+        codeExhausted += 1;
         continue;
       }
 
       const plan = planByLessonNo.get(nth);
-      await createSession({
+      const session = await createSession({
         lessonPlanId: plan?.id ?? "",
         classNo: item.classNo,
         date: item.date,
@@ -130,10 +117,15 @@ export async function POST(request: Request) {
         startedAt: null,
         endedAt: null,
       });
+
+      if (!session) {
+        skipped += 1;
+        continue;
+      }
       created += 1;
       existingSlots.add(slotKey);
     }
 
-    return ok({ created, skipped, total: planned.length });
+    return ok({ created, skipped, codeExhausted, total: planned.length });
   });
 }

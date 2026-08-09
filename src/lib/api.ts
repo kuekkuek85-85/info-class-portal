@@ -1,5 +1,7 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 /** API 응답 헬퍼. 클라이언트는 { ok, ... } 또는 { ok: false, error } 형태만 본다. */
@@ -85,8 +87,8 @@ export async function readJson<T>(request: Request): Promise<T | null> {
  * 아주 단순한 인메모리 시도 횟수 제한.
  *
  * 서버리스에서는 인스턴스마다 카운터가 따로 놀기 때문에 정확한 방어가 아니다.
- * 한 반 28명 규모에서 학번을 눌러 이름을 훑어보는 정도를 늦추는 용도이고,
- * 진짜 방어선은 "코드를 맞춘 사람만 학번 화면에 도달한다"는 동선 자체다 (PRD 3.1).
+ * 코드를 하나씩 넣어 보는 행동을 늦추는 용도이고, 진짜 방어선은
+ * "코드를 맞춘 사람만 학번 화면에 도달한다"는 동선 자체다 (PRD 3.1).
  */
 const attempts = new Map<string, { count: number; resetAt: number }>();
 
@@ -104,8 +106,38 @@ export function rateLimit(key: string, limit: number, windowMs: number): boolean
   return true;
 }
 
-export function clientKey(request: Request, scope: string): string {
+const DEVICE_COOKIE = "portal_device";
+
+/**
+ * 기기(브라우저)별 제한 키.
+ *
+ * IP로 세면 안 된다. 학교 태블릿 28대가 하나의 공인 IP(NAT)로 나가므로, 몇 명이 코드를
+ * 잘못 눌러 재시도하는 것만으로 나머지 학생 전원이 429로 막힌다. 첫 수업에서 이건 치명적이다.
+ * 대신 브라우저마다 익명 쿠키를 하나 발급해 그 기준으로 센다 — 한 대가 코드 90개를 훑는 것은
+ * 막으면서 옆자리 학생에게는 영향을 주지 않는다.
+ *
+ * 쿠키를 지우면 우회되지만, 그 수준의 시도는 앱이 아니라 교실에서 통제할 문제다 (PRD 3.1).
+ */
+export async function deviceKey(scope: string): Promise<string> {
+  const store = await cookies();
+  let id = store.get(DEVICE_COOKIE)?.value;
+
+  if (!id || !/^[0-9a-f-]{36}$/.test(id)) {
+    id = randomUUID();
+    store.set(DEVICE_COOKIE, id, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 180,
+    });
+  }
+  return `${scope}:${id}`;
+}
+
+/** 기기 쿠키를 못 쓰는 상황을 위한 백스톱. 한 교실 전체가 공유하는 값이라 한도를 넉넉히 잡는다. */
+export function networkKey(request: Request, scope: string): string {
   const forwarded = request.headers.get("x-forwarded-for") ?? "";
   const ip = forwarded.split(",")[0]?.trim() || "unknown";
-  return `${scope}:${ip}`;
+  return `net:${scope}:${ip}`;
 }
