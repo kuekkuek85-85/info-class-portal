@@ -2,7 +2,7 @@ import { fail, guard, ok } from "@/lib/api";
 import { listMoodEntriesByStudent, listReflectionsByStudent, listAllSessions } from "@/lib/db";
 import { getMood } from "@/lib/mood";
 import { readStudentSession } from "@/lib/session";
-import { hasAnswer } from "@/lib/types";
+import { answersOf, hasAnswer } from "@/lib/types";
 
 /**
  * 학생 본인의 누적 기록. 한 학기치 성장 기록으로 보여준다 (PRD 3.4).
@@ -34,7 +34,7 @@ export async function GET() {
           lessonNo: session?.lessonNo ?? null,
           title: session?.title ?? "",
           // 질문과 답을 짝지어 보낸다. 세션 스냅샷 덕분에 그날 실제로 받은 질문이 남아 있다.
-          entries: row.answers
+          entries: answersOf(row)
             .map((answer, index) => ({ question: questions[index] ?? "", answer }))
             .filter((entry) => entry.answer.trim()),
           moodLabel: mood ? (getMood(mood.mood)?.label ?? "") : "",

@@ -9,7 +9,7 @@ import {
   studentNameMap,
 } from "@/lib/db";
 import { readStudentSession } from "@/lib/session";
-import { hasAnswer, type PhaseContent } from "@/lib/types";
+import { answersOf, hasAnswer, type PhaseContent } from "@/lib/types";
 
 /**
  * 오늘 그 교시 수업 화면에 필요한 것 전부를 한 번에 내려준다.
@@ -55,7 +55,7 @@ export async function GET() {
       const names = await studentNameMap(rows.map((row) => row.studentId));
       peers = rows.map((row) => ({
         name: names.get(row.studentId)?.name || "친구",
-        answers: row.answers,
+        answers: answersOf(row),
       }));
     }
 
@@ -79,7 +79,7 @@ export async function GET() {
       },
       mood: mood ? { mood: mood.mood, reason: mood.reason } : null,
       reflection: reflection
-        ? { answers: reflection.answers ?? [], draft: reflection.draft }
+        ? { answers: answersOf(reflection), draft: reflection.draft }
         : null,
       peers,
     });

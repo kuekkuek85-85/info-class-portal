@@ -10,7 +10,7 @@ import {
 } from "@/lib/db";
 import { getMood } from "@/lib/mood";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
-import { hasAnswer } from "@/lib/types";
+import { answersOf, hasAnswer } from "@/lib/types";
 
 /**
  * 교사 대시보드 — 출석·감정 개별 응답·성찰을 이름과 함께 본다.
@@ -73,7 +73,7 @@ export async function GET(request: Request) {
           : null,
         reflection: reflection
           ? {
-              answers: reflection.answers ?? [],
+              answers: answersOf(reflection),
               draft: reflection.draft,
               updatedAt: reflection.updatedAt,
             }

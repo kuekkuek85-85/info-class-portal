@@ -4,7 +4,13 @@ import { db } from "@/lib/firebase-admin";
 import { COLLECTIONS, listAllSessions, listStudents } from "@/lib/db";
 import { getMood } from "@/lib/mood";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
-import { hasAnswer, type Attendance, type MoodEntry, type Reflection } from "@/lib/types";
+import {
+  answersOf,
+  hasAnswer,
+  type Attendance,
+  type MoodEntry,
+  type Reflection,
+} from "@/lib/types";
 
 /**
  * CSV 내보내기 (PRD 5.2).
@@ -126,7 +132,7 @@ export async function GET(request: Request) {
         .flatMap((row) => {
           const session = sessionById.get(row.sessionId);
           const questions = session?.reflectionQuestions ?? [];
-          return row.answers
+          return answersOf(row)
             .map((answer, index) => ({ answer, index }))
             .filter((entry) => entry.answer.trim())
             .map((entry) => [

@@ -168,9 +168,19 @@ export interface Reflection {
   updatedAt: number;
 }
 
+/**
+ * 저장된 답 배열을 안전하게 꺼낸다.
+ *
+ * 질문이 하나였던 시절의 문서에는 answers 가 없다. 그런 문서 하나 때문에 교사 대시보드 전체가
+ * 500 으로 죽으면 수업 중에 손쓸 방법이 없다. 읽는 쪽에서 항상 배열을 보장한다.
+ */
+export function answersOf(reflection: { answers?: string[] } | null | undefined): string[] {
+  return Array.isArray(reflection?.answers) ? reflection.answers : [];
+}
+
 /** 답이 하나라도 있는지 — 제출 여부·집계 판정에 쓴다 */
-export function hasAnswer(reflection: Pick<Reflection, "answers">): boolean {
-  return reflection.answers.some((answer) => answer.trim().length > 0);
+export function hasAnswer(reflection: { answers?: string[] }): boolean {
+  return answersOf(reflection).some((answer) => answer.trim().length > 0);
 }
 
 /** 시간표 한 줄. 반별 요일·교시를 등록하면 학기 전체 세션을 생성한다. */
