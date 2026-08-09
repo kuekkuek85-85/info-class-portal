@@ -13,6 +13,52 @@ export const CLASS_NUMBERS: readonly ClassNo[] = [1, 2, 3, 4];
 /** 세션 상태. 스냅샷 수정은 scheduled 상태에서만 허용된다 (PRD 5.1). */
 export type SessionStatus = "scheduled" | "active" | "ended";
 
+/**
+ * 수업 진행 단계. 학생 화면은 교사가 정한 단계 하나만 보여준다.
+ *
+ * 중1은 화면당 할 일이 하나여야 하고(PRD 1), 30명이 제각각 다른 화면에 가 있으면
+ * 교사가 수업을 끌고 갈 수 없다. 그래서 학생에게 이동 권한을 주지 않는다.
+ */
+export type LessonPhase =
+  | "waiting"
+  | "mood"
+  | "progress"
+  | "assessment"
+  | "video"
+  | "reflection"
+  | "done";
+
+export const LESSON_PHASES: readonly LessonPhase[] = [
+  "waiting",
+  "mood",
+  "progress",
+  "assessment",
+  "video",
+  "reflection",
+  "done",
+];
+
+export const PHASE_LABELS: Record<LessonPhase, string> = {
+  waiting: "대기",
+  mood: "기분",
+  progress: "진도 안내",
+  assessment: "평가 안내",
+  video: "영상 시청",
+  reflection: "성찰",
+  done: "마침",
+};
+
+/** 한 단계에서 학생에게 보여줄 것. url 이 있으면 화면에 임베드한다. */
+export interface PhaseContent {
+  heading: string;
+  body: string;
+  url: string;
+}
+
+export function emptyPhaseContent(): PhaseContent {
+  return { heading: "", body: "", url: "" };
+}
+
 /** 명렬표. 문서 ID = 학번 문자열 (예: "10101") */
 export interface Student {
   studentId: string;
@@ -32,9 +78,12 @@ export interface LessonPlan {
   id: string;
   lessonNo: number;
   title: string;
-  slideUrl: string;
-  reflectionQuestion: string;
   moodCheckEnabled: boolean;
+  progress: PhaseContent;
+  assessment: PhaseContent;
+  video: PhaseContent;
+  /** 성찰 질문. 학생은 각 질문에 따로 답한다. */
+  reflectionQuestions: string[];
   /** 다른 학생의 성찰 글을 볼 수 있는지. 기본값 false (PRD 3.4) */
   reflectionPublic: boolean;
   createdAt: number;
@@ -57,13 +106,17 @@ export interface ClassSession {
   period: number;
   /** 수업 코드. 숫자 2자리 문자열 (예: "47") */
   code: string;
-  slideUrl: string;
-  reflectionQuestion: string;
   moodCheckEnabled: boolean;
+  progress: PhaseContent;
+  assessment: PhaseContent;
+  video: PhaseContent;
+  reflectionQuestions: string[];
   reflectionPublic: boolean;
   lessonNo: number;
   title: string;
   status: SessionStatus;
+  /** 지금 학생 화면에 띄울 단계. 교사만 바꾼다. */
+  phase: LessonPhase;
   /** 수업 직후 남기는 한 줄 회고. 다음 반 수업 전 개선 루프의 출발점 (PRD 5.1) */
   teacherNote: string;
   startedAt: number | null;
@@ -107,11 +160,17 @@ export interface Reflection {
   sessionId: string;
   classNo: ClassNo;
   date: string;
-  content: string;
+  /** 질문별 답. 인덱스가 세션 스냅샷의 reflectionQuestions 순서와 짝을 이룬다. */
+  answers: string[];
   /** 자동 임시저장된 미완성 상태인지 (PRD 3.4) */
   draft: boolean;
   createdAt: number;
   updatedAt: number;
+}
+
+/** 답이 하나라도 있는지 — 제출 여부·집계 판정에 쓴다 */
+export function hasAnswer(reflection: Pick<Reflection, "answers">): boolean {
+  return reflection.answers.some((answer) => answer.trim().length > 0);
 }
 
 /** 시간표 한 줄. 반별 요일·교시를 등록하면 학기 전체 세션을 생성한다. */

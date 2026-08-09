@@ -9,6 +9,7 @@ import type {
   Attendance,
   ClassNo,
   ClassSession,
+  LessonPhase,
   LessonPlan,
   MoodEntry,
   Reflection,
@@ -311,8 +312,34 @@ export async function deleteSession(id: string): Promise<void> {
 export async function setSessionStatus(id: string, status: SessionStatus): Promise<void> {
   const patch: Partial<ClassSession> = { status };
   if (status === "active") patch.startedAt = Date.now();
-  if (status === "ended") patch.endedAt = Date.now();
+  if (status === "ended") {
+    patch.endedAt = Date.now();
+    patch.phase = "done";
+  }
   await updateSession(id, patch);
+}
+
+/** 학생 화면 단계를 바꾼다. 교사만 호출한다. */
+export async function setSessionPhase(id: string, phase: LessonPhase): Promise<void> {
+  await updateSession(id, { phase });
+  phaseCache.delete(id);
+}
+
+/**
+ * 학생 화면이 단계를 따라오려면 짧은 주기로 물어야 한다. 28명이 5초마다 묻는데 그때마다
+ * Firestore 를 읽으면 한 차시에 만 건이 넘어 무료 한도(하루 5만 읽기)를 위협한다.
+ * 몇 초짜리 캐시만 둬도 읽기가 한 자릿수 배로 줄고, 단계 전환 지연은 체감되지 않는다.
+ */
+const phaseCache = new Map<string, { session: ClassSession; at: number }>();
+const PHASE_CACHE_MS = 3000;
+
+export async function getSessionCached(id: string): Promise<ClassSession | null> {
+  const hit = phaseCache.get(id);
+  if (hit && Date.now() - hit.at < PHASE_CACHE_MS) return hit.session;
+
+  const session = await getSession(id);
+  if (session) phaseCache.set(id, { session, at: Date.now() });
+  return session;
 }
 
 /**
@@ -334,21 +361,24 @@ export async function syncScheduledSessions(plan: LessonPlan): Promise<number> {
 
   const batch = db().batch();
   for (const doc of snap.docs) {
-    batch.set(
-      doc.ref,
-      {
-        slideUrl: plan.slideUrl,
-        reflectionQuestion: plan.reflectionQuestion,
-        moodCheckEnabled: plan.moodCheckEnabled,
-        reflectionPublic: plan.reflectionPublic,
-        lessonNo: plan.lessonNo,
-        title: plan.title,
-      },
-      { merge: true },
-    );
+    batch.set(doc.ref, snapshotOf(plan), { merge: true });
   }
   await batch.commit();
   return snap.size;
+}
+
+/** 차시 계획에서 세션으로 복사되는 부분. 생성·재배정·동기화가 모두 이 한 곳을 쓴다. */
+export function snapshotOf(plan: LessonPlan) {
+  return {
+    moodCheckEnabled: plan.moodCheckEnabled,
+    progress: plan.progress,
+    assessment: plan.assessment,
+    video: plan.video,
+    reflectionQuestions: plan.reflectionQuestions,
+    reflectionPublic: plan.reflectionPublic,
+    lessonNo: plan.lessonNo,
+    title: plan.title,
+  };
 }
 
 // ------------------------------------------------------------------- 출석
@@ -446,8 +476,9 @@ export async function upsertReflection(
   const alreadySubmitted = existing.exists && existing.data()?.draft === false;
   const draft = alreadySubmitted ? false : input.draft;
 
+  // answers 는 배열이라 merge 로는 원소가 지워지지 않는다. 통째로 덮어쓴다.
   const doc = { ...input, draft, createdAt, updatedAt: now };
-  await ref.set(doc, { merge: true });
+  await ref.set(doc);
   return { id, ...doc };
 }
 

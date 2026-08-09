@@ -10,6 +10,7 @@ import {
 } from "@/lib/db";
 import { getMood } from "@/lib/mood";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
+import { hasAnswer } from "@/lib/types";
 
 /**
  * 교사 대시보드 — 출석·감정 개별 응답·성찰을 이름과 함께 본다.
@@ -71,7 +72,11 @@ export async function GET(request: Request) {
             }
           : null,
         reflection: reflection
-          ? { content: reflection.content, draft: reflection.draft, updatedAt: reflection.updatedAt }
+          ? {
+              answers: reflection.answers ?? [],
+              draft: reflection.draft,
+              updatedAt: reflection.updatedAt,
+            }
           : null,
       };
     });
@@ -89,7 +94,7 @@ export async function GET(request: Request) {
         rosterCount: roster.filter((s) => !s.temporary).length,
         joinedCount: attendance.length,
         moodCount: moods.length,
-        reflectionCount: reflections.filter((r) => r.content.trim()).length,
+        reflectionCount: reflections.filter((r) => hasAnswer(r)).length,
         unreviewed,
       },
     });

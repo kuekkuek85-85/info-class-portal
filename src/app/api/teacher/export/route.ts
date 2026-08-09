@@ -4,7 +4,7 @@ import { db } from "@/lib/firebase-admin";
 import { COLLECTIONS, listAllSessions, listStudents } from "@/lib/db";
 import { getMood } from "@/lib/mood";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
-import type { Attendance, MoodEntry, Reflection } from "@/lib/types";
+import { hasAnswer, type Attendance, type MoodEntry, type Reflection } from "@/lib/types";
 
 /**
  * CSV 내보내기 (PRD 5.2).
@@ -118,27 +118,33 @@ export async function GET(request: Request) {
 
     if (type === "reflections") {
       const snap = await db().collection(COLLECTIONS.reflections).get();
+      // 질문마다 한 줄. 나중에 피벗하기도, 눈으로 읽기도 이쪽이 낫다.
       const rows = snap.docs
         .map((doc) => doc.data() as Reflection)
-        .filter((row) => row.content.trim())
+        .filter((row) => hasAnswer(row))
         .sort((a, b) => a.date.localeCompare(b.date) || a.studentId.localeCompare(b.studentId))
-        .map((row) => {
+        .flatMap((row) => {
           const session = sessionById.get(row.sessionId);
-          return [
-            row.date,
-            session?.lessonNo ?? "",
-            session?.title ?? "",
-            row.classNo,
-            row.studentId,
-            nameOf.get(row.studentId) ?? "",
-            session?.reflectionQuestion ?? "",
-            row.content,
-          ];
+          const questions = session?.reflectionQuestions ?? [];
+          return row.answers
+            .map((answer, index) => ({ answer, index }))
+            .filter((entry) => entry.answer.trim())
+            .map((entry) => [
+              row.date,
+              session?.lessonNo ?? "",
+              session?.title ?? "",
+              row.classNo,
+              row.studentId,
+              nameOf.get(row.studentId) ?? "",
+              entry.index + 1,
+              questions[entry.index] ?? "",
+              entry.answer,
+            ]);
         });
       return csvResponse(
         "reflections.csv",
         toCsv(
-          ["날짜", "차시", "제목", "반", "학번", "이름", "질문", "성찰"],
+          ["날짜", "차시", "제목", "반", "학번", "이름", "질문번호", "질문", "답"],
           rows,
         ),
       );

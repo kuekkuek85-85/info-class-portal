@@ -1,8 +1,14 @@
 import { fail, guard, ok, readJson } from "@/lib/api";
 import { datesForWeekday, isDateKey } from "@/lib/datetime";
-import { createSession, listLessonPlans, listSessionsByDate, reserveCode } from "@/lib/db";
+import {
+  createSession,
+  listLessonPlans,
+  listSessionsByDate,
+  reserveCode,
+  snapshotOf,
+} from "@/lib/db";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
-import type { ClassNo, TimetableSlot } from "@/lib/types";
+import { emptyPhaseContent, type ClassNo, type TimetableSlot } from "@/lib/types";
 
 /**
  * 시간표 → 학기 전체 세션 자동 생성 (PRD 4).
@@ -106,13 +112,22 @@ export async function POST(request: Request) {
         date: item.date,
         period: item.period,
         code,
-        slideUrl: plan?.slideUrl ?? "",
-        reflectionQuestion: plan?.reflectionQuestion ?? "",
-        moodCheckEnabled: plan?.moodCheckEnabled ?? true,
-        reflectionPublic: plan?.reflectionPublic ?? false,
+        ...(plan
+          ? snapshotOf(plan)
+          : {
+              // 아직 차시 계획이 없는 회차는 빈 껍데기로 만들어 두고 나중에 배정한다
+              moodCheckEnabled: true,
+              progress: emptyPhaseContent(),
+              assessment: emptyPhaseContent(),
+              video: emptyPhaseContent(),
+              reflectionQuestions: [],
+              reflectionPublic: false,
+              lessonNo: nth,
+              title: `${nth}차시`,
+            }),
         lessonNo: nth,
-        title: plan?.title ?? `${nth}차시`,
         status: "scheduled",
+        phase: "waiting",
         teacherNote: "",
         startedAt: null,
         endedAt: null,

@@ -3,21 +3,23 @@ import {
   createSession,
   deleteSession,
   getLessonPlan,
-  reserveCode,
   getSession,
   listAllSessions,
   listSessionsByDate,
+  reserveCode,
+  setSessionPhase,
   setSessionStatus,
+  snapshotOf,
   updateSession,
 } from "@/lib/db";
 import { isDateKey, todayKST } from "@/lib/datetime";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
-import type { ClassNo, SessionStatus } from "@/lib/types";
+import { LESSON_PHASES, type ClassNo, type LessonPhase, type SessionStatus } from "@/lib/types";
 
 /**
  * 세션(class_sessions) 관리.
  *
- * 생성 시점에 차시 계획의 슬라이드 URL·성찰 질문을 세션으로 복사(스냅샷)한다.
+ * 생성 시점에 차시 계획의 내용을 세션으로 복사(스냅샷)한다.
  * 이렇게 해야 "1반은 어떤 질문에 답한 것인가"가 나중에도 정확히 남는다 (PRD 5.1).
  */
 
@@ -72,13 +74,9 @@ export async function POST(request: Request) {
       period,
       code,
       // ↓ 여기서 복사한 값이 그 반이 실제로 본 내용으로 고정된다
-      slideUrl: plan.slideUrl,
-      reflectionQuestion: plan.reflectionQuestion,
-      moodCheckEnabled: plan.moodCheckEnabled,
-      reflectionPublic: plan.reflectionPublic,
-      lessonNo: plan.lessonNo,
-      title: plan.title,
+      ...snapshotOf(plan),
       status: "scheduled",
+      phase: "waiting",
       teacherNote: "",
       startedAt: null,
       endedAt: null,
@@ -93,7 +91,7 @@ export async function POST(request: Request) {
   });
 }
 
-/** 교사 메모 저장, 상태 전환(시작/종료), 성찰 공개 여부 토글. */
+/** 단계 전환, 교사 메모, 상태 전환(시작/종료), 성찰 공개 여부, 차시 재배정. */
 export async function PATCH(request: Request) {
   return guard(async () => {
     const me = await requireTeacher();
@@ -105,6 +103,7 @@ export async function PATCH(request: Request) {
       status?: SessionStatus;
       reflectionPublic?: boolean;
       lessonPlanId?: string;
+      phase?: LessonPhase;
     }>(request);
 
     if (!body?.id) return fail("invalid_input");
@@ -120,15 +119,12 @@ export async function PATCH(request: Request) {
       const plan = await getLessonPlan(body.lessonPlanId);
       if (!plan) return fail("not_found", "차시 계획을 찾을 수 없습니다.");
 
-      await updateSession(body.id, {
-        lessonPlanId: plan.id,
-        slideUrl: plan.slideUrl,
-        reflectionQuestion: plan.reflectionQuestion,
-        moodCheckEnabled: plan.moodCheckEnabled,
-        reflectionPublic: plan.reflectionPublic,
-        lessonNo: plan.lessonNo,
-        title: plan.title,
-      });
+      await updateSession(body.id, { lessonPlanId: plan.id, ...snapshotOf(plan) });
+    }
+
+    if (body.phase) {
+      if (!LESSON_PHASES.includes(body.phase)) return fail("invalid_input");
+      await setSessionPhase(body.id, body.phase);
     }
 
     if (typeof body.teacherNote === "string") {

@@ -14,8 +14,7 @@ interface HistoryItem {
   date: string;
   lessonNo: number | null;
   title: string;
-  question: string;
-  content: string;
+  entries: { question: string; answer: string }[];
   moodLabel: string;
   updatedAt: number;
 }
@@ -61,10 +60,16 @@ export default function HistoryPage() {
               {item.title && <span>· {item.title}</span>}
               {item.moodLabel && <span>· 그날 기분: {item.moodLabel}</span>}
             </div>
-            {item.question && (
-              <p className="mt-2 text-sm font-medium text-muted">{item.question}</p>
-            )}
-            <p className="mt-1 whitespace-pre-wrap text-base leading-relaxed">{item.content}</p>
+            {item.entries.map((entry, i) => (
+              <div key={i} className="mt-3">
+                {entry.question && (
+                  <p className="text-sm font-medium text-muted">
+                    {i + 1}. {entry.question}
+                  </p>
+                )}
+                <p className="mt-1 whitespace-pre-wrap text-base leading-relaxed">{entry.answer}</p>
+              </div>
+            ))}
           </li>
         ))}
       </ul>

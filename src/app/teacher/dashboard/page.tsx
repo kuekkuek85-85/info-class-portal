@@ -7,6 +7,7 @@ import { formatDateKorean, formatTimeKST, todayKST } from "@/lib/datetime";
 import { QUADRANTS, type Quadrant } from "@/lib/mood";
 import { describePeriod, periodTime } from "@/lib/timetable";
 import { usePolled } from "@/lib/use-polled";
+import { LESSON_PHASES, PHASE_LABELS, type LessonPhase } from "@/lib/types";
 
 /**
  * 교사 대시보드 — 출석 확인 겸 접속자 실시간 명단, 감정 개별 응답, 성찰 모아보기, 교사 메모.
@@ -25,8 +26,11 @@ interface SessionRow {
   title: string;
   code: string;
   status: "scheduled" | "active" | "ended";
+  phase: LessonPhase;
   teacherNote: string;
   reflectionPublic: boolean;
+  reflectionQuestions: string[];
+  moodCheckEnabled: boolean;
   date: string;
 }
 
@@ -42,7 +46,7 @@ interface StudentRow {
     reason: string;
     reviewed: boolean;
   } | null;
-  reflection: { content: string; draft: boolean; updatedAt: number } | null;
+  reflection: { answers: string[]; draft: boolean; updatedAt: number } | null;
 }
 
 interface DashboardData {
@@ -214,6 +218,56 @@ function Dashboard() {
             </div>
           </section>
 
+          {/* 학생 화면은 여기서 정한 단계만 보여준다. 학생은 스스로 옮길 수 없다. */}
+          <section className="flex flex-col gap-3 rounded-2xl border border-line bg-card px-5 py-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-sm font-semibold">
+                수업 진행 — 지금 학생 화면:{" "}
+                <span className="text-accent">{PHASE_LABELS[session.phase]}</span>
+              </h2>
+              <p className="text-xs text-muted">누르면 학생 태블릿이 4초 안에 따라옵니다</p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {LESSON_PHASES.filter(
+                (item) => item !== "mood" || session.moodCheckEnabled,
+              ).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => patchSession({ phase: item })}
+                  aria-current={session.phase === item ? "true" : undefined}
+                  className={`rounded-xl px-4 py-2.5 text-sm font-medium transition ${
+                    session.phase === item
+                      ? "bg-accent text-white"
+                      : "border border-line hover:border-accent"
+                  }`}
+                >
+                  {PHASE_LABELS[item]}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => patchSession({ phase: neighbourPhase(session, -1) })}
+                disabled={session.phase === "waiting"}
+                className="rounded-lg border border-line px-4 py-2 text-sm disabled:opacity-40"
+              >
+                ← 이전 단계
+              </button>
+              <button
+                type="button"
+                onClick={() => patchSession({ phase: neighbourPhase(session, 1) })}
+                disabled={session.phase === "done"}
+                className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+              >
+                다음 단계 →
+              </button>
+            </div>
+          </section>
+
           {stats && (
             <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Stat label="접속" value={`${stats.joinedCount} / ${stats.rosterCount}`} />
@@ -294,12 +348,20 @@ function Dashboard() {
                       <td className="px-3 py-2 max-w-[240px] whitespace-pre-wrap">
                         {row.mood?.reason || <span className="text-muted">—</span>}
                       </td>
-                      <td className="px-3 py-2 max-w-[320px] whitespace-pre-wrap">
-                        {row.reflection?.content ? (
+                      <td className="px-3 py-2 max-w-[420px]">
+                        {row.reflection && row.reflection.answers.some((a) => a.trim()) ? (
                           <>
-                            {row.reflection.content}
+                            {row.reflection.answers.map(
+                              (answer, index) =>
+                                answer.trim() && (
+                                  <p key={index} className="whitespace-pre-wrap">
+                                    <span className="text-muted">{index + 1}. </span>
+                                    {answer}
+                                  </p>
+                                ),
+                            )}
                             {row.reflection.draft && (
-                              <span className="ml-1 text-xs text-muted">(작성 중)</span>
+                              <span className="text-xs text-muted">(작성 중)</span>
                             )}
                           </>
                         ) : (
@@ -342,6 +404,14 @@ function Dashboard() {
       )}
     </div>
   );
+}
+
+/** 감정 체크를 쓰지 않는 차시에서는 '기분'을 건너뛴다 */
+function neighbourPhase(session: SessionRow, step: 1 | -1): LessonPhase {
+  const usable = LESSON_PHASES.filter((item) => item !== "mood" || session.moodCheckEnabled);
+  const at = usable.indexOf(session.phase);
+  const next = Math.min(Math.max(at + step, 0), usable.length - 1);
+  return usable[next];
 }
 
 function Stat({ label, value, warn }: { label: string; value: string; warn?: boolean }) {

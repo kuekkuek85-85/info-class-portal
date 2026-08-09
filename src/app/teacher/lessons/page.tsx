@@ -5,6 +5,7 @@ import { useState } from "react";
 import { TeacherShell } from "@/components/teacher-shell";
 import { todayKST } from "@/lib/datetime";
 import { usePolled } from "@/lib/use-polled";
+import { emptyPhaseContent, type PhaseContent } from "@/lib/types";
 
 /**
  * 차시 계획 관리 + 개별 수업 등록.
@@ -17,18 +18,24 @@ interface Plan {
   id: string;
   lessonNo: number;
   title: string;
-  slideUrl: string;
-  reflectionQuestion: string;
   moodCheckEnabled: boolean;
+  progress: PhaseContent;
+  assessment: PhaseContent;
+  video: PhaseContent;
+  reflectionQuestions: string[];
   reflectionPublic: boolean;
 }
 
-const EMPTY: Omit<Plan, "id"> = {
+type Draft = Omit<Plan, "id"> & { id?: string };
+
+const EMPTY: Draft = {
   lessonNo: 1,
   title: "",
-  slideUrl: "",
-  reflectionQuestion: "",
   moodCheckEnabled: true,
+  progress: emptyPhaseContent(),
+  assessment: emptyPhaseContent(),
+  video: emptyPhaseContent(),
+  reflectionQuestions: [""],
   reflectionPublic: false,
 };
 
@@ -41,7 +48,7 @@ export default function LessonsPage() {
 }
 
 function Lessons() {
-  const [draft, setDraft] = useState<Omit<Plan, "id"> & { id?: string }>(EMPTY);
+  const [draft, setDraft] = useState<Draft>(EMPTY);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -79,9 +86,21 @@ function Lessons() {
     reload();
   }
 
+  function edit(plan: Plan) {
+    setDraft({
+      ...plan,
+      progress: plan.progress ?? emptyPhaseContent(),
+      assessment: plan.assessment ?? emptyPhaseContent(),
+      video: plan.video ?? emptyPhaseContent(),
+      reflectionQuestions:
+        plan.reflectionQuestions?.length > 0 ? [...plan.reflectionQuestions] : [""],
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
     <div className="flex flex-col gap-8">
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-4">
         <h1 className="text-xl font-bold">{draft.id ? "차시 수정" : "차시 등록"}</h1>
 
         <div className="grid gap-3 sm:grid-cols-[120px_1fr]">
@@ -106,26 +125,80 @@ function Lessons() {
           </label>
         </div>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-muted">슬라이드 URL (비워두면 교사 화면 투사로 대체)</span>
-          <input
-            value={draft.slideUrl}
-            onChange={(event) => setDraft({ ...draft, slideUrl: event.target.value })}
-            placeholder="https://..."
-            className="rounded-lg border border-line bg-card px-3 py-2"
-          />
-        </label>
+        <p className="text-sm text-muted">
+          수업은 <b>기분 → 진도 안내 → 평가 안내 → 영상 시청 → 성찰</b> 순서로 진행되고, 학생
+          화면은 <b>대시보드에서 선생님이 넘긴 단계</b>만 보여줍니다.
+        </p>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-muted">성찰 질문</span>
-          <textarea
-            value={draft.reflectionQuestion}
-            onChange={(event) => setDraft({ ...draft, reflectionQuestion: event.target.value })}
-            rows={3}
-            placeholder="예) 영상에서 AI가 아직 못 한다고 한 것 중 하나를 고르고, 왜 어려울지 내 생각 쓰기"
-            className="rounded-lg border border-line bg-card px-3 py-2"
-          />
-        </label>
+        <ContentEditor
+          label="진도 안내"
+          hint="이번 단원에서 무엇을 배우는지. URL을 넣으면 슬라이드가 학생 화면에 표시됩니다."
+          value={draft.progress}
+          onChange={(progress) => setDraft({ ...draft, progress })}
+        />
+        <ContentEditor
+          label="평가 안내"
+          hint="수행평가 방식과 기준."
+          value={draft.assessment}
+          onChange={(assessment) => setDraft({ ...draft, assessment })}
+        />
+        <ContentEditor
+          label="영상 시청"
+          hint="유튜브 주소를 넣으면 포털 안에서 재생됩니다. 새 창으로 열지 않아 학생 화면이 흩어지지 않습니다."
+          value={draft.video}
+          onChange={(video) => setDraft({ ...draft, video })}
+          urlPlaceholder="https://youtu.be/... 또는 https://www.youtube.com/watch?v=..."
+        />
+
+        <section className="flex flex-col gap-2 rounded-xl border border-line bg-card p-4">
+          <h2 className="text-sm font-semibold">성찰 질문</h2>
+          <p className="text-xs text-muted">
+            질문마다 입력칸이 하나씩 생기고, 학생은 <b>모든 질문에 각각</b> 답합니다.
+          </p>
+
+          {draft.reflectionQuestions.map((question, index) => (
+            <div key={index} className="flex items-start gap-2">
+              <span className="pt-2.5 text-sm font-semibold text-muted">{index + 1}.</span>
+              <textarea
+                value={question}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    reflectionQuestions: draft.reflectionQuestions.map((q, i) =>
+                      i === index ? event.target.value : q,
+                    ),
+                  })
+                }
+                rows={2}
+                placeholder="예) 영상에서 AI가 아직 못 한다고 한 것 중 하나를 고르고, 왜 어려울지 내 생각 쓰기"
+                className="flex-1 rounded-lg border border-line bg-background px-3 py-2 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setDraft({
+                    ...draft,
+                    reflectionQuestions: draft.reflectionQuestions.filter((_, i) => i !== index),
+                  })
+                }
+                disabled={draft.reflectionQuestions.length === 1}
+                className="mt-1 rounded-lg border border-line px-3 py-2 text-xs disabled:opacity-40"
+              >
+                삭제
+              </button>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={() =>
+              setDraft({ ...draft, reflectionQuestions: [...draft.reflectionQuestions, ""] })
+            }
+            className="self-start rounded-lg border border-line px-4 py-2 text-sm"
+          >
+            + 질문 추가
+          </button>
+        </section>
 
         <div className="flex flex-wrap gap-4 text-sm">
           <label className="flex items-center gap-2">
@@ -181,19 +254,29 @@ function Lessons() {
                 <p className="font-medium">
                   {plan.lessonNo}차시 · {plan.title}
                 </p>
-                <p className="mt-1 line-clamp-2 text-sm text-muted">
-                  {plan.reflectionQuestion || "성찰 질문 없음"}
+                <p className="mt-1 text-sm text-muted">
+                  성찰 질문 {plan.reflectionQuestions?.length ?? 0}개
                 </p>
                 <p className="mt-1 text-xs text-muted">
                   {plan.moodCheckEnabled ? "감정 체크 O" : "감정 체크 X"} ·{" "}
                   {plan.reflectionPublic ? "성찰 공개" : "성찰 비공개"} ·{" "}
-                  {plan.slideUrl ? "슬라이드 있음" : "슬라이드 없음"}
+                  {[
+                    plan.progress?.heading || plan.progress?.body || plan.progress?.url
+                      ? "진도"
+                      : null,
+                    plan.assessment?.heading || plan.assessment?.body || plan.assessment?.url
+                      ? "평가"
+                      : null,
+                    plan.video?.url ? "영상" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || "단계 내용 없음"}
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">
                 <button
                   type="button"
-                  onClick={() => setDraft(plan)}
+                  onClick={() => edit(plan)}
                   className="rounded-lg border border-line px-3 py-1.5 text-xs"
                 >
                   수정
@@ -213,6 +296,47 @@ function Lessons() {
 
       <QuickSession plans={plans} />
     </div>
+  );
+}
+
+function ContentEditor({
+  label,
+  hint,
+  value,
+  onChange,
+  urlPlaceholder = "https://... (없으면 비워 두세요)",
+}: {
+  label: string;
+  hint: string;
+  value: PhaseContent;
+  onChange: (value: PhaseContent) => void;
+  urlPlaceholder?: string;
+}) {
+  return (
+    <section className="flex flex-col gap-2 rounded-xl border border-line bg-card p-4">
+      <h2 className="text-sm font-semibold">{label}</h2>
+      <p className="text-xs text-muted">{hint}</p>
+
+      <input
+        value={value.heading}
+        onChange={(event) => onChange({ ...value, heading: event.target.value })}
+        placeholder={`화면 제목 (비우면 "${label}")`}
+        className="rounded-lg border border-line bg-background px-3 py-2 text-sm"
+      />
+      <textarea
+        value={value.body}
+        onChange={(event) => onChange({ ...value, body: event.target.value })}
+        rows={3}
+        placeholder="학생 화면에 보여줄 안내 문구"
+        className="rounded-lg border border-line bg-background px-3 py-2 text-sm"
+      />
+      <input
+        value={value.url}
+        onChange={(event) => onChange({ ...value, url: event.target.value })}
+        placeholder={urlPlaceholder}
+        className="rounded-lg border border-line bg-background px-3 py-2 text-sm"
+      />
+    </section>
   );
 }
 

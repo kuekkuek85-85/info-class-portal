@@ -8,7 +8,7 @@ import {
   updateLessonPlan,
 } from "@/lib/db";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
-import type { LessonPlan } from "@/lib/types";
+import { emptyPhaseContent, type LessonPlan, type PhaseContent } from "@/lib/types";
 
 /**
  * 차시 계획(lesson_plans) 관리.
@@ -30,13 +30,27 @@ export async function GET() {
 
 type LessonInput = Partial<Omit<LessonPlan, "id" | "createdAt" | "updatedAt">>;
 
+function normalizeContent(value: Partial<PhaseContent> | undefined): PhaseContent {
+  if (!value) return emptyPhaseContent();
+  return {
+    heading: (value.heading ?? "").trim().slice(0, 200),
+    body: (value.body ?? "").trim().slice(0, 4000),
+    url: (value.url ?? "").trim().slice(0, 1000),
+  };
+}
+
 function normalize(body: LessonInput) {
   return {
     lessonNo: Number(body.lessonNo),
     title: (body.title ?? "").trim(),
-    slideUrl: (body.slideUrl ?? "").trim(),
-    reflectionQuestion: (body.reflectionQuestion ?? "").trim(),
     moodCheckEnabled: body.moodCheckEnabled !== false,
+    progress: normalizeContent(body.progress),
+    assessment: normalizeContent(body.assessment),
+    video: normalizeContent(body.video),
+    // 빈 질문은 버린다. 학생 화면에 빈 입력칸이 생기면 뭘 쓰라는 건지 알 수 없다.
+    reflectionQuestions: (Array.isArray(body.reflectionQuestions) ? body.reflectionQuestions : [])
+      .map((question) => String(question).trim().slice(0, 500))
+      .filter(Boolean),
     reflectionPublic: body.reflectionPublic === true,
   };
 }

@@ -5,58 +5,68 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { MoodPicker } from "@/components/mood-picker";
+import { PHASE_LABELS, type LessonPhase } from "@/lib/types";
 
 /**
  * 오늘 수업 화면.
  *
- * 진입 직후 오늘 그 교시 수업이 바로 열린다. 날짜·교시를 고르는 단계를 두지 않는다
- * (30명 × 클릭 1회 ≒ 1분). 탭 하나에 할 일 하나만 둔다 — 중1 대상 설계 (PRD 1, 3.2).
+ * 학생은 화면을 스스로 옮기지 못한다. 지금 어느 단계인지는 교사가 정하고, 학생 화면은
+ * 그것을 따라간다. 30명이 제각각 다른 화면에 가 있으면 수업을 끌고 갈 수 없고,
+ * 중1은 화면당 할 일이 하나여야 한다 (PRD 1, 3.2).
  */
 
-type Tab = "slide" | "mood" | "reflection";
+interface Content {
+  heading: string;
+  body: string;
+  url: string;
+}
 
 interface LessonData {
   me: { studentId: string; name: string; classNo: number };
   session: {
     id: string;
-    /** 교사가 수업을 종료했는가. 종료 후에는 읽기만 된다. */
+    phase: LessonPhase;
     closed: boolean;
     lessonNo: number;
     title: string;
-    slideUrl: string;
-    reflectionQuestion: string;
     moodCheckEnabled: boolean;
+    progress: Content;
+    assessment: Content;
+    video: Content;
+    reflectionQuestions: string[];
     reflectionPublic: boolean;
     date: string;
     period: number;
     classNo: number;
   };
   mood: { mood: string; reason: string } | null;
-  reflection: { content: string; draft: boolean } | null;
-  peers: { name: string; content: string }[];
+  reflection: { answers: string[]; draft: boolean } | null;
+  peers: { name: string; answers: string[] }[];
 }
 
 /** 입력이 멈춘 뒤 이만큼 지나면 임시저장한다. 종이 울려도 쓰던 내용이 남아야 한다. */
 const AUTOSAVE_DELAY_MS = 1500;
+/** 교사가 단계를 넘긴 것을 학생 화면이 알아채는 주기 */
+const PHASE_POLL_MS = 4000;
 
 export default function LessonPage() {
   const router = useRouter();
   const [data, setData] = useState<LessonData | null>(null);
   const [loadError, setLoadError] = useState("");
-  const [tab, setTab] = useState<Tab>("slide");
+  const [phase, setPhase] = useState<LessonPhase>("waiting");
+  const [closed, setClosed] = useState(false);
 
   const [mood, setMood] = useState("");
   const [moodReason, setMoodReason] = useState("");
   const [moodSaving, setMoodSaving] = useState(false);
   const [moodSaved, setMoodSaved] = useState(false);
 
-  const [reflection, setReflection] = useState("");
+  const [answers, setAnswers] = useState<string[]>([]);
   const [reflectionState, setReflectionState] = useState<"idle" | "saving" | "saved" | "done">(
     "idle",
   );
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaved = useRef("");
-  /** 한 번 제출했으면 이후 자동저장도 초안이 아니다. 제출 상태가 되돌아가면 안 된다. */
   const submitted = useRef(false);
 
   useEffect(() => {
@@ -76,18 +86,19 @@ export default function LessonPage() {
 
       const payload = result as LessonData;
       setData(payload);
+      setPhase(payload.session.phase);
+      setClosed(payload.session.closed);
       setMood(payload.mood?.mood ?? "");
       setMoodReason(payload.mood?.reason ?? "");
       setMoodSaved(Boolean(payload.mood));
-      setReflection(payload.reflection?.content ?? "");
-      lastSaved.current = payload.reflection?.content ?? "";
+
+      const count = payload.session.reflectionQuestions.length;
+      const initial = Array.from({ length: count }, (_, i) => payload.reflection?.answers[i] ?? "");
+      setAnswers(initial);
+      lastSaved.current = JSON.stringify(initial);
       if (payload.reflection && !payload.reflection.draft) {
         submitted.current = true;
         setReflectionState("done");
-      }
-      // 슬라이드가 없는 차시면 바로 할 일이 있는 탭으로 보낸다
-      if (!payload.session.slideUrl) {
-        setTab(payload.session.moodCheckEnabled ? "mood" : "reflection");
       }
     }
 
@@ -97,7 +108,27 @@ export default function LessonPage() {
     };
   }, [router]);
 
-  const saveReflection = useCallback(async (content: string, submit: boolean) => {
+  // 교사가 넘긴 단계를 따라간다
+  useEffect(() => {
+    if (!data) return;
+    let cancelled = false;
+
+    async function tick() {
+      const response = await fetch("/api/student/phase");
+      const result = await response.json();
+      if (cancelled || !result.ok) return;
+      setPhase(result.phase as LessonPhase);
+      setClosed(Boolean(result.closed));
+    }
+
+    const timer = setInterval(() => void tick(), PHASE_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [data]);
+
+  const saveReflection = useCallback(async (next: string[], submit: boolean) => {
     // 예약된 자동저장을 먼저 취소한다. 제출 직후 늦게 도착한 임시저장이
     // 제출 완료 상태를 초안으로 되돌리는 것을 막는다.
     if (autosaveTimer.current) {
@@ -110,12 +141,12 @@ export default function LessonPage() {
     const response = await fetch("/api/student/reflection", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, draft: !submitted.current }),
+      body: JSON.stringify({ answers: next, draft: !submitted.current }),
     });
     const result = await response.json();
 
     if (result.ok) {
-      lastSaved.current = content;
+      lastSaved.current = JSON.stringify(next);
       setReflectionState(result.draft ? "saved" : "done");
     } else {
       setReflectionState("idle");
@@ -124,18 +155,18 @@ export default function LessonPage() {
 
   // 입력 중 자동 임시저장 (PRD 3.4)
   useEffect(() => {
-    if (!data || data.session.closed) return;
-    if (reflection === lastSaved.current) return;
+    if (!data || closed) return;
+    if (JSON.stringify(answers) === lastSaved.current) return;
 
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     autosaveTimer.current = setTimeout(() => {
-      void saveReflection(reflection, false);
+      void saveReflection(answers, false);
     }, AUTOSAVE_DELAY_MS);
 
     return () => {
       if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     };
-  }, [data, reflection, saveReflection]);
+  }, [answers, closed, data, saveReflection]);
 
   async function submitMood() {
     setMoodSaving(true);
@@ -166,11 +197,8 @@ export default function LessonPage() {
   }
 
   const { session, me } = data;
-  const tabs: { key: Tab; label: string; hidden?: boolean }[] = [
-    { key: "slide", label: "수업", hidden: !session.slideUrl },
-    { key: "mood", label: "기분", hidden: !session.moodCheckEnabled },
-    { key: "reflection", label: "성찰" },
-  ];
+  const answered = answers.filter((a) => a.trim()).length;
+  const total = session.reflectionQuestions.length;
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
@@ -181,7 +209,8 @@ export default function LessonPage() {
               {session.lessonNo}차시 · {session.title}
             </p>
             <p className="text-xs text-muted">
-              1학년 {me.classNo}반 {me.name || "(임시 번호)"}
+              1학년 {me.classNo}반 {me.name || "(임시 번호)"} · 지금은{" "}
+              <span className="font-medium text-accent">{PHASE_LABELS[phase]}</span>
             </p>
           </div>
           <Link
@@ -191,61 +220,27 @@ export default function LessonPage() {
             내 기록
           </Link>
         </div>
-
-        <nav className="mx-auto mt-3 flex w-full max-w-3xl gap-2" aria-label="수업 활동">
-          {tabs
-            .filter((item) => !item.hidden)
-            .map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => setTab(item.key)}
-                aria-current={tab === item.key ? "page" : undefined}
-                className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                  tab === item.key
-                    ? "bg-accent text-white"
-                    : "border border-line bg-card text-muted"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-        </nav>
       </header>
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-5">
-        {session.closed && (
+        {closed && (
           <p className="mb-4 rounded-xl border border-line bg-card px-4 py-3 text-center text-sm text-muted">
             이 수업은 끝났어요. 내가 쓴 것은 볼 수 있지만 더 저장되지는 않아요.
           </p>
         )}
 
-        {tab === "slide" && session.slideUrl && (
-          <section className="flex flex-col gap-3">
-            {/*
-              유튜브 등 외부 영상은 슬라이드 안에 심어둔다. 새 창으로 열면 학생 화면이
-              각자 흩어진다 (PRD 3.2). 그래서 여기서는 슬라이드만 임베드한다.
-            */}
-            <div className="overflow-hidden rounded-2xl border border-line bg-card">
-              <iframe
-                src={session.slideUrl}
-                title={`${session.lessonNo}차시 수업 슬라이드`}
-                className="h-[70vh] w-full"
-                allow="fullscreen; autoplay; encrypted-media"
-              />
-            </div>
-            <a
-              href={session.slideUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-center text-sm text-muted underline underline-offset-4"
-            >
-              화면이 안 보이면 여기를 눌러 새 창으로 열기
-            </a>
-          </section>
+        {phase === "waiting" && (
+          <Placeholder
+            title="잠시만 기다려 주세요"
+            description="선생님이 시작하면 화면이 저절로 바뀝니다."
+          />
         )}
 
-        {tab === "mood" && session.moodCheckEnabled && (
+        {phase === "done" && (
+          <Placeholder title="오늘 수업 끝!" description="고생했어요. 태블릿을 정리해 주세요." />
+        )}
+
+        {phase === "mood" && session.moodCheckEnabled && (
           <MoodPicker
             value={mood}
             reason={moodReason}
@@ -254,28 +249,50 @@ export default function LessonPage() {
             onSubmit={submitMood}
             saving={moodSaving}
             saved={moodSaved}
-            disabled={session.closed}
+            disabled={closed}
           />
         )}
 
-        {tab === "reflection" && (
-          <section className="flex flex-col gap-4">
+        {phase === "progress" && <ContentView content={session.progress} fallback="진도 안내" />}
+        {phase === "assessment" && (
+          <ContentView content={session.assessment} fallback="평가 안내" />
+        )}
+        {phase === "video" && <ContentView content={session.video} fallback="영상 시청" tall />}
+
+        {phase === "reflection" && (
+          <section className="flex flex-col gap-5">
             <div>
-              <h2 className="text-lg font-semibold">오늘의 한 줄 성찰</h2>
-              <p className="mt-2 whitespace-pre-wrap rounded-xl border border-line bg-card px-4 py-3 text-base leading-relaxed">
-                {session.reflectionQuestion || "오늘 배운 것과 느낀 점을 한 줄로 적어 주세요."}
+              <h2 className="text-lg font-semibold">오늘의 성찰</h2>
+              <p className="mt-1 text-sm text-muted">
+                {total}개 질문에 모두 답해 주세요. ({answered}/{total} 작성)
               </p>
             </div>
 
-            <textarea
-              value={reflection}
-              onChange={(event) => setReflection(event.target.value)}
-              rows={6}
-              maxLength={1000}
-              disabled={session.closed}
-              placeholder="여기에 적어 주세요"
-              className="w-full rounded-xl border border-line bg-card px-3 py-3 text-base leading-relaxed outline-none focus:border-accent disabled:opacity-60"
-            />
+            {session.reflectionQuestions.map((question, index) => (
+              <div key={index} className="flex flex-col gap-2">
+                <label
+                  htmlFor={`answer-${index}`}
+                  className="rounded-xl border border-line bg-card px-4 py-3 text-base leading-relaxed"
+                >
+                  <span className="mr-1 font-semibold text-accent">{index + 1}.</span>
+                  {question}
+                </label>
+                <textarea
+                  id={`answer-${index}`}
+                  value={answers[index] ?? ""}
+                  onChange={(event) =>
+                    setAnswers((prev) =>
+                      prev.map((value, i) => (i === index ? event.target.value : value)),
+                    )
+                  }
+                  rows={3}
+                  maxLength={1000}
+                  disabled={closed}
+                  placeholder="여기에 적어 주세요"
+                  className="w-full rounded-xl border border-line bg-card px-3 py-3 text-base leading-relaxed outline-none focus:border-accent disabled:opacity-60"
+                />
+              </div>
+            ))}
 
             <div className="flex items-center justify-between text-xs text-muted">
               <span aria-live="polite">
@@ -284,17 +301,22 @@ export default function LessonPage() {
                 {reflectionState === "done" && "제출 완료"}
                 {reflectionState === "idle" && "쓰는 동안 자동으로 저장돼요"}
               </span>
-              <span>{reflection.length} / 1000</span>
             </div>
 
             <button
               type="button"
-              onClick={() => saveReflection(reflection, true)}
-              disabled={!reflection.trim() || reflectionState === "saving" || session.closed}
+              onClick={() => saveReflection(answers, true)}
+              disabled={answered === 0 || reflectionState === "saving" || closed}
               className="h-14 rounded-2xl bg-accent text-lg font-semibold text-white transition active:scale-95 disabled:opacity-40"
             >
               {reflectionState === "done" ? "다시 제출하기" : "제출하기"}
             </button>
+
+            {answered < total && answered > 0 && (
+              <p className="text-center text-xs text-muted">
+                아직 답하지 않은 질문이 {total - answered}개 있어요.
+              </p>
+            )}
 
             {session.reflectionPublic && data.peers.length > 0 && (
               <section className="mt-4 flex flex-col gap-2">
@@ -306,7 +328,15 @@ export default function LessonPage() {
                       className="rounded-xl border border-line bg-card px-3 py-2 text-sm"
                     >
                       <span className="font-medium">{peer.name}</span>
-                      <p className="mt-1 whitespace-pre-wrap leading-relaxed">{peer.content}</p>
+                      {peer.answers.map(
+                        (answer, i) =>
+                          answer.trim() && (
+                            <p key={i} className="mt-1 whitespace-pre-wrap leading-relaxed">
+                              <span className="text-muted">{i + 1}. </span>
+                              {answer}
+                            </p>
+                          ),
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -316,5 +346,55 @@ export default function LessonPage() {
         )}
       </main>
     </div>
+  );
+}
+
+function Placeholder({ title, description }: { title: string; description: string }) {
+  return (
+    <section className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-card px-6 py-16 text-center">
+      <h2 className="text-xl font-semibold">{title}</h2>
+      <p className="text-sm text-muted">{description}</p>
+    </section>
+  );
+}
+
+function ContentView({
+  content,
+  fallback,
+  tall,
+}: {
+  content: Content;
+  fallback: string;
+  tall?: boolean;
+}) {
+  const hasAnything = content.heading || content.body || content.url;
+
+  if (!hasAnything) {
+    return (
+      <Placeholder title={fallback} description="선생님 화면을 봐 주세요." />
+    );
+  }
+
+  return (
+    <section className="flex flex-col gap-4">
+      <h2 className="text-lg font-semibold">{content.heading || fallback}</h2>
+
+      {content.body && (
+        <p className="whitespace-pre-wrap rounded-xl border border-line bg-card px-4 py-3 text-base leading-relaxed">
+          {content.body}
+        </p>
+      )}
+
+      {content.url && (
+        <div className="overflow-hidden rounded-2xl border border-line bg-card">
+          <iframe
+            src={content.url}
+            title={content.heading || fallback}
+            className={tall ? "aspect-video w-full" : "h-[60vh] w-full"}
+            allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
+          />
+        </div>
+      )}
+    </section>
   );
 }
