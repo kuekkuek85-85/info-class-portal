@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { ContentView, type Content } from "@/components/content-view";
 import { MoodPicker } from "@/components/mood-picker";
 import { PHASE_LABELS, type LessonPhase } from "@/lib/types";
 
@@ -14,12 +15,6 @@ import { PHASE_LABELS, type LessonPhase } from "@/lib/types";
  * 그것을 따라간다. 30명이 제각각 다른 화면에 가 있으면 수업을 끌고 갈 수 없고,
  * 중1은 화면당 할 일이 하나여야 한다 (PRD 1, 3.2).
  */
-
-interface Content {
-  heading: string;
-  body: string;
-  url: string;
-}
 
 interface LessonData {
   me: { studentId: string; name: string; classNo: number };
@@ -390,47 +385,6 @@ function Placeholder({ title, description }: { title: string; description: strin
     <section className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-card px-6 py-16 text-center">
       <h2 className="text-xl font-semibold">{title}</h2>
       <p className="text-sm text-muted">{description}</p>
-    </section>
-  );
-}
-
-function ContentView({
-  content,
-  fallback,
-  tall,
-}: {
-  content: Content;
-  fallback: string;
-  tall?: boolean;
-}) {
-  const hasAnything = content.heading || content.body || content.url;
-
-  if (!hasAnything) {
-    return (
-      <Placeholder title={fallback} description="선생님 화면을 봐 주세요." />
-    );
-  }
-
-  return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold">{content.heading || fallback}</h2>
-
-      {content.body && (
-        <p className="whitespace-pre-wrap rounded-xl border border-line bg-card px-4 py-3 text-base leading-relaxed">
-          {content.body}
-        </p>
-      )}
-
-      {content.url && (
-        <div className="overflow-hidden rounded-2xl border border-line bg-card">
-          <iframe
-            src={content.url}
-            title={content.heading || fallback}
-            className={tall ? "aspect-video w-full" : "h-[60vh] w-full"}
-            allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
-          />
-        </div>
-      )}
     </section>
   );
 }

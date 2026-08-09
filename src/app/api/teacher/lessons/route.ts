@@ -32,11 +32,42 @@ type LessonInput = Partial<Omit<LessonPlan, "id" | "createdAt" | "updatedAt">>;
 
 function normalizeContent(value: Partial<PhaseContent> | undefined): PhaseContent {
   if (!value) return emptyPhaseContent();
-  return {
+
+  const content: PhaseContent = {
     heading: (value.heading ?? "").trim().slice(0, 200),
     body: (value.body ?? "").trim().slice(0, 4000),
     url: (value.url ?? "").trim().slice(0, 1000),
   };
+
+  // 구조화된 블록은 그대로 보존한다. 여기서 떨어뜨리면 차시를 한 번 저장할 때마다
+  // 카드·탭이 조용히 사라져 텍스트만 남는다.
+  if (Array.isArray(value.cards) && value.cards.length > 0) {
+    content.cards = value.cards.map((card) => ({
+      badge: String(card?.badge ?? "").slice(0, 40),
+      title: String(card?.title ?? "").slice(0, 120),
+      note: String(card?.note ?? "").slice(0, 60),
+      lines: (Array.isArray(card?.lines) ? card.lines : []).map((line) =>
+        String(line).slice(0, 300),
+      ),
+    }));
+  }
+
+  if (Array.isArray(value.tabs) && value.tabs.length > 0) {
+    content.tabs = value.tabs.map((tab) => ({
+      label: String(tab?.label ?? "").slice(0, 40),
+      subtitle: String(tab?.subtitle ?? "").slice(0, 120),
+      note: String(tab?.note ?? "").slice(0, 60),
+      rows: (Array.isArray(tab?.rows) ? tab.rows : []).map((row) => ({
+        label: String(row?.label ?? "").slice(0, 60),
+        value: String(row?.value ?? "").slice(0, 1000),
+      })),
+      highlights: (Array.isArray(tab?.highlights) ? tab.highlights : []).map((line) =>
+        String(line).slice(0, 500),
+      ),
+    }));
+  }
+
+  return content;
 }
 
 function normalize(body: LessonInput) {

@@ -26,6 +26,8 @@ function present(content: PhaseContent | undefined) {
     heading: content?.heading ?? "",
     body: content?.body ?? "",
     url: content?.url ? toEmbedUrl(content.url) : "",
+    cards: content?.cards ?? [],
+    tabs: content?.tabs ?? [],
   };
 }
 

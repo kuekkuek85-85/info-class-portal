@@ -48,11 +48,39 @@ export const PHASE_LABELS: Record<LessonPhase, string> = {
   done: "마침",
 };
 
-/** 한 단계에서 학생에게 보여줄 것. url 이 있으면 화면에 임베드한다. */
+/** 진도 안내처럼 나란히 놓고 비교하는 내용 — 카드 한 장 */
+export interface ContentCard {
+  /** "5단원" 처럼 앞에 붙는 꼬리표 */
+  badge: string;
+  title: string;
+  /** "8~9월" 같은 부가 정보 */
+  note: string;
+  lines: string[];
+}
+
+/** 수행평가처럼 여러 개를 번갈아 보여줘야 하는 내용 — 탭 하나 */
+export interface ContentTab {
+  label: string;
+  subtitle: string;
+  note: string;
+  /** 표로 보여줄 [항목, 내용] 쌍 */
+  rows: { label: string; value: string }[];
+  /** 꼭 기억해야 할 것 — 눈에 띄게 따로 뺀다 */
+  highlights: string[];
+}
+
+/**
+ * 한 단계에서 학생에게 보여줄 것.
+ *
+ * 긴 문단은 중1이 한눈에 읽지 못한다. cards·tabs 가 있으면 그것으로 그리고,
+ * 없을 때만 body 를 그대로 보여준다. url 이 있으면 화면에 임베드한다.
+ */
 export interface PhaseContent {
   heading: string;
   body: string;
   url: string;
+  cards?: ContentCard[];
+  tabs?: ContentTab[];
 }
 
 export function emptyPhaseContent(): PhaseContent {
