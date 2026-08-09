@@ -48,8 +48,9 @@ export async function GET() {
   };
 
   await attempt("firebase-admin/app", () => import("firebase-admin/app"));
-  await attempt("firebase-admin/auth", () => import("firebase-admin/auth"));
   await attempt("firebase-admin/firestore", () => import("firebase-admin/firestore"));
+  await attempt("@/lib/session", () => import("@/lib/session"));
+  await attempt("@/lib/db", () => import("@/lib/db"));
   await attempt("@google-cloud/firestore", () => import("@google-cloud/firestore"));
   await attempt("@grpc/grpc-js", () => import("@grpc/grpc-js"));
   await attempt("jose", () => import("jose"));

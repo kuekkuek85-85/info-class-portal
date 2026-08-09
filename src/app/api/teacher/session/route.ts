@@ -1,5 +1,5 @@
 import { fail, guard, ok, readJson } from "@/lib/api";
-import { adminAuth } from "@/lib/firebase-admin";
+import { verifyGoogleIdToken } from "@/lib/firebase-admin";
 import {
   clearTeacherSession,
   createTeacherSession,
@@ -19,23 +19,19 @@ export async function POST(request: Request) {
     const body = await readJson<{ idToken?: string }>(request);
     if (!body?.idToken) return fail("invalid_input");
 
-    const decoded = await adminAuth().verifyIdToken(body.idToken).catch(() => null);
-    if (!decoded) return fail("unauthorized", "로그인 정보를 확인하지 못했습니다.");
+    const user = await verifyGoogleIdToken(body.idToken);
+    if (!user) return fail("unauthorized", "로그인 정보를 확인하지 못했습니다.");
 
-    if (!isAllowedTeacher(decoded.email)) {
+    if (!isAllowedTeacher(user.email)) {
       return fail(
         "unauthorized",
         "허용된 교사 계정이 아닙니다. 환경변수 TEACHER_EMAILS 를 확인하세요.",
       );
     }
 
-    await createTeacherSession({
-      uid: decoded.uid,
-      email: decoded.email ?? "",
-      name: decoded.name ?? decoded.email ?? "교사",
-    });
+    await createTeacherSession(user);
 
-    return ok({ email: decoded.email, name: decoded.name ?? "" });
+    return ok({ email: user.email, name: user.name });
   });
 }
 

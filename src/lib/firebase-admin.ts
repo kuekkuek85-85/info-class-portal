@@ -1,7 +1,6 @@
 import "server-only";
 
 import { cert, getApp, getApps, initializeApp, type App } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 
 /**
@@ -67,8 +66,47 @@ export function db(): Firestore {
   return cachedDb;
 }
 
-export function adminAuth() {
-  return getAuth(adminApp());
+export interface VerifiedGoogleUser {
+  uid: string;
+  email: string;
+  name: string;
+}
+
+/**
+ * 교사 Google 로그인 ID 토큰을 검증한다.
+ *
+ * firebase-admin/auth 를 쓰지 않는다. 그 모듈이 끌어오는 jwks-rsa 는 CommonJS 인데
+ * 의존하는 jose 6.x 는 ESM 전용이라, Vercel 함수에서 모듈 로드 자체가 실패한다
+ * (ERR_REQUIRE_ESM). firestore 쪽은 멀쩡하므로 auth 만 REST 로 대체했다.
+ *
+ * Identity Toolkit 의 accounts:lookup 은 토큰 서명·만료·프로젝트 소속을 서버에서 확인해
+ * 주므로 검증 강도는 그대로다. 권한 판단(허용 이메일 대조)은 여전히 우리 서버가 한다.
+ */
+export async function verifyGoogleIdToken(idToken: string): Promise<VerifiedGoogleUser | null> {
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (!apiKey) {
+    throw new Error("환경변수 NEXT_PUBLIC_FIREBASE_API_KEY 가 설정되지 않았습니다.");
+  }
+
+  const response = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+      cache: "no-store",
+    },
+  );
+
+  if (!response.ok) return null;
+
+  const data = (await response.json()) as {
+    users?: { localId?: string; email?: string; displayName?: string }[];
+  };
+  const user = data.users?.[0];
+  if (!user?.localId || !user.email) return null;
+
+  return { uid: user.localId, email: user.email, name: user.displayName ?? user.email };
 }
 
 /** 설정이 끝났는지 (설정 안내 화면 노출 여부 판단용) */

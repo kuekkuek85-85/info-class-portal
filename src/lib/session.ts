@@ -1,7 +1,7 @@
 import "server-only";
 
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
-import { SignJWT, jwtVerify } from "jose";
 
 import { endOfDayKST } from "./datetime";
 import type { ClassNo, CodeTokenPayload, StudentSessionPayload } from "./types";
@@ -11,6 +11,10 @@ import type { ClassNo, CodeTokenPayload, StudentSessionPayload } from "./types";
  *
  * 학생 세션은 당일 자정에 만료된다 (PRD 3.1). 한 차시 동안 재입력이 없어야 하지만,
  * 다음 날까지 살아 있으면 태블릿을 공용으로 쓰는 환경에서 남의 계정으로 들어가게 된다.
+ *
+ * JWT(HS256)를 Node 내장 crypto 로 직접 만든다. jose 를 쓰면 firebase-admin 이 의존하는
+ * jwks-rsa(CommonJS)가 require("jose") 에 실패해 Vercel 함수가 통째로 죽는다
+ * (ERR_REQUIRE_ESM). 서명 알고리즘이 HMAC-SHA256 하나뿐이라 라이브러리가 필요 없다.
  */
 
 const STUDENT_COOKIE = "portal_student";
@@ -21,27 +25,49 @@ const TEACHER_COOKIE = "portal_teacher";
 const CODE_TOKEN_TTL_SECONDS = 10 * 60;
 const TEACHER_TTL_SECONDS = 12 * 60 * 60;
 
-function secret(): Uint8Array {
+function secret(): string {
   const value = process.env.SESSION_SECRET;
   if (!value || value.length < 32) {
     throw new Error(
       "환경변수 SESSION_SECRET 가 없거나 너무 짧습니다 (32자 이상). `openssl rand -base64 32` 등으로 생성하세요.",
     );
   }
-  return new TextEncoder().encode(value);
+  return value;
+}
+
+function encode(value: object): string {
+  return Buffer.from(JSON.stringify(value), "utf8").toString("base64url");
+}
+
+function hmac(data: string): string {
+  return createHmac("sha256", secret()).update(data).digest("base64url");
 }
 
 async function sign(payload: Record<string, unknown>, expiresAt: Date): Promise<string> {
-  return new SignJWT(payload)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(expiresAt)
-    .sign(secret());
+  const now = Math.floor(Date.now() / 1000);
+  const head = encode({ alg: "HS256", typ: "JWT" });
+  const body = encode({ ...payload, iat: now, exp: Math.floor(expiresAt.getTime() / 1000) });
+  return `${head}.${body}.${hmac(`${head}.${body}`)}`;
 }
 
 async function verify<T>(token: string): Promise<T | null> {
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  const [head, body, signature] = parts;
+
+  // 서명 비교는 길이가 같을 때만 timingSafeEqual 이 동작한다
+  const expected = Buffer.from(hmac(`${head}.${body}`));
+  const given = Buffer.from(signature);
+  if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
+
   try {
-    const { payload } = await jwtVerify(token, secret());
+    // alg 를 확인하지 않으면 "none" 을 주장하는 토큰을 받아들이게 된다
+    const header = JSON.parse(Buffer.from(head, "base64url").toString("utf8"));
+    if (header?.alg !== "HS256") return null;
+
+    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
+    if (typeof payload?.exp === "number" && payload.exp * 1000 <= Date.now()) return null;
+
     return payload as T;
   } catch {
     return null;
