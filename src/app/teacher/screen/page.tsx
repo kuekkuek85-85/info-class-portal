@@ -6,6 +6,7 @@ import { TeacherShell } from "@/components/teacher-shell";
 import { todayKST } from "@/lib/datetime";
 import { toEmbedUrl } from "@/lib/embed";
 import { usePolled } from "@/lib/use-polled";
+import { pickCurrentSession } from "@/lib/pick-session";
 
 /**
  * 교실 앞 전자칠판에 띄우는 화면.
@@ -26,6 +27,7 @@ interface SessionRow {
   period: number;
   lessonNo: number;
   title: string;
+  status: "scheduled" | "active" | "ended";
   video?: Content;
   reflectionQuestions?: string[];
 }
@@ -45,7 +47,8 @@ function Screen() {
     `/api/teacher/sessions?date=${todayKST()}`,
   );
   const sessions = data?.sessions ?? [];
-  const session = sessions.find((s) => s.id === picked) ?? sessions[0];
+  // 대시보드와 같은 이유 — 열자마자 "지금 하는 수업"이 떠 있어야 한다
+  const session = sessions.find((s) => s.id === picked) ?? pickCurrentSession(sessions);
   const embed = session?.video?.url ? toEmbedUrl(session.video.url) : "";
 
   return (

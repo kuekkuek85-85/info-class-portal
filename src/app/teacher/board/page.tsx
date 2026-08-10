@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { TeacherShell } from "@/components/teacher-shell";
 import { todayKST } from "@/lib/datetime";
+import { pickCurrentSession } from "@/lib/pick-session";
 import { QUADRANTS, type Quadrant } from "@/lib/mood";
 import { usePolled } from "@/lib/use-polled";
 
@@ -35,6 +36,7 @@ interface SessionOption {
   period: number;
   lessonNo: number;
   title: string;
+  status: "scheduled" | "active" | "ended";
 }
 
 const POLL_INTERVAL_MS = 5000;
@@ -58,8 +60,9 @@ function Board() {
   );
   const sessions = sessionList?.sessions ?? [];
 
-  // 고르지 않았으면 오늘 첫 수업을 쓴다. 상태를 effect로 채우지 않고 렌더에서 정한다.
-  const sessionId = picked || sessions[0]?.id || "";
+  // 고르지 않았으면 "지금 하는 수업"을 쓴다. 오늘 첫 수업을 기본값으로 두면 3교시에
+  // 2교시 반의 기분이 교실 앞 화면에 뜬다 — 다른 반 데이터가 노출되는 셈이다.
+  const sessionId = picked || pickCurrentSession(sessions)?.id || "";
 
   const { data } = usePolled<BoardData>(
     sessionId ? `/api/teacher/board?sessionId=${sessionId}` : null,

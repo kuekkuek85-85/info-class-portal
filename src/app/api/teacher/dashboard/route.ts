@@ -9,6 +9,7 @@ import {
   listStudents,
 } from "@/lib/db";
 import { getMood } from "@/lib/mood";
+import { pickCurrentSession } from "@/lib/pick-session";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
 import { answersOf, hasAnswer } from "@/lib/types";
 
@@ -30,11 +31,18 @@ export async function GET(request: Request) {
 
     const sessions = await listSessionsByDate(date);
 
-    if (!sessionId) {
+    /*
+     * 교사가 고르지 않았으면 "지금 하는 수업"을 서버가 잡아 준다.
+     *
+     * 첫 수업을 기본값으로 두면 3교시에 화면을 열었을 때 2교시 반의 감정·성찰이 뜬다.
+     * 교실 앞 공유 화면까지 같은 값을 쓰므로, 다른 반 학생의 기록이 노출되는 문제가 된다.
+     */
+    const target = sessionId ?? pickCurrentSession(sessions)?.id;
+    if (!target) {
       return ok({ date, sessions, session: null });
     }
 
-    const session = await getSession(sessionId);
+    const session = await getSession(target);
     if (!session) return fail("not_found");
 
     const [attendance, moods, reflections, roster] = await Promise.all([

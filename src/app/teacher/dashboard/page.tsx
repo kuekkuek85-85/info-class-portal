@@ -85,6 +85,7 @@ function Dashboard() {
     POLL_INTERVAL_MS,
   );
 
+  // sessionId 를 안 보내면 서버가 "지금 하는 수업"을 골라 준다 (교시 시각표 기준).
   const sessions = data?.sessions ?? [];
   const session = data?.session ?? null;
   const rows = data?.rows ?? [];
