@@ -125,6 +125,8 @@ export function DrawBoard({
   const [width, setWidth] = useState(1);
   const [textSize, setTextSize] = useState(1);
   const [penOnly, setPenOnly] = useState(false);
+  /** 펜 전용 모드 때문에 손가락 입력이 막혔다 — 왜 안 그려지는지 알려 주기 위해 */
+  const [penOnlyBlocked, setPenOnlyBlocked] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(true);
 
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -213,8 +215,22 @@ export function DrawBoard({
 
   function handlePointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
     if (disabled) return;
-    // 손바닥이 화면에 닿아 생기는 선을 막는 모드. 폰 학생은 손가락뿐이라 기본은 꺼 둔다.
-    if (penOnly && event.pointerType !== "pen") return;
+
+    /*
+     * 손바닥이 화면에 닿아 생기는 선을 막는 모드.
+     *
+     * **손가락(touch)만 막는다.** 예전에는 "펜이 아니면 전부 막기"였는데, 그러면
+     * 스타일러스 없는 태블릿이나 노트북에서 이걸 켠 학생은 아예 못 그리게 된다.
+     * 체크박스 하나 때문이라는 걸 학생은 알아채지 못하고 "안 그려져요"만 반복한다.
+     * 막아야 할 것은 손바닥이지 마우스가 아니다.
+     */
+    if (penOnly && event.pointerType === "touch") {
+      setPenOnlyBlocked(true);
+      return;
+    }
+    // 펜이나 마우스로 다시 그리기 시작하면 안내를 치운다. 잘 되고 있는데 경고가 남아
+    // 있으면 학생은 계속 뭔가 잘못된 줄 안다.
+    if (penOnlyBlocked) setPenOnlyBlocked(false);
 
     const [x, y] = toLogical(event);
 
@@ -890,10 +906,23 @@ export function DrawBoard({
           <input
             type="checkbox"
             checked={penOnly}
-            onChange={(event) => setPenOnly(event.target.checked)}
+            onChange={(event) => {
+              setPenOnly(event.target.checked);
+              setPenOnlyBlocked(false);
+            }}
           />
           펜으로만 그리기 (손바닥이 닿아도 안 그려져요)
         </label>
+
+        {/*
+          켜 둔 채 손가락으로 그으면 아무 일도 안 일어난다. 왜 안 되는지 말해 주지 않으면
+          학생은 태블릿이 고장 난 줄 안다.
+        */}
+        {penOnlyBlocked && (
+          <p className="rounded-md bg-cream px-4 py-3 t-body-sm">
+            펜으로만 그리기가 켜져 있어요. 손가락으로 그리려면 위 체크를 꺼 주세요.
+          </p>
+        )}
 
         <p className="t-caption">
           {tool === "eraser"

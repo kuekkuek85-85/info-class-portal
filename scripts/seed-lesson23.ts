@@ -275,15 +275,33 @@ const SEEDS: PlanSeed[] = [
  * 되돌리면 안 되기 때문이다. 다만 퀴즈·활동처럼 화면에 입력칸이 없는 것을 고치려면
  * 이 길밖에 없어서, 명시적으로 요구할 때만 열어 둔다.
  */
-const FORCE = process.argv.includes("--force");
+/**
+ * `--include-active` 는 `--force` 를 함께 뜻한다.
+ *
+ * 진행 중인 수업까지 갱신하겠다는 것은 이미 등록된 차시를 고치겠다는 뜻이다. 두 옵션을
+ * 따로 두면 `--include-active` 만 붙였을 때 아무 일도 없이 "건너뜁니다"만 뜨고,
+ * 왜 안 되는지 모른 채 수업 시간이 지나간다.
+ */
+const INCLUDE_ACTIVE = process.argv.includes("--include-active");
+const FORCE = process.argv.includes("--force") || INCLUDE_ACTIVE;
 
-/** 아직 시작하지 않은 세션에만 스냅샷을 다시 복사한다 (PRD 5.1) */
+/*
+ * `--include-active` 를 붙이면 **이미 시작한 수업**의 스냅샷까지 덮어쓴다.
+ *
+ * 기본값이 "건드리지 않음"인 데는 이유가 있다. 수업 도중에 문항이나 질문이 바뀌면
+ * 학생이 실제로 답한 내용과 기록이 어긋나고, 나중에 "이 반은 어떤 질문에 답한 것인가"를
+ * 알 수 없게 된다 (PRD 5.1).
+ *
+ * 그러니 이 옵션은 **교사가 혼자 테스트하던 세션**처럼, 어긋나도 잃을 기록이 없다는 것을
+ * 아는 경우에만 쓴다.
+ */
+
+/** 세션 스냅샷을 다시 복사한다. 기본은 아직 시작하지 않은 세션만 (PRD 5.1) */
 async function syncScheduled(planId: string, seed: PlanSeed): Promise<number> {
-  const snap = await db
-    .collection("classSessions")
-    .where("lessonPlanId", "==", planId)
-    .where("status", "==", "scheduled")
-    .get();
+  const base = db.collection("classSessions").where("lessonPlanId", "==", planId);
+  const snap = INCLUDE_ACTIVE
+    ? await base.where("status", "in", ["scheduled", "active"]).get()
+    : await base.where("status", "==", "scheduled").get();
 
   if (snap.empty) return 0;
 
@@ -337,7 +355,8 @@ async function main(): Promise<void> {
         const synced = await syncScheduled(doc.id, seed);
         console.log(
           `↻ ${seed.lessonNo}차시 갱신 — ${seed.title} (${doc.id})` +
-            `\n   아직 시작하지 않은 수업 ${synced}개에 반영`,
+            `\n   ${INCLUDE_ACTIVE ? "진행 중인 수업까지 포함해" : "아직 시작하지 않은"} ` +
+            `수업 ${synced}개에 반영`,
         );
       }
       continue;
