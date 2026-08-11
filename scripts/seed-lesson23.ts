@@ -241,8 +241,8 @@ const SEEDS: PlanSeed[] = [
       url: "https://youtu.be/UtUyfRostjY",
     },
     reflectionQuestions: [
-      "오늘 퀴즈에서 가장 놀란 변화는 무엇이고, 왜 놀랐나요?",
-      "내가 고른 장소에 넣고 싶은 기술을 하나만 적어 주세요. 이름만이라도 좋아요.",
+      "타임머신 퀴즈에서 1996년과 지금을 비교했어요. 가장 놀랐던 변화 하나를 고르고, 왜 놀랐는지 써 주세요.",
+      "내가 그린 장소에 넣고 싶은 기술을 하나만 적어 주세요. 이름만이라도 좋아요.",
     ],
     reflectionPublic: false,
     quiz: QUIZ,

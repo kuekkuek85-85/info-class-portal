@@ -51,6 +51,14 @@ export interface DrawBoardProps {
 
 type Tool = "pen" | "eraser" | "text";
 
+/** 되돌리기 한 단계. 무엇을 했는지 기록해 두어야 그것을 정확히 되돌릴 수 있다 */
+type UndoAction =
+  | { type: "addStroke" }
+  | { type: "addText" }
+  | { type: "eraseStroke"; index: number; stroke: Stroke }
+  | { type: "eraseText"; index: number; text: TextItem }
+  | { type: "clear"; strokes: Stroke[]; texts: TextItem[] };
+
 /**
  * 획이 멈춘 뒤 이만큼 지나면 저장한다.
  *
@@ -74,6 +82,9 @@ const MAX_STALE_RESENDS = 3;
  * 수 있지만, 아예 거절당하는 것보다 낫다).
  */
 const KEEPALIVE_LIMIT_BYTES = 56_000;
+
+/** 직접 적는 장소 이름의 길이 상한. 서버도 같은 값으로 자른다 */
+const MAX_PLACE_LENGTH = 12;
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -99,6 +110,15 @@ export function DrawBoard({
 
   const [strokeCount, setStrokeCount] = useState(initialStrokes.length);
   const [textCount, setTextCount] = useState(initialTexts.length);
+
+  /**
+   * 되돌리기 기록.
+   *
+   * 그린 것·지운 것·전부 지운 것을 모두 담는다. 이전에는 "마지막 획을 뺀다"였는데,
+   * 그러면 글자를 넣고 되돌리기를 눌렀을 때 글자는 그대로 있고 엉뚱한 선이 사라졌다.
+   */
+  const historyRef = useRef<UndoAction[]>([]);
+  const [historyCount, setHistoryCount] = useState(0);
 
   const [tool, setTool] = useState<Tool>("pen");
   const [color, setColor] = useState(0);
@@ -135,6 +155,15 @@ export function DrawBoard({
   const staleCountRef = useRef(0);
 
   const [textDraft, setTextDraft] = useState<{ x: number; y: number; value: string } | null>(null);
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customPlace, setCustomPlace] = useState("");
+
+  function confirmCustomPlace() {
+    const value = customPlace.replace(/\s+/g, " ").trim().slice(0, MAX_PLACE_LENGTH);
+    if (!value) return;
+    setCustomOpen(false);
+    onPlaceChange(value);
+  }
 
   // ------------------------------------------------------------- 그리기
 
@@ -240,19 +269,37 @@ export function DrawBoard({
 
     strokesRef.current = [...strokesRef.current, { c: color, w: width, p: simplified }];
     setStrokeCount(strokesRef.current.length);
+    pushHistory({ type: "addStroke" });
     markDirty();
   }
 
-  /** 누른 지점에 걸친 획 하나를 지운다. 획 단위라 "덧칠해서 지우기"보다 확실하다 */
+  /**
+   * 누른 지점의 글자나 획 하나를 지운다.
+   *
+   * 글자를 먼저 검사한다. 글자는 획 위에 그려지므로 눈에도 위에 있고, 글자를 지우려고
+   * 눌렀는데 밑에 깔린 선이 지워지면 학생은 지우개가 고장 난 줄 안다.
+   */
   function eraseAt(x: number, y: number) {
-    const strokes = strokesRef.current;
+    const texts = textsRef.current;
+    for (let i = texts.length - 1; i >= 0; i -= 1) {
+      if (!hitsText(texts[i], x, y)) continue;
 
+      pushHistory({ type: "eraseText", index: i, text: texts[i] });
+      textsRef.current = texts.filter((_, index) => index !== i);
+      setTextCount(textsRef.current.length);
+      needsReplaceRef.current = true;
+      markDirty();
+      return;
+    }
+
+    const strokes = strokesRef.current;
     // 위에 그린 것부터 검사한다 — 눈에 보이는 것이 먼저 지워져야 자연스럽다
     for (let i = strokes.length - 1; i >= 0; i -= 1) {
       const stroke = strokes[i];
       const tolerance = STROKE_WIDTHS[stroke.w] / 2 + 14;
       if (!hitsStroke(stroke.p, x, y, tolerance)) continue;
 
+      pushHistory({ type: "eraseStroke", index: i, stroke });
       strokesRef.current = strokes.filter((_, index) => index !== i);
       setStrokeCount(strokesRef.current.length);
       needsReplaceRef.current = true;
@@ -261,22 +308,71 @@ export function DrawBoard({
     }
   }
 
+  /**
+   * 마지막에 한 일을 되돌린다.
+   *
+   * 예전에는 "마지막 획을 뺀다"였다. 그래서 글자를 넣고 되돌리기를 누르면 글자는 그대로
+   * 있고 엉뚱한 선이 사라졌다. 무엇을 했는지 기록해 두고 그것을 되돌린다.
+   */
   function undo() {
-    if (strokesRef.current.length === 0) return;
-    strokesRef.current = strokesRef.current.slice(0, -1);
+    const action = historyRef.current.pop();
+    if (!action) return;
+
+    switch (action.type) {
+      case "addStroke":
+        strokesRef.current = strokesRef.current.slice(0, -1);
+        break;
+      case "addText":
+        textsRef.current = textsRef.current.slice(0, -1);
+        break;
+      case "eraseStroke":
+        // 지웠던 자리에 되돌려 넣는다. 맨 뒤에 붙이면 그리는 순서가 바뀌어 겹침이 달라진다.
+        strokesRef.current = [
+          ...strokesRef.current.slice(0, action.index),
+          action.stroke,
+          ...strokesRef.current.slice(action.index),
+        ];
+        break;
+      case "eraseText":
+        textsRef.current = [
+          ...textsRef.current.slice(0, action.index),
+          action.text,
+          ...textsRef.current.slice(action.index),
+        ];
+        break;
+      case "clear":
+        strokesRef.current = action.strokes;
+        textsRef.current = action.texts;
+        break;
+    }
+
     setStrokeCount(strokesRef.current.length);
+    setTextCount(textsRef.current.length);
     needsReplaceRef.current = true;
-    markDirty();
+    // 되돌리기 자체는 기록하지 않는다 — 그러면 되돌리기를 되돌리는 무한 왕복이 된다
+    dirtyRef.current = true;
+    revisionRef.current += 1;
+    staleCountRef.current = 0;
+    scheduleSave();
+    setHistoryCount(historyRef.current.length);
   }
 
   function clearAll() {
-    if (!confirm("그림을 전부 지울까요? 되돌릴 수 없어요.")) return;
+    if (!confirm("그림을 전부 지울까요? 되돌리기로 한 번은 되살릴 수 있어요.")) return;
+
+    pushHistory({ type: "clear", strokes: strokesRef.current, texts: textsRef.current });
     strokesRef.current = [];
     textsRef.current = [];
     setStrokeCount(0);
     setTextCount(0);
     needsReplaceRef.current = true;
     markDirty();
+  }
+
+  /** 되돌릴 수 있는 일 하나를 쌓는다. 오래된 것부터 버린다 */
+  function pushHistory(action: UndoAction) {
+    historyRef.current = [...historyRef.current, action].slice(-UNDO_LIMIT);
+    setHistoryCount(historyRef.current.length);
   }
 
   function commitText() {
@@ -289,6 +385,7 @@ export function DrawBoard({
       { x: draft.x, y: draft.y, size: TEXT_SIZES[textSize], content: draft.value.trim() },
     ];
     setTextCount(textsRef.current.length);
+    pushHistory({ type: "addText" });
     markDirty();
   }
 
@@ -572,8 +669,71 @@ export function DrawBoard({
               {item}
             </button>
           ))}
+
+          {/*
+            목록에 없는 곳을 그리고 싶은 학생이 반드시 나온다. 열 곳으로 상상을 가두면
+            "고를 게 없어요"에서 5분이 지나간다.
+          */}
+          <button
+            type="button"
+            onClick={() => setCustomOpen(true)}
+            className="block t-subhead border-2 border-dashed border-ink bg-canvas py-8 text-center"
+          >
+            기타
+            <span className="t-caption mt-1 block">직접 적기</span>
+          </button>
         </div>
         <p className="t-caption text-center">한 번 고르면 수업 중에는 바꾸지 않아요.</p>
+
+        {customOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="custom-place-label"
+          >
+            <div className="flex w-full max-w-sm flex-col gap-3 rounded-lg bg-canvas p-5">
+              <label id="custom-place-label" htmlFor="custom-place" className="t-subhead">
+                어디를 그릴 건가요?
+              </label>
+              <p className="t-caption">예) 도서관, 지하철역, 우리 집 옥상</p>
+              <input
+                id="custom-place"
+                autoFocus
+                value={customPlace}
+                maxLength={MAX_PLACE_LENGTH}
+                onChange={(event) => setCustomPlace(event.target.value)}
+                onKeyDown={(event) => {
+                  // 한글을 조합하는 중에 누르는 Enter 는 "글자 확정"이지 제출이 아니다.
+                  // 거르지 않으면 "도서" 까지만 적힌 채로 넘어간다.
+                  if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+                    confirmCustomPlace();
+                  }
+                  if (event.key === "Escape") setCustomOpen(false);
+                }}
+                className="field"
+                placeholder={`${MAX_PLACE_LENGTH}자까지`}
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={confirmCustomPlace}
+                  disabled={!customPlace.trim()}
+                  className="pill pill-primary flex-1"
+                >
+                  이걸로 할래요
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomOpen(false)}
+                  className="pill pill-secondary flex-1"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
     );
   }
@@ -653,7 +813,7 @@ export function DrawBoard({
           <button
             type="button"
             onClick={undo}
-            disabled={strokeCount === 0 || disabled}
+            disabled={historyCount === 0 || disabled}
             className="pill pill-secondary t-body-sm"
           >
             되돌리기
@@ -661,7 +821,7 @@ export function DrawBoard({
           <button
             type="button"
             onClick={clearAll}
-            disabled={disabled}
+            disabled={disabled || (strokeCount === 0 && textCount === 0)}
             className="pill pill-secondary t-body-sm"
           >
             전부 지우기
@@ -737,9 +897,9 @@ export function DrawBoard({
 
         <p className="t-caption">
           {tool === "eraser"
-            ? "지우고 싶은 선을 톡 누르세요. 선 하나가 통째로 지워져요."
+            ? "지우고 싶은 선이나 글자를 톡 누르세요. 하나가 통째로 지워져요."
             : tool === "text"
-              ? "글자를 넣고 싶은 자리를 톡 누르세요."
+              ? "글자를 넣고 싶은 자리를 톡 누르세요. 지우개로 다시 지울 수 있어요."
               : `되돌리기는 ${UNDO_LIMIT}번까지 눌러도 됩니다.`}
         </p>
       </div>
@@ -763,7 +923,8 @@ export function DrawBoard({
                 setTextDraft((draft) => (draft ? { ...draft, value: event.target.value } : draft))
               }
               onKeyDown={(event) => {
-                if (event.key === "Enter") commitText();
+                // 한글 조합 중의 Enter 는 글자 확정이다 (위 장소 입력과 같은 이유)
+                if (event.key === "Enter" && !event.nativeEvent.isComposing) commitText();
                 if (event.key === "Escape") setTextDraft(null);
               }}
               className="field"
@@ -865,4 +1026,43 @@ function distanceToSegment(
   // 선분 위로 투영한 위치를 0~1 로 자른다 — 선분 밖이면 끝점까지의 거리가 된다
   const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lengthSquared));
   return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
+/**
+ * 글자의 실제 폭을 잰다.
+ *
+ * 글자 수 × 크기 × 0.6 으로 어림하면 안 된다. 그 값은 영문 기준이고, 한글은 한 글자가
+ * 거의 정사각형이라 실제 폭의 60% 밖에 안 된다 — "자동 배달 로봇"의 오른쪽 절반을
+ * 눌러도 안 지워진다. 그리는 데 쓰는 것과 같은 폰트로 직접 잰다.
+ */
+let measureCanvas: CanvasRenderingContext2D | null = null;
+
+function measureTextWidth(text: TextItem): number {
+  if (!measureCanvas) {
+    measureCanvas = document.createElement("canvas").getContext("2d");
+  }
+  // 못 재면 넉넉하게 잡는다. 좁게 잡아 안 지워지는 쪽이 훨씬 답답하다.
+  if (!measureCanvas) return text.content.length * text.size;
+
+  // artifact-canvas.tsx 의 drawArtifact 와 같은 폰트여야 한다
+  measureCanvas.font = `bold ${text.size}px sans-serif`;
+  return measureCanvas.measureText(text.content).width;
+}
+
+/**
+ * 누른 지점이 이 글자 위에 있는가.
+ *
+ * 캔버스에 그린 글자는 클릭 판정이 없어서 직접 상자를 계산한다. 사방에 여유를 조금 둬서
+ * 살짝 빗나가도 지워지게 한다 — 지우려고 세 번 누르는 것보다 한 번에 지워지는 쪽이 낫다.
+ */
+function hitsText(text: TextItem, x: number, y: number): boolean {
+  const width = measureTextWidth(text);
+  const padding = 12;
+  return (
+    x >= text.x - padding &&
+    x <= text.x + width + padding &&
+    // 캔버스에 textBaseline="top" 으로 그리므로 y 가 글자의 위쪽이다
+    y >= text.y - padding &&
+    y <= text.y + text.size + padding
+  );
 }

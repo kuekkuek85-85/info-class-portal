@@ -33,6 +33,9 @@ import { isTrait, type Stroke, type TextItem } from "@/lib/types";
 /** 저장 방식. append 는 새로 그은 획만, replace 는 통째로 (지우개·되돌리기 뒤) */
 type SaveMode = "append" | "replace";
 
+/** 직접 적는 장소 이름의 길이 상한. 갤러리 카드 제목에 그대로 들어간다 */
+const MAX_PLACE_LENGTH = 12;
+
 interface SaveBody {
   mode?: SaveMode;
   strokes?: unknown;
@@ -119,12 +122,15 @@ export async function POST(request: Request) {
     const patch: Record<string, unknown> = {};
 
     if (typeof body.place === "string") {
-      // 목록에 없는 장소는 받지 않는다. 자유 입력이면 갤러리에 무엇이든 적어 넣을 수 있다.
-      const places = activity.places ?? [];
-      if (body.place && !places.includes(body.place)) {
-        return fail("invalid_input", "그 장소는 목록에 없어요.");
-      }
-      patch.place = body.place;
+      /*
+       * 목록에 없는 장소도 받는다 — 학생이 직접 적을 수 있어야 상상이 열 곳에 갇히지 않는다.
+       *
+       * 다만 이 값은 갤러리에 "2040년의 ○○○"으로 그대로 뜬다. 자유 입력은 아무 말이나
+       * 적어 넣을 자리가 되므로, 길이를 짧게 자르고 줄바꿈을 막는다. 그래도 남는 위험은
+       * 실명 표시와 교사 숨김으로 관리한다 (PRD 3.5).
+       */
+      const place = body.place.replace(/\s+/g, " ").trim().slice(0, MAX_PLACE_LENGTH);
+      patch.place = place;
     }
 
     if (typeof body.year === "number" && Number.isFinite(body.year)) {
