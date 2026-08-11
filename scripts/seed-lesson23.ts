@@ -201,11 +201,19 @@ const QUIZ: QuizContent = {
       nowText:
         "지금은 앱에서 지문 인증으로 몇 초 만에 보낸다. 빨라졌지만 그만큼 안전장치도 함께 붙었다.",
       stickers: ["보안성", "가속화"],
+      /*
+       * 이 사진만 자유 이용 저작물이 아니다 (나머지 셋은 위키미디어 공용).
+       * IBK기업은행 블로그의 전표 작성 안내 이미지이고, 수업 목적으로 출처를 밝혀 쓴다.
+       *
+       * 저장소에 파일을 복사해 두지 않고 원본 주소를 그대로 가리킨다 — 이 저장소는
+       * 공개되어 있어서, 남의 저작물을 복사해 두면 수업이 아니라 재배포가 된다.
+       */
       media: {
         kind: "image",
-        url: "https://upload.wikimedia.org/wikipedia/commons/6/69/Post_Office_Savings_Bank_passbook.jpg",
-        caption: "종이 통장. 창구에 가야 입금·출금이 이 종이에 적혔다",
-        credit: "Wainuiomartian, 위키미디어 공용, CC BY-SA 4.0",
+        url: "https://t1.daumcdn.net/cfile/tistory/23103A485350B20332",
+        caption:
+          "은행 창구에서 쓰던 무통장 입금 전표. 계좌번호·금액·받는 사람·보내는 사람을 손으로 적어 창구에 냈다",
+        credit: "IBK기업은행 블로그 (blog.ibk.co.kr/1173)",
       },
     },
   ],
