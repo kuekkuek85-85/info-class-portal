@@ -48,6 +48,18 @@ interface SessionRow {
   quizIndex?: number;
   quizRevealed?: boolean;
   activity?: { activityId: string; worksheet?: { key: string }[] };
+  /** 단계 버튼을 만들지 말지 판단하는 데만 쓴다 */
+  progress?: SessionContent;
+  assessment?: SessionContent;
+  video?: SessionContent;
+}
+
+interface SessionContent {
+  heading?: string;
+  body?: string;
+  url?: string;
+  cards?: unknown[];
+  tabs?: unknown[];
 }
 
 interface StudentRow {
@@ -463,12 +475,39 @@ function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
   if (phase === "worksheet" || phase === "gallery") {
     return (session.activity?.worksheet?.length ?? 0) > 0;
   }
+  /*
+   * 내용을 채워 넣은 차시에만 버튼을 만든다.
+   *
+   * 진도·평가 안내는 1차시(오리엔테이션)에서만 쓴다. 2차시는 퀴즈와 그리기로 채워져
+   * 있어서 이 단계로 넘기면 학생 28명이 동시에 빈 화면을 본다. 영상도 마찬가지로,
+   * 주소가 없는 차시(3차시)에서는 "영상 시청 중"만 뜨고 볼 것이 없다.
+   */
+  if (phase === "progress") return hasContent(session.progress);
+  if (phase === "assessment") return hasContent(session.assessment);
+  if (phase === "video") return hasContent(session.video);
   return true;
+}
+
+/** 학생에게 보여 줄 것이 하나라도 있는가 */
+function hasContent(content: SessionContent | undefined): boolean {
+  if (!content) return false;
+  return Boolean(
+    content.heading?.trim() ||
+      content.body?.trim() ||
+      content.url?.trim() ||
+      content.cards?.length ||
+      content.tabs?.length,
+  );
 }
 
 function neighbourPhase(session: SessionRow, step: 1 | -1): LessonPhase {
   const usable = LESSON_PHASES.filter((item) => availablePhase(session, item));
   const at = usable.indexOf(session.phase);
+
+  // 지금 단계가 목록에 없다 — 차시 내용이 바뀌어 그 단계가 사라진 경우다.
+  // 이럴 때 계산을 그대로 돌리면 엉뚱한 곳으로 뛴다. 맨 앞으로 되돌린다.
+  if (at < 0) return usable[0];
+
   const next = Math.min(Math.max(at + step, 0), usable.length - 1);
   return usable[next];
 }

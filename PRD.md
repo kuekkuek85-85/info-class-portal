@@ -243,9 +243,22 @@ Route Handler(서버)를 거치고, 서버만 Firebase Admin SDK를 쓴다. 그�
 | `done` 마침 | 정리 안내 |
 
 **차시에 없는 단계는 교사 화면에 버튼이 나오지 않는다.** 단계가 11개로 늘면서 잘못 누르기
-쉬워졌는데, 한 번 잘못 누르면 28명 화면이 동시에 빈 화면이 된다. 퀴즈가 없는 차시에는
-퀴즈 버튼이, 활동지가 없는 차시(2차시)에는 활동지·감상 버튼이 아예 없다.
+쉬워졌는데, 한 번 잘못 누르면 28명 화면이 동시에 빈 화면이 된다.
 
+판단 기준은 **세션 스냅샷에 내용이 들어 있는가** 하나다.
+
+| 단계 | 버튼이 나오는 조건 |
+|---|---|
+| `mood` | 감정 체크가 켜진 차시 |
+| `quiz` | 퀴즈 문항이 있는 차시 |
+| `progress` · `assessment` · `video` | 그 칸에 제목·본문·주소·카드·탭 중 하나라도 있는 차시 |
+| `draw` | 그리기 활동이 붙은 차시 |
+| `worksheet` · `gallery` | 활동지 질문이 있는 차시 |
+
+진도·평가 안내는 1차시(오리엔테이션)에서만 쓴다. 2차시는 퀴즈와 그리기로 채워져 있어
+그 칸이 비어 있고, 그래서 버튼도 나오지 않는다.
+
+**1차시** waiting → mood → progress → assessment → video → reflection → done
 **2차시** waiting → mood → quiz → video → draw → reflection → done
 **3차시** waiting → mood → draw → worksheet → gallery → reflection → done
 
