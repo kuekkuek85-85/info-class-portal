@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 /**
  * 타임머신 퀴즈 — 학생 화면.
  *
@@ -17,6 +19,8 @@ export interface QuizState {
   answerIndex: number | null;
   nowText: string;
   stickers: string[];
+  /** 사진은 주소째 오고, 영상은 종류만 온다 (재생은 전자칠판에서) */
+  media: { kind: "image" | "video"; url: string; caption: string; credit: string } | null;
   earned: string[];
 }
 
@@ -95,6 +99,12 @@ export function QuizView({ question, state, picked, onPick, saving, disabled }: 
         <p className="t-body-sm text-center">골랐어요. 다 같이 정답을 볼 때까지 기다려 주세요.</p>
       )}
 
+      {/*
+        정답과 함께 나오는 자료.
+        말로만 "옛날엔 삐삐로 연락했다"고 하면 중1에게는 아무 그림도 안 그려진다.
+      */}
+      {state.revealed && state.media && <MediaFigure media={state.media} />}
+
       {/* 정답 공개 — 왜 그렇게 바뀌었는지가 본론이다 */}
       {state.revealed && state.nowText && (
         <div className="block bg-cream">
@@ -133,5 +143,44 @@ export function QuizView({ question, state, picked, onPick, saving, disabled }: 
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * 정답과 함께 나오는 자료.
+ *
+ * 사진이 안 뜨는 경우를 반드시 처리한다. 학교망이 외부 주소를 막거나 잠깐 느릴 때
+ * 아무 처리가 없으면 깨진 아이콘만 남고, 28명이 동시에 "선생님 사진 안 나와요"를 외친다.
+ * 그때도 설명 문구는 읽을 수 있어야 수업이 이어진다.
+ */
+function MediaFigure({ media }: { media: NonNullable<QuizState["media"]> }) {
+  const [failed, setFailed] = useState(false);
+  const showImage = media.kind === "image" && !failed;
+
+  return (
+    <figure className="flex flex-col gap-2">
+      {showImage ? (
+        // next/image 를 쓰지 않는다 — 외부 도메인이라 설정이 필요하고, 최적화 프록시를
+        // 거치면 학교망에서 한 단계 더 실패할 자리가 생긴다. 그냥 원본을 띄운다.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={media.url}
+          alt={media.caption}
+          loading="lazy"
+          onError={() => setFailed(true)}
+          className="w-full rounded-lg border border-line bg-surface object-contain"
+        />
+      ) : (
+        <div className="block bg-navy text-center text-inverse-ink">
+          <p className="t-subhead">
+            {media.kind === "video" ? "📺 앞 화면을 봐 주세요" : "🖼 앞 화면으로 함께 볼게요"}
+          </p>
+        </div>
+      )}
+      <figcaption className="t-body-sm">
+        {media.caption}
+        {media.credit && <span className="t-caption mt-1 block">출처 · {media.credit}</span>}
+      </figcaption>
+    </figure>
   );
 }

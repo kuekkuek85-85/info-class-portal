@@ -1,4 +1,4 @@
-import type { ClassSession, Trait } from "./types";
+import type { ClassSession, QuizMedia, Trait } from "./types";
 
 /**
  * 퀴즈 진행 상태를 세션에서 읽어 학생 화면이 쓸 형태로 만든다.
@@ -18,6 +18,13 @@ export interface QuizView {
   answerIndex: number | null;
   nowText: string;
   stickers: Trait[];
+  /**
+   * 공개 뒤에만 내려간다.
+   *
+   * 영상은 주소를 빼고 종류만 알려 준다 — 학생 태블릿에서 영상이 열릴 수 있으면
+   * 30명이 각자 다른 지점을 보게 된다. 재생은 전자칠판에서만 한다 (PRD 3.2).
+   */
+  media: (Omit<QuizMedia, "url"> & { url: string }) | null;
   /**
    * 지금까지 모은 특성 스티커 (누적).
    *
@@ -57,8 +64,24 @@ export function quizView(session: ClassSession): QuizView | null {
     answerIndex: revealed ? current.answerIndex : null,
     nowText: revealed ? current.nowText : "",
     stickers: revealed ? (current.stickers ?? []) : [],
+    media: revealed ? studentMedia(current.media) : null,
     earned,
   };
+}
+
+/**
+ * 학생에게 내려보낼 자료.
+ *
+ * 사진은 주소째 보낸다 — 태블릿에서 봐도 흩어질 일이 없고, 오히려 가까이 보는 편이 낫다.
+ * 영상은 **주소를 지운다.** 종류만 알려 주면 화면은 "앞을 보라"고 안내할 수 있고,
+ * 주소가 없으니 태블릿에서 열리는 경로 자체가 없다.
+ */
+function studentMedia(media: QuizMedia | undefined): QuizView["media"] {
+  if (!media?.url) return null;
+  if (media.kind === "video") {
+    return { kind: "video", url: "", caption: media.caption, credit: media.credit };
+  }
+  return { kind: "image", url: media.url, caption: media.caption, credit: media.credit };
 }
 
 /** 학생에게 내려보내도 되는 문항 목록 — 정답과 해설을 뺀 것 */

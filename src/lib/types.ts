@@ -120,6 +120,24 @@ export function isTrait(value: string): value is Trait {
   return (TRAITS as readonly string[]).includes(value);
 }
 
+/**
+ * 정답을 공개할 때 함께 띄우는 자료.
+ *
+ * 말로만 "옛날엔 삐삐로 연락했다"고 하면 중1에게는 아무 그림도 안 그려진다.
+ * 실물을 한 번 보여주는 쪽이 설명 세 문장보다 낫다.
+ *
+ * 사진은 학생 태블릿과 전자칠판 양쪽에 뜨고, **영상은 전자칠판에만** 뜬다.
+ * 영상을 태블릿에 내려보내면 30명이 각자 다른 지점을 보게 된다 (PRD 3.2).
+ */
+export interface QuizMedia {
+  kind: "image" | "video";
+  url: string;
+  /** 화면에 함께 적을 한 줄 설명 */
+  caption: string;
+  /** 출처·라이선스 표기. 남의 사진을 쓰면 밝히는 것이 수업에서 가르치는 태도와 같다 */
+  credit: string;
+}
+
 export interface QuizQuestion {
   /** "1996년, 처음 가는 곳은 어떻게 찾아갔을까?" */
   prompt: string;
@@ -130,6 +148,8 @@ export interface QuizQuestion {
   nowText: string;
   /** 이 문항이 가르치는 특성 태그 */
   stickers: Trait[];
+  /** 정답 공개 때 함께 띄울 사진·영상 */
+  media?: QuizMedia;
 }
 
 export interface QuizContent {

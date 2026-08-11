@@ -38,7 +38,16 @@ interface SessionRow {
   phase: LessonPhase;
   video?: Content;
   reflectionQuestions?: string[];
-  quiz?: { questions: { prompt: string; choices: string[]; answerIndex: number; nowText: string; stickers: string[] }[] };
+  quiz?: {
+    questions: {
+      prompt: string;
+      choices: string[];
+      answerIndex: number;
+      nowText: string;
+      stickers: string[];
+      media?: { kind: "image" | "video"; url: string; caption: string; credit: string };
+    }[];
+  };
   quizIndex?: number;
   quizRevealed?: boolean;
 }
@@ -202,6 +211,12 @@ function QuizBoard({ session }: { session: SessionRow }) {
         })}
       </ul>
 
+      {/*
+        정답과 함께 나오는 자료. 영상은 여기서만 재생한다 — 학생 태블릿에는 주소를
+        아예 내려보내지 않아서, 각자 다른 지점을 보는 일이 생기지 않는다 (PRD 3.2).
+      */}
+      {revealed && question.media && <BoardMedia media={question.media} />}
+
       {revealed && question.nowText && (
         <div className="rounded-2xl bg-cream px-6 py-5">
           <p className="text-lg font-semibold">그럼 지금은?</p>
@@ -223,5 +238,62 @@ function QuizBoard({ session }: { session: SessionRow }) {
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * 전자칠판에 띄우는 정답 자료.
+ *
+ * 사진이 안 뜨거나 영상이 임베드를 막는 경우를 함께 처리한다. 수업 중에 화면이 비면
+ * 되돌릴 방법이 있어야 한다 — 사진은 원본 주소를, 영상은 유튜브 링크를 남겨 둔다.
+ */
+function BoardMedia({
+  media,
+}: {
+  media: { kind: "image" | "video"; url: string; caption: string; credit: string };
+}) {
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <figure className="flex flex-col gap-3">
+      {media.kind === "image" ? (
+        failed ? (
+          <p className="rounded-2xl border border-line bg-card px-6 py-8 text-center text-lg text-muted">
+            사진을 불러오지 못했습니다. 아래 &ldquo;원본 열기&rdquo;로 띄워 주세요.
+          </p>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={media.url}
+            alt={media.caption}
+            onError={() => setFailed(true)}
+            className="max-h-[52vh] w-full rounded-2xl border border-line bg-surface object-contain"
+          />
+        )
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-line bg-black">
+          <iframe
+            src={toEmbedUrl(media.url)}
+            title={media.caption}
+            className="aspect-video w-full"
+            allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      )}
+
+      <figcaption className="flex flex-wrap items-center gap-3 text-lg">
+        <span>{media.caption}</span>
+        <a
+          href={media.url}
+          target="_blank"
+          rel="noreferrer"
+          className="rounded-lg border border-line px-3 py-1 text-sm"
+        >
+          {media.kind === "video" ? "유튜브에서 열기" : "원본 열기"}
+        </a>
+        {media.credit && <span className="text-sm text-muted">출처 · {media.credit}</span>}
+      </figcaption>
+    </figure>
   );
 }

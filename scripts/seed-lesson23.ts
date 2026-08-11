@@ -126,6 +126,16 @@ const ACTIVITY_LESSON3: ActivityContent = {
 
 // -------------------------------------------------------------- 2차시 퀴즈
 
+/*
+ * 정답을 공개할 때 함께 띄우는 자료.
+ *
+ * 사진은 모두 위키미디어 공용의 자유 이용 저작물이다. 수업에서 남의 사진을 쓰면서
+ * 출처를 안 밝히면, 정작 수행평가1에서 학생에게 출처 밝히기를 요구할 명분이 없다.
+ * 그래서 credit 을 화면에 함께 띄운다.
+ *
+ * 3번만 영상이다. 지도·카세트·통장은 실물 사진 한 장으로 충분하지만, 삐삐는 중1이
+ * 실물을 본 적조차 없어서 "어떻게 쓰는 물건인지"를 봐야 이해가 된다.
+ */
 const QUIZ: QuizContent = {
   questions: [
     {
@@ -139,6 +149,12 @@ const QUIZ: QuizContent = {
       nowText:
         "지금은 내 위치를 알고 길을 알려 주는 내비가 있다. 나에게 맞춘 정보가 실시간으로 오는 것이다.",
       stickers: ["정보화", "개인화"],
+      media: {
+        kind: "image",
+        url: "https://upload.wikimedia.org/wikipedia/commons/6/62/Exploring_new_destinations_with_a_map_and_vintage_car_at_sunset.jpg",
+        caption: "종이 지도를 펴 놓고 길을 찾는 모습",
+        credit: "Nenad Stojković, 위키미디어 공용, CC BY 2.0",
+      },
     },
     {
       prompt: "1996년, 좋아하는 노래는 어떻게 들었을까?",
@@ -150,6 +166,12 @@ const QUIZ: QuizContent = {
       answerIndex: 1,
       nowText: "지금은 내 취향을 학습한 스트리밍이 다음 곡까지 골라 준다.",
       stickers: ["개인화", "연결성"],
+      media: {
+        kind: "image",
+        url: "https://upload.wikimedia.org/wikipedia/commons/5/5b/AIWA_TPR-950_-_4_Band_Radio_Cassette_Recorder_%28edited_and_cropped%29.jpg",
+        caption: "라디오와 카세트가 하나로 붙어 있다. 노래가 나오면 녹음 버튼을 눌렀다",
+        credit: "Brad.K · Pittigrilli, 위키미디어 공용, CC BY 2.0",
+      },
     },
     {
       prompt: "1996년, 친구에게 급한 연락은 어떻게 했을까?",
@@ -161,6 +183,12 @@ const QUIZ: QuizContent = {
       answerIndex: 1,
       nowText: "지금은 어디에 있든 즉시 닿는다. 메시지도, 통화도, 영상까지도.",
       stickers: ["연결성", "가속화"],
+      media: {
+        kind: "video",
+        url: "https://www.youtube.com/watch?v=Y4XH-RSXDus",
+        caption: "숫자로 사랑 고백했던 90년대 인싸템 삐삐 — 486은 '사랑해'",
+        credit: "크랩 (KBS)",
+      },
     },
     {
       prompt: "1996년, 다른 도시에 사는 가족에게 용돈을 보내려면?",
@@ -173,6 +201,12 @@ const QUIZ: QuizContent = {
       nowText:
         "지금은 앱에서 지문 인증으로 몇 초 만에 보낸다. 빨라졌지만 그만큼 안전장치도 함께 붙었다.",
       stickers: ["보안성", "가속화"],
+      media: {
+        kind: "image",
+        url: "https://upload.wikimedia.org/wikipedia/commons/6/69/Post_Office_Savings_Bank_passbook.jpg",
+        caption: "종이 통장. 창구에 가야 입금·출금이 이 종이에 적혔다",
+        credit: "Wainuiomartian, 위키미디어 공용, CC BY-SA 4.0",
+      },
     },
   ],
 };
@@ -234,6 +268,51 @@ const SEEDS: PlanSeed[] = [
 
 // ------------------------------------------------------------------ 실행
 
+/**
+ * `--force` 를 붙이면 이미 있는 차시의 내용도 갱신한다.
+ *
+ * 기본값이 "건너뛰기"인 이유는 교사가 화면에서 고쳐 둔 것을 스크립트 재실행이 조용히
+ * 되돌리면 안 되기 때문이다. 다만 퀴즈·활동처럼 화면에 입력칸이 없는 것을 고치려면
+ * 이 길밖에 없어서, 명시적으로 요구할 때만 열어 둔다.
+ */
+const FORCE = process.argv.includes("--force");
+
+/** 아직 시작하지 않은 세션에만 스냅샷을 다시 복사한다 (PRD 5.1) */
+async function syncScheduled(planId: string, seed: PlanSeed): Promise<number> {
+  const snap = await db
+    .collection("classSessions")
+    .where("lessonPlanId", "==", planId)
+    .where("status", "==", "scheduled")
+    .get();
+
+  if (snap.empty) return 0;
+
+  const batch = db.batch();
+  for (const doc of snap.docs) {
+    // 세션이 들고 있는 진행 상태(phase·code 등)는 건드리지 않는다
+    batch.set(
+      doc.ref,
+      {
+        moodCheckEnabled: seed.moodCheckEnabled,
+        game: seed.game,
+        gameExplainer: seed.gameExplainer,
+        progress: seed.progress,
+        assessment: seed.assessment,
+        video: seed.video,
+        reflectionQuestions: seed.reflectionQuestions,
+        reflectionPublic: seed.reflectionPublic,
+        quiz: seed.quiz,
+        activity: seed.activity,
+        lessonNo: seed.lessonNo,
+        title: seed.title,
+      },
+      { merge: true },
+    );
+  }
+  await batch.commit();
+  return snap.size;
+}
+
 async function main(): Promise<void> {
   for (const seed of SEEDS) {
     const existing = await db
@@ -241,16 +320,29 @@ async function main(): Promise<void> {
       .where("lessonNo", "==", seed.lessonNo)
       .get();
 
-    if (!existing.empty) {
+    if (!existing.empty && !FORCE) {
       console.warn(
         `⚠ ${seed.lessonNo}차시가 이미 있습니다 (${existing.docs.length}개) — 건너뜁니다.\n` +
-          `  덮어쓰려면 /teacher/lessons 에서 지운 뒤 다시 실행하세요. ` +
-          `이미 시작한 수업의 스냅샷은 그대로 보존됩니다.`,
+          `  내용을 갱신하려면 --force 를 붙여 다시 실행하세요.\n` +
+          `  (이미 시작한 수업의 스냅샷은 --force 를 붙여도 그대로 보존됩니다)`,
       );
       continue;
     }
 
     const now = Date.now();
+
+    if (!existing.empty) {
+      for (const doc of existing.docs) {
+        await doc.ref.set({ ...seed, updatedAt: now }, { merge: true });
+        const synced = await syncScheduled(doc.id, seed);
+        console.log(
+          `↻ ${seed.lessonNo}차시 갱신 — ${seed.title} (${doc.id})` +
+            `\n   아직 시작하지 않은 수업 ${synced}개에 반영`,
+        );
+      }
+      continue;
+    }
+
     const ref = await db.collection(LESSON_PLANS).add({ ...seed, createdAt: now, updatedAt: now });
     console.log(`✓ ${seed.lessonNo}차시 등록 — ${seed.title} (${ref.id})`);
   }
