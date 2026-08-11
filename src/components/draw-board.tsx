@@ -127,7 +127,6 @@ export function DrawBoard({
   const [penOnly, setPenOnly] = useState(false);
   /** 펜 전용 모드 때문에 손가락 입력이 막혔다 — 왜 안 그려지는지 알려 주기 위해 */
   const [penOnlyBlocked, setPenOnlyBlocked] = useState(false);
-  const [toolsOpen, setToolsOpen] = useState(true);
 
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [sizeWarn, setSizeWarn] = useState(false);
@@ -797,140 +796,151 @@ export function DrawBoard({
         </p>
       )}
 
-      <div className="overflow-hidden rounded-lg border-2 border-line bg-white">
-        <canvas
-          ref={canvasRef}
-          width={CANVAS_WIDTH}
-          height={CANVAS_HEIGHT}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          // 손가락으로 그을 때 화면이 함께 스크롤되면 그림이 그어지지 않는다
-          style={{ touchAction: "none" }}
-          className="h-auto w-full"
-        />
-      </div>
+      {/*
+        캔버스와 도구를 나란히 둔다.
+        아래에 쌓으면 노트북·태블릿에서 도구가 화면 밖으로 밀려나 스크롤해야 보인다.
+        30분 수업에서 "지우개가 어디 있어요"로 몇 번을 부르게 된다.
 
-      {/* 폰 세로 화면에서는 도구가 화면을 다 먹는다. 접을 수 있게 둔다 */}
-      <button
-        type="button"
-        onClick={() => setToolsOpen((open) => !open)}
-        className="pill pill-secondary t-body-sm self-start sm:hidden"
-      >
-        {toolsOpen ? "도구 접기" : "도구 펴기"}
-      </button>
-
-      <div className={`flex-col gap-3 ${toolsOpen ? "flex" : "hidden sm:flex"}`}>
-        <div className="flex flex-wrap gap-2">
-          <ToolButton active={tool === "pen"} onClick={() => setTool("pen")} label="펜" />
-          <ToolButton active={tool === "eraser"} onClick={() => setTool("eraser")} label="지우개" />
-          <ToolButton active={tool === "text"} onClick={() => setTool("text")} label="글자" />
-          <button
-            type="button"
-            onClick={undo}
-            disabled={historyCount === 0 || disabled}
-            className="pill pill-secondary t-body-sm"
-          >
-            되돌리기
-          </button>
-          <button
-            type="button"
-            onClick={clearAll}
-            disabled={disabled || (strokeCount === 0 && textCount === 0)}
-            className="pill pill-secondary t-body-sm"
-          >
-            전부 지우기
-          </button>
+        캔버스 높이를 화면 기준으로 묶어 두는 것이 핵심이다. 폭에만 맞추면 세로가
+        그만큼 길어져(4:3) 또 도구가 밀려난다.
+      */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
+        <div className="min-w-0 flex-1 overflow-hidden rounded-lg border-2 border-line bg-white">
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            // 손가락으로 그을 때 화면이 함께 스크롤되면 그림이 그어지지 않는다
+            style={{ touchAction: "none" }}
+            className="mx-auto block max-h-[46vh] w-auto max-w-full sm:max-h-[52vh] lg:max-h-[68vh]"
+          />
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {PALETTE.map((hex, index) => (
-            <button
-              key={hex}
-              type="button"
-              aria-label={`색 ${index + 1}`}
-              aria-pressed={color === index}
-              onClick={() => {
-                setColor(index);
-                setTool("pen");
-              }}
-              style={{ background: hex }}
-              className={`h-10 w-10 rounded-full border-2 ${
-                color === index ? "border-ink ring-2 ring-ink" : "border-line"
-              }`}
+        <div className="flex shrink-0 flex-col gap-3 lg:w-64">
+          <div className="grid grid-cols-3 gap-2">
+            <ToolButton active={tool === "pen"} onClick={() => setTool("pen")} label="펜" />
+            <ToolButton
+              active={tool === "eraser"}
+              onClick={() => setTool("eraser")}
+              label="지우개"
             />
-          ))}
-        </div>
+            <ToolButton active={tool === "text"} onClick={() => setTool("text")} label="글자" />
+          </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="t-caption">굵기</span>
-          {STROKE_WIDTHS.map((value, index) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={width === index}
-              onClick={() => setWidth(index)}
-              className={`flex h-10 w-12 items-center justify-center rounded-lg border-2 ${
-                width === index ? "border-ink bg-surface" : "border-line"
-              }`}
-            >
-              <span
-                className="rounded-full bg-ink"
-                style={{ width: 4 + index * 6, height: 4 + index * 6 }}
+          {/* 색은 6칸씩 두 줄. 폰에서도 한눈에 들어오고 세로를 적게 먹는다 */}
+          <div className="grid grid-cols-6 gap-2">
+            {PALETTE.map((hex, index) => (
+              <button
+                key={hex}
+                type="button"
+                aria-label={`색 ${index + 1}`}
+                aria-pressed={color === index}
+                onClick={() => {
+                  setColor(index);
+                  setTool("pen");
+                }}
+                style={{ background: hex }}
+                className={`aspect-square w-full rounded-full border-2 ${
+                  color === index ? "border-ink ring-2 ring-ink" : "border-line"
+                }`}
               />
-            </button>
-          ))}
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="t-caption w-9 shrink-0">굵기</span>
+            {STROKE_WIDTHS.map((value, index) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={width === index}
+                onClick={() => setWidth(index)}
+                className={`flex h-10 flex-1 items-center justify-center rounded-lg border-2 ${
+                  width === index ? "border-ink bg-surface" : "border-line"
+                }`}
+              >
+                <span
+                  className="rounded-full bg-ink"
+                  style={{ width: 4 + index * 6, height: 4 + index * 6 }}
+                />
+              </button>
+            ))}
+          </div>
 
           {tool === "text" && (
-            <>
-              <span className="t-caption ml-2">글자 크기</span>
+            <div className="flex items-center gap-2">
+              <span className="t-caption w-9 shrink-0">글자</span>
               {TEXT_SIZES.map((value, index) => (
                 <button
                   key={value}
                   type="button"
                   aria-pressed={textSize === index}
                   onClick={() => setTextSize(index)}
-                  className={`rounded-lg border-2 px-3 py-1.5 ${
+                  className={`h-10 flex-1 rounded-lg border-2 text-sm ${
                     textSize === index ? "border-ink bg-surface" : "border-line"
                   }`}
                 >
                   {["작게", "보통", "크게"][index]}
                 </button>
               ))}
-            </>
+            </div>
           )}
-        </div>
 
-        <label className="flex items-center gap-2 t-body-sm">
-          <input
-            type="checkbox"
-            checked={penOnly}
-            onChange={(event) => {
-              setPenOnly(event.target.checked);
-              setPenOnlyBlocked(false);
-            }}
-          />
-          펜으로만 그리기 (손바닥이 닿아도 안 그려져요)
-        </label>
+          {/* 여기도 .pill 을 쓰지 않는다 — 좁은 칸에서 글자가 접힌다 (ToolButton 주석 참조) */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={undo}
+              disabled={historyCount === 0 || disabled}
+              className="h-11 rounded-full border-2 border-line bg-canvas px-1 text-base font-semibold disabled:opacity-35"
+            >
+              되돌리기
+            </button>
+            <button
+              type="button"
+              onClick={clearAll}
+              disabled={disabled || (strokeCount === 0 && textCount === 0)}
+              className="h-11 rounded-full border-2 border-line bg-canvas px-1 text-base font-semibold disabled:opacity-35"
+            >
+              전부 지우기
+            </button>
+          </div>
+
+          <label className="flex items-start gap-2 t-body-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={penOnly}
+              onChange={(event) => {
+                setPenOnly(event.target.checked);
+                setPenOnlyBlocked(false);
+              }}
+            />
+            <span>펜으로만 그리기 (손바닥이 닿아도 안 그려져요)</span>
+          </label>
 
         {/*
           켜 둔 채 손가락으로 그으면 아무 일도 안 일어난다. 왜 안 되는지 말해 주지 않으면
           학생은 태블릿이 고장 난 줄 안다.
         */}
-        {penOnlyBlocked && (
-          <p className="rounded-md bg-cream px-4 py-3 t-body-sm">
-            펜으로만 그리기가 켜져 있어요. 손가락으로 그리려면 위 체크를 꺼 주세요.
-          </p>
-        )}
+          {penOnlyBlocked && (
+            <p className="rounded-md bg-cream px-3 py-2 t-body-sm">
+              펜으로만 그리기가 켜져 있어요. 손가락으로 그리려면 위 체크를 꺼 주세요.
+            </p>
+          )}
 
-        <p className="t-caption">
-          {tool === "eraser"
-            ? "지우고 싶은 선이나 글자를 톡 누르세요. 하나가 통째로 지워져요."
-            : tool === "text"
-              ? "글자를 넣고 싶은 자리를 톡 누르세요. 지우개로 다시 지울 수 있어요."
-              : `되돌리기는 ${UNDO_LIMIT}번까지 눌러도 됩니다.`}
-        </p>
+          <p className="t-caption">
+            {tool === "eraser"
+              ? "지우고 싶은 선이나 글자를 톡 누르세요. 하나가 통째로 지워져요."
+              : tool === "text"
+                ? "글자를 넣고 싶은 자리를 톡 누르세요. 지우개로 다시 지울 수 있어요."
+                : `되돌리기는 ${UNDO_LIMIT}번까지 눌러도 됩니다.`}
+          </p>
+        </div>
       </div>
 
       {textDraft && (
@@ -1004,6 +1014,13 @@ function sendFinalSave(strokes: Stroke[], texts: TextItem[], rev: number): void 
   }).catch(() => undefined);
 }
 
+/**
+ * 도구 열 전용 버튼.
+ *
+ * `.pill` 을 쓰지 않는다. 그 클래스는 좌우 여백이 24px씩이라 좁은 열(약 80px 칸)에서
+ * "지우개"가 두 줄로 접히고, 글자 크기도 1.125rem 으로 고정돼 있어 압축이 안 된다.
+ * 게다가 `.pill` 은 Tailwind 레이어 밖에 있어서 유틸리티로 덮어쓸 수도 없다.
+ */
 function ToolButton({
   active,
   onClick,
@@ -1018,7 +1035,9 @@ function ToolButton({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`pill t-body-sm ${active ? "pill-primary" : "pill-secondary"}`}
+      className={`h-11 rounded-full border-2 px-1 text-base font-semibold transition active:scale-[0.97] ${
+        active ? "border-ink bg-ink text-canvas" : "border-line bg-canvas text-ink"
+      }`}
     >
       {label}
     </button>
