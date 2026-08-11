@@ -370,7 +370,16 @@ export default function LessonPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-5">
+      {/*
+        읽는 화면은 폭을 좁게 묶는다 — 글줄이 길면 중1이 눈으로 따라가지 못한다.
+        그리기만 예외다. 그리는 공간은 넓을수록 좋고, 768px 안에 가두면 노트북에서
+        캔버스가 화면 한구석의 작은 상자가 된다.
+      */}
+      <main
+        className={`mx-auto w-full flex-1 px-4 py-5 ${
+          phase === "draw" ? "max-w-none" : "max-w-3xl"
+        }`}
+      >
         {closed && (
           <p className="mb-5 rounded-md bg-surface px-4 py-3 text-center t-body-sm">
             이 수업은 끝났어요. 내가 쓴 것은 볼 수 있지만 더 저장되지는 않아요.

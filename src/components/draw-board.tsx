@@ -804,23 +804,41 @@ export function DrawBoard({
         캔버스 높이를 화면 기준으로 묶어 두는 것이 핵심이다. 폭에만 맞추면 세로가
         그만큼 길어져(4:3) 또 도구가 밀려난다.
       */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
-        <div className="min-w-0 flex-1 overflow-hidden rounded-lg border-2 border-line bg-white">
-          <canvas
-            ref={canvasRef}
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            // 손가락으로 그을 때 화면이 함께 스크롤되면 그림이 그어지지 않는다
-            style={{ touchAction: "none" }}
-            className="mx-auto block max-h-[46vh] w-auto max-w-full sm:max-h-[52vh] lg:max-h-[68vh]"
-          />
+      {/*
+        가운데로 모은다. 캔버스 열을 flex-1 로 늘리면 아주 넓은 화면에서 캔버스는
+        가운데, 도구는 저 멀리 오른쪽 끝에 떨어져 손이 닿지 않는다.
+      */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-center">
+        {/*
+          테두리를 캔버스에 딱 맞춘다(w-fit). 열 전체에 두르면 캔버스가 화면 높이에
+          걸려 폭이 남을 때 흰 여백까지 상자 안에 들어가, 그리는 곳이 어디까지인지
+          알아보기 어렵다.
+        */}
+        <div className="flex min-w-0 justify-center">
+          <div className="w-fit max-w-full overflow-hidden rounded-lg border-2 border-line bg-white">
+            <canvas
+              ref={canvasRef}
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              // 손가락으로 그을 때 화면이 함께 스크롤되면 그림이 그어지지 않는다
+              style={{ touchAction: "none" }}
+              /*
+                넓은 화면에서는 남은 세로를 거의 다 쓴다. 빼는 값은 위쪽 수업 제목 줄과
+                그림판 제목·저장 줄, 그리고 아래 여백의 몫이다.
+                dvh 를 쓰는 이유: 폰 브라우저의 주소창이 접혔다 펴질 때 vh 는 따라오지
+                않아, 캔버스가 화면 밖으로 삐져나간다.
+              */
+              className="block max-h-[46dvh] w-auto max-w-full sm:max-h-[50dvh] lg:max-h-[calc(100dvh-12rem)]"
+            />
+          </div>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-3 lg:w-64">
+        {/* 폰에서는 간격을 한 단계 좁힌다 — 이 12px 몇 개가 도구를 화면 밖으로 밀어낸다 */}
+        <div className="flex shrink-0 flex-col gap-2 lg:w-64 lg:gap-3">
           <div className="grid grid-cols-3 gap-2">
             <ToolButton active={tool === "pen"} onClick={() => setTool("pen")} label="펜" />
             <ToolButton
@@ -831,8 +849,15 @@ export function DrawBoard({
             <ToolButton active={tool === "text"} onClick={() => setTool("text")} label="글자" />
           </div>
 
-          {/* 색은 6칸씩 두 줄. 폰에서도 한눈에 들어오고 세로를 적게 먹는다 */}
-          <div className="grid grid-cols-6 gap-2">
+          {/*
+            색 배치가 세로 높이를 좌우한다.
+             · 폰: 6칸씩 두 줄 (한 칸이 손가락에 맞게 커진다)
+             · 태블릿 세로처럼 넓지만 도구가 아래에 쌓이는 경우: 12칸 한 줄.
+               두 줄로 두면 칸 하나가 100px이 넘어가 그것만으로 220px을 먹고,
+               도구가 화면 밖으로 밀려난다
+             · 넓은 화면(도구가 옆으로 가는 256px 열): 다시 6칸씩 두 줄
+          */}
+          <div className="grid grid-cols-6 gap-2 sm:grid-cols-12 lg:grid-cols-6">
             {PALETTE.map((hex, index) => (
               <button
                 key={hex}
