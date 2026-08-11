@@ -30,6 +30,11 @@ const TARGETS: Record<PurgeTarget, { label: string; confirm: string; note: strin
     confirm: "출석삭제",
     note: "학기 종료 시 실행합니다.",
   },
+  artifacts: {
+    label: "작품 전체 (그림·활동지·퀴즈 답·피드백)",
+    confirm: "작품삭제",
+    note: "학기 종료 시 실행합니다. 그림은 CSV로 내보낼 수 없으니 필요하면 먼저 화면으로 남기세요.",
+  },
   students: {
     label: "명렬표(이름) 전체",
     confirm: "명렬표삭제",

@@ -22,18 +22,32 @@ export type SessionStatus = "scheduled" | "active" | "ended";
 export type LessonPhase =
   | "waiting"
   | "mood"
+  | "quiz"
   | "progress"
   | "assessment"
   | "video"
+  | "draw"
+  | "worksheet"
+  | "gallery"
   | "reflection"
   | "done";
 
+/**
+ * 교사 화면에 버튼이 이 순서로 나열된다. 실제 수업이 지나가는 순서에 가깝게 둔다.
+ *  · 2차시: waiting → mood → quiz → video → draw → reflection → done
+ *  · 3차시: waiting → mood → draw → worksheet → gallery → reflection → done
+ * 차시마다 쓰지 않는 단계는 그냥 건너뛴다.
+ */
 export const LESSON_PHASES: readonly LessonPhase[] = [
   "waiting",
   "mood",
+  "quiz",
   "progress",
   "assessment",
   "video",
+  "draw",
+  "worksheet",
+  "gallery",
   "reflection",
   "done",
 ];
@@ -41,9 +55,13 @@ export const LESSON_PHASES: readonly LessonPhase[] = [
 export const PHASE_LABELS: Record<LessonPhase, string> = {
   waiting: "대기",
   mood: "기분",
+  quiz: "타임머신 퀴즈",
   progress: "진도 안내",
   assessment: "평가 안내",
   video: "영상 시청",
+  draw: "그리기",
+  worksheet: "활동지",
+  gallery: "작품 감상",
   reflection: "성찰",
   done: "마침",
 };
@@ -87,6 +105,70 @@ export function emptyPhaseContent(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
 
+// ------------------------------------------------- 타임머신 퀴즈 (2차시)
+
+/**
+ * 디지털 특성 5개. 퀴즈 정답을 공개할 때 스티커로 붙어 누적된다.
+ *
+ * 특성을 따로 설명하는 시간을 두지 않는 것이 이 수업의 설계다. 퀴즈 네 문항을 지나면
+ * 다섯 특성이 화면에 다 남아 있고, 그 상태가 곧 정리 화면이 된다.
+ */
+export const TRAITS = ["보안성", "정보화", "가속화", "연결성", "개인화"] as const;
+export type Trait = (typeof TRAITS)[number];
+
+export function isTrait(value: string): value is Trait {
+  return (TRAITS as readonly string[]).includes(value);
+}
+
+export interface QuizQuestion {
+  /** "1996년, 처음 가는 곳은 어떻게 찾아갔을까?" */
+  prompt: string;
+  /** 선지 3개 */
+  choices: string[];
+  answerIndex: number;
+  /** 정답 공개 때 함께 보여줄 "지금은 이렇다" */
+  nowText: string;
+  /** 이 문항이 가르치는 특성 태그 */
+  stickers: Trait[];
+}
+
+export interface QuizContent {
+  questions: QuizQuestion[];
+}
+
+// --------------------------------------------- 그리기 활동 (2·3차시 공용)
+
+/** 활동지 질문 한 줄. kind 에 따라 입력 방식이 달라진다. */
+export interface WorksheetQuestion {
+  /** 답을 저장할 키. artifacts.answers 의 키가 된다 */
+  key: string;
+  label: string;
+  hint: string;
+  /**
+   * text  — 한 줄 입력
+   * long  — 여러 줄 입력
+   * traits — 특성 5개 중 다중 선택. 이 답만 answers 가 아니라 artifacts.traits 에 저장된다
+   */
+  kind: "text" | "long" | "traits";
+  maxLength: number;
+}
+
+export interface ActivityContent {
+  /**
+   * 그림을 묶는 열쇠. **2차시와 3차시 차시 계획에 같은 값을 넣는다.**
+   *
+   * 그림은 sessionId 가 아니라 이 값으로 저장·조회된다. 그래서 2차시에 그리던 그림이
+   * 3차시에 그대로 열리고, 태블릿이 죽어도 폰으로 로그인해 이어 그릴 수 있다.
+   * 30분 수업에서 그리기를 두 차시로 쪼갠 이상 이것 없이는 설계가 성립하지 않는다.
+   */
+  activityId: string;
+  /** 장소 선택지 */
+  places: string[];
+  /** 기본 연도 */
+  year: number;
+  worksheet: WorksheetQuestion[];
+}
+
 /** 명렬표. 문서 ID = 학번 문자열 (예: "10101") */
 export interface Student {
   studentId: string;
@@ -123,6 +205,10 @@ export interface LessonPlan {
   reflectionQuestions: string[];
   /** 다른 학생의 성찰 글을 볼 수 있는지. 기본값 false (PRD 3.4) */
   reflectionPublic: boolean;
+  /** 타임머신 퀴즈. 없는 차시가 대부분이라 선택 항목 */
+  quiz?: QuizContent;
+  /** 그리기 활동. 2·3차시가 같은 activityId 를 공유한다 */
+  activity?: ActivityContent;
   createdAt: number;
   updatedAt: number;
 }
@@ -151,11 +237,22 @@ export interface ClassSession {
   video: PhaseContent;
   reflectionQuestions: string[];
   reflectionPublic: boolean;
+  quiz?: QuizContent;
+  activity?: ActivityContent;
   lessonNo: number;
   title: string;
   status: SessionStatus;
   /** 지금 학생 화면에 띄울 단계. 교사만 바꾼다. */
   phase: LessonPhase;
+  /**
+   * 퀴즈 진행 상태. 교사만 바꾼다.
+   *
+   * 세션 문서에 두는 이유: 학생 화면은 이미 세션을 폴링하고 있고 그 응답이 캐시된다.
+   * 별도 컬렉션을 만들면 28명 × 4초짜리 새 폴링이 하나 더 생긴다 (PRD 10장 D2).
+   */
+  quizIndex?: number;
+  /** 정답을 공개했는지 */
+  quizRevealed?: boolean;
   /** 수업 직후 남기는 한 줄 회고. 다음 반 수업 전 개선 루프의 출발점 (PRD 5.1) */
   teacherNote: string;
   startedAt: number | null;
@@ -221,6 +318,110 @@ export function answersOf(reflection: { answers?: string[] } | null | undefined)
 export function hasAnswer(reflection: { answers?: string[] }): boolean {
   return answersOf(reflection).some((answer) => answer.trim().length > 0);
 }
+
+/** 퀴즈 응답. 문서ID = sessionId__학번 */
+export interface QuizAnswer {
+  id: string;
+  studentId: string;
+  sessionId: string;
+  classNo: ClassNo;
+  date: string;
+  /**
+   * 문항별 고른 선지 인덱스. 아직 안 고른 문항은 -1.
+   * 한 번 고르면 바꿀 수 없다 — 정답 공개를 보고 눈치껏 바꾸는 것을 막는다.
+   */
+  answers: number[];
+  updatedAt: number;
+}
+
+/** 저장된 답 배열을 안전하게 꺼낸다 (문항 수가 늘어난 뒤의 옛 문서 대비) */
+export function quizAnswersOf(row: { answers?: number[] } | null | undefined): number[] {
+  return Array.isArray(row?.answers) ? row.answers : [];
+}
+
+// ----------------------------------------------------------------- 작품
+
+/**
+ * 획 하나. 키를 한 글자로 줄인 이유는 문서 크기 때문이다.
+ * 좌표 수백 개마다 "color"/"width"/"points" 를 반복하면 그것만으로 수십 KB가 된다.
+ */
+export interface Stroke {
+  /** 색 인덱스 (PALETTE) */
+  c: number;
+  /** 굵기 인덱스 (STROKE_WIDTHS) */
+  w: number;
+  /** [x0,y0,x1,y1,…] 논리 좌표(1600×1200) 정수 */
+  p: number[];
+}
+
+export interface TextItem {
+  x: number;
+  y: number;
+  size: number;
+  content: string;
+}
+
+export type ArtifactStatus = "draft" | "submitted";
+
+/**
+ * 학생 작품. 문서ID = activityId__학번
+ *
+ * sessionId 가 아니라 activityId 로 묶는다 — 2차시에 그린 것을 3차시에 이어 그려야 하고,
+ * 태블릿이 죽으면 폰으로 이어 그릴 수 있어야 한다.
+ */
+export interface Artifact {
+  id: string;
+  activityId: string;
+  studentId: string;
+  classNo: ClassNo;
+  /** 학생이 고른 장소 */
+  place: string;
+  year: number;
+  strokes: Stroke[];
+  texts: TextItem[];
+  /** 활동지 답 (WorksheetQuestion.key → 값) */
+  answers: Record<string, string>;
+  /** 특성 다중 선택 (kind: "traits" 질문의 답) */
+  traits: string[];
+  /** 출처 — 수행평가1의 "출처 밝히기 태도" 평가 근거 (PRD 7) */
+  sources: { site: string; ai: string };
+  status: ArtifactStatus;
+  /** 교사가 숨김 처리했는지. 갤러리에서 빠진다 */
+  hidden: boolean;
+  /**
+   * 그림 저장 순번. 클라이언트가 저장할 때마다 1씩 올려 보내고, 서버는 이보다 낮은
+   * 번호의 요청을 무시한다.
+   *
+   * 없으면 이런 일이 생긴다: 자동저장(획 10개)이 날아가는 중에 교사가 단계를 넘겨
+   * 마지막 저장(획 12개 전체)이 함께 출발한다. 둘의 도착 순서는 보장되지 않아서,
+   * 늦게 도착한 옛 요청이 최신 그림을 덮어쓰거나 같은 획을 두 번 붙인다.
+   */
+  saveRev: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** 피드백. 문서ID = artifactId__작성자학번 (교사는 작성자 자리에 "teacher") */
+export interface ArtifactFeedback {
+  id: string;
+  artifactId: string;
+  /** 작성자 학번. 교사가 쓴 것은 "teacher" */
+  authorId: string;
+  /** 대상 작품 주인의 학번 — 내가 받은 피드백을 찾을 때 쓴다 */
+  ownerId: string;
+  classNo: ClassNo;
+  /** "그림에서 찾은 기술 하나" */
+  foundTech: string;
+  /** "궁금한 점 하나" */
+  question: string;
+  /** 작품 주인의 한 줄 응답 */
+  authorReply: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** 교사가 쓴 피드백의 작성자 자리 값 */
+export const TEACHER_AUTHOR_ID = "teacher";
 
 /** 시간표 한 줄. 반별 요일·교시를 등록하면 학기 전체 세션을 생성한다. */
 export interface TimetableSlot {

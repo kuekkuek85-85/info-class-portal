@@ -6,12 +6,15 @@ import { db } from "./firebase-admin";
 import { todayKST } from "./datetime";
 import { isPeriodOver } from "./timetable";
 import type {
+  Artifact,
+  ArtifactFeedback,
   Attendance,
   ClassNo,
   ClassSession,
   LessonPhase,
   LessonPlan,
   MoodEntry,
+  QuizAnswer,
   Reflection,
   SessionStatus,
   Student,
@@ -32,6 +35,9 @@ export const COLLECTIONS = {
   moodEntries: "moodEntries",
   reflections: "reflections",
   codeReservations: "codeReservations",
+  quizAnswers: "quizAnswers",
+  artifacts: "artifacts",
+  artifactFeedbacks: "artifactFeedbacks",
   meta: "meta",
 } as const;
 
@@ -326,6 +332,16 @@ export async function setSessionPhase(id: string, phase: LessonPhase): Promise<v
 }
 
 /**
+ * 세션 캐시를 버린다. 교사가 세션 문서를 고친 직후에 부른다.
+ *
+ * 퀴즈 문항 이동처럼 교실에서 즉시 반영돼야 하는 변경이 캐시 때문에 몇 초 늦으면,
+ * 교사는 버튼이 안 먹은 줄 알고 다시 누른다.
+ */
+export function invalidateSessionCache(id: string): void {
+  phaseCache.delete(id);
+}
+
+/**
  * 학생 화면이 단계를 따라오려면 짧은 주기로 물어야 한다. 28명이 5초마다 묻는데 그때마다
  * Firestore 를 읽으면 한 차시에 만 건이 넘어 무료 한도(하루 5만 읽기)를 위협한다.
  * 몇 초짜리 캐시만 둬도 읽기가 한 자릿수 배로 줄고, 단계 전환 지연은 체감되지 않는다.
@@ -378,9 +394,319 @@ export function snapshotOf(plan: LessonPlan) {
     video: plan.video,
     reflectionQuestions: plan.reflectionQuestions,
     reflectionPublic: plan.reflectionPublic,
+    // 퀴즈·활동도 스냅샷에 포함한다. 교사가 2반 수업 전에 문항을 고쳐도 1반이 실제로
+    // 답한 문항이 그대로 남아야 응답 분포를 읽을 수 있다 (PRD 5.1).
+    quiz: plan.quiz,
+    activity: plan.activity,
     lessonNo: plan.lessonNo,
     title: plan.title,
   };
+}
+
+// ------------------------------------------------------------- 퀴즈 응답
+
+/**
+ * 문항 하나의 답을 기록한다. **이미 고른 문항은 덮어쓰지 않는다.**
+ *
+ * 정답이 공개된 뒤 슬쩍 바꾸는 것을 막는 것이 목적이라, 잠금은 화면이 아니라 여기서 건다.
+ * 화면에서만 막으면 요청을 직접 보내는 것으로 우회된다.
+ *
+ * @returns 실제로 기록됐는지 (이미 답한 문항이면 false)
+ */
+export async function recordQuizAnswer(
+  input: { sessionId: string; studentId: string; classNo: ClassNo; date: string },
+  questionIndex: number,
+  choiceIndex: number,
+  questionCount: number,
+): Promise<boolean> {
+  const id = entryId(input.sessionId, input.studentId);
+  const ref = db().collection(COLLECTIONS.quizAnswers).doc(id);
+
+  return db().runTransaction(async (tx) => {
+    const doc = await tx.get(ref);
+    const previous: number[] = doc.exists ? (doc.data()?.answers ?? []) : [];
+
+    // 길이를 문항 수에 맞추고 빈 칸은 -1(미응답)로 채운다
+    const answers = Array.from({ length: questionCount }, (_, i) => previous[i] ?? -1);
+    if (answers[questionIndex] >= 0) return false;
+
+    answers[questionIndex] = choiceIndex;
+    tx.set(ref, { ...input, answers, updatedAt: Date.now() }, { merge: true });
+    return true;
+  });
+}
+
+export async function getQuizAnswer(
+  sessionId: string,
+  studentId: string,
+): Promise<QuizAnswer | null> {
+  const doc = await db()
+    .collection(COLLECTIONS.quizAnswers)
+    .doc(entryId(sessionId, studentId))
+    .get();
+  return doc.exists ? withId<QuizAnswer>(doc) : null;
+}
+
+export async function listQuizAnswers(sessionId: string): Promise<QuizAnswer[]> {
+  return collectAll<QuizAnswer>(
+    db().collection(COLLECTIONS.quizAnswers).where("sessionId", "==", sessionId),
+  );
+}
+
+// ----------------------------------------------------------------- 작품
+
+/** 문서 ID = activityId__학번. 차시가 아니라 활동에 묶여야 이어 그리기가 된다. */
+export function artifactId(activityId: string, studentId: string): string {
+  return `${activityId}__${studentId}`;
+}
+
+/**
+ * 한 번에 뛸 수 있는 저장 순번의 최대 폭.
+ *
+ * 정상적인 사용에서 순번은 한 번에 1씩만 올라간다. 30분 수업 내내 그려도 수백을 넘지 않는다.
+ */
+const REV_MAX_JUMP = 100_000;
+
+export async function getArtifact(
+  activityId: string,
+  studentId: string,
+): Promise<Artifact | null> {
+  const doc = await db()
+    .collection(COLLECTIONS.artifacts)
+    .doc(artifactId(activityId, studentId))
+    .get();
+  return doc.exists ? withId<Artifact>(doc) : null;
+}
+
+export async function getArtifactById(id: string): Promise<Artifact | null> {
+  const doc = await db().collection(COLLECTIONS.artifacts).doc(id).get();
+  return doc.exists ? withId<Artifact>(doc) : null;
+}
+
+export async function listArtifacts(activityId: string, classNo?: ClassNo): Promise<Artifact[]> {
+  const base = db().collection(COLLECTIONS.artifacts).where("activityId", "==", activityId);
+  const rows = await collectAll<Artifact>(
+    classNo ? base.where("classNo", "==", classNo) : base,
+  );
+  return rows.sort((a, b) => a.studentId.localeCompare(b.studentId));
+}
+
+/**
+ * 없으면 만들고 있으면 그대로 돌려준다. 그림판 첫 진입에서 쓴다.
+ *
+ * 만들 때는 반드시 create() 를 쓴다. merge 저장으로 만들면, 거의 동시에 들어온 두 요청 중
+ * 늦은 쪽이 이미 만들어진 문서 위에 빈 기본값(`strokes: []`, `saveRev: 0`)을 덮어써서
+ * 그 사이 저장된 그림과 순번을 날린다.
+ */
+export async function ensureArtifact(input: {
+  activityId: string;
+  studentId: string;
+  classNo: ClassNo;
+  year: number;
+}): Promise<Artifact> {
+  const existing = await getArtifact(input.activityId, input.studentId);
+  if (existing) return existing;
+
+  const now = Date.now();
+  const doc: Omit<Artifact, "id"> = {
+    activityId: input.activityId,
+    studentId: input.studentId,
+    classNo: input.classNo,
+    place: "",
+    year: input.year,
+    strokes: [],
+    texts: [],
+    answers: {},
+    traits: [],
+    sources: { site: "", ai: "" },
+    status: "draft",
+    hidden: false,
+    saveRev: 0,
+    createdAt: now,
+    updatedAt: now,
+  };
+  const id = artifactId(input.activityId, input.studentId);
+  try {
+    await db().collection(COLLECTIONS.artifacts).doc(id).create(doc);
+    return { id, ...doc };
+  } catch (error) {
+    // 그 사이 다른 요청이 먼저 만들었다면 그쪽 것을 그대로 쓴다
+    if (!isAlreadyExists(error)) throw error;
+    const created = await getArtifact(input.activityId, input.studentId);
+    if (created) return created;
+    throw error;
+  }
+}
+
+export async function updateArtifact(
+  id: string,
+  patch: Partial<Omit<Artifact, "id" | "createdAt">>,
+): Promise<void> {
+  await db()
+    .collection(COLLECTIONS.artifacts)
+    .doc(id)
+    .set({ ...patch, updatedAt: Date.now() }, { merge: true });
+}
+
+/**
+ * 그림을 저장한다. append 는 새로 그은 획만, replace 는 통째로.
+ *
+ * 트랜잭션으로 읽고 쓰는 이유 두 가지.
+ *  ① 두 요청이 겹치면 각자 읽은 배열에 각자 덧붙여 한쪽 획이 통째로 사라진다.
+ *  ② **도착 순서가 뒤집힐 수 있다.** 자동저장이 날아가는 중에 학생이 화면을 떠나
+ *     마지막 저장이 함께 출발하면, 늦게 도착한 옛 요청이 최신 그림을 덮어쓴다.
+ *     그래서 저장 순번(saveRev)이 더 낮은 요청은 조용히 버린다.
+ *
+ * @returns 저장 뒤의 대략적인 문서 크기, 거부 여부, 뒤늦게 온 요청인지
+ */
+export async function writeStrokes(
+  id: string,
+  input: {
+    mode: "append" | "replace";
+    strokes: Artifact["strokes"];
+    texts?: Artifact["texts"];
+    rev: number;
+  },
+  limits: { warn: number; reject: number },
+): Promise<{
+  size: number;
+  rejected: boolean;
+  total: number;
+  stale: boolean;
+  /** 서버가 지금 들고 있는 순번. 클라이언트가 여기에 맞춰 다시 센다 */
+  serverRev: number;
+}> {
+  return db().runTransaction(async (tx) => {
+    const ref = db().collection(COLLECTIONS.artifacts).doc(id);
+    const doc = await tx.get(ref);
+    const current: Artifact["strokes"] = doc.exists ? (doc.data()?.strokes ?? []) : [];
+    const storedRev: number = doc.exists ? (doc.data()?.saveRev ?? 0) : 0;
+
+    /*
+     * 순번이 터무니없이 크면 받지 않는다.
+     *
+     * 요청을 직접 만들어 순번을 아주 큰 값으로 한 번 저장해 버리면, 그 뒤로 정상적인
+     * 저장이 전부 "옛 요청"으로 버려진다. 자기 그림만 못 쓰게 만드는 짓이지만,
+     * 한 번 그렇게 되면 되돌릴 방법이 화면에 없다.
+     */
+    if (!Number.isSafeInteger(input.rev) || input.rev > storedRev + REV_MAX_JUMP) {
+      return {
+        size: roughSize(current),
+        rejected: false,
+        total: current.length,
+        stale: true,
+        serverRev: storedRev,
+      };
+    }
+
+    // 이미 더 최신 저장이 들어와 있다 — 이 요청은 늦게 도착한 옛것이므로 버린다.
+    // 현재 순번을 함께 돌려줘 클라이언트가 한 번에 따라잡게 한다 (그리기 화면을
+    // 다시 열면 순번이 0부터 시작해 한동안 계속 버려지는 것을 막는다).
+    if (input.rev <= storedRev) {
+      return {
+        size: roughSize(current),
+        rejected: false,
+        total: current.length,
+        stale: true,
+        serverRev: storedRev,
+      };
+    }
+
+    const merged = input.mode === "replace" ? input.strokes : [...current, ...input.strokes];
+    const size = roughSize(merged);
+
+    // 한도를 넘으면 새 획만 거부한다. 통째로 실패시키면 이미 그린 것까지 못 올린다.
+    // 순번도 올리지 않는다 — 아무것도 쓰지 않았으므로.
+    if (size > limits.reject) {
+      return {
+        size: roughSize(current),
+        rejected: true,
+        total: current.length,
+        stale: false,
+        serverRev: storedRev,
+      };
+    }
+
+    const patch: Record<string, unknown> = {
+      strokes: merged,
+      saveRev: input.rev,
+      updatedAt: Date.now(),
+    };
+    // 텍스트도 같은 트랜잭션에서 쓴다. 따로 쓰면 획과 텍스트가 서로 다른 시점의
+    // 상태로 섞일 수 있다.
+    if (input.texts) patch.texts = input.texts;
+
+    tx.set(ref, patch, { merge: true });
+    return { size, rejected: false, total: merged.length, stale: false, serverRev: input.rev };
+  });
+}
+
+/** 획 배열이 Firestore 문서에서 차지하는 크기의 근사값. 숫자 하나를 8바이트로 본다. */
+export function roughSize(strokes: Artifact["strokes"]): number {
+  let bytes = 0;
+  for (const stroke of strokes) {
+    bytes += 32 + stroke.p.length * 8;
+  }
+  return bytes;
+}
+
+// --------------------------------------------------------------- 피드백
+
+export function feedbackId(artifact: string, authorId: string): string {
+  return `${artifact}__${authorId}`;
+}
+
+export async function upsertFeedback(
+  input: Omit<ArtifactFeedback, "id" | "createdAt" | "updatedAt" | "authorReply">,
+): Promise<void> {
+  const id = feedbackId(input.artifactId, input.authorId);
+  const ref = db().collection(COLLECTIONS.artifactFeedbacks).doc(id);
+  const existing = await ref.get();
+  const now = Date.now();
+
+  await ref.set(
+    {
+      ...input,
+      createdAt: existing.exists ? (existing.data()?.createdAt ?? now) : now,
+      updatedAt: now,
+    },
+    { merge: true },
+  );
+}
+
+/** 작품 주인이 남기는 한 줄 응답 */
+export async function replyToFeedback(id: string, reply: string): Promise<void> {
+  await db()
+    .collection(COLLECTIONS.artifactFeedbacks)
+    .doc(id)
+    .set({ authorReply: reply, updatedAt: Date.now() }, { merge: true });
+}
+
+export async function listFeedbacksFor(artifactIds: string[]): Promise<ArtifactFeedback[]> {
+  const unique = [...new Set(artifactIds)].filter(Boolean);
+  if (unique.length === 0) return [];
+
+  const rows: ArtifactFeedback[] = [];
+  // Firestore `in` 은 한 번에 30개까지
+  for (let i = 0; i < unique.length; i += 30) {
+    rows.push(
+      ...(await collectAll<ArtifactFeedback>(
+        db()
+          .collection(COLLECTIONS.artifactFeedbacks)
+          .where("artifactId", "in", unique.slice(i, i + 30)),
+      )),
+    );
+  }
+  return rows.sort((a, b) => a.createdAt - b.createdAt);
+}
+
+/** 내가 쓴 피드백 — 갤러리에서 "이미 남겼는지" 표시에 쓴다 */
+export async function listFeedbacksByAuthor(
+  authorId: string,
+  artifactIds: string[],
+): Promise<ArtifactFeedback[]> {
+  const all = await listFeedbacksFor(artifactIds);
+  return all.filter((row) => row.authorId === authorId);
 }
 
 // ------------------------------------------------------------------- 출석
@@ -517,6 +843,7 @@ export type PurgeTarget =
   | "moodEntries"
   | "reflections"
   | "attendance"
+  | "artifacts"
   | "students";
 
 /** 컬렉션을 페이지 단위로 지운다. 학기말 일괄 삭제·월 단위 이유 삭제에 쓴다. */
@@ -580,6 +907,15 @@ export async function purge(target: PurgeTarget): Promise<number> {
       return deleteQueryBatch(db().collection(COLLECTIONS.reflections));
     case "attendance":
       return deleteQueryBatch(db().collection(COLLECTIONS.attendance));
+    case "artifacts": {
+      // 작품·퀴즈 답·피드백은 한 덩어리로 지운다. 작품만 지우고 피드백을 남기면
+      // 무엇에 대한 피드백인지 알 수 없는 문서만 떠다닌다.
+      const removed =
+        (await deleteQueryBatch(db().collection(COLLECTIONS.artifacts))) +
+        (await deleteQueryBatch(db().collection(COLLECTIONS.artifactFeedbacks))) +
+        (await deleteQueryBatch(db().collection(COLLECTIONS.quizAnswers)));
+      return removed;
+    }
     case "students":
       return deleteQueryBatch(db().collection(COLLECTIONS.students));
   }

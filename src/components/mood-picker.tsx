@@ -10,9 +10,19 @@ import { MOOD_NOTICE, MOOD_OPTIONS, QUADRANTS, type Quadrant } from "@/lib/mood"
  * 16개를 한 화면에 펼쳐 스크롤 없이 한 번에 고르게 했다.
  */
 
+/**
+ * 화면 배치가 곧 축이다. 위 = 기운 높음(고활성), 오른쪽 = 기분 좋음(쾌).
+ *
+ *        불쾌 ←→ 쾌
+ *   높음  빨강   노랑
+ *   낮음  파랑   초록
+ *
+ * 이 순서를 바꾸면 화면 안내("위로 갈수록 기운이 높고…")와 어긋나 학생이 엉뚱한 칸을 본다.
+ * `/teacher/board` 의 GRID 도 같은 순서를 쓴다 — 한쪽만 고치면 두 화면이 달라진다.
+ */
 const ORDER: Quadrant[][] = [
-  ["blue", "red"],
-  ["green", "yellow"],
+  ["red", "yellow"],
+  ["blue", "green"],
 ];
 
 interface MoodPickerProps {

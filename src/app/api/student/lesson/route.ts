@@ -2,14 +2,16 @@ import { fail, guard, ok } from "@/lib/api";
 import { toEmbedUrl } from "@/lib/embed";
 import {
   getMoodEntry,
+  getQuizAnswer,
   getReflection,
   getSession,
   isSessionClosed,
   listReflections,
   studentNameMap,
 } from "@/lib/db";
+import { publicQuestions, quizView } from "@/lib/quiz";
 import { readStudentSession } from "@/lib/session";
-import { answersOf, hasAnswer, type PhaseContent } from "@/lib/types";
+import { answersOf, hasAnswer, quizAnswersOf, type PhaseContent } from "@/lib/types";
 
 /**
  * 오늘 그 교시 수업 화면에 필요한 것 전부를 한 번에 내려준다.
@@ -41,9 +43,10 @@ export async function GET() {
 
     const questions = session.reflectionQuestions ?? [];
 
-    const [mood, reflection] = await Promise.all([
+    const [mood, reflection, quizAnswer] = await Promise.all([
       getMoodEntry(session.id, me.studentId),
       getReflection(session.id, me.studentId),
+      getQuizAnswer(session.id, me.studentId),
     ]);
 
     // 다른 학생 글 공개는 차시별 교사 설정. 기본값은 비공개 (PRD 3.4)
@@ -79,10 +82,23 @@ export async function GET() {
         video: { heading: session.video?.heading ?? "", body: session.video?.body ?? "", url: "" },
         reflectionQuestions: questions,
         reflectionPublic: session.reflectionPublic,
+        // 문항과 선지만. 정답·해설은 교사가 공개한 뒤 /api/student/phase 로 따로 내려간다.
+        quizQuestions: publicQuestions(session),
+        // 활동지·장소 선택지. 그림 자체는 /api/student/artifact 로 따로 받는다.
+        activity: session.activity
+          ? {
+              activityId: session.activity.activityId,
+              places: session.activity.places ?? [],
+              year: session.activity.year ?? 2040,
+              worksheet: session.activity.worksheet ?? [],
+            }
+          : null,
         date: session.date,
         period: session.period,
         classNo: session.classNo,
       },
+      quiz: quizView(session),
+      myQuizAnswers: quizAnswersOf(quizAnswer),
       mood: mood ? { mood: mood.mood, reason: mood.reason } : null,
       reflection: reflection
         ? { answers: answersOf(reflection), draft: reflection.draft }

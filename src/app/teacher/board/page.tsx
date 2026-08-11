@@ -41,8 +41,11 @@ interface SessionOption {
 
 const POLL_INTERVAL_MS = 5000;
 
-/** 화면 배치가 곧 무드미터 축이다. 위 = 기운 높음, 오른쪽 = 기분 좋음. */
-const GRID: Quadrant[] = ["blue", "red", "green", "yellow"];
+/**
+ * 화면 배치가 곧 무드미터 축이다. 위 = 기운 높음, 오른쪽 = 기분 좋음.
+ * 학생 화면(`mood-picker.tsx`의 ORDER)과 반드시 같은 순서여야 한다.
+ */
+const GRID: Quadrant[] = ["red", "yellow", "blue", "green"];
 
 export default function BoardPage() {
   return (

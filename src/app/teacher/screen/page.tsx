@@ -7,12 +7,19 @@ import { todayKST } from "@/lib/datetime";
 import { toEmbedUrl } from "@/lib/embed";
 import { usePolled } from "@/lib/use-polled";
 import { pickCurrentSession } from "@/lib/pick-session";
+import type { LessonPhase } from "@/lib/types";
 
 /**
  * 교실 앞 전자칠판에 띄우는 화면.
  *
  * 영상은 여기서만 재생한다. 학생 태블릿에는 영상 주소를 아예 내려보내지 않으므로,
  * 30명이 각자 다른 지점을 보거나 유튜브로 빠져나가는 일이 생기지 않는다 (PRD 3.2).
+ *
+ * 퀴즈 단계에서는 문항을 크게 띄운다. 학생 태블릿에도 같은 문항이 있지만, 다 같이 한 곳을
+ * 보면서 읽어야 "1996년에는…"이라는 이야기가 성립한다.
+ *
+ * 이 화면은 교사가 바꾸는 상태(문항 번호·정답 공개)를 따라가야 해서 폴링한다.
+ * 대시보드와 달리 **한 대만** 띄우고 세션 목록 몇 건만 읽으므로 읽기 부담이 작다.
  */
 
 interface Content {
@@ -28,9 +35,18 @@ interface SessionRow {
   lessonNo: number;
   title: string;
   status: "scheduled" | "active" | "ended";
+  phase: LessonPhase;
   video?: Content;
   reflectionQuestions?: string[];
+  quiz?: { questions: { prompt: string; choices: string[]; answerIndex: number; nowText: string; stickers: string[] }[] };
+  quizIndex?: number;
+  quizRevealed?: boolean;
 }
+
+/** 교사 조작을 따라가는 주기. 학생 화면(4초)과 비슷하게 둔다 */
+const POLL_MS = 4000;
+
+const CHOICE_LABELS = ["①", "②", "③", "④", "⑤"];
 
 export default function ScreenPage() {
   return (
@@ -45,11 +61,13 @@ function Screen() {
 
   const { data } = usePolled<{ sessions: SessionRow[] }>(
     `/api/teacher/sessions?date=${todayKST()}`,
+    POLL_MS,
   );
   const sessions = data?.sessions ?? [];
   // 대시보드와 같은 이유 — 열자마자 "지금 하는 수업"이 떠 있어야 한다
   const session = sessions.find((s) => s.id === picked) ?? pickCurrentSession(sessions);
   const embed = session?.video?.url ? toEmbedUrl(session.video.url) : "";
+  const showQuiz = session?.phase === "quiz" && (session.quiz?.questions.length ?? 0) > 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -57,8 +75,9 @@ function Screen() {
         <div>
           <h1 className="text-xl font-bold">전자칠판 화면</h1>
           <p className="text-sm text-muted">
-            영상은 이 화면에서만 재생됩니다. 학생 태블릿에는 &ldquo;영상 시청 중&rdquo; 안내와 질문만
-            뜹니다.
+            {showQuiz
+              ? "퀴즈 문항을 크게 띄웁니다. 문항 이동·정답 공개는 대시보드에서 하세요."
+              : "영상은 이 화면에서만 재생됩니다. 학생 태블릿에는 안내와 질문만 뜹니다."}
           </p>
         </div>
         <select
@@ -80,13 +99,15 @@ function Screen() {
         </p>
       )}
 
-      {session && !embed && (
+      {session && showQuiz && <QuizBoard session={session} />}
+
+      {session && !showQuiz && !embed && (
         <p className="rounded-xl border border-line bg-card px-4 py-6 text-center text-sm text-muted">
           이 차시에는 영상이 등록되어 있지 않습니다. <b>차시</b> 화면에서 영상 주소를 넣어 주세요.
         </p>
       )}
 
-      {session && embed && (
+      {session && !showQuiz && embed && (
         <>
           <div className="overflow-hidden rounded-2xl border border-line bg-black">
             <iframe
@@ -131,5 +152,76 @@ function Screen() {
         </>
       )}
     </div>
+  );
+}
+
+/** 교실 뒤에서도 읽혀야 한다 — 글자를 최대한 키운다 */
+function QuizBoard({ session }: { session: SessionRow }) {
+  const questions = session.quiz?.questions ?? [];
+  const index = Math.min(Math.max(session.quizIndex ?? 0, 0), questions.length - 1);
+  const question = questions[index];
+  const revealed = session.quizRevealed === true;
+
+  if (!question) return null;
+
+  // 지나간 문항 + 공개된 지금 문항의 특성 (학생 화면과 같은 규칙)
+  const earned: string[] = [];
+  for (let i = 0; i < index; i += 1) {
+    for (const trait of questions[i]?.stickers ?? []) {
+      if (!earned.includes(trait)) earned.push(trait);
+    }
+  }
+  if (revealed) {
+    for (const trait of question.stickers ?? []) {
+      if (!earned.includes(trait)) earned.push(trait);
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-5">
+      <p className="text-lg font-semibold text-muted">
+        타임머신 {index + 1} / {questions.length}
+      </p>
+      <h2 className="text-4xl leading-snug font-bold">{question.prompt}</h2>
+
+      <ul className="flex flex-col gap-3">
+        {question.choices.map((choice, i) => {
+          const isAnswer = revealed && i === question.answerIndex;
+          return (
+            <li
+              key={i}
+              className={`flex items-start gap-4 rounded-2xl border-2 px-6 py-5 text-2xl ${
+                isAnswer ? "border-ink bg-lime font-bold" : "border-line bg-card"
+              }`}
+            >
+              <span className="font-bold">{CHOICE_LABELS[i]}</span>
+              <span className="flex-1">{choice}</span>
+              {isAnswer && <span className="shrink-0">정답</span>}
+            </li>
+          );
+        })}
+      </ul>
+
+      {revealed && question.nowText && (
+        <div className="rounded-2xl bg-cream px-6 py-5">
+          <p className="text-lg font-semibold">그럼 지금은?</p>
+          <p className="mt-2 text-2xl leading-snug whitespace-pre-wrap">{question.nowText}</p>
+        </div>
+      )}
+
+      {earned.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-lg text-muted">모은 특성 {earned.length}/5</span>
+          {earned.map((trait) => (
+            <span
+              key={trait}
+              className="rounded-full bg-ink px-5 py-2 text-2xl font-bold text-canvas"
+            >
+              {trait}
+            </span>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

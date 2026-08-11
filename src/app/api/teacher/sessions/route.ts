@@ -4,6 +4,7 @@ import {
   deleteSession,
   getLessonPlan,
   getSession,
+  invalidateSessionCache,
   listAllSessions,
   listSessionsByDate,
   reserveCode,
@@ -104,6 +105,8 @@ export async function PATCH(request: Request) {
       reflectionPublic?: boolean;
       lessonPlanId?: string;
       phase?: LessonPhase;
+      quizIndex?: number;
+      quizRevealed?: boolean;
     }>(request);
 
     if (!body?.id) return fail("invalid_input");
@@ -125,6 +128,32 @@ export async function PATCH(request: Request) {
     if (body.phase) {
       if (!LESSON_PHASES.includes(body.phase)) return fail("invalid_input");
       await setSessionPhase(body.id, body.phase);
+    }
+
+    /*
+     * 퀴즈 제어. 문항을 옮기면 공개 상태는 항상 꺼진 채로 시작한다 —
+     * 다음 문항이 정답 공개 상태로 열리면 학생이 문제를 보기 전에 답부터 본다.
+     */
+    if (typeof body.quizIndex === "number" || typeof body.quizRevealed === "boolean") {
+      const total = session.quiz?.questions.length ?? 0;
+      if (total === 0) return fail("invalid_input", "이 차시에는 퀴즈가 없습니다.");
+
+      const patch: { quizIndex?: number; quizRevealed?: boolean } = {};
+
+      if (typeof body.quizIndex === "number") {
+        if (!Number.isInteger(body.quizIndex) || body.quizIndex < 0 || body.quizIndex >= total) {
+          return fail("invalid_input", "그런 문항 번호는 없습니다.");
+        }
+        patch.quizIndex = body.quizIndex;
+        patch.quizRevealed = false;
+      }
+      if (typeof body.quizRevealed === "boolean") {
+        patch.quizRevealed = body.quizRevealed;
+      }
+
+      await updateSession(body.id, patch);
+      // 학생 화면은 세션 캐시를 읽는다. 비워 주지 않으면 최대 3초 늦게 반영된다.
+      invalidateSessionCache(body.id);
     }
 
     if (typeof body.teacherNote === "string") {

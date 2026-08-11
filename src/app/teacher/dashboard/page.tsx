@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { TeacherArtifactPanel } from "@/components/teacher-artifact-panel";
+import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
 import { TeacherShell } from "@/components/teacher-shell";
 import { formatDateKorean, formatTimeKST, todayKST } from "@/lib/datetime";
 import { QUADRANTS, type Quadrant } from "@/lib/mood";
@@ -16,7 +18,17 @@ import { LESSON_PHASES, PHASE_LABELS, type LessonPhase } from "@/lib/types";
  * 구조를 유지하려면 교사 화면도 서버 API를 거쳐야 하고, 28명 규모에서는 폴링으로 충분하다.
  */
 
-const POLL_INTERVAL_MS = 5000;
+/**
+ * 접속자 명단 갱신 주기.
+ *
+ * 5초에서 늘렸다. 한 번 부를 때마다 출석·감정·성찰·명렬표를 통째로 다시 읽어서
+ * 폴링 1회가 문서 100건이 넘는다. 5초로 두면 30분 수업 하나가 무료 읽기 한도
+ * (하루 5만 건)의 절반을 먹고, 하루 세 반이면 늦은 교시에 읽기가 거부된다 (PRD 10장 D2).
+ *
+ * 출석 명단이 20초 늦게 갱신되는 것은 수업에 지장이 없다. 도중에 확인이 급하면
+ * 화면을 다시 열면 된다.
+ */
+const POLL_INTERVAL_MS = 20_000;
 
 interface SessionRow {
   id: string;
@@ -32,6 +44,10 @@ interface SessionRow {
   reflectionQuestions: string[];
   moodCheckEnabled: boolean;
   date: string;
+  quiz?: { questions: { prompt: string; choices: string[]; answerIndex: number }[] };
+  quizIndex?: number;
+  quizRevealed?: boolean;
+  activity?: { activityId: string; worksheet?: { key: string }[] };
 }
 
 interface StudentRow {
@@ -229,7 +245,7 @@ function Dashboard() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {LESSON_PHASES.filter((item) => item !== "mood" || session.moodCheckEnabled).map(
+              {LESSON_PHASES.filter((item) => availablePhase(session, item)).map(
                 (item) => (
                   <button
                     key={item}
@@ -275,6 +291,23 @@ function Dashboard() {
               </button>
             </div>
           </section>
+
+          {/* 퀴즈가 붙은 차시에서 퀴즈 단계일 때만. 다른 단계에서는 자리만 차지한다 */}
+          {session.phase === "quiz" && session.quiz && (
+            <TeacherQuizPanel
+              sessionId={session.id}
+              questions={session.quiz.questions}
+              index={session.quizIndex ?? 0}
+              revealed={session.quizRevealed === true}
+              onPatch={patchSession}
+            />
+          )}
+
+          {/* 그리기 이후 단계에서만. 그 전에는 볼 작품이 없다 */}
+          {session.activity &&
+            (session.phase === "draw" ||
+              session.phase === "worksheet" ||
+              session.phase === "gallery") && <TeacherArtifactPanel sessionId={session.id} />}
 
           {stats && (
             <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -415,8 +448,26 @@ function Dashboard() {
 }
 
 /** 감정 체크를 쓰지 않는 차시에서는 '기분'을 건너뛴다 */
+/**
+ * 이 차시에 쓸 수 있는 단계인가.
+ *
+ * 단계가 11개로 늘면서, 쓰지 않는 단계까지 다 보여주면 교사가 수업 중에 잘못 누르기 쉽다.
+ * 잘못 누르면 학생 28명 화면이 동시에 빈 화면으로 바뀐다 — 되돌리는 동안 수업이 멈춘다.
+ * 그래서 내용이 없는 단계는 아예 버튼을 만들지 않는다.
+ */
+function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
+  if (phase === "mood") return session.moodCheckEnabled;
+  if (phase === "quiz") return (session.quiz?.questions.length ?? 0) > 0;
+  if (phase === "draw") return Boolean(session.activity);
+  // 활동지·감상은 활동지 질문이 있는 차시(3차시)에만. 2차시는 그리기까지만 한다.
+  if (phase === "worksheet" || phase === "gallery") {
+    return (session.activity?.worksheet?.length ?? 0) > 0;
+  }
+  return true;
+}
+
 function neighbourPhase(session: SessionRow, step: 1 | -1): LessonPhase {
-  const usable = LESSON_PHASES.filter((item) => item !== "mood" || session.moodCheckEnabled);
+  const usable = LESSON_PHASES.filter((item) => availablePhase(session, item));
   const at = usable.indexOf(session.phase);
   const next = Math.min(Math.max(at + step, 0), usable.length - 1);
   return usable[next];

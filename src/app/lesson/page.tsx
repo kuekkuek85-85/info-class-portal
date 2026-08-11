@@ -5,8 +5,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { ContentView, type Content } from "@/components/content-view";
+import { DrawBoard } from "@/components/draw-board";
+import { GalleryView } from "@/components/gallery-view";
 import { MoodPicker } from "@/components/mood-picker";
-import { PHASE_LABELS, type LessonPhase } from "@/lib/types";
+import { QuizView, type QuizState } from "@/components/quiz-view";
+import { WorksheetView, type WorksheetValue } from "@/components/worksheet-view";
+import {
+  PHASE_LABELS,
+  type LessonPhase,
+  type Stroke,
+  type TextItem,
+  type WorksheetQuestion,
+} from "@/lib/types";
 
 /**
  * 오늘 수업 화면.
@@ -15,6 +25,13 @@ import { PHASE_LABELS, type LessonPhase } from "@/lib/types";
  * 그것을 따라간다. 30명이 제각각 다른 화면에 가 있으면 수업을 끌고 갈 수 없고,
  * 중1은 화면당 할 일이 하나여야 한다 (PRD 1, 3.2).
  */
+
+export interface ActivityInfo {
+  activityId: string;
+  places: string[];
+  year: number;
+  worksheet: WorksheetQuestion[];
+}
 
 interface LessonData {
   me: { studentId: string; name: string; classNo: number };
@@ -32,10 +49,15 @@ interface LessonData {
     video: Content;
     reflectionQuestions: string[];
     reflectionPublic: boolean;
+    /** 문항과 선지만. 정답은 교사가 공개할 때 따로 내려온다 */
+    quizQuestions: { prompt: string; choices: string[] }[];
+    activity: ActivityInfo | null;
     date: string;
     period: number;
     classNo: number;
   };
+  quiz: QuizState | null;
+  myQuizAnswers: number[];
   mood: { mood: string; reason: string } | null;
   reflection: { answers: string[]; draft: boolean } | null;
   peers: { name: string; answers: string[] }[];
@@ -60,6 +82,33 @@ export default function LessonPage() {
   const [moodReason, setMoodReason] = useState("");
   const [moodSaving, setMoodSaving] = useState(false);
   const [moodSaved, setMoodSaved] = useState(false);
+
+  const [quiz, setQuiz] = useState<QuizState | null>(null);
+  const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
+  const [quizSaving, setQuizSaving] = useState(false);
+
+  /**
+   * 그림·활동지. 그리기 단계에 들어갈 때 한 번만 받아 온다.
+   *
+   * 수업 화면을 열 때 같이 받지 않는 이유: 그림은 획이 수천 개라 응답이 커진다.
+   * 퀴즈만 하는 차시에서까지 그걸 내려받을 이유가 없다.
+   */
+  const [artifact, setArtifact] = useState<{
+    place: string;
+    year: number;
+    strokes: Stroke[];
+    texts: TextItem[];
+    status: string;
+    /** 서버가 마지막으로 받아들인 저장 순번 */
+    saveRev: number;
+  } | null>(null);
+  const [worksheet, setWorksheet] = useState<WorksheetValue>({
+    answers: {},
+    traits: [],
+    sources: { site: "", ai: "" },
+  });
+  const [submitError, setSubmitError] = useState("");
+  const artifactLoaded = useRef(false);
 
   const [answers, setAnswers] = useState<string[]>([]);
   const [reflectionState, setReflectionState] = useState<"idle" | "saving" | "saved" | "done">(
@@ -92,6 +141,8 @@ export default function LessonPage() {
       setMood(payload.mood?.mood ?? "");
       setMoodReason(payload.mood?.reason ?? "");
       setMoodSaved(Boolean(payload.mood));
+      setQuiz(payload.quiz);
+      setQuizAnswers(payload.myQuizAnswers ?? []);
 
       const count = payload.session.reflectionQuestions.length;
       const initial = Array.from({ length: count }, (_, i) => payload.reflection?.answers[i] ?? "");
@@ -130,6 +181,8 @@ export default function LessonPage() {
 
       setPhase(next);
       setClosed(Boolean(result.closed));
+      // 문항 이동·정답 공개도 같은 응답에 실려 온다 (퀴즈 전용 폴링을 만들지 않는다)
+      setQuiz((result.quiz as QuizState | null) ?? null);
     }
 
     const timer = setInterval(() => void tick(), PHASE_POLL_MS);
@@ -178,6 +231,94 @@ export default function LessonPage() {
       if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     };
   }, [answers, closed, data, saveReflection]);
+
+  // 그리기·활동지 단계에 처음 들어갈 때 그림을 받아 온다 (한 번만)
+  useEffect(() => {
+    if (!data?.session.activity) return;
+    if (phase !== "draw" && phase !== "worksheet") return;
+    if (artifactLoaded.current) return;
+    artifactLoaded.current = true;
+
+    let cancelled = false;
+    async function loadArtifact() {
+      const response = await fetch("/api/student/artifact");
+      const result = await response.json();
+      if (cancelled || !result.ok) return;
+
+      setArtifact({
+        place: result.artifact.place,
+        year: result.artifact.year,
+        strokes: result.artifact.strokes,
+        texts: result.artifact.texts,
+        status: result.artifact.status,
+        saveRev: result.artifact.saveRev ?? 0,
+      });
+      setWorksheet({
+        answers: result.artifact.answers ?? {},
+        traits: result.artifact.traits ?? [],
+        sources: result.artifact.sources ?? { site: "", ai: "" },
+      });
+    }
+
+    void loadArtifact();
+    return () => {
+      cancelled = true;
+    };
+  }, [data, phase]);
+
+  async function choosePlace(place: string) {
+    setArtifact((prev) => (prev ? { ...prev, place } : prev));
+    await fetch("/api/student/artifact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ place }),
+    });
+  }
+
+  async function submitArtifact() {
+    setSubmitError("");
+    const response = await fetch("/api/student/artifact/submit", { method: "POST" });
+    const result = await response.json();
+
+    if (!result.ok) {
+      setSubmitError(result.message ?? "제출하지 못했어요.");
+      return;
+    }
+    setArtifact((prev) => (prev ? { ...prev, status: "submitted" } : prev));
+  }
+
+  async function pickQuizChoice(choiceIndex: number) {
+    if (!quiz) return;
+    const questionIndex = quiz.index;
+    // 이미 고른 문항이면 아무 일도 하지 않는다 (서버에서도 다시 막는다)
+    if ((quizAnswers[questionIndex] ?? -1) >= 0) return;
+
+    // 화면을 먼저 잠근다. 응답을 기다리는 1초 사이에 다른 선지를 누르는 일이 잦다.
+    setQuizAnswers((prev) => {
+      const next = [...prev];
+      while (next.length <= questionIndex) next.push(-1);
+      next[questionIndex] = choiceIndex;
+      return next;
+    });
+    setQuizSaving(true);
+
+    const response = await fetch("/api/student/quiz", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questionIndex, choiceIndex }),
+    });
+    const result = await response.json();
+    setQuizSaving(false);
+
+    // 저장이 실패했으면 잠금을 풀어 다시 고를 수 있게 한다
+    if (!result.ok) {
+      setQuizAnswers((prev) => {
+        const next = [...prev];
+        next[questionIndex] = -1;
+        return next;
+      });
+    }
+  }
 
   async function submitMood() {
     setMoodSaving(true);
@@ -287,6 +428,17 @@ export default function LessonPage() {
           />
         )}
 
+        {phase === "quiz" && quiz && (
+          <QuizView
+            question={session.quizQuestions[quiz.index]}
+            state={quiz}
+            picked={quizAnswers[quiz.index] ?? -1}
+            onPick={pickQuizChoice}
+            saving={quizSaving}
+            disabled={closed}
+          />
+        )}
+
         {phase === "progress" && <ContentView content={session.progress} fallback="진도 안내" />}
         {phase === "assessment" && (
           <ContentView content={session.assessment} fallback="평가 안내" />
@@ -321,6 +473,47 @@ export default function LessonPage() {
             )}
           </section>
         )}
+
+        {phase === "draw" &&
+          (session.activity && artifact ? (
+            <DrawBoard
+              key={session.activity.activityId}
+              initialStrokes={artifact.strokes}
+              initialTexts={artifact.texts}
+              initialRev={artifact.saveRev}
+              places={session.activity.places}
+              place={artifact.place}
+              year={artifact.year}
+              onPlaceChange={choosePlace}
+              onExit={(strokes, texts, saveRev) =>
+                setArtifact((prev) => (prev ? { ...prev, strokes, texts, saveRev } : prev))
+              }
+              disabled={closed}
+            />
+          ) : (
+            <Placeholder title="그림을 준비하고 있어요" description="잠시만 기다려 주세요." />
+          ))}
+
+        {phase === "worksheet" &&
+          (session.activity && artifact ? (
+            <WorksheetView
+              questions={session.activity.worksheet}
+              place={artifact.place}
+              year={artifact.year}
+              strokes={artifact.strokes}
+              texts={artifact.texts}
+              value={worksheet}
+              onChange={setWorksheet}
+              onSubmit={submitArtifact}
+              submitted={artifact.status === "submitted"}
+              submitError={submitError}
+              disabled={closed}
+            />
+          ) : (
+            <Placeholder title="활동지를 준비하고 있어요" description="잠시만 기다려 주세요." />
+          ))}
+
+        {phase === "gallery" && <GalleryView disabled={closed} />}
 
         {phase === "reflection" && (
           <section className="flex flex-col gap-6">

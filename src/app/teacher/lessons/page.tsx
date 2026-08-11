@@ -5,7 +5,12 @@ import { useState } from "react";
 import { TeacherShell } from "@/components/teacher-shell";
 import { todayKST } from "@/lib/datetime";
 import { usePolled } from "@/lib/use-polled";
-import { emptyPhaseContent, type PhaseContent } from "@/lib/types";
+import {
+  emptyPhaseContent,
+  type ActivityContent,
+  type PhaseContent,
+  type QuizContent,
+} from "@/lib/types";
 
 /**
  * 차시 계획 관리 + 개별 수업 등록.
@@ -26,9 +31,13 @@ interface Plan {
   video: PhaseContent;
   reflectionQuestions: string[];
   reflectionPublic: boolean;
+  /** 시드로만 등록된다. 이 화면에서는 있다는 표시만 하고 수정하지 않는다 */
+  quiz?: QuizContent;
+  activity?: ActivityContent;
 }
 
-type Draft = Omit<Plan, "id"> & { id?: string };
+/** 편집기가 다루는 필드만. 퀴즈·활동은 서버가 기존 값을 그대로 유지한다 */
+type Draft = Omit<Plan, "id" | "quiz" | "activity"> & { id?: string };
 
 const EMPTY: Draft = {
   lessonNo: 1,
@@ -292,6 +301,32 @@ function Lessons() {
                     .filter(Boolean)
                     .join(" · ") || "단계 내용 없음"}
                 </p>
+
+                {/*
+                  퀴즈·활동은 시드 스크립트로 등록되고 이 화면에는 입력칸이 없다.
+                  표시조차 없으면 교사가 "이 차시에 퀴즈가 붙어 있다"는 사실을 모르고
+                  수업에 들어가게 된다. 고칠 수는 없어도 있다는 것은 보여야 한다.
+                */}
+                {(plan.quiz || plan.activity) && (
+                  <p className="mt-2 flex flex-wrap gap-1.5">
+                    {plan.quiz && (
+                      <span className="rounded-full bg-lime px-2.5 py-1 text-xs font-semibold">
+                        퀴즈 {plan.quiz.questions?.length ?? 0}문항
+                      </span>
+                    )}
+                    {plan.activity && (
+                      <span className="rounded-full bg-mint px-2.5 py-1 text-xs font-semibold">
+                        그리기 활동 · {plan.activity.activityId}
+                        {plan.activity.worksheet?.length
+                          ? ` · 활동지 ${plan.activity.worksheet.length}문항`
+                          : ""}
+                      </span>
+                    )}
+                    <span className="rounded-full border border-line px-2.5 py-1 text-xs text-muted">
+                      화면에서 수정 불가 — 시드 스크립트로 관리
+                    </span>
+                  </p>
+                )}
               </div>
               <div className="flex shrink-0 gap-2">
                 <button

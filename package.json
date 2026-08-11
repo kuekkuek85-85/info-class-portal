@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:lesson23": "node --env-file=.env.local scripts/seed-lesson23.ts"
   },
   "dependencies": {
     "firebase": "^12.17.1",

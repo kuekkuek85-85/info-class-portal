@@ -118,7 +118,16 @@ export async function PATCH(request: Request) {
     const existing = await getLessonPlan(body.id);
     if (!existing) return fail("not_found");
 
-    const input = normalize({ ...existing, ...body });
+    /*
+     * 퀴즈·활동은 편집기에 입력 UI 가 없다(시드 스크립트로 등록). 화면이 보내오지 않는
+     * 필드라서, 저장할 때마다 명시적으로 되살려 주지 않으면 조용히 지워진다.
+     * merge 저장이라 지금은 살아남지만, 그건 우연히 그런 것이지 의도한 보호가 아니다.
+     */
+    const input = {
+      ...normalize({ ...existing, ...body }),
+      quiz: existing.quiz,
+      activity: existing.activity,
+    };
     await updateLessonPlan(body.id, input);
 
     // 아직 시작하지 않은 세션에만 반영한다. 끝난 세션은 그날 실제로 쓴 내용을 그대로 보존한다.
