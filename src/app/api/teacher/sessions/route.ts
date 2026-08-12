@@ -24,6 +24,14 @@ import { LESSON_PHASES, type ClassNo, type LessonPhase, type SessionStatus } fro
  * 이렇게 해야 "1반은 어떤 질문에 답한 것인가"가 나중에도 정확히 남는다 (PRD 5.1).
  */
 
+/**
+ * 리허설 수업이 쓰는 교시.
+ *
+ * 시각표(1~7교시)에 없는 번호라 자동 만료 판정을 받지 않는다. 방과 후에 걸어보는 것이
+ * 목적이므로 "지금은 수업 시간이 아니라서 코드가 만료됨"이 되면 안 된다.
+ */
+const REHEARSAL_PERIOD = 9;
+
 export async function GET(request: Request) {
   return guard(async () => {
     const me = await requireTeacher();
@@ -51,16 +59,22 @@ export async function POST(request: Request) {
       classNo?: number;
       date?: string;
       period?: number;
+      rehearsal?: boolean;
     }>(request);
 
+    const rehearsal = body?.rehearsal === true;
     const classNo = Number(body?.classNo) as ClassNo;
-    const period = Number(body?.period);
-    const date = body?.date ?? "";
+    // 리허설은 오늘, 시각표에 없는 교시로 고정한다. 진짜 수업과 시간이 겹칠 일이 없고,
+    // 목록에서도 한눈에 구분된다.
+    const period = rehearsal ? REHEARSAL_PERIOD : Number(body?.period);
+    const date = rehearsal ? todayKST() : (body?.date ?? "");
 
     if (!body?.lessonPlanId) return fail("invalid_input", "차시를 선택해 주세요.");
     if (![1, 2, 3, 4].includes(classNo)) return fail("invalid_input", "반은 1~4 중 하나입니다.");
     if (!isDateKey(date)) return fail("invalid_input", "날짜 형식은 2026-08-11 입니다.");
-    if (!Number.isFinite(period) || period < 1 || period > 8) {
+    // 리허설 교시(9)는 리허설로 만들 때만 쓸 수 있다. 진짜 수업에 열어 두면 시각 만료가
+    // 면제되지 않는 9교시 수업이 생겨 코드가 하교 후까지 살아 있게 된다.
+    if (!Number.isFinite(period) || period < 1 || period > (rehearsal ? 9 : 8)) {
       return fail("invalid_input", "교시는 1~8 사이입니다.");
     }
 
@@ -78,6 +92,7 @@ export async function POST(request: Request) {
       ...snapshotOf(plan),
       status: "scheduled",
       phase: "waiting",
+      rehearsal,
       teacherNote: "",
       startedAt: null,
       endedAt: null,
@@ -85,7 +100,12 @@ export async function POST(request: Request) {
 
     // 문서 ID가 (날짜, 교시, 반)이라 중복은 Firestore가 거부한다
     if (!session) {
-      return fail("invalid_input", `${date} ${period}교시 ${classNo}반 수업이 이미 있습니다.`);
+      return fail(
+        "invalid_input",
+        rehearsal
+          ? `${classNo}반 리허설 수업이 이미 있습니다. 아래 목록에서 지우고 다시 만드세요.`
+          : `${date} ${period}교시 ${classNo}반 수업이 이미 있습니다.`,
+      );
     }
 
     return ok({ session });

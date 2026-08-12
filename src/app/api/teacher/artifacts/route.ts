@@ -8,7 +8,7 @@ import {
   updateArtifact,
   upsertFeedback,
 } from "@/lib/db";
-import { displayName, toCard } from "@/lib/gallery";
+import { activityIdFor, displayName, toCard } from "@/lib/gallery";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
 import { TEACHER_AUTHOR_ID } from "@/lib/types";
 
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     const session = await getSession(sessionId);
     if (!session) return fail("not_found");
 
-    const activityId = session.activity?.activityId;
+    const activityId = activityIdFor(session);
     if (!activityId) return ok({ activity: false, rows: [], stats: null });
 
     // 작품 한 편만 펼쳐 보기

@@ -9,17 +9,24 @@ import { currentPeriod } from "./timetable";
  *
  * ① 교사가 시작한 세션 → ② 시각표상 지금 교시 → ③ 아직 안 끝난 첫 수업 → ④ 첫 수업
  */
-export function pickCurrentSession<T extends { period: number; status: string }>(
-  sessions: T[],
-  now: Date = new Date(),
-): T | undefined {
-  if (sessions.length === 0) return undefined;
+export function pickCurrentSession<
+  T extends { period: number; status: string; rehearsal?: boolean },
+>(sessions: T[], now: Date = new Date()): T | undefined {
+  /*
+   * 리허설은 후보에서 뺀다.
+   *
+   * 교사가 방과 후에 만들어 두고 지우는 것을 깜빡하면, 그 수업은 계속 열려 있다
+   * (시각 만료가 면제되므로). 다음 날 대시보드가 그것을 "지금 하는 수업"으로 골라 버리면
+   * 교사는 엉뚱한 반 화면을 보며 진짜 수업을 진행하게 된다.
+   */
+  const real = sessions.filter((s) => !s.rehearsal);
+  if (real.length === 0) return undefined;
 
   const today = todayKST(now);
   return (
-    sessions.find((s) => s.status === "active") ??
-    sessions.find((s) => s.period === currentPeriod(today, now)) ??
-    sessions.find((s) => s.status !== "ended") ??
-    sessions[0]
+    real.find((s) => s.status === "active") ??
+    real.find((s) => s.period === currentPeriod(today, now)) ??
+    real.find((s) => s.status !== "ended") ??
+    real[0]
   );
 }

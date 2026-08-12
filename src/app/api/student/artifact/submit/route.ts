@@ -1,5 +1,6 @@
 import { fail, guard, ok } from "@/lib/api";
 import { getArtifact, getSession, isSessionClosed, updateArtifact } from "@/lib/db";
+import { activityIdFor } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
 
 /**
@@ -20,7 +21,7 @@ export async function POST() {
       return fail("session_expired", "수업이 끝나서 제출할 수 없어요.");
     }
 
-    const activityId = session.activity?.activityId;
+    const activityId = activityIdFor(session);
     if (!activityId) return fail("not_found", "이 차시에는 그리기 활동이 없어요.");
 
     const artifact = await getArtifact(activityId, me.studentId);

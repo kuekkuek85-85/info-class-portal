@@ -273,6 +273,16 @@ export interface ClassSession {
   quizIndex?: number;
   /** 정답을 공개했는지 */
   quizRevealed?: boolean;
+  /**
+   * 교사가 혼자 걸어보는 리허설 수업.
+   *
+   * 방과 후에 화면을 미리 확인하려면 "오늘 날짜에, 아직 안 끝난 교시" 인 수업이 있어야
+   * 하는데 그런 시간이 없다. 그래서 이 표시가 붙은 수업은 교시 시각과 무관하게 열려 있다.
+   *
+   * 대신 "지금 하는 수업" 자동 선택에서는 빠진다. 지우는 것을 깜빡한 리허설 수업이
+   * 다음 날 진짜 수업 대신 대시보드에 뜨면, 교사는 엉뚱한 반을 보며 수업을 진행하게 된다.
+   */
+  rehearsal?: boolean;
   /** 수업 직후 남기는 한 줄 회고. 다음 반 수업 전 개선 루프의 출발점 (PRD 5.1) */
   teacherNote: string;
   startedAt: number | null;
@@ -430,18 +440,34 @@ export interface ArtifactFeedback {
   /** 대상 작품 주인의 학번 — 내가 받은 피드백을 찾을 때 쓴다 */
   ownerId: string;
   classNo: ClassNo;
-  /** "그림에서 찾은 기술 하나" */
+  /** "이 그림에 쓰인 기술이 뭘까?" — 맞히기 */
   foundTech: string;
   /** "궁금한 점 하나" */
   question: string;
   /** 작품 주인의 한 줄 응답 */
   authorReply: string;
+  /** 이모지 반응 하나. 글을 안 써도 표현할 수 있게 (PRD 3.5 — 반응은 열되 서열화는 피한다) */
+  reaction?: string;
   createdAt: number;
   updatedAt: number;
 }
 
 /** 교사가 쓴 피드백의 작성자 자리 값 */
 export const TEACHER_AUTHOR_ID = "teacher";
+
+/**
+ * 고를 수 있는 이모지 반응.
+ *
+ * 넷으로 제한한다. 종류를 늘리면 "좋아요 수"가 되어 잘 그린 순위가 생기고,
+ * 그림 못 그린다고 생각하는 학생이 손을 놓는다 (PRD 9장 — 서열화는 피한다).
+ * 그래서 부러움·놀람·응원처럼 방향이 다른 것만 남겼다.
+ */
+export const REACTIONS = ["👍", "😮", "💡", "❤️"] as const;
+export type Reaction = (typeof REACTIONS)[number];
+
+export function isReaction(value: string): value is Reaction {
+  return (REACTIONS as readonly string[]).includes(value);
+}
 
 /** 시간표 한 줄. 반별 요일·교시를 등록하면 학기 전체 세션을 생성한다. */
 export interface TimetableSlot {

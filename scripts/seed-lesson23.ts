@@ -88,10 +88,10 @@ const ACTIVITY_LESSON3: ActivityContent = {
   worksheet: [
     {
       key: "place_year",
-      label: "내 그림은 몇 년도의 어디인가요?",
-      hint: "장소는 위에 이미 적혀 있어요. 연도만 적어 주세요.",
+      label: "내 그림의 제목을 적어 주세요.",
+      hint: "예) 알아서 배달되는 편의점, 로봇이 진료하는 병원",
       kind: "text",
-      maxLength: 20,
+      maxLength: 40,
     },
     {
       key: "techs",
@@ -117,7 +117,7 @@ const ACTIVITY_LESSON3: ActivityContent = {
     {
       key: "traits",
       label: "내 기술이 특히 강한 특성은?",
-      hint: "2차시 퀴즈에서 본 다섯 가지예요. 여러 개 골라도 됩니다.",
+      hint: "아래 특성은 디지털 사회의 특성입니다. 인터넷이나 AI를 통해 조사해 보고 골라 보세요.",
       kind: "traits",
       maxLength: 0,
     },
@@ -287,14 +287,27 @@ const SEEDS: PlanSeed[] = [
     lessonNo: 3,
     title: "2040년의 ___ — 미래 그리기 완성",
     moodCheckEnabled: true,
-    game: empty(),
+    // 2차시와 같은 이유로 대기 시간에 게임을 띄운다 (도착 시각이 5분씩 벌어진다)
+    game: {
+      heading: "기다리는 동안 — 하노이 탑",
+      body: "원판을 옮겨 탑을 통째로 오른쪽으로 보내세요.\n한 번에 한 개씩, 큰 원판을 작은 원판 위에 올릴 수 없어요.\n지난 시간보다 원판을 하나 더 늘려서 해 보세요.",
+      url: "https://hanoi-tower-game-rosy.vercel.app/",
+    },
+    // 원리 설명은 1차시에 이미 했다 (2차시 주석 참조)
     gameExplainer: empty(),
     progress: empty(),
     assessment: empty(),
     video: empty(),
+    /*
+     * 두 질문 모두 **오늘 실제로 한 일**에 붙는다.
+     *
+     * 예전 두 번째 질문은 "내 그림을 진짜로 만들려면 무엇이 더 필요할까요?" 였는데,
+     * 중1이 답하기엔 너무 막연하다. 오늘 활동지에서 고른 특성과 친구 작품을 보며
+     * 맞혀 본 기술이 있으니, 그것을 되짚게 하는 편이 답도 나오고 남는 것도 있다.
+     */
     reflectionQuestions: [
-      "친구 작품에서 처음 알게 된 기술 하나를 적어 주세요.",
-      "내 그림을 진짜로 만들려면 무엇이 더 필요할까요? 한 줄로.",
+      "친구 작품을 보며 어떤 기술인지 맞혀 봤지요. 그중 하나를 골라, 내가 처음 알게 된 것이나 놀랐던 점을 적어 주세요.",
+      "내 그림 속 기술 하나를 고르고, 그것이 디지털 사회의 어떤 특성(보안성·정보화·가속화·연결성·개인화)과 이어지는지 설명해 주세요.",
     ],
     reflectionPublic: false,
     activity: ACTIVITY_LESSON3,

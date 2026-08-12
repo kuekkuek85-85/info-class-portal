@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { CardNews, type CardNewsData } from "@/components/card-news";
 import { usePolled } from "@/lib/use-polled";
-import type { WorksheetQuestion } from "@/lib/types";
+import { REACTIONS, type WorksheetQuestion } from "@/lib/types";
 
 /**
  * 작품 감상 + 피드백.
@@ -19,18 +19,23 @@ import type { WorksheetQuestion } from "@/lib/types";
 interface CardRow extends CardNewsData {
   id: string;
   author: string;
+  /** 이모지별 개수. 누가 눌렀는지는 내려오지 않는다 */
+  counts?: Record<string, number>;
+  /** 내가 누른 이모지 */
+  mine?: string;
 }
 
 interface GalleryData {
   assigned: CardRow[];
   choices: { id: string; author: string; place: string; year: number }[];
-  myFeedbacks: { artifactId: string; foundTech: string; question: string }[];
+  myFeedbacks: { artifactId: string; foundTech: string; question: string; reaction: string }[];
   mine: (CardRow & { status: string }) | null;
   received: {
     id: string;
     from: string;
     foundTech: string;
     question: string;
+    reaction: string;
     authorReply: string;
   }[];
   worksheet: WorksheetQuestion[];
@@ -93,7 +98,14 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
           {data.assigned.map((card, index) => (
             <div key={card.id} className="flex flex-col gap-3">
               <h3 className="t-eyebrow">꼭 봐야 할 작품 {index + 1}</h3>
-              <CardNews data={card} worksheet={worksheet} author={card.author} />
+              <CardNews data={card} worksheet={worksheet} />
+              <ReactionBar
+                artifactId={card.id}
+                counts={card.counts ?? {}}
+                mine={card.mine ?? ""}
+                onSaved={load}
+                disabled={disabled}
+              />
               <FeedbackForm
                 artifactId={card.id}
                 existing={feedbackOf(card.id)}
@@ -121,7 +133,14 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
 
               {picked && (
                 <>
-                  <CardNews data={picked} worksheet={worksheet} author={picked.author} />
+                  <CardNews data={picked} worksheet={worksheet} />
+                  <ReactionBar
+                    artifactId={picked.id}
+                    counts={picked.counts ?? {}}
+                    mine={picked.mine ?? ""}
+                    onSaved={load}
+                    disabled={disabled}
+                  />
                   <FeedbackForm
                     artifactId={picked.id}
                     existing={feedbackOf(picked.id)}
@@ -138,7 +157,18 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
       {tab === "mine" && (
         <>
           {data.mine ? (
-            <CardNews data={data.mine} worksheet={worksheet} />
+            <>
+              <CardNews data={data.mine} worksheet={worksheet} />
+              {Object.keys(data.mine.counts ?? {}).length > 0 && (
+                <p className="flex flex-wrap gap-2">
+                  {Object.entries(data.mine.counts ?? {}).map(([emoji, n]) => (
+                    <span key={emoji} className="rounded-full bg-surface px-3 py-1.5 t-body">
+                      {emoji} {n}
+                    </span>
+                  ))}
+                </p>
+              )}
+            </>
           ) : (
             <p className="block bg-lilac py-10 text-center t-body-lg">아직 그린 작품이 없어요.</p>
           )}
@@ -154,6 +184,64 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
         </>
       )}
     </section>
+  );
+}
+
+/**
+ * 이모지 반응.
+ *
+ * 글을 쓰기 어려워하는 학생도 표현할 수 있어야 한다. 네 개로 제한한 이유는 개수가 늘면
+ * "좋아요 수"가 되어 잘 그린 순위가 생기기 때문이다 (PRD 9장 — 서열화는 피한다).
+ * 같은 것을 다시 누르면 취소된다.
+ */
+function ReactionBar({
+  artifactId,
+  counts,
+  mine,
+  onSaved,
+  disabled,
+}: {
+  artifactId: string;
+  counts: Record<string, number>;
+  mine: string;
+  onSaved: () => void;
+  disabled?: boolean;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  async function react(emoji: string) {
+    setBusy(true);
+    await fetch("/api/student/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ artifactId, reaction: mine === emoji ? "" : emoji }),
+    });
+    setBusy(false);
+    onSaved();
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {REACTIONS.map((emoji) => {
+        const on = mine === emoji;
+        const n = counts[emoji] ?? 0;
+        return (
+          <button
+            key={emoji}
+            type="button"
+            onClick={() => react(emoji)}
+            disabled={busy || disabled}
+            aria-pressed={on}
+            className={`rounded-full border-2 px-4 py-2 t-body ${
+              on ? "border-ink bg-surface" : "border-line bg-canvas"
+            }`}
+          >
+            {emoji}
+            {n > 0 && <span className="ml-2 font-semibold">{n}</span>}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -195,20 +283,25 @@ function FeedbackForm({
 
   return (
     <div className="flex flex-col gap-3 rounded-lg bg-surface p-4">
+      {/*
+        자유 댓글칸이 아니다. 무엇을 쓸지 정해진 두 칸만 둔다.
+        첫 칸은 일부러 "맞혀 보기"로 물었다 — 그림을 자세히 들여다봐야 답할 수 있고,
+        칭찬이나 평가가 아니라 관찰이 오간다.
+      */}
       <label className="flex flex-col gap-1">
-        <span className="t-body-sm font-bold">이 그림에서 찾은 기술 하나</span>
+        <span className="t-body-sm font-bold">이 그림에 어떤 기술이 쓰였을까요? 맞혀 보세요</span>
         <input
           value={foundTech}
           onChange={(event) => setFoundTech(event.target.value)}
           maxLength={200}
           disabled={disabled}
-          placeholder="예) 천장에 달린 배달 드론"
+          placeholder="예) 천장에 달린 배달 드론인 것 같아요"
           className="field"
         />
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="t-body-sm font-bold">궁금한 점 하나</span>
+        <span className="t-body-sm font-bold">그림을 그린 친구에게 물어보고 싶은 것</span>
         <input
           value={question}
           onChange={(event) => setQuestion(event.target.value)}

@@ -17,6 +17,7 @@ import {
   isValidWidthIndex,
   quantize,
 } from "@/lib/drawing";
+import { activityIdFor } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
 import { isTrait, type Stroke, type TextItem } from "@/lib/types";
 
@@ -61,7 +62,7 @@ export async function GET() {
     if (!activity?.activityId) return fail("not_found", "이 차시에는 그리기 활동이 없어요.");
 
     const artifact = await ensureArtifact({
-      activityId: activity.activityId,
+      activityId: activityIdFor(session),
       studentId: me.studentId,
       classNo: session.classNo,
       year: activity.year ?? 2040,
@@ -111,7 +112,7 @@ export async function POST(request: Request) {
     if (!body) return fail("invalid_input");
 
     const artifact = await ensureArtifact({
-      activityId: activity.activityId,
+      activityId: activityIdFor(session),
       studentId: me.studentId,
       classNo: session.classNo,
       year: activity.year ?? 2040,

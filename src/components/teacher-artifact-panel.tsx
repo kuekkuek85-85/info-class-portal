@@ -92,75 +92,81 @@ export function TeacherArtifactPanel({ sessionId }: { sessionId: string }) {
         </button>
       </div>
 
+      {/*
+        펼친 작품은 **누른 줄 바로 아래**에 놓는다. 목록 맨 끝에 붙이면 25명 중 3번을
+        눌렀을 때 화면이 저 아래로 튀고, 교사는 자기가 뭘 눌렀는지 잃어버린다.
+      */}
       <ul className="flex flex-col gap-1">
         {rows.map((row) => (
-          <li
-            key={row.id}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line px-3 py-2"
-          >
-            <div className="min-w-0">
-              <p className="t-body-sm font-semibold">
-                {row.author}
-                {row.hidden && " · 숨김"}
-              </p>
-              <p className="t-caption">
-                {row.place ? `${row.year}년의 ${row.place}` : "장소 미선택"} · 획 {row.strokeCount}개
-                · {row.status === "submitted" ? "제출함" : "작성 중"}
-              </p>
+          <li key={row.id} className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line px-3 py-2">
+              <div className="min-w-0">
+                <p className="t-body-sm font-semibold">
+                  {row.author}
+                  {row.hidden && " · 숨김"}
+                </p>
+                <p className="t-caption">
+                  {row.place ? `${row.year}년의 ${row.place}` : "장소 미선택"} · 획{" "}
+                  {row.strokeCount}개 · {row.status === "submitted" ? "제출함" : "작성 중"}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  onClick={() => void openDetail(openId === row.id ? "" : row.id)}
+                  className="pill pill-secondary t-body-sm"
+                >
+                  {openId === row.id ? "닫기" : "보기"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => patch(row.id, { hidden: !row.hidden })}
+                  className="pill pill-secondary t-body-sm"
+                >
+                  {row.hidden ? "숨김 해제" : "숨기기"}
+                </button>
+              </div>
             </div>
-            <div className="flex shrink-0 gap-2">
-              <button
-                type="button"
-                onClick={() => void openDetail(openId === row.id ? "" : row.id)}
-                className="pill pill-secondary t-body-sm"
-              >
-                {openId === row.id ? "닫기" : "보기"}
-              </button>
-              <button
-                type="button"
-                onClick={() => patch(row.id, { hidden: !row.hidden })}
-                className="pill pill-secondary t-body-sm"
-              >
-                {row.hidden ? "숨김 해제" : "숨기기"}
-              </button>
-            </div>
+
+            {openId === row.id && !detail && (
+              <p className="t-body-sm px-3">작품을 불러오는 중…</p>
+            )}
+
+            {openId === row.id && detail && (
+              <div className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-3">
+                <CardNews
+                  data={detail.card}
+                  worksheet={detail.worksheet}
+                  author={detail.card.author}
+                  compact
+                />
+
+                {detail.feedbacks.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <h3 className="t-caption">받은 피드백 {detail.feedbacks.length}개</h3>
+                    {detail.feedbacks.map((item) => (
+                      <div key={item.id} className="rounded-lg bg-canvas px-3 py-2">
+                        <p className="t-caption">{item.from}</p>
+                        {item.foundTech && <p className="t-body-sm">찾은 기술 · {item.foundTech}</p>}
+                        {item.question && <p className="t-body-sm">궁금한 점 · {item.question}</p>}
+                        {item.authorReply && (
+                          <p className="t-body-sm mt-1">↳ 작성자 답 · {item.authorReply}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <TeacherFeedbackForm
+                  key={detail.card.id}
+                  existing={detail.feedbacks.find((item) => item.mine)}
+                  onSave={(foundTech, question) => patch(detail.card.id, { foundTech, question })}
+                />
+              </div>
+            )}
           </li>
         ))}
       </ul>
-
-      {openId && !detail && <p className="t-body-sm">작품을 불러오는 중…</p>}
-
-      {detail && (
-        <div className="flex flex-col gap-4 border-t border-line pt-4">
-          <CardNews
-            data={detail.card}
-            worksheet={detail.worksheet}
-            author={detail.card.author}
-            compact
-          />
-
-          {detail.feedbacks.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <h3 className="t-caption">받은 피드백 {detail.feedbacks.length}개</h3>
-              {detail.feedbacks.map((item) => (
-                <div key={item.id} className="rounded-lg bg-surface px-3 py-2">
-                  <p className="t-caption">{item.from}</p>
-                  {item.foundTech && <p className="t-body-sm">찾은 기술 · {item.foundTech}</p>}
-                  {item.question && <p className="t-body-sm">궁금한 점 · {item.question}</p>}
-                  {item.authorReply && (
-                    <p className="t-body-sm mt-1">↳ 작성자 답 · {item.authorReply}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          <TeacherFeedbackForm
-            existing={detail.feedbacks.find((item) => item.mine)}
-            onSave={(foundTech, question) => patch(detail.card.id, { foundTech, question })}
-          />
-        </div>
-      )}
     </section>
   );
 }

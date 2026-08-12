@@ -1,4 +1,22 @@
-import type { Artifact, Student } from "./types";
+import { createHmac } from "node:crypto";
+
+import type { Artifact, ClassSession, Student } from "./types";
+
+/**
+ * 이 수업에서 쓸 활동 ID.
+ *
+ * 작품은 세션이 아니라 **활동**에 묶인다(`activityId__학번`). 차시를 넘어 이어 그리려면
+ * 그래야 하지만, 그 때문에 교사가 리허설로 걸어 보면서 그린 선이 **그 학생의 진짜 그림에
+ * 그대로 들어간다.** 갤러리에도 섞인다.
+ *
+ * 그래서 리허설은 활동 ID 뒤에 꼬리표를 붙여 완전히 다른 문서를 쓰게 한다.
+ * 리허설에서 무엇을 하든 진짜 작품은 손끝 하나 닿지 않는다.
+ */
+export function activityIdFor(session: ClassSession): string {
+  const id = session.activity?.activityId;
+  if (!id) return "";
+  return session.rehearsal ? `${id}__rehearsal` : id;
+}
 
 /**
  * 화면에 쓸 표시명 — 서버에서 조인해 문자열 하나로 만든다.
@@ -14,10 +32,40 @@ export function displayName(student: Student | undefined): string {
   return `${student.classNo}반 ${student.number}번 ${student.name}`;
 }
 
+/**
+ * 학생에게 내려보낼 작품 번호.
+ *
+ * 진짜 문서 ID 는 `활동ID__학번` 이라, 그대로 내려보내면 화면에 이름을 안 띄워도
+ * 개발자 도구에서 누구 것인지 그대로 읽힌다. 하필 정보 수업이라 열어 보는 학생이 나온다.
+ *
+ * **그냥 해시로는 부족하다.** 한 반의 학번 후보가 서른 개뿐이라, 활동 ID만 알면
+ * `future-2040__10401` 부터 차례로 해시해서 목록과 맞춰 보면 누구 것인지 다 드러난다.
+ * 그래서 서버만 아는 열쇠로 서명한다 — 열쇠가 없으면 후보를 만들어 볼 수가 없다.
+ *
+ * 서버는 그 반의 작품 목록(많아야 28개)을 훑어 같은 값을 만드는 문서를 찾는다.
+ */
+export function publicIdOf(artifactId: string): string {
+  return createHmac("sha256", galleryKey()).update(artifactId).digest("hex").slice(0, 16);
+}
+
+function galleryKey(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error("환경변수 SESSION_SECRET 가 설정되지 않았습니다.");
+  }
+  // 쿠키 서명과 같은 열쇠를 쓰되 용도를 섞지 않는다
+  return `${secret}:gallery`;
+}
+
+/** 학생이 보낸 작품 번호를 실제 작품으로 되돌린다. 없으면 null */
+export function findByPublicId(artifacts: Artifact[], publicId: string): Artifact | null {
+  return artifacts.find((row) => publicIdOf(row.id) === publicId) ?? null;
+}
+
 /** 카드뉴스 한 장에 필요한 것만 추린다 */
 export function toCard(artifact: Artifact, author: string) {
   return {
-    id: artifact.id,
+    id: publicIdOf(artifact.id),
     author,
     place: artifact.place,
     year: artifact.year,

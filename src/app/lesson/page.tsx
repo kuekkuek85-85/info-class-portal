@@ -110,6 +110,13 @@ export default function LessonPage() {
   const [submitError, setSubmitError] = useState("");
   const artifactLoaded = useRef(false);
 
+  /**
+   * 그리기 · 활동지 중 학생이 지금 보고 있는 쪽.
+   *
+   * 교사가 단계를 바꾸면 그쪽으로 옮겨 가고(수업 신호), 그 뒤로는 학생이 직접 오간다.
+   */
+  const [workTab, setWorkTab] = useState<"draw" | "worksheet">("draw");
+
   const [answers, setAnswers] = useState<string[]>([]);
   const [reflectionState, setReflectionState] = useState<"idle" | "saving" | "saved" | "done">(
     "idle",
@@ -136,6 +143,7 @@ export default function LessonPage() {
       const payload = result as LessonData;
       setData(payload);
       setPhase(payload.session.phase);
+      if (payload.session.phase === "worksheet") setWorkTab("worksheet");
       previousPhase.current = payload.session.phase;
       setClosed(payload.session.closed);
       setMood(payload.mood?.mood ?? "");
@@ -176,6 +184,10 @@ export default function LessonPage() {
       if (previousPhase.current === "waiting" && next !== "waiting" && !explainerShown.current) {
         explainerShown.current = true;
         setShowExplainer(true);
+      }
+      // 교사가 그리기·활동지 사이를 옮기면 학생 화면도 그쪽을 편다. 그 뒤로는 학생 마음대로.
+      if (next !== previousPhase.current && (next === "draw" || next === "worksheet")) {
+        setWorkTab(next);
       }
       previousPhase.current = next;
 
@@ -483,7 +495,39 @@ export default function LessonPage() {
           </section>
         )}
 
-        {phase === "draw" &&
+        {/*
+          그리기와 활동지는 학생이 스스로 오간다.
+          다른 단계와 달리 여기서는 진도가 사람마다 다르다 — 그림을 오래 그리는 학생도
+          있고, 글을 쓰다가 "아 그걸 안 그렸네" 하고 돌아가는 학생도 있다. 교사가 한꺼번에
+          넘겨 버리면 둘 중 한쪽은 반드시 끊긴다.
+
+          교사가 단계를 바꾸면 화면은 그쪽으로 따라가되(수업 신호), 그 뒤로는 학생이
+          자유롭게 오갈 수 있다.
+        */}
+        {(phase === "draw" || phase === "worksheet") && session.activity && (
+          <div className="mb-5 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setWorkTab("draw")}
+              className={`pill flex-1 ${workTab === "draw" ? "pill-primary" : "pill-secondary"}`}
+            >
+              그림 그리기
+            </button>
+            <button
+              type="button"
+              onClick={() => setWorkTab("worksheet")}
+              disabled={session.activity.worksheet.length === 0}
+              className={`pill flex-1 ${
+                workTab === "worksheet" ? "pill-primary" : "pill-secondary"
+              }`}
+            >
+              활동지 쓰기
+            </button>
+          </div>
+        )}
+
+        {(phase === "draw" || phase === "worksheet") &&
+          workTab === "draw" &&
           (session.activity && artifact ? (
             <DrawBoard
               key={session.activity.activityId}
@@ -503,7 +547,8 @@ export default function LessonPage() {
             <Placeholder title="그림을 준비하고 있어요" description="잠시만 기다려 주세요." />
           ))}
 
-        {phase === "worksheet" &&
+        {(phase === "draw" || phase === "worksheet") &&
+          workTab === "worksheet" &&
           (session.activity && artifact ? (
             <WorksheetView
               questions={session.activity.worksheet}

@@ -171,7 +171,11 @@ export async function deleteLessonPlan(id: string): Promise<void> {
  * 학생 쓰기 API가 공통으로 쓴다.
  */
 export function isSessionClosed(session: ClassSession, now: Date = new Date()): boolean {
-  return session.status === "ended" || isPeriodOver(session.date, session.period, now);
+  if (session.status === "ended") return true;
+  // 리허설은 교시 시각으로 닫지 않는다. 방과 후에 걸어보는 것이 목적이라
+  // 시각으로 닫으면 만들자마자 만료된다. 끝내는 방법은 종료 버튼과 삭제뿐이다.
+  if (session.rehearsal) return false;
+  return isPeriodOver(session.date, session.period, now);
 }
 
 export async function getSession(id: string): Promise<ClassSession | null> {
@@ -215,9 +219,7 @@ export async function findSessionByCode(
       .where("date", "==", date)
       .where("code", "==", code),
   );
-  const usable = sessions.filter(
-    (s) => s.status !== "ended" && !isPeriodOver(s.date, s.period),
-  );
+  const usable = sessions.filter((s) => !isSessionClosed(s));
   return usable[0] ?? null;
 }
 
@@ -656,22 +658,35 @@ export function feedbackId(artifact: string, authorId: string): string {
   return `${artifact}__${authorId}`;
 }
 
+/**
+ * 피드백을 남기거나 고친다.
+ *
+ * **보내지 않은 칸은 건드리지 않는다.** 이모지만 눌렀는데 이미 써 둔 글이 지워지면
+ * 학생은 자기가 뭘 잘못했는지 모른다. 반대로 글만 고쳤을 때 눌러 둔 이모지도 남아야 한다.
+ * authorReply 는 작품 주인이 쓰는 값이라 여기서 아예 다루지 않는다.
+ */
 export async function upsertFeedback(
-  input: Omit<ArtifactFeedback, "id" | "createdAt" | "updatedAt" | "authorReply">,
+  input: Pick<ArtifactFeedback, "artifactId" | "authorId" | "ownerId" | "classNo"> &
+    Partial<Pick<ArtifactFeedback, "foundTech" | "question" | "reaction">>,
 ): Promise<void> {
   const id = feedbackId(input.artifactId, input.authorId);
   const ref = db().collection(COLLECTIONS.artifactFeedbacks).doc(id);
   const existing = await ref.get();
   const now = Date.now();
 
-  await ref.set(
-    {
-      ...input,
-      createdAt: existing.exists ? (existing.data()?.createdAt ?? now) : now,
-      updatedAt: now,
-    },
-    { merge: true },
-  );
+  const patch: Record<string, unknown> = {
+    artifactId: input.artifactId,
+    authorId: input.authorId,
+    ownerId: input.ownerId,
+    classNo: input.classNo,
+    createdAt: existing.exists ? (existing.data()?.createdAt ?? now) : now,
+    updatedAt: now,
+  };
+  if (input.foundTech !== undefined) patch.foundTech = input.foundTech;
+  if (input.question !== undefined) patch.question = input.question;
+  if (input.reaction !== undefined) patch.reaction = input.reaction;
+
+  await ref.set(patch, { merge: true });
 }
 
 /** 작품 주인이 남기는 한 줄 응답 */

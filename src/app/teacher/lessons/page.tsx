@@ -39,6 +39,16 @@ interface Plan {
 /** 편집기가 다루는 필드만. 퀴즈·활동은 서버가 기존 값을 그대로 유지한다 */
 type Draft = Omit<Plan, "id" | "quiz" | "activity"> & { id?: string };
 
+/** 리허설 목록에 쓰는 만큼만 */
+interface SessionRow {
+  id: string;
+  code: string;
+  classNo: number;
+  lessonNo: number;
+  title: string;
+  rehearsal?: boolean;
+}
+
 const EMPTY: Draft = {
   lessonNo: 1,
   title: "",
@@ -349,8 +359,126 @@ function Lessons() {
         </ul>
       </section>
 
+      <Rehearsal plans={plans} />
       <QuickSession plans={plans} />
     </div>
+  );
+}
+
+/**
+ * 리허설 — 교사가 혼자 화면을 걸어보는 수업.
+ *
+ * 방과 후에 미리 확인하려면 "오늘 날짜에, 아직 안 끝난 교시" 인 수업이 있어야 하는데
+ * 그런 시간이 없다. 진짜 교시로 만들면 만들자마자 코드가 만료된다.
+ *
+ * 그래서 시각표에 없는 교시로 만들고 시각 만료를 면제한다. 대신 "지금 하는 수업"
+ * 자동 선택에서는 빠진다 — 지우는 것을 깜빡한 리허설이 다음 날 진짜 수업 대신
+ * 대시보드에 뜨면 엉뚱한 반을 보며 수업하게 된다.
+ */
+function Rehearsal({ plans }: { plans: Plan[] }) {
+  const [picked, setPicked] = useState("");
+  const [classNo, setClassNo] = useState(1);
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const lessonPlanId = picked || plans[0]?.id || "";
+  const { data, reload } = usePolled<{ sessions: SessionRow[] }>(
+    `/api/teacher/sessions?date=${todayKST()}`,
+  );
+  const rehearsals = (data?.sessions ?? []).filter((s) => s.rehearsal);
+
+  async function create() {
+    setBusy(true);
+    setMessage("");
+    const response = await fetch("/api/teacher/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lessonPlanId, classNo, rehearsal: true }),
+    });
+    const result = await response.json();
+    setBusy(false);
+    setMessage(result.ok ? "" : (result.message ?? "만들지 못했습니다."));
+    reload();
+  }
+
+  async function remove(id: string) {
+    await fetch(`/api/teacher/sessions?id=${id}`, { method: "DELETE" });
+    reload();
+  }
+
+  return (
+    <section className="flex flex-col gap-3 rounded-2xl border border-line bg-card p-4">
+      <h2 className="text-lg font-semibold">리허설 — 혼자 걸어보기</h2>
+      <p className="text-sm text-muted">
+        방과 후에도 코드가 만료되지 않는 연습용 수업입니다. 진짜 수업 목록과 대시보드의 &ldquo;지금
+        하는 수업&rdquo;에는 잡히지 않으니, 확인이 끝나면 지워 주세요. 학생 화면은{" "}
+        <b>각 반 30번 테스트 계정</b>(10130 · 10230 · 10330 · 10430)으로 들어가면 됩니다.
+      </p>
+
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-muted">차시</span>
+          <select
+            value={lessonPlanId}
+            onChange={(event) => setPicked(event.target.value)}
+            className="rounded-lg border border-line bg-background px-3 py-2"
+          >
+            {plans.map((plan) => (
+              <option key={plan.id} value={plan.id}>
+                {plan.lessonNo}차시 {plan.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-muted">반</span>
+          <select
+            value={classNo}
+            onChange={(event) => setClassNo(Number(event.target.value))}
+            className="rounded-lg border border-line bg-background px-3 py-2"
+          >
+            {[1, 2, 3, 4].map((n) => (
+              <option key={n} value={n}>
+                {n}반
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          onClick={create}
+          disabled={!lessonPlanId || busy}
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+        >
+          {busy ? "만드는 중…" : "리허설 수업 열기"}
+        </button>
+      </div>
+
+      {message && <p className="text-sm">{message}</p>}
+
+      {rehearsals.length > 0 && (
+        <ul className="flex flex-col gap-2 border-t border-line pt-3">
+          {rehearsals.map((item) => (
+            <li
+              key={item.id}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface px-3 py-2"
+            >
+              <span className="text-sm">
+                <b className="text-lg">코드 {item.code}</b> · {item.classNo}반 · {item.lessonNo}차시{" "}
+                {item.title}
+              </span>
+              <button
+                type="button"
+                onClick={() => remove(item.id)}
+                className="rounded-lg border border-line px-3 py-1.5 text-xs text-rose-600"
+              >
+                지우기
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
