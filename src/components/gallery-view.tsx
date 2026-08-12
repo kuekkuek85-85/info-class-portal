@@ -1,35 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
+import { ArtifactCanvas } from "@/components/artifact-canvas";
 import { CardNews, type CardNewsData } from "@/components/card-news";
 import { usePolled } from "@/lib/use-polled";
-import { REACTIONS, type WorksheetQuestion } from "@/lib/types";
+import { REACTIONS, TRAITS, type WorksheetQuestion } from "@/lib/types";
 
 /**
- * 작품 감상 + 피드백.
+ * 작품 감상.
  *
- * 필수 2편은 서버가 배정하고, 1편은 목록에서 고른다. 배정을 두는 이유는
- * "아무도 내 걸 안 봤다"를 없애기 위해서다 — 자유 선택만 두면 몇 명에게 몰린다.
+ * 그림을 먼저 보여준다. 제목과 이름을 줄줄이 늘어놓은 목록에서는 무엇을 볼지 고를 수가
+ * 없다 — 학생이 고르는 기준은 그림이다. 그래서 격자에 그림을 깔고, 누르면 펼친다.
  *
- * 점수·좋아요·랭킹은 없다. 그림 실력 대회로 읽히는 순간 그림을 못 그린다고 생각하는
- * 학생이 손을 놓는다 (PRD 9장).
+ * 왼쪽 필터는 특성과 장소로 좁힌다. "가속화가 강한 작품만" 처럼 보면, 그냥 훑는 것과 달리
+ * 특성이라는 말이 실제로 쓰인다 — 2차시 퀴즈에서 모은 다섯 개가 여기서 도구가 된다.
+ *
+ * 점수·좋아요 순위는 없다. 그림 실력 대회로 읽히는 순간 못 그린다고 생각하는 학생이
+ * 손을 놓는다 (PRD 9장).
  */
 
-interface CardRow extends CardNewsData {
+interface Work extends CardNewsData {
   id: string;
-  author: string;
-  /** 이모지별 개수. 누가 눌렀는지는 내려오지 않는다 */
-  counts?: Record<string, number>;
-  /** 내가 누른 이모지 */
-  mine?: string;
+  /** 꼭 봐야 할 두 편인지 */
+  assigned: boolean;
+  counts: Record<string, number>;
+  myReaction: string;
+  myFoundTech: string;
+  myQuestion: string;
 }
 
 interface GalleryData {
-  assigned: CardRow[];
-  choices: { id: string; author: string; place: string; year: number }[];
-  myFeedbacks: { artifactId: string; foundTech: string; question: string; reaction: string }[];
-  mine: (CardRow & { status: string }) | null;
+  works: Work[];
+  mine: (CardNewsData & { id: string; status: string; counts: Record<string, number> }) | null;
   received: {
     id: string;
     from: string;
@@ -39,44 +42,45 @@ interface GalleryData {
     authorReply: string;
   }[];
   worksheet: WorksheetQuestion[];
+  places: string[];
 }
 
 export function GalleryView({ disabled }: { disabled?: boolean }) {
-  const [picked, setPicked] = useState<CardRow | null>(null);
-  const [pickedId, setPickedId] = useState("");
   const [tab, setTab] = useState<"peers" | "mine">("peers");
+  const [openId, setOpenId] = useState("");
+  const [traitFilter, setTraitFilter] = useState<string[]>([]);
+  const [placeFilter, setPlaceFilter] = useState<string[]>([]);
+  const [onlyAssigned, setOnlyAssigned] = useState(false);
 
-  // 간격을 주지 않는다 — 열 때 한 번만 읽고, 피드백을 남긴 뒤에만 reload() 한다.
-  const { data, reload: load } = usePolled<GalleryData>("/api/student/gallery");
+  // 간격을 주지 않는다 — 열 때 한 번만 읽고, 남긴 뒤에만 reload() 한다
+  const { data, reload } = usePolled<GalleryData>("/api/student/gallery");
 
-  async function openChoice(id: string) {
-    setPickedId(id);
-    if (!id) {
-      setPicked(null);
-      return;
-    }
-    const response = await fetch(`/api/student/gallery?id=${encodeURIComponent(id)}`);
-    const result = await response.json();
-    if (result.ok) setPicked(result.card as CardRow);
-  }
+  // ?? [] 를 그대로 두면 렌더마다 새 배열이 되어 아래 useMemo 가 매번 다시 돈다
+  const works = useMemo(() => data?.works ?? [], [data]);
 
-  if (!data) {
-    return <p className="py-10 text-center t-body">불러오는 중…</p>;
-  }
+  const filtered = useMemo(() => {
+    return works.filter((work) => {
+      if (onlyAssigned && !work.assigned) return false;
+      if (placeFilter.length > 0 && !placeFilter.includes(work.place)) return false;
+      // 특성은 "고른 것 중 하나라도 있으면" 으로 본다. 전부 만족을 요구하면 거의 안 남는다.
+      if (traitFilter.length > 0 && !traitFilter.some((t) => work.traits.includes(t))) return false;
+      return true;
+    });
+  }, [works, onlyAssigned, placeFilter, traitFilter]);
 
-  const worksheet = data.worksheet;
-  const feedbackOf = (artifactId: string) =>
-    data.myFeedbacks.find((row) => row.artifactId === artifactId);
+  const open = works.find((work) => work.id === openId) ?? null;
+
+  if (!data) return <p className="py-10 text-center t-body">불러오는 중…</p>;
 
   return (
-    <section className="flex flex-col gap-6">
+    <section className="flex flex-col gap-5">
       <div className="flex gap-2">
         <button
           type="button"
           onClick={() => setTab("peers")}
           className={`pill flex-1 ${tab === "peers" ? "pill-primary" : "pill-secondary"}`}
         >
-          친구 작품 보기
+          친구 작품 ({works.length})
         </button>
         <button
           type="button"
@@ -89,66 +93,87 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
 
       {tab === "peers" && (
         <>
-          {data.assigned.length === 0 && (
+          {works.length === 0 && (
             <p className="block bg-lilac py-12 text-center t-body-lg">
-              아직 제출된 작품이 없어요. 조금 뒤에 다시 보면 친구들 작품이 올라와 있을 거예요.
+              아직 그려진 작품이 없어요. 조금 뒤에 다시 보면 친구들 그림이 올라와 있을 거예요.
             </p>
           )}
 
-          {data.assigned.map((card, index) => (
-            <div key={card.id} className="flex flex-col gap-3">
-              <h3 className="t-eyebrow">꼭 봐야 할 작품 {index + 1}</h3>
-              <CardNews data={card} worksheet={worksheet} />
-              <ReactionBar
-                artifactId={card.id}
-                counts={card.counts ?? {}}
-                mine={card.mine ?? ""}
-                onSaved={load}
-                disabled={disabled}
+          {works.length > 0 && (
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+              <FilterPanel
+                places={data.places}
+                traitFilter={traitFilter}
+                placeFilter={placeFilter}
+                onlyAssigned={onlyAssigned}
+                onTrait={setTraitFilter}
+                onPlace={setPlaceFilter}
+                onAssigned={setOnlyAssigned}
+                total={works.length}
+                shown={filtered.length}
               />
-              <FeedbackForm
-                artifactId={card.id}
-                existing={feedbackOf(card.id)}
-                onSaved={load}
-                disabled={disabled}
-              />
-            </div>
-          ))}
 
-          {data.choices.length > 0 && (
-            <div className="flex flex-col gap-3 border-t border-line pt-5">
-              <h3 className="t-eyebrow">보고 싶은 작품 하나 더 고르기</h3>
-              <select
-                value={pickedId}
-                onChange={(event) => void openChoice(event.target.value)}
-                className="field"
-              >
-                <option value="">고르기</option>
-                {data.choices.map((choice) => (
-                  <option key={choice.id} value={choice.id}>
-                    {choice.year}년의 {choice.place} — {choice.author}
-                  </option>
-                ))}
-              </select>
-
-              {picked && (
-                <>
-                  <CardNews data={picked} worksheet={worksheet} />
-                  <ReactionBar
-                    artifactId={picked.id}
-                    counts={picked.counts ?? {}}
-                    mine={picked.mine ?? ""}
-                    onSaved={load}
-                    disabled={disabled}
-                  />
-                  <FeedbackForm
-                    artifactId={picked.id}
-                    existing={feedbackOf(picked.id)}
-                    onSaved={load}
-                    disabled={disabled}
-                  />
-                </>
-              )}
+              <div className="min-w-0 flex-1">
+                {filtered.length === 0 ? (
+                  <p className="rounded-lg bg-surface py-12 text-center t-body">
+                    고른 조건에 맞는 작품이 없어요. 필터를 조금 풀어 보세요.
+                  </p>
+                ) : (
+                  <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                    {filtered.map((work) => (
+                      <li key={work.id}>
+                        <button
+                          type="button"
+                          onClick={() => setOpenId(work.id)}
+                          className="flex w-full flex-col gap-2 rounded-lg border-2 border-line bg-canvas p-2 text-left transition active:scale-[0.99]"
+                        >
+                          {/* 축소해 그린다 — 원본 크기로 스물다섯 장을 띄우면 화면이 죽는다 */}
+                          <ArtifactCanvas
+                            strokes={work.strokes}
+                            texts={work.texts}
+                            pixelWidth={480}
+                            className="h-auto w-full rounded bg-white"
+                          />
+                          <div className="flex flex-col gap-1">
+                            <p className="t-body-sm font-bold">
+                              {work.answers.place_year?.trim() ||
+                                `${work.year}년의 ${work.place || "어딘가"}`}
+                            </p>
+                            <p className="t-caption">{work.place}</p>
+                            {work.traits.length > 0 && (
+                              <p className="flex flex-wrap gap-1">
+                                {work.traits.map((trait) => (
+                                  <span
+                                    key={trait}
+                                    className="rounded-full bg-lilac px-2 py-0.5 text-xs font-semibold"
+                                  >
+                                    {trait}
+                                  </span>
+                                ))}
+                              </p>
+                            )}
+                            <p className="flex flex-wrap items-center gap-2">
+                              {work.assigned && (
+                                <span className="rounded-full bg-ink px-2 py-0.5 text-xs font-semibold text-canvas">
+                                  꼭 보기
+                                </span>
+                              )}
+                              {Object.entries(work.counts).map(([emoji, n]) => (
+                                <span key={emoji} className="text-xs">
+                                  {emoji} {n}
+                                </span>
+                              ))}
+                              {(work.myFoundTech || work.myQuestion) && (
+                                <span className="text-xs text-muted">✎ 남김</span>
+                              )}
+                            </p>
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           )}
         </>
@@ -158,10 +183,10 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
         <>
           {data.mine ? (
             <>
-              <CardNews data={data.mine} worksheet={worksheet} />
-              {Object.keys(data.mine.counts ?? {}).length > 0 && (
+              <CardNews data={data.mine} worksheet={data.worksheet} />
+              {Object.keys(data.mine.counts).length > 0 && (
                 <p className="flex flex-wrap gap-2">
-                  {Object.entries(data.mine.counts ?? {}).map(([emoji, n]) => (
+                  {Object.entries(data.mine.counts).map(([emoji, n]) => (
                     <span key={emoji} className="rounded-full bg-surface px-3 py-1.5 t-body">
                       {emoji} {n}
                     </span>
@@ -177,13 +202,167 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
           {data.received.length === 0 && (
             <p className="t-body">아직 없어요. 조금만 기다려 보세요.</p>
           )}
-
           {data.received.map((item) => (
-            <ReceivedCard key={item.id} item={item} onSaved={load} disabled={disabled} />
+            <ReceivedCard key={item.id} item={item} onSaved={reload} disabled={disabled} />
           ))}
         </>
       )}
+
+      {open && (
+        <DetailModal
+          work={open}
+          worksheet={data.worksheet}
+          onClose={() => setOpenId("")}
+          onSaved={reload}
+          disabled={disabled}
+        />
+      )}
     </section>
+  );
+}
+
+/** 왼쪽 필터. 넓은 화면에서는 옆에, 좁은 화면에서는 위에 접혀 붙는다 */
+function FilterPanel({
+  places,
+  traitFilter,
+  placeFilter,
+  onlyAssigned,
+  onTrait,
+  onPlace,
+  onAssigned,
+  total,
+  shown,
+}: {
+  places: string[];
+  traitFilter: string[];
+  placeFilter: string[];
+  onlyAssigned: boolean;
+  onTrait: (next: string[]) => void;
+  onPlace: (next: string[]) => void;
+  onAssigned: (next: boolean) => void;
+  total: number;
+  shown: number;
+}) {
+  const toggle = (list: string[], value: string, set: (next: string[]) => void) =>
+    set(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+
+  const dirty = traitFilter.length > 0 || placeFilter.length > 0 || onlyAssigned;
+
+  return (
+    <aside className="flex shrink-0 flex-col gap-4 rounded-lg border border-line p-4 lg:w-56">
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="t-body font-bold">필터</h3>
+        <span className="t-caption">
+          {shown} / {total}
+        </span>
+      </div>
+
+      <label className="flex items-center gap-2 t-body-sm">
+        <input
+          type="checkbox"
+          checked={onlyAssigned}
+          onChange={(event) => onAssigned(event.target.checked)}
+        />
+        꼭 봐야 할 작품만
+      </label>
+
+      <div className="flex flex-col gap-2 border-t border-line pt-3">
+        <p className="t-caption">디지털 사회의 특성</p>
+        {TRAITS.map((trait) => (
+          <label key={trait} className="flex items-center gap-2 t-body-sm">
+            <input
+              type="checkbox"
+              checked={traitFilter.includes(trait)}
+              onChange={() => toggle(traitFilter, trait, onTrait)}
+            />
+            {trait}
+          </label>
+        ))}
+      </div>
+
+      {places.length > 0 && (
+        <div className="flex flex-col gap-2 border-t border-line pt-3">
+          <p className="t-caption">장소</p>
+          {places.map((place) => (
+            <label key={place} className="flex items-center gap-2 t-body-sm">
+              <input
+                type="checkbox"
+                checked={placeFilter.includes(place)}
+                onChange={() => toggle(placeFilter, place, onPlace)}
+              />
+              {place}
+            </label>
+          ))}
+        </div>
+      )}
+
+      {dirty && (
+        <button
+          type="button"
+          onClick={() => {
+            onTrait([]);
+            onPlace([]);
+            onAssigned(false);
+          }}
+          className="pill pill-secondary t-body-sm"
+        >
+          필터 지우기
+        </button>
+      )}
+    </aside>
+  );
+}
+
+/** 카드를 누르면 펼쳐지는 상세. 격자 위에 덮어 띄운다 */
+function DetailModal({
+  work,
+  worksheet,
+  onClose,
+  onSaved,
+  disabled,
+}: {
+  work: Work;
+  worksheet: WorksheetQuestion[];
+  onClose: () => void;
+  onSaved: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-6"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-lg bg-canvas p-5 sm:rounded-lg">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="t-headline">작품 보기</h3>
+          <button type="button" onClick={onClose} className="pill pill-secondary t-body-sm">
+            닫기
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <CardNews data={work} worksheet={worksheet} />
+
+          <ReactionBar
+            artifactId={work.id}
+            counts={work.counts}
+            mine={work.myReaction}
+            onSaved={onSaved}
+            disabled={disabled}
+          />
+
+          <FeedbackForm
+            key={work.id}
+            artifactId={work.id}
+            foundTech={work.myFoundTech}
+            question={work.myQuestion}
+            onSaved={onSaved}
+            disabled={disabled}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -191,8 +370,7 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
  * 이모지 반응.
  *
  * 글을 쓰기 어려워하는 학생도 표현할 수 있어야 한다. 네 개로 제한한 이유는 개수가 늘면
- * "좋아요 수"가 되어 잘 그린 순위가 생기기 때문이다 (PRD 9장 — 서열화는 피한다).
- * 같은 것을 다시 누르면 취소된다.
+ * "좋아요 수"가 되어 잘 그린 순위가 생기기 때문이다. 같은 것을 다시 누르면 취소된다.
  */
 function ReactionBar({
   artifactId,
@@ -245,20 +423,27 @@ function ReactionBar({
   );
 }
 
-/** 두 칸짜리 고정 양식. 자유 댓글칸은 만들지 않는다 */
+/**
+ * 두 칸짜리 고정 양식. 자유 댓글칸은 만들지 않는다.
+ *
+ * 첫 칸은 일부러 "맞혀 보기"로 물었다 — 그림을 자세히 들여다봐야 답할 수 있고,
+ * 칭찬이나 평가가 아니라 관찰이 오간다.
+ */
 function FeedbackForm({
   artifactId,
-  existing,
+  foundTech: initialFoundTech,
+  question: initialQuestion,
   onSaved,
   disabled,
 }: {
   artifactId: string;
-  existing?: { foundTech: string; question: string };
+  foundTech: string;
+  question: string;
   onSaved: () => void;
   disabled?: boolean;
 }) {
-  const [foundTech, setFoundTech] = useState(existing?.foundTech ?? "");
-  const [question, setQuestion] = useState(existing?.question ?? "");
+  const [foundTech, setFoundTech] = useState(initialFoundTech);
+  const [question, setQuestion] = useState(initialQuestion);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -281,13 +466,10 @@ function FeedbackForm({
     onSaved();
   }
 
+  const already = Boolean(initialFoundTech || initialQuestion);
+
   return (
     <div className="flex flex-col gap-3 rounded-lg bg-surface p-4">
-      {/*
-        자유 댓글칸이 아니다. 무엇을 쓸지 정해진 두 칸만 둔다.
-        첫 칸은 일부러 "맞혀 보기"로 물었다 — 그림을 자세히 들여다봐야 답할 수 있고,
-        칭찬이나 평가가 아니라 관찰이 오간다.
-      */}
       <label className="flex flex-col gap-1">
         <span className="t-body-sm font-bold">이 그림에 어떤 기술이 쓰였을까요? 맞혀 보세요</span>
         <input
@@ -319,7 +501,7 @@ function FeedbackForm({
           disabled={saving || disabled || (!foundTech.trim() && !question.trim())}
           className="pill pill-primary"
         >
-          {existing ? "고쳐서 남기기" : "남기기"}
+          {already ? "고쳐서 남기기" : "남기기"}
         </button>
         {message && <span className="t-body-sm">{message}</span>}
       </div>
@@ -332,7 +514,14 @@ function ReceivedCard({
   onSaved,
   disabled,
 }: {
-  item: { id: string; from: string; foundTech: string; question: string; authorReply: string };
+  item: {
+    id: string;
+    from: string;
+    foundTech: string;
+    question: string;
+    reaction: string;
+    authorReply: string;
+  };
   onSaved: () => void;
   disabled?: boolean;
 }) {
@@ -352,7 +541,9 @@ function ReceivedCard({
 
   return (
     <div className="card flex flex-col gap-2">
-      <p className="t-caption">{item.from}</p>
+      <p className="t-caption">
+        {item.from} {item.reaction}
+      </p>
       {item.foundTech && (
         <p className="t-body">
           <span className="font-bold">찾은 기술 · </span>
@@ -361,7 +552,7 @@ function ReceivedCard({
       )}
       {item.question && (
         <p className="t-body">
-          <span className="font-bold">궁금한 점 · </span>
+          <span className="font-bold">물어본 것 · </span>
           {item.question}
         </p>
       )}

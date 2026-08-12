@@ -17,10 +17,19 @@ interface ArtifactCanvasProps {
   strokes: Stroke[];
   texts: TextItem[];
   className?: string;
+  /**
+   * 그릴 실제 픽셀 폭. 작게 주면 축소해서 그린다.
+   *
+   * 격자에 스물다섯 장을 늘어놓을 때 이걸 안 주면 캔버스 하나가 1600×1200 을 붙잡는다.
+   * 스물다섯 장이면 190MB — 태블릿에서 화면이 그대로 죽는다.
+   */
+  pixelWidth?: number;
 }
 
-export function ArtifactCanvas({ strokes, texts, className }: ArtifactCanvasProps) {
+export function ArtifactCanvas({ strokes, texts, className, pixelWidth }: ArtifactCanvasProps) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const width = pixelWidth ?? CANVAS_WIDTH;
+  const height = Math.round((width / CANVAS_WIDTH) * CANVAS_HEIGHT);
 
   useEffect(() => {
     const canvas = ref.current;
@@ -28,14 +37,18 @@ export function ArtifactCanvas({ strokes, texts, className }: ArtifactCanvasProp
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // 논리 좌표(1600×1200)로 그려진 그림을 실제 크기에 맞춰 줄인다
+    ctx.save();
+    ctx.scale(width / CANVAS_WIDTH, height / CANVAS_HEIGHT);
     drawArtifact(ctx, strokes, texts);
-  }, [strokes, texts]);
+    ctx.restore();
+  }, [strokes, texts, width, height]);
 
   return (
     <canvas
       ref={ref}
-      width={CANVAS_WIDTH}
-      height={CANVAS_HEIGHT}
+      width={width}
+      height={height}
       className={className ?? "h-auto w-full rounded-lg border border-line bg-white"}
     />
   );
