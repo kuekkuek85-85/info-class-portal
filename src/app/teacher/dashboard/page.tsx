@@ -120,23 +120,37 @@ function Dashboard() {
   const stats = data?.stats;
   const note = noteDraft ?? session?.teacherNote ?? "";
 
+  /*
+   * 지금 화면에 떠 있는 수업의 ID.
+   *
+   * sessionId 는 교사가 드롭다운에서 **직접 고른** 경우에만 채워진다. 아무것도 고르지
+   * 않고 화면을 열면 서버가 "지금 하는 수업"을 골라 주는데(4.3), 그때 sessionId 는
+   * null 이다.
+   *
+   * 예전에는 여기서 `if (!sessionId) return` 으로 돌아가 버렸다. 그래서 대시보드를
+   * 열자마자 단계 버튼을 누르면 **아무 일도 일어나지 않았다.** 오류도 안 뜨니 교사는
+   * 계속 누르고, 학생 화면은 그대로다. 수업이 그 자리에서 멈춘다.
+   */
+  const currentSessionId = sessionId ?? session?.id ?? null;
+
   async function patchSession(patch: Record<string, unknown>) {
-    if (!sessionId) return;
+    if (!currentSessionId) return;
     await fetch("/api/teacher/sessions", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: sessionId, ...patch }),
+      body: JSON.stringify({ id: currentSessionId, ...patch }),
     });
     setNoteDraft(null);
     reload();
   }
 
   async function reviewAll() {
-    if (!sessionId) return;
+    // 여기도 같은 이유로 서버가 고른 수업을 받아 쓴다 (patchSession 주석 참조)
+    if (!currentSessionId) return;
     await fetch("/api/teacher/mood-review", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId, all: true }),
+      body: JSON.stringify({ sessionId: currentSessionId, all: true }),
     });
     reload();
   }
@@ -178,8 +192,10 @@ function Dashboard() {
                   setSessionId(item.id);
                   setNoteDraft(null);
                 }}
+                // 서버가 골라 준 수업도 골라진 것으로 표시한다. 아무것도 선택돼 보이지
+                // 않으면 교사는 "어느 반을 보고 있는지" 알 수 없다.
                 className={`rounded-xl border px-4 py-3 text-left transition ${
-                  sessionId === item.id
+                  currentSessionId === item.id
                     ? "border-accent bg-accent/10"
                     : "border-line bg-card hover:border-accent"
                 }`}
