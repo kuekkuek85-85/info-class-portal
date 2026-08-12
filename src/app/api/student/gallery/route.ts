@@ -2,7 +2,7 @@ import { fail, guard, ok } from "@/lib/api";
 import { getArtifact, getSession, listArtifacts, listFeedbacksFor } from "@/lib/db";
 import { activityIdFor, assignPeers, isVisible, publicIdOf, toCard } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
-import { TEACHER_AUTHOR_ID } from "@/lib/types";
+import { TEACHER_AUTHOR_ID, reactionsOf } from "@/lib/types";
 
 /**
  * 작품 감상 — 우리 반 작품 전체를 한 번에 내려보낸다.
@@ -40,21 +40,28 @@ export async function GET() {
       ...(mine ? [mine.id] : []),
     ]);
 
-    /** 작품별 이모지 개수와 내가 누른 것, 내가 쓴 글 */
+    /** 작품별 이모지 개수와 내가 누른 것들, 내가 쓴 글 */
     const byArtifact = new Map<
       string,
-      { counts: Record<string, number>; myReaction: string; myFoundTech: string; myQuestion: string }
+      {
+        counts: Record<string, number>;
+        myReactions: string[];
+        myFoundTech: string;
+        myQuestion: string;
+      }
     >();
     for (const row of feedbacks) {
       const entry = byArtifact.get(row.artifactId) ?? {
         counts: {},
-        myReaction: "",
+        myReactions: [],
         myFoundTech: "",
         myQuestion: "",
       };
-      if (row.reaction) entry.counts[row.reaction] = (entry.counts[row.reaction] ?? 0) + 1;
+      // 한 사람이 여러 개를 누를 수 있다 — 누른 것마다 하나씩 센다
+      const picked = reactionsOf(row);
+      for (const emoji of picked) entry.counts[emoji] = (entry.counts[emoji] ?? 0) + 1;
       if (row.authorId === me.studentId) {
-        entry.myReaction = row.reaction ?? "";
+        entry.myReactions = picked;
         entry.myFoundTech = row.foundTech ?? "";
         entry.myQuestion = row.question ?? "";
       }
@@ -71,7 +78,7 @@ export async function GET() {
         // 꼭 봐야 할 두 편. 자유 선택만 두면 잘 그린 몇 명에게 몰린다 (assignPeers 참조)
         assigned: assignedIds.has(row.id),
         counts: byArtifact.get(row.id)?.counts ?? {},
-        myReaction: byArtifact.get(row.id)?.myReaction ?? "",
+        myReactions: byArtifact.get(row.id)?.myReactions ?? [],
         myFoundTech: byArtifact.get(row.id)?.myFoundTech ?? "",
         myQuestion: byArtifact.get(row.id)?.myQuestion ?? "",
       }));
@@ -93,14 +100,14 @@ export async function GET() {
        * 알 수 없는 빈 카드가 쌓인다.
        */
       received: received
-        .filter((row) => row.foundTech?.trim() || row.question?.trim() || row.reaction)
+        .filter((row) => row.foundTech?.trim() || row.question?.trim() || reactionsOf(row).length)
         .map((row) => ({
           // 피드백 문서 ID 도 `작품ID__작성자학번` 이라 그대로 내보내면 누가 썼는지 드러난다
           id: publicIdOf(row.id),
           from: row.authorId === TEACHER_AUTHOR_ID ? "선생님" : "친구",
           foundTech: row.foundTech,
           question: row.question,
-          reaction: row.reaction ?? "",
+          reactions: reactionsOf(row),
           authorReply: row.authorReply ?? "",
         })),
       worksheet: session.activity?.worksheet ?? [],

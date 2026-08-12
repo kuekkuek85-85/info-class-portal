@@ -667,7 +667,7 @@ export function feedbackId(artifact: string, authorId: string): string {
  */
 export async function upsertFeedback(
   input: Pick<ArtifactFeedback, "artifactId" | "authorId" | "ownerId" | "classNo"> &
-    Partial<Pick<ArtifactFeedback, "foundTech" | "question" | "reaction">>,
+    Partial<Pick<ArtifactFeedback, "foundTech" | "question" | "reactions">>,
 ): Promise<void> {
   const id = feedbackId(input.artifactId, input.authorId);
   const ref = db().collection(COLLECTIONS.artifactFeedbacks).doc(id);
@@ -684,7 +684,11 @@ export async function upsertFeedback(
   };
   if (input.foundTech !== undefined) patch.foundTech = input.foundTech;
   if (input.question !== undefined) patch.question = input.question;
-  if (input.reaction !== undefined) patch.reaction = input.reaction;
+  if (input.reactions !== undefined) {
+    patch.reactions = input.reactions;
+    // 하나만 누를 수 있던 시절의 값이 남아 있으면 지운다 (두 곳을 같이 읽지 않도록)
+    patch.reaction = "";
+  }
 
   await ref.set(patch, { merge: true });
 }

@@ -47,7 +47,8 @@ export async function POST(request: Request) {
       artifactId?: string;
       foundTech?: string;
       question?: string;
-      reaction?: string;
+      /** 지금 눌러 둔 이모지 전부. 화면이 통째로 보내고 서버는 그대로 덮어쓴다 */
+      reactions?: string[];
       /** 내가 받은 피드백에 다는 한 줄 답 */
       replyTo?: string;
       reply?: string;
@@ -94,7 +95,7 @@ export async function POST(request: Request) {
     const patch: {
       foundTech?: string;
       question?: string;
-      reaction?: string;
+      reactions?: string[];
     } = {};
 
     if (typeof body.foundTech === "string") {
@@ -103,10 +104,12 @@ export async function POST(request: Request) {
     if (typeof body.question === "string") {
       patch.question = body.question.trim().slice(0, MAX_LENGTH);
     }
-    if (typeof body.reaction === "string") {
-      // 목록에 없는 이모지는 버린다. 자유 입력이면 이모지 칸이 또 하나의 댓글창이 된다.
-      // 빈 문자열은 "누른 것을 취소" 라는 뜻이라 그대로 통과시킨다.
-      patch.reaction = isReaction(body.reaction) ? body.reaction : "";
+    if (Array.isArray(body.reactions)) {
+      /*
+       * 목록에 없는 이모지는 버린다. 자유 입력이면 이모지 칸이 또 하나의 댓글창이 된다.
+       * 빈 배열은 "다 껐다" 는 뜻이라 그대로 통과시킨다.
+       */
+      patch.reactions = [...new Set(body.reactions.filter((r) => typeof r === "string" && isReaction(r)))];
     }
 
     if (Object.keys(patch).length === 0) {

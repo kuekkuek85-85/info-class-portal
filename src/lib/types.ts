@@ -446,7 +446,14 @@ export interface ArtifactFeedback {
   question: string;
   /** 작품 주인의 한 줄 응답 */
   authorReply: string;
-  /** 이모지 반응 하나. 글을 안 써도 표현할 수 있게 (PRD 3.5 — 반응은 열되 서열화는 피한다) */
+  /**
+   * 이모지 반응. 글을 안 써도 표현할 수 있게 (PRD 3.5 — 반응은 열되 서열화는 피한다).
+   *
+   * 여러 개를 함께 누를 수 있다. 하나만 고르게 하면 "놀랐고 아이디어도 좋다"를 표현할 수
+   * 없어서, 학생은 결국 아무 것이나 하나 누르고 만다.
+   */
+  reactions?: string[];
+  /** @deprecated 하나만 누를 수 있던 때의 값. 읽을 때 reactions 로 옮겨 본다 */
   reaction?: string;
   createdAt: number;
   updatedAt: number;
@@ -467,6 +474,17 @@ export type Reaction = (typeof REACTIONS)[number];
 
 export function isReaction(value: string): value is Reaction {
   return (REACTIONS as readonly string[]).includes(value);
+}
+
+/**
+ * 저장된 반응을 배열로 꺼낸다.
+ *
+ * 처음에는 하나만 누를 수 있어서 `reaction` 문자열로 저장했다. 그 시절 문서가 남아 있으므로
+ * 읽을 때 두 형태를 모두 받는다. 목록에 없는 이모지는 버린다.
+ */
+export function reactionsOf(row: { reactions?: string[]; reaction?: string }): Reaction[] {
+  const raw = row.reactions ?? (row.reaction ? [row.reaction] : []);
+  return [...new Set(raw.filter(isReaction))];
 }
 
 /** 시간표 한 줄. 반별 요일·교시를 등록하면 학기 전체 세션을 생성한다. */

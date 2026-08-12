@@ -25,7 +25,8 @@ interface Work extends CardNewsData {
   /** 꼭 봐야 할 두 편인지 */
   assigned: boolean;
   counts: Record<string, number>;
-  myReaction: string;
+  /** 내가 눌러 둔 이모지들 */
+  myReactions: string[];
   myFoundTech: string;
   myQuestion: string;
 }
@@ -38,7 +39,7 @@ interface GalleryData {
     from: string;
     foundTech: string;
     question: string;
-    reaction: string;
+    reactions: string[];
     authorReply: string;
   }[];
   worksheet: WorksheetQuestion[];
@@ -359,7 +360,7 @@ function DetailModal({
           <ReactionBar
             artifactId={work.id}
             counts={work.counts}
-            mine={work.myReaction}
+            mine={work.myReactions}
             onSaved={onSaved}
             disabled={disabled}
           />
@@ -381,8 +382,12 @@ function DetailModal({
 /**
  * 이모지 반응.
  *
- * 글을 쓰기 어려워하는 학생도 표현할 수 있어야 한다. 네 개로 제한한 이유는 개수가 늘면
- * "좋아요 수"가 되어 잘 그린 순위가 생기기 때문이다. 같은 것을 다시 누르면 취소된다.
+ * 글을 쓰기 어려워하는 학생도 표현할 수 있어야 한다. **네 개를 함께 누를 수 있다** —
+ * 하나만 고르게 하면 "놀랐고 아이디어도 좋다"를 표현할 수 없어서, 결국 아무 것이나
+ * 하나 누르고 만다. 같은 것을 다시 누르면 꺼진다.
+ *
+ * 종류를 넷으로 제한한 이유는 따로다. 개수가 늘면 "좋아요 수"가 되어 잘 그린 순위가
+ * 생기고, 그림 못 그린다고 생각하는 학생이 손을 놓는다 (PRD 9장).
  */
 function ReactionBar({
   artifactId,
@@ -393,34 +398,43 @@ function ReactionBar({
 }: {
   artifactId: string;
   counts: Record<string, number>;
-  mine: string;
+  mine: string[];
   onSaved: () => void;
   disabled?: boolean;
 }) {
-  const [busy, setBusy] = useState(false);
+  /*
+   * 누른 즉시 화면을 바꾸고 저장은 뒤따르게 한다.
+   * 서버 응답을 기다렸다 바꾸면 이모지를 연달아 누를 때 한 박자씩 밀린다.
+   */
+  const [picked, setPicked] = useState(mine);
 
   async function react(emoji: string) {
-    setBusy(true);
+    const next = picked.includes(emoji)
+      ? picked.filter((item) => item !== emoji)
+      : [...picked, emoji];
+    setPicked(next);
+
     await fetch("/api/student/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ artifactId, reaction: mine === emoji ? "" : emoji }),
+      body: JSON.stringify({ artifactId, reactions: next }),
     });
-    setBusy(false);
     onSaved();
   }
 
   return (
     <div className="flex flex-wrap gap-2">
       {REACTIONS.map((emoji) => {
-        const on = mine === emoji;
-        const n = counts[emoji] ?? 0;
+        const on = picked.includes(emoji);
+        // 내가 방금 켜고 끈 것을 개수에도 바로 반영한다 (서버 값이 오기 전까지)
+        const base = counts[emoji] ?? 0;
+        const n = base + (on ? 1 : 0) - (mine.includes(emoji) ? 1 : 0);
         return (
           <button
             key={emoji}
             type="button"
             onClick={() => react(emoji)}
-            disabled={busy || disabled}
+            disabled={disabled}
             aria-pressed={on}
             className={`rounded-full border-2 px-4 py-2 t-body ${
               on ? "border-ink bg-surface" : "border-line bg-canvas"
@@ -531,7 +545,7 @@ function ReceivedCard({
     from: string;
     foundTech: string;
     question: string;
-    reaction: string;
+    reactions: string[];
     authorReply: string;
   };
   onSaved: () => void;
@@ -554,7 +568,7 @@ function ReceivedCard({
   return (
     <div className="card flex flex-col gap-2">
       <p className="t-caption">
-        {item.from} {item.reaction}
+        {item.from} {item.reactions.join(" ")}
       </p>
       {item.foundTech && (
         <p className="t-body">
