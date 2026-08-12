@@ -123,7 +123,17 @@ export function assignPeers(submitted: Artifact[], myStudentId: string): Artifac
   return picked;
 }
 
-/** 갤러리에 올라갈 자격 — 제출했고, 교사가 숨기지 않은 것 */
+/**
+ * 갤러리에 올라갈 자격 — **그린 것이 있고**, 교사가 숨기지 않은 것.
+ *
+ * 처음에는 "제출"을 눌러야 올라가게 했다. 그런데 30분 수업에서 제출까지 가는 학생은
+ * 마지막 몇 분에나 나온다. 그때까지 갤러리는 텅 비어 있고, 감상 단계로 넘겨도 볼 것이
+ * 없어 활동 자체가 성립하지 않는다.
+ *
+ * 그리는 중인 그림이 보이는 것은 오히려 낫다. 남이 무엇을 그리는지 보면 막혀 있던
+ * 학생이 시작한다. 완성 여부는 제출 표시로 교사만 따로 본다.
+ */
 export function isVisible(artifact: Artifact): boolean {
-  return artifact.status === "submitted" && !artifact.hidden;
+  if (artifact.hidden) return false;
+  return (artifact.strokes?.length ?? 0) > 0;
 }

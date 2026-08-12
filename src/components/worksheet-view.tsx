@@ -219,12 +219,16 @@ export function WorksheetView({
         disabled={disabled}
         className="pill pill-primary pill-block"
       >
-        {submitted ? "다시 제출하기" : "제출하기 — 친구들이 볼 수 있어요"}
+        {/*
+          그림은 그리는 순간 이미 갤러리에 올라간다. 이 버튼은 "다 했어요" 표시라,
+          문구도 그렇게 바꾼다 — 누르지 않으면 안 보인다고 오해하면 조급해진다.
+        */}
+        {submitted ? "다시 냈어요" : "다 했어요 — 선생님께 알리기"}
       </button>
 
       {submitted && (
         <p className="t-body-sm text-center">
-          제출했어요. 수업이 끝나기 전까지는 계속 고칠 수 있습니다.
+          선생님께 알렸어요. 수업이 끝나기 전까지는 계속 고칠 수 있습니다.
         </p>
       )}
     </section>
