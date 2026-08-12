@@ -535,7 +535,11 @@ export default function LessonPage() {
 
             {session.reflectionQuestions.map((question, index) => (
               <div key={index} className="flex flex-col gap-3">
-                <label htmlFor={`answer-${index}`} className="block bg-cream t-subhead">
+                {/* 질문에 예시를 줄 바꿔 붙이는 경우가 있다. 안 그러면 한 줄로 뭉친다 */}
+                <label
+                  htmlFor={`answer-${index}`}
+                  className="block bg-cream t-subhead whitespace-pre-wrap"
+                >
                   <span className="mr-2 font-bold">{index + 1}.</span>
                   {question}
                 </label>
