@@ -384,12 +384,14 @@ export default function LessonPage() {
 
       {/*
         읽는 화면은 폭을 좁게 묶는다 — 글줄이 길면 중1이 눈으로 따라가지 못한다.
-        그리기만 예외다. 그리는 공간은 넓을수록 좋고, 768px 안에 가두면 노트북에서
-        캔버스가 화면 한구석의 작은 상자가 된다.
+
+        그림을 보는 화면은 예외다. 그리기는 캔버스가 화면 한구석의 작은 상자가 되고,
+        작품 감상은 왼쪽 필터를 빼고 나면 격자에 530px밖에 남지 않아 썸네일이
+        엄지손톱만 해진다. 둘 다 폭이 곧 쓸모인 화면이다.
       */}
       <main
         className={`mx-auto w-full flex-1 px-4 py-5 ${
-          phase === "draw" ? "max-w-none" : "max-w-3xl"
+          phase === "draw" || phase === "gallery" ? "max-w-[1600px]" : "max-w-3xl"
         }`}
       >
         {closed && (

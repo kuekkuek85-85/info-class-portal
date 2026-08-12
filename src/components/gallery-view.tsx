@@ -114,12 +114,16 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
               />
 
               <div className="min-w-0 flex-1">
+                {/*
+                  칸 수를 늘리지 않는다. 그림을 알아볼 수 있어야 고를 수 있고,
+                  한 화면에 많이 넣는 것보다 한 장이 큰 편이 낫다.
+                */}
                 {filtered.length === 0 ? (
                   <p className="rounded-lg bg-surface py-12 text-center t-body">
                     고른 조건에 맞는 작품이 없어요. 필터를 조금 풀어 보세요.
                   </p>
                 ) : (
-                  <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                  <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
                     {filtered.map((work) => (
                       <li key={work.id}>
                         <button
@@ -127,11 +131,15 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
                           onClick={() => setOpenId(work.id)}
                           className="flex w-full flex-col gap-2 rounded-lg border-2 border-line bg-canvas p-2 text-left transition active:scale-[0.99]"
                         >
-                          {/* 축소해 그린다 — 원본 크기로 스물다섯 장을 띄우면 화면이 죽는다 */}
+                          {/*
+                            축소해 그린다 — 원본(1600×1200) 크기로 스물다섯 장을 띄우면
+                            캔버스만 190MB라 태블릿 화면이 죽는다. 카드가 커진 만큼
+                            640px 로 올려 흐릿해지지 않게 했다.
+                          */}
                           <ArtifactCanvas
                             strokes={work.strokes}
                             texts={work.texts}
-                            pixelWidth={480}
+                            pixelWidth={640}
                             className="h-auto w-full rounded bg-white"
                           />
                           <div className="flex flex-col gap-1">
@@ -266,8 +274,12 @@ function FilterPanel({
         꼭 봐야 할 작품만
       </label>
 
-      <div className="flex flex-col gap-2 border-t border-line pt-3">
-        <p className="t-caption">디지털 사회의 특성</p>
+      {/*
+        좁은 화면에서는 필터가 격자 위에 통째로 얹힌다. 세로로 세워 두면 체크박스 열 개를
+        지나야 그림이 나온다 — 눕혀서 두어 줄로 만든다.
+      */}
+      <div className="flex flex-wrap gap-x-4 gap-y-2 border-t border-line pt-3 lg:flex-col">
+        <p className="t-caption w-full">디지털 사회의 특성</p>
         {TRAITS.map((trait) => (
           <label key={trait} className="flex items-center gap-2 t-body-sm">
             <input
@@ -281,8 +293,8 @@ function FilterPanel({
       </div>
 
       {places.length > 0 && (
-        <div className="flex flex-col gap-2 border-t border-line pt-3">
-          <p className="t-caption">장소</p>
+        <div className="flex flex-wrap gap-x-4 gap-y-2 border-t border-line pt-3 lg:flex-col">
+          <p className="t-caption w-full">장소</p>
           {places.map((place) => (
             <label key={place} className="flex items-center gap-2 t-body-sm">
               <input
