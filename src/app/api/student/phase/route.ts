@@ -25,6 +25,14 @@ export async function GET() {
       phase: session.phase,
       closed: isSessionClosed(session),
       quiz: quizView(session),
+      /*
+       * 성찰 공개 여부도 얹는다. 세션 문서에 이미 들어 있어 추가 조회가 없다.
+       *
+       * 친구들 글 자체를 여기서 보내지는 않는다. 그러려면 성찰 문서를 매번 다 읽어야 하는데,
+       * 4초마다 28명이 28건씩 읽으면 분당 만 건이 넘는다 (PRD 10장 D2). 이 값이 바뀌는
+       * 순간에만 화면이 수업 내용을 한 번 다시 받아 간다.
+       */
+      reflectionPublic: session.reflectionPublic,
     });
   });
 }

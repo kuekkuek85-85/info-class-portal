@@ -125,6 +125,30 @@ export default function LessonPage() {
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaved = useRef("");
   const submitted = useRef(false);
+  /** 성찰 공개 여부가 바뀌었는지 보려고 직전 값을 들고 있는다 */
+  const wasPublic = useRef<boolean | null>(null);
+
+  /**
+   * 친구들 성찰만 다시 받아 온다.
+   *
+   * 수업 내용을 통째로 다시 불러오면(load) 지금 쓰고 있는 답까지 서버 값으로 덮인다.
+   * 여기서는 공개 여부와 친구 글만 갈아 끼운다.
+   */
+  const refreshPeers = useCallback(async () => {
+    const response = await fetch("/api/student/lesson");
+    const result = await response.json();
+    if (!result.ok) return;
+
+    setData((prev) =>
+      prev
+        ? {
+            ...prev,
+            peers: result.peers ?? [],
+            session: { ...prev.session, reflectionPublic: result.session.reflectionPublic },
+          }
+        : prev,
+    );
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -196,6 +220,22 @@ export default function LessonPage() {
       setClosed(Boolean(result.closed));
       // 문항 이동·정답 공개도 같은 응답에 실려 온다 (퀴즈 전용 폴링을 만들지 않는다)
       setQuiz((result.quiz as QuizState | null) ?? null);
+
+      /*
+       * 교사가 "성찰 서로 공개"를 켜는 순간 친구들 글을 받아 온다.
+       *
+       * 예전에는 이 값이 첫 화면을 열 때 한 번만 내려와서, 교사가 공개를 눌러도 학생이
+       * 새로고침하기 전에는 아무 일도 일어나지 않았다. 30분 수업에서 28명에게
+       * "새로고침하세요"를 시키는 것은 사실상 그 활동을 접는 것과 같다.
+       *
+       * 친구 글 자체를 4초마다 받지는 않는다 — 그러면 성찰 문서를 분당 만 건씩 읽는다.
+       * 켜지고 꺼지는 순간에만 한 번 받아 온다.
+       */
+      const nowPublic = Boolean(result.reflectionPublic);
+      if (wasPublic.current !== null && wasPublic.current !== nowPublic) {
+        void refreshPeers();
+      }
+      wasPublic.current = nowPublic;
     }
 
     const timer = setInterval(() => void tick(), PHASE_POLL_MS);
@@ -203,7 +243,7 @@ export default function LessonPage() {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [data]);
+  }, [data, refreshPeers]);
 
   const saveReflection = useCallback(async (next: string[], submit: boolean) => {
     // 예약된 자동저장을 먼저 취소한다. 제출 직후 늦게 도착한 임시저장이
@@ -640,9 +680,29 @@ export default function LessonPage() {
               </p>
             )}
 
-            {session.reflectionPublic && data.peers.length > 0 && (
+            {session.reflectionPublic && (
               <section className="mt-2 flex flex-col gap-3">
-                <h3 className="t-eyebrow">친구들의 성찰</h3>
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h3 className="t-eyebrow">친구들의 성찰</h3>
+                  {/*
+                    친구 글은 공개를 켜는 순간 한 번 받아 온다. 그 뒤에 낸 친구 글은
+                    이 버튼을 눌러야 들어온다 — 4초마다 다 읽으면 읽기가 감당이 안 된다.
+                  */}
+                  <button
+                    type="button"
+                    onClick={() => void refreshPeers()}
+                    className="pill pill-secondary t-body-sm"
+                  >
+                    새로 온 글 보기
+                  </button>
+                </div>
+
+                {data.peers.length === 0 && (
+                  <p className="t-body">
+                    아직 낸 친구가 없어요. 잠시 뒤 <b>새로 온 글 보기</b>를 눌러 보세요.
+                  </p>
+                )}
+
                 <ul className="flex flex-col gap-3">
                   {data.peers.map((peer, index) => (
                     <li key={index} className="card">
