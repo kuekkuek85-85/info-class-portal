@@ -235,6 +235,23 @@ input[type="number"] {
   appearance: textfield;
 }
 
+/*
+ * 자리 비움 알림이 뜰 때 쓴다.
+ *
+ * 툭 나타나면 경고처럼 읽힌다. 이 알림은 나무라는 것이 아니라 알려 주는 것이라
+ * 살짝 떠오르게 한다. 움직임을 줄이도록 설정한 기기에서는 아래 규칙이 껐다.
+ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

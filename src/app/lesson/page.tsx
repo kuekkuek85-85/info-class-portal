@@ -445,6 +445,29 @@ export default function LessonPage() {
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
+      {/*
+        돌아온 순간 한 번 띄운다.
+
+        본문 안에 끼워 넣지 않고 화면 위에 띄우는 이유가 둘이다.
+         ① 본문에 넣으면 뜰 때 캔버스가 밀리고 사라질 때 다시 올라온다 — 그리는 도중에
+            화면이 두 번 움직인다
+         ② 활동지·감상에서 아래로 스크롤한 채 돌아오면 위쪽 배너는 화면 밖이라 안 보인다.
+            "기록되고 있다"를 체감시키는 것이 이 기능 효과의 대부분인데 그게 사라진다
+
+        pointer-events-none 을 반드시 둔다. 그리는 중에 떠서 획을 가로채면 안 된다.
+        문구는 비난조로 쓰지 않는다 — 감시가 아니라 피드백이다.
+      */}
+      {awayShown !== null && (
+        <div
+          role="status"
+          className="pointer-events-none fixed inset-x-0 top-4 z-40 flex justify-center px-4"
+        >
+          <p className="animate-[fadeIn_150ms_ease-out] rounded-full border-2 border-ink bg-canvas px-5 py-3 text-center t-body shadow-lg">
+            🕐 {formatAway(awayShown)} 동안 자리를 비웠어요
+          </p>
+        </div>
+      )}
+
       <header className="sticky top-0 z-10 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
           <div className="min-w-0">
@@ -475,16 +498,6 @@ export default function LessonPage() {
             : "max-w-3xl"
         }`}
       >
-        {/* 돌아온 순간 한 번. 비난조로 쓰지 않는다 — 감시가 아니라 피드백이다 */}
-        {awayShown !== null && (
-          <p
-            role="status"
-            className="mb-5 rounded-md bg-lilac px-4 py-3 text-center t-body"
-          >
-            🕐 {formatAway(awayShown)} 동안 자리를 비웠어요. 지금 단계로 돌아왔습니다.
-          </p>
-        )}
-
         {closed && (
           <p className="mb-5 rounded-md bg-surface px-4 py-3 text-center t-body-sm">
             이 수업은 끝났어요. 내가 쓴 것은 볼 수 있지만 더 저장되지는 않아요.
