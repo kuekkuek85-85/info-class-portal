@@ -48,6 +48,8 @@ interface SessionRow {
   quizIndex?: number;
   quizRevealed?: boolean;
   activity?: { activityId: string; worksheet?: { key: string }[] };
+  /** 지난 차시 복습 — 학생이 기분 체크를 마치면 서버가 만들어 넣는다. 여기서는 한 줄만 쓴다 */
+  reviewCache?: { summary?: string } | null;
   /** 단계 버튼을 만들지 말지 판단하는 데만 쓴다 */
   progress?: SessionContent;
   assessment?: SessionContent;
@@ -119,6 +121,9 @@ function Dashboard() {
   const rows = data?.rows ?? [];
   const stats = data?.stats;
   const note = noteDraft ?? session?.teacherNote ?? "";
+
+  // 학생 한 명이 기분 체크를 마치면 서버가 만들어 세션에 넣어 둔다 (review.ts 참조)
+  const reviewSummary = session?.reviewCache?.summary ?? "";
 
   /*
    * 지금 화면에 떠 있는 수업의 ID.
@@ -262,6 +267,22 @@ function Dashboard() {
               </label>
             </div>
           </section>
+
+          {/*
+            지난 차시에 이 반이 어땠는지 한 줄.
+
+            같은 4문항인데 반마다 갈렸다 — "용돈 보내기"를 4반은 다 맞혔고 1반은 56%,
+            3반은 44%만 맞혔다. 반마다 다시 짚어야 할 것이 다르다. 수업 들어가기 전에
+            읽고 한마디 하시라고 여기 둔다.
+
+            학생 중 한 명이 기분 체크를 마치는 순간 만들어진다. 그 전에는 뜨지 않는다.
+          */}
+          {reviewSummary && (
+            <section className="card flex flex-col gap-1">
+              <h2 className="t-caption">지난 시간 이 반은</h2>
+              <p className="t-body">{reviewSummary}</p>
+            </section>
+          )}
 
           {/* 학생 화면은 여기서 정한 단계만 보여준다. 학생은 스스로 옮길 수 없다. */}
           <section className="card flex flex-col gap-4">

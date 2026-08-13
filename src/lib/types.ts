@@ -283,6 +283,13 @@ export interface ClassSession {
    * 다음 날 진짜 수업 대신 대시보드에 뜨면, 교사는 엉뚱한 반을 보며 수업을 진행하게 된다.
    */
   rehearsal?: boolean;
+  /**
+   * 지난 차시 복습 화면을 만들어 둔 것 (없으면 null).
+   *
+   * 먼저 들어온 학생 한 명이 만들고 나머지는 그대로 받는다. 28명이 각자 지난 차시
+   * 기록을 뒤지면 수업 한 번에 읽기가 2천 건이다. 자세한 사정은 review.ts 참조.
+   */
+  reviewCache?: unknown;
   /** 수업 직후 남기는 한 줄 회고. 다음 반 수업 전 개선 루프의 출발점 (PRD 5.1) */
   teacherNote: string;
   startedAt: number | null;

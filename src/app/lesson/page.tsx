@@ -9,6 +9,7 @@ import { DrawBoard } from "@/components/draw-board";
 import { GalleryView } from "@/components/gallery-view";
 import { MoodPicker } from "@/components/mood-picker";
 import { QuizView, type QuizState } from "@/components/quiz-view";
+import { ReviewView } from "@/components/review-view";
 import { WorksheetView, type WorksheetValue } from "@/components/worksheet-view";
 import {
   PHASE_LABELS,
@@ -439,16 +440,26 @@ export default function LessonPage() {
         )}
 
         {phase === "mood" && session.moodCheckEnabled && (
-          <MoodPicker
-            value={mood}
-            reason={moodReason}
-            onChange={setMood}
-            onReasonChange={setMoodReason}
-            onSubmit={submitMood}
-            saving={moodSaving}
-            saved={moodSaved}
-            disabled={closed}
-          />
+          <>
+            <MoodPicker
+              value={mood}
+              reason={moodReason}
+              onChange={setMood}
+              onReasonChange={setMoodReason}
+              onSubmit={submitMood}
+              saving={moodSaving}
+              saved={moodSaved}
+              disabled={closed}
+            />
+            {/*
+              기분 체크를 마친 학생에게만 이어서 복습을 편다.
+
+              단계를 따로 만들지 않은 이유: 기분 체크가 끝나는 시각은 학생마다 다르고,
+              먼저 끝낸 학생은 2~3분을 그냥 앉아 있다. 교사가 버튼을 한 번 더 누르는
+              방식이면 그 빈 시간이 그대로 남는다. 여기서는 끝낸 사람부터 알아서 넘어간다.
+            */}
+            {moodSaved && <ReviewView disabled={closed} />}
+          </>
         )}
 
         {phase === "quiz" && quiz && (
