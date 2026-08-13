@@ -106,9 +106,20 @@ export function WorksheetView({
         </p>
       </div>
 
-      {/* 그림을 위에 띄워 둔다. 자기가 뭘 그렸는지 보면서 써야 답이 구체적으로 나온다 */}
-      <div className="rounded-lg border border-line p-2">
-        <ArtifactCanvas strokes={strokes} texts={texts} className="h-auto w-full rounded bg-white" />
+      {/*
+        그림을 위에 띄워 둔다. 자기가 뭘 그렸는지 보면서 써야 답이 구체적으로 나온다.
+
+        높이를 화면의 3분의 1로 묶는다. 폭에만 맞추면 넓은 화면에서 미리보기 하나가
+        976px을 먹어(1366×768에서 실측) 첫 질문조차 보이지 않는다. 여기서는 그리는 게
+        아니라 보고 쓰는 것이므로, 그림보다 질문이 보이는 편이 낫다.
+      */}
+      <div className="flex justify-center rounded-lg border border-line p-2">
+        <ArtifactCanvas
+          strokes={strokes}
+          texts={texts}
+          pixelWidth={640}
+          className="h-auto max-h-[32dvh] w-auto max-w-full rounded bg-white"
+        />
       </div>
 
       {questions.map((question) => (

@@ -68,6 +68,17 @@ type UndoAction =
 const AUTOSAVE_MS = 12_000;
 /** 이 주기로 한 번은 통째로 맞춘다 */
 const FULL_SYNC_MS = 60_000;
+
+/** 캔버스 아래에 남겨 두는 여백. 화면 끝에 딱 붙으면 잘린 것처럼 보인다 */
+const BOTTOM_GAP = 24;
+
+/**
+ * 캔버스가 이보다 작아지면 그리기가 안 된다.
+ *
+ * 화면이 아주 낮으면(가로로 눕힌 폰 등) 스크롤을 허용하는 편이 낫다.
+ * 다 보이지만 그릴 수 없는 캔버스보다는 낫다.
+ */
+const MIN_CANVAS_HEIGHT = 260;
 /** 연속 실패가 이만큼 이어지면 자동 재시도를 멈춘다 (저장 버튼은 계속 쓸 수 있다) */
 const MAX_RETRIES = 5;
 /** 순번이 밀려 되돌아온 요청을 이만큼까지만 자동으로 다시 보낸다 */
@@ -154,6 +165,17 @@ export function DrawBoard({
   const rejectedAtRef = useRef(-1);
   /** 순번이 밀려 되돌아온 횟수 — 몇 번을 넘으면 자동 재전송을 멈춘다 */
   const staleCountRef = useRef(0);
+
+  /**
+   * 캔버스가 쓸 수 있는 세로 길이 — **화면에서 직접 잰다.**
+   *
+   * 처음에는 `calc(100dvh - 12rem)` 처럼 빼는 값을 고정해 뒀는데, 위에 무엇이 하나
+   * 추가될 때마다 어긋났다(그림·활동지 탭을 넣자 1366×768에서 60px이 넘쳤다).
+   * 캔버스 위에 무엇이 얼마나 쌓였는지 재서 남은 만큼만 쓰면 다시 깨지지 않는다.
+   */
+  const [maxHeight, setMaxHeight] = useState<number | null>(null);
+  const canvasBoxRef = useRef<HTMLDivElement>(null);
+  const toolsRef = useRef<HTMLDivElement>(null);
 
   const [textDraft, setTextDraft] = useState<{ x: number; y: number; value: string } | null>(null);
   const [customOpen, setCustomOpen] = useState(false);
@@ -588,6 +610,50 @@ export function DrawBoard({
     saveRef.current = save;
   }, [save]);
 
+  /**
+   * 캔버스 높이를 화면에 맞춘다 — 스크롤 없이 다 보이게.
+   *
+   * 캔버스 위에 쌓인 것(수업 제목 줄·탭·그림판 제목)의 높이는 화면 폭과 글자 크기에 따라
+   * 달라진다. 빼는 값을 상수로 박아 두면 그 중 하나만 바뀌어도 넘친다.
+   *
+   * 도구가 아래에 쌓이는 좁은 화면에서는 도구 높이까지 빼야 한다. 그렇지 않으면 캔버스가
+   * 남은 세로를 다 먹고 도구가 화면 밖으로 밀려난다.
+   */
+  useEffect(() => {
+    function measure() {
+      const box = canvasBoxRef.current;
+      if (!box) return;
+
+      const boxTop = box.getBoundingClientRect().top;
+      const tools = toolsRef.current?.getBoundingClientRect();
+      // 도구가 캔버스보다 아래에 있으면 세로로 쌓인 배치다
+      const stacked = tools ? tools.top >= boxTop + 40 : false;
+
+      const reserved = stacked ? (tools?.height ?? 0) + BOTTOM_GAP + 12 : BOTTOM_GAP;
+      const available = window.innerHeight - boxTop - reserved;
+
+      // 너무 작아지면 그릴 수가 없다 — 그 아래로는 차라리 스크롤을 허용한다
+      setMaxHeight(Math.max(available, MIN_CANVAS_HEIGHT));
+    }
+
+    measure();
+    window.addEventListener("resize", measure);
+
+    /*
+     * 한 번만 재면 모자란다. 글꼴이 늦게 올라오거나 도구가 두 줄로 접히면 캔버스 위아래
+     * 높이가 달라지는데, 그때 다시 재지 않으면 그만큼 화면 밖으로 넘친다
+     * (태블릿 세로에서 18px이 그렇게 남았다).
+     */
+    const observer = new ResizeObserver(() => measure());
+    if (canvasBoxRef.current) observer.observe(canvasBoxRef.current);
+    if (toolsRef.current) observer.observe(toolsRef.current);
+
+    return () => {
+      window.removeEventListener("resize", measure);
+      observer.disconnect();
+    };
+  }, []);
+
   // 주기적 전체 동기화 — 중간에 실패한 요청이 있어도 여기서 맞춰진다
   useEffect(() => {
     if (disabled) return;
@@ -814,7 +880,7 @@ export function DrawBoard({
           걸려 폭이 남을 때 흰 여백까지 상자 안에 들어가, 그리는 곳이 어디까지인지
           알아보기 어렵다.
         */}
-        <div className="flex min-w-0 justify-center">
+        <div ref={canvasBoxRef} className="flex min-w-0 justify-center">
           <div className="w-fit max-w-full overflow-hidden rounded-lg border-2 border-line bg-white">
             <canvas
               ref={canvasRef}
@@ -824,21 +890,23 @@ export function DrawBoard({
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerUp}
-              // 손가락으로 그을 때 화면이 함께 스크롤되면 그림이 그어지지 않는다
-              style={{ touchAction: "none" }}
-              /*
-                넓은 화면에서는 남은 세로를 거의 다 쓴다. 빼는 값은 위쪽 수업 제목 줄과
-                그림판 제목·저장 줄, 그리고 아래 여백의 몫이다.
-                dvh 를 쓰는 이유: 폰 브라우저의 주소창이 접혔다 펴질 때 vh 는 따라오지
-                않아, 캔버스가 화면 밖으로 삐져나간다.
-              */
-              className="block max-h-[46dvh] w-auto max-w-full sm:max-h-[50dvh] lg:max-h-[calc(100dvh-12rem)]"
+              style={{
+                // 손가락으로 그을 때 화면이 함께 스크롤되면 그림이 그어지지 않는다
+                touchAction: "none",
+                /*
+                  잰 값이 나오기 전(첫 그림 한 번)에는 아래 className 의 dvh 값이 쓰인다.
+                  dvh 를 쓰는 이유: 폰 브라우저의 주소창이 접혔다 펴질 때 vh 는 따라오지
+                  않아, 캔버스가 화면 밖으로 삐져나간다.
+                */
+                maxHeight: maxHeight ? `${maxHeight}px` : undefined,
+              }}
+              className="block max-h-[46dvh] w-auto max-w-full sm:max-h-[50dvh] lg:max-h-[calc(100dvh-14rem)]"
             />
           </div>
         </div>
 
         {/* 폰에서는 간격을 한 단계 좁힌다 — 이 12px 몇 개가 도구를 화면 밖으로 밀어낸다 */}
-        <div className="flex shrink-0 flex-col gap-2 lg:w-64 lg:gap-3">
+        <div ref={toolsRef} className="flex shrink-0 flex-col gap-2 lg:w-64 lg:gap-3">
           <div className="grid grid-cols-3 gap-2">
             <ToolButton active={tool === "pen"} onClick={() => setTool("pen")} label="펜" />
             <ToolButton
