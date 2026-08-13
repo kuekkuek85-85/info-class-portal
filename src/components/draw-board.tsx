@@ -636,7 +636,15 @@ export function DrawBoard({
       setMaxHeight(Math.max(available, MIN_CANVAS_HEIGHT));
     }
 
+    /*
+     * 첫 번째 measure() 는 아직 배치가 끝나기 전에 도는 경우가 있다.
+     *
+     * 특히 탭을 눌러 그리기로 **돌아올 때** 그렇다. 그 순간 위쪽 요소들의 높이가 아직
+     * 확정되지 않아 남은 공간이 실제보다 작게 잡히고, 캔버스가 최소 높이(260px)까지
+     * 쪼그라든 채 굳는다. 다음 프레임에 한 번 더 재서 바로잡는다.
+     */
     measure();
+    const raf = requestAnimationFrame(measure);
     window.addEventListener("resize", measure);
 
     /*
@@ -649,6 +657,7 @@ export function DrawBoard({
     if (toolsRef.current) observer.observe(toolsRef.current);
 
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener("resize", measure);
       observer.disconnect();
     };

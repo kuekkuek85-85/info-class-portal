@@ -112,11 +112,15 @@ export default function LessonPage() {
   const artifactLoaded = useRef(false);
 
   /**
-   * 그리기 · 활동지 중 학생이 지금 보고 있는 쪽.
+   * 그리기 · 활동지 · 작품 감상 중 학생이 지금 보고 있는 쪽.
+   *
+   * 이 셋은 학생마다 진도가 다르다. 그림을 오래 그리는 학생이 있고, 글을 쓰다가
+   * "아 그걸 안 그렸네" 하고 돌아가는 학생이 있고, 일찍 끝내고 남의 작품을 볼 학생이 있다.
+   * 교사가 한꺼번에 넘기면 그중 한쪽은 반드시 끊긴다.
    *
    * 교사가 단계를 바꾸면 그쪽으로 옮겨 가고(수업 신호), 그 뒤로는 학생이 직접 오간다.
    */
-  const [workTab, setWorkTab] = useState<"draw" | "worksheet">("draw");
+  const [workTab, setWorkTab] = useState<"draw" | "worksheet" | "gallery">("draw");
 
   const [answers, setAnswers] = useState<string[]>([]);
   const [reflectionState, setReflectionState] = useState<"idle" | "saving" | "saved" | "done">(
@@ -169,6 +173,7 @@ export default function LessonPage() {
       setData(payload);
       setPhase(payload.session.phase);
       if (payload.session.phase === "worksheet") setWorkTab("worksheet");
+      if (payload.session.phase === "gallery") setWorkTab("gallery");
       previousPhase.current = payload.session.phase;
       setClosed(payload.session.closed);
       setMood(payload.mood?.mood ?? "");
@@ -210,8 +215,14 @@ export default function LessonPage() {
         explainerShown.current = true;
         setShowExplainer(true);
       }
-      // 교사가 그리기·활동지 사이를 옮기면 학생 화면도 그쪽을 편다. 그 뒤로는 학생 마음대로.
-      if (next !== previousPhase.current && (next === "draw" || next === "worksheet")) {
+      /*
+       * 교사가 그리기·활동지·작품 감상 사이를 옮기면 학생 화면도 그쪽을 편다.
+       * 그 뒤로는 학생이 알아서 오간다 — 신호는 주되 붙잡아 두지는 않는다.
+       */
+      if (
+        next !== previousPhase.current &&
+        (next === "draw" || next === "worksheet" || next === "gallery")
+      ) {
         setWorkTab(next);
       }
       previousPhase.current = next;
@@ -402,6 +413,14 @@ export default function LessonPage() {
   }
 
   const { session, me } = data;
+
+  /*
+   * 학생이 스스로 오갈 수 있는 구간.
+   *
+   * 교사가 셋 중 어느 단계를 켜 두었든 학생은 그림 · 활동지 · 작품 감상을 오간다.
+   * 빨리 끝낸 학생을 붙잡아 두면 떠들고, 아직 그리는 학생을 갤러리로 끌고 가면 못 끝낸다.
+   */
+  const isWorkPhase = phase === "draw" || phase === "worksheet" || phase === "gallery";
   const answered = answers.filter((a) => a.trim()).length;
   const total = session.reflectionQuestions.length;
 
@@ -432,7 +451,9 @@ export default function LessonPage() {
       */}
       <main
         className={`mx-auto w-full flex-1 px-4 py-5 ${
-          phase === "draw" || phase === "gallery" ? "max-w-[1600px]" : "max-w-3xl"
+          phase === "draw" || phase === "worksheet" || phase === "gallery"
+            ? "max-w-[1600px]"
+            : "max-w-3xl"
         }`}
       >
         {closed && (
@@ -557,7 +578,7 @@ export default function LessonPage() {
           교사가 단계를 바꾸면 화면은 그쪽으로 따라가되(수업 신호), 그 뒤로는 학생이
           자유롭게 오갈 수 있다.
         */}
-        {(phase === "draw" || phase === "worksheet") && session.activity && (
+        {isWorkPhase && session.activity && (
           <div className="mb-5 flex gap-2">
             <button
               type="button"
@@ -576,10 +597,21 @@ export default function LessonPage() {
             >
               활동지 쓰기
             </button>
+            {/*
+              먼저 끝낸 학생이 갈 곳. 그림은 그리는 순간 갤러리에 올라가므로
+              (gallery.ts 의 isVisible) 아직 그리는 중인 반에서도 볼 것이 있다.
+            */}
+            <button
+              type="button"
+              onClick={() => setWorkTab("gallery")}
+              className={`pill flex-1 ${workTab === "gallery" ? "pill-primary" : "pill-secondary"}`}
+            >
+              작품 감상
+            </button>
           </div>
         )}
 
-        {(phase === "draw" || phase === "worksheet") &&
+        {isWorkPhase &&
           workTab === "draw" &&
           (session.activity && artifact ? (
             <DrawBoard
@@ -600,7 +632,7 @@ export default function LessonPage() {
             <Placeholder title="그림을 준비하고 있어요" description="잠시만 기다려 주세요." />
           ))}
 
-        {(phase === "draw" || phase === "worksheet") &&
+        {isWorkPhase &&
           workTab === "worksheet" &&
           (session.activity && artifact ? (
             <WorksheetView
@@ -620,7 +652,7 @@ export default function LessonPage() {
             <Placeholder title="활동지를 준비하고 있어요" description="잠시만 기다려 주세요." />
           ))}
 
-        {phase === "gallery" && <GalleryView disabled={closed} />}
+        {isWorkPhase && workTab === "gallery" && <GalleryView disabled={closed} />}
 
         {phase === "reflection" && (
           <section className="flex flex-col gap-6">
