@@ -1,6 +1,6 @@
 import "server-only";
 
-import { FieldPath, type Query } from "firebase-admin/firestore";
+import { FieldPath, FieldValue, type Query } from "firebase-admin/firestore";
 
 import { db } from "./firebase-admin";
 import { todayKST } from "./datetime";
@@ -737,6 +737,38 @@ export async function recordAttendance(input: Omit<Attendance, "id">): Promise<v
   const existing = await ref.get();
   if (existing.exists) return;
   await ref.set(input);
+}
+
+/**
+ * 이탈 에피소드 하나를 출석 문서에 누적한다.
+ *
+ * `increment()` 를 쓰는 이유: 읽고-더하고-쓰는 트랜잭션이 필요 없고, 여러 건이 동시에
+ * 도착해도 어긋나지 않는다.
+ *
+ * 최장 기록만 읽어서 비교한다 — increment 로는 최댓값을 갱신할 수 없다. 이 한 건은
+ * 에피소드가 생길 때만 도는 읽기라 대시보드 폴링과 무관하다.
+ */
+export async function addAwayEpisode(
+  sessionId: string,
+  studentId: string,
+  awayMs: number,
+): Promise<void> {
+  const ref = db().collection(COLLECTIONS.attendance).doc(entryId(sessionId, studentId));
+  const snap = await ref.get();
+  // 출석 기록이 없으면 만들지 않는다. 인증을 거치지 않은 요청으로 문서가 생기면 안 된다.
+  if (!snap.exists) return;
+
+  const longest = Number((snap.data() as Attendance).longestAwayMs ?? 0);
+
+  await ref.set(
+    {
+      awayMs: FieldValue.increment(awayMs),
+      awayCount: FieldValue.increment(1),
+      longestAwayMs: Math.max(longest, awayMs),
+      lastAwayAt: Date.now(),
+    },
+    { merge: true },
+  );
 }
 
 export async function listAttendance(sessionId: string): Promise<Attendance[]> {

@@ -10,6 +10,7 @@ import { GalleryView } from "@/components/gallery-view";
 import { MoodPicker } from "@/components/mood-picker";
 import { QuizView, type QuizState } from "@/components/quiz-view";
 import { ReviewView } from "@/components/review-view";
+import { useFocusTracker } from "@/hooks/use-focus-tracker";
 import { WorksheetView, type WorksheetValue } from "@/components/worksheet-view";
 import {
   PHASE_LABELS,
@@ -131,6 +132,24 @@ export default function LessonPage() {
   const submitted = useRef(false);
   /** 성찰 공개 여부가 바뀌었는지 보려고 직전 값을 들고 있는다 */
   const wasPublic = useRef<boolean | null>(null);
+
+  /*
+   * 화면을 벗어난 시간을 잰다. 수업이 끝난 뒤에는 세지 않는다.
+   *
+   * 배너를 띄우는 것이 이 기능 효과의 대부분이다 — "기록되고 있다"를 학생이 체감하는
+   * 순간 이탈 자체가 준다. 그래서 문구를 비난조로 쓰지 않는다. 감시가 아니라 피드백이다.
+   */
+  const awayNotice = useFocusTracker(phase, !closed);
+  /** 이미 닫은 배너의 일련번호. 렌더 중에 계산하고, 효과는 시간이 지나면 닫기만 한다 */
+  const [awayDismissed, setAwayDismissed] = useState(0);
+  const awayShown =
+    awayNotice && awayNotice.seq > awayDismissed ? awayNotice.ms : null;
+
+  useEffect(() => {
+    if (!awayNotice || awayNotice.seq <= awayDismissed) return;
+    const timer = setTimeout(() => setAwayDismissed(awayNotice.seq), 6000);
+    return () => clearTimeout(timer);
+  }, [awayNotice, awayDismissed]);
 
   /**
    * 친구들 성찰만 다시 받아 온다.
@@ -456,6 +475,16 @@ export default function LessonPage() {
             : "max-w-3xl"
         }`}
       >
+        {/* 돌아온 순간 한 번. 비난조로 쓰지 않는다 — 감시가 아니라 피드백이다 */}
+        {awayShown !== null && (
+          <p
+            role="status"
+            className="mb-5 rounded-md bg-lilac px-4 py-3 text-center t-body"
+          >
+            🕐 {formatAway(awayShown)} 동안 자리를 비웠어요. 지금 단계로 돌아왔습니다.
+          </p>
+        )}
+
         {closed && (
           <p className="mb-5 rounded-md bg-surface px-4 py-3 text-center t-body-sm">
             이 수업은 끝났어요. 내가 쓴 것은 볼 수 있지만 더 저장되지는 않아요.
@@ -823,6 +852,15 @@ function ExplainerModal({ content, onClose }: { content: Content; onClose: () =>
       </div>
     </div>
   );
+}
+
+/** "42초" · "1분 20초" — 중1이 바로 읽을 수 있게 */
+function formatAway(ms: number): string {
+  const total = Math.round(ms / 1000);
+  if (total < 60) return `${total}초`;
+  const min = Math.floor(total / 60);
+  const sec = total % 60;
+  return sec === 0 ? `${min}분` : `${min}분 ${sec}초`;
 }
 
 function Placeholder({ title, description }: { title: string; description: string }) {

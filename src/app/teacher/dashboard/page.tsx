@@ -9,7 +9,7 @@ import { formatDateKorean, formatTimeKST, todayKST } from "@/lib/datetime";
 import { QUADRANTS, type Quadrant } from "@/lib/mood";
 import { describePeriod, periodTime } from "@/lib/timetable";
 import { usePolled } from "@/lib/use-polled";
-import { LESSON_PHASES, PHASE_LABELS, type LessonPhase } from "@/lib/types";
+import { AWAY_ALERT, LESSON_PHASES, PHASE_LABELS, type LessonPhase } from "@/lib/types";
 
 /**
  * 교사 대시보드 — 출석 확인 겸 접속자 실시간 명단, 감정 개별 응답, 성찰 모아보기, 교사 메모.
@@ -77,6 +77,8 @@ interface StudentRow {
     reviewed: boolean;
   } | null;
   reflection: { answers: string[]; draft: boolean; updatedAt: number } | null;
+  /** 이탈 누적치 — 출석 문서에 얹혀 있어 추가 읽기가 없다 */
+  away?: { ms: number; count: number; longestMs: number };
 }
 
 interface DashboardData {
@@ -406,6 +408,7 @@ function Dashboard() {
                     <th className="px-3 py-2">학번</th>
                     <th className="px-3 py-2">이름</th>
                     <th className="px-3 py-2">접속</th>
+                    <th className="px-3 py-2">자리 비움</th>
                     <th className="px-3 py-2">기분</th>
                     <th className="px-3 py-2">이유</th>
                     <th className="px-3 py-2">성찰</th>
@@ -421,6 +424,7 @@ function Dashboard() {
                       <td className="px-3 py-2 tabular-nums text-muted">
                         {formatTimeKST(row.joinedAt)}
                       </td>
+                      <AwayCell away={row.away} />
                       <td className="px-3 py-2">
                         {row.mood ? (
                           <span className="inline-flex items-center gap-1.5">
@@ -560,6 +564,41 @@ function Stat({ label, value, warn }: { label: string; value: string; warn?: boo
       <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
     </div>
   );
+}
+
+/**
+ * 자리 비움 한 칸.
+ *
+ * **신호등이지 성적표가 아니다.** 어디로 갔는지는 알 수 없고 — 화면 꺼짐·전화·알림과
+ * 구분되지 않는다 — 그래서 이 숫자만으로 학생을 지목해 꾸짖으면 안 된다.
+ * 노란 칸이 뜨면 그 학생 옆을 한 번 지나가면 된다는 뜻으로만 쓴다.
+ *
+ * 정렬도 순위도 두지 않는다. 줄을 세우는 순간 신호등이 리더보드가 된다.
+ */
+function AwayCell({ away }: { away?: StudentRow["away"] }) {
+  if (!away || away.count === 0 || away.ms < 30_000) {
+    return <td className="px-3 py-2 text-muted">—</td>;
+  }
+
+  const alert =
+    away.ms >= AWAY_ALERT.totalMs ||
+    away.count >= AWAY_ALERT.count ||
+    away.longestMs >= AWAY_ALERT.longestMs;
+
+  return (
+    <td className={`px-3 py-2 tabular-nums ${alert ? "bg-amber-100 dark:bg-amber-900/40" : "text-muted"}`}>
+      {formatAway(away.ms)} · {away.count}회
+    </td>
+  );
+}
+
+/** "1분 20초" — 교사가 훑어보는 표라 짧게 */
+function formatAway(ms: number): string {
+  const total = Math.round(ms / 1000);
+  if (total < 60) return `${total}초`;
+  const min = Math.floor(total / 60);
+  const sec = total % 60;
+  return sec === 0 ? `${min}분` : `${min}분 ${sec}초`;
 }
 
 function StatusBadge({ status }: { status: SessionRow["status"] }) {

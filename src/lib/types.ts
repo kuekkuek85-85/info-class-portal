@@ -315,7 +315,60 @@ export interface Attendance {
   classNo: ClassNo;
   date: string;
   joinedAt: number;
+
+  /*
+   * 이탈(집중 확인) 누적치.
+   *
+   * 별도 컬렉션을 만들지 않고 출석 문서에 얹는다. 대시보드 폴링은 이미 28명의 출석
+   * 문서를 매회 읽으므로, 여기 얹으면 **읽기 증가가 정확히 0건**이다. 따로 두면
+   * 폴링마다 28건이 더 붙어 D2(읽기량)를 정면으로 악화시킨다.
+   *
+   * 대가로 "몇 시 몇 분에 나갔는지" 목록은 남지 않는다. 이 기능의 용도는 "지금 누구를
+   * 봐야 하나"이지 행동 로그 축적이 아니다.
+   */
+  /** 누적 이탈 시간(ms) */
+  awayMs?: number;
+  /** 10초 이상 에피소드 수 */
+  awayCount?: number;
+  /** 최장 1회 이탈(ms) */
+  longestAwayMs?: number;
+  /** 마지막 이탈 시각 */
+  lastAwayAt?: number;
 }
+
+/**
+ * 이탈을 세지 않는 단계.
+ *
+ * 수업 구조상 화면을 안 보는 게 정상인 구간이 있다. 여기서 세면 오탐이 데이터를 오염시킨다.
+ *  · video   — 학생은 전자칠판을 보라고 안내받는다. 태블릿 화면이 저절로 꺼진다
+ *  · waiting — 수업 시작 전. 도착 시각이 5분씩 벌어지는 구간이다
+ *  · done    — 정리·반납 구간
+ */
+export const FOCUS_EXEMPT_PHASES: readonly LessonPhase[] = ["waiting", "video", "done"];
+
+export function countsFocus(phase: LessonPhase): boolean {
+  return !FOCUS_EXEMPT_PHASES.includes(phase);
+}
+
+/**
+ * 10초 미만은 기록하지 않는다.
+ *
+ * 알림 확인, 실수로 누른 탭 전환이 대부분이다. 이것까지 세면 화면이 의미 없는 숫자로
+ * 가득 차서 정작 봐야 할 학생이 묻힌다.
+ */
+export const AWAY_MIN_MS = 10_000;
+
+/**
+ * 대시보드에서 노란 배경으로 표시할 기준.
+ *
+ * 첫 2주 운영 후 실측으로 보정한다. 셋 중 하나만 넘어도 표시한다 — 오래 한 번 나간 것과
+ * 짧게 여러 번 나간 것은 다른 신호지만 둘 다 돌아볼 이유가 된다.
+ */
+export const AWAY_ALERT = {
+  totalMs: 3 * 60_000,
+  count: 5,
+  longestMs: 2 * 60_000,
+} as const;
 
 export interface MoodEntry {
   id: string;

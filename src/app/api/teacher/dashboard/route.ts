@@ -70,6 +70,16 @@ export async function GET(request: Request) {
         name: nameOf.get(entry.studentId) ?? "",
         temporary: !nameOf.get(entry.studentId),
         joinedAt: entry.joinedAt,
+        /*
+         * 이탈 누적치. 출석 문서에 얹혀 있어 **추가 읽기가 없다**.
+         * 이 화면에서만 쓴다 — /api/teacher/board(교실 앞 공유 화면)에는 절대 내보내지
+         * 않는다. 개인별 이탈 표시는 공개 망신이 된다.
+         */
+        away: {
+          ms: entry.awayMs ?? 0,
+          count: entry.awayCount ?? 0,
+          longestMs: entry.longestAwayMs ?? 0,
+        },
         mood: mood
           ? {
               key: mood.mood,

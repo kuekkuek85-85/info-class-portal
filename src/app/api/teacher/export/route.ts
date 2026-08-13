@@ -86,11 +86,18 @@ export async function GET(request: Request) {
             row.studentId,
             nameOf.get(row.studentId) ?? "",
             formatTimeKST(row.joinedAt),
+            // 이탈 누적치. 초 단위로 내보낸다 — 표 계산기에서 바로 더할 수 있게
+            Math.round((row.awayMs ?? 0) / 1000),
+            row.awayCount ?? 0,
+            Math.round((row.longestAwayMs ?? 0) / 1000),
           ];
         });
       return csvResponse(
         "attendance.csv",
-        toCsv(["날짜", "교시", "반", "학번", "이름", "접속시각"], rows),
+        toCsv(
+          ["날짜", "교시", "반", "학번", "이름", "접속시각", "자리비움(초)", "자리비움(회)", "최장1회(초)"],
+          rows,
+        ),
       );
     }
 

@@ -203,6 +203,19 @@ export default function EntryPage() {
             </p>
           )}
 
+          {/*
+            이탈 기록 고지 — 기능과 **같은 배포에** 싣는다.
+            몰래 켜는 순간 이 기능은 교육적으로 실패한 것이 된다.
+
+            둘째 줄을 굳이 넣는 이유: 사실이기도 하고, 9월 개인정보 단원에서
+            "수집하지 않는 것을 수집하지 않는다고 정확히 말하는 것"의 실례가 된다.
+          */}
+          <p className="rounded-md bg-surface px-4 py-3 text-left t-body-sm">
+            수업 화면을 벗어나면 <b>벗어난 시간</b>이 기록되고, 선생님이 볼 수 있어요.
+            <br />
+            어느 앱이나 사이트로 갔는지는 <b>알 수 없고, 기록되지도 않아요.</b>
+          </p>
+
           <div className="flex flex-col gap-3">
             <button
               type="button"
