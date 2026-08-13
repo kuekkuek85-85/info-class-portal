@@ -38,12 +38,22 @@ export type LessonPhase =
  *  · 3차시: waiting → mood → draw → worksheet → gallery → reflection → done
  * 차시마다 쓰지 않는 단계는 그냥 건너뛴다.
  */
+/**
+ * 단계 순서 — 대시보드의 버튼 차례이자 "이전·다음 단계"가 따라가는 길이다.
+ *
+ * 진도·평가 안내가 퀴즈보다 앞이다. 둘 다 있는 수업은 1·2차시 합본처럼 오리엔테이션을
+ * 겸하는 경우인데, 그때는 학기 안내를 먼저 하고 활동으로 들어가는 편이 자연스럽다.
+ * 안내를 뒤로 미루면 활동이 끊기고, 남은 시간에 밀려 안내를 아예 못 하기도 한다.
+ *
+ * 진도·평가가 비어 있는 차시(2·3차시)에서는 그 둘이 버튼에서 빠지므로,
+ * 기분 다음이 곧 퀴즈다 — 순서를 바꿔도 그 수업들의 흐름은 그대로다.
+ */
 export const LESSON_PHASES: readonly LessonPhase[] = [
   "waiting",
   "mood",
-  "quiz",
   "progress",
   "assessment",
+  "quiz",
   "video",
   "draw",
   "worksheet",
