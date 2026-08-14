@@ -176,6 +176,8 @@ export function DrawBoard({
   const [maxHeight, setMaxHeight] = useState<number | null>(null);
   const canvasBoxRef = useRef<HTMLDivElement>(null);
   const toolsRef = useRef<HTMLDivElement>(null);
+  /** 캔버스 상자에서 실제 그림면까지의 안쪽 여백 (테두리 + padding) */
+  const insetRef = useRef({ left: 0, top: 0, right: 0, bottom: 0 });
 
   const [textDraft, setTextDraft] = useState<{ x: number; y: number; value: string } | null>(null);
   const [customOpen, setCustomOpen] = useState(false);
@@ -217,11 +219,30 @@ export function DrawBoard({
     redraw();
   }, [redraw, strokeCount, textCount]);
 
-  /** 화면 좌표 → 논리 좌표(1600×1200) */
+  /**
+   * 화면 좌표 → 논리 좌표(1600×1200).
+   *
+   * **테두리와 안쪽 여백을 빼고 센다.**
+   * getBoundingClientRect() 는 여백까지 포함한 상자를 준다. 캔버스에 여백이 1px이라도
+   * 붙으면 그만큼 그림이 손끝에서 밀리는데, 어디서 붙었는지 찾기가 아주 어렵다.
+   * 실제로 그런 일이 있었다 — className 의 "block" 이 같은 이름의 디자인 클래스와
+   * 겹쳐 32px 여백이 붙었고, 모든 획이 그만큼 어긋났다.
+   *
+   * 여백 값은 배치가 바뀔 때만 다시 읽는다. 획 하나에 pointermove 가 수십 번 오는데
+   * 그때마다 getComputedStyle 을 부르면 그리는 손이 걸린다.
+   */
   function toLogical(event: React.PointerEvent<HTMLCanvasElement>): [number, number] {
     const rect = event.currentTarget.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * CANVAS_WIDTH;
-    const y = ((event.clientY - rect.top) / rect.height) * CANVAS_HEIGHT;
+    const inset = insetRef.current;
+
+    const left = rect.left + inset.left;
+    const top = rect.top + inset.top;
+    const width = rect.width - inset.left - inset.right;
+    const height = rect.height - inset.top - inset.bottom;
+    if (width <= 0 || height <= 0) return [0, 0];
+
+    const x = ((event.clientX - left) / width) * CANVAS_WIDTH;
+    const y = ((event.clientY - top) / height) * CANVAS_HEIGHT;
     return [x, y];
   }
 
@@ -621,6 +642,19 @@ export function DrawBoard({
    */
   useEffect(() => {
     function measure() {
+      // 캔버스에 붙은 테두리·여백을 다시 읽는다 (toLogical 이 이 값으로 좌표를 보정한다)
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const s = getComputedStyle(canvas);
+        const px = (v: string) => Number.parseFloat(v) || 0;
+        insetRef.current = {
+          left: px(s.borderLeftWidth) + px(s.paddingLeft),
+          right: px(s.borderRightWidth) + px(s.paddingRight),
+          top: px(s.borderTopWidth) + px(s.paddingTop),
+          bottom: px(s.borderBottomWidth) + px(s.paddingBottom),
+        };
+      }
+
       const box = canvasBoxRef.current;
       if (!box) return;
 
@@ -903,13 +937,20 @@ export function DrawBoard({
                 // 손가락으로 그을 때 화면이 함께 스크롤되면 그림이 그어지지 않는다
                 touchAction: "none",
                 /*
+                  className 에 "block" 을 쓰지 않는다.
+                  이 프로젝트의 globals.css 에 같은 이름의 디자인 클래스가 있어서
+                  (색면 패널 · padding 2rem) 함께 먹는다. 그러면 캔버스 안쪽에 32px
+                  여백이 생기고, 터치 좌표가 그만큼 밀린다.
+                */
+                display: "block",
+                /*
                   잰 값이 나오기 전(첫 그림 한 번)에는 아래 className 의 dvh 값이 쓰인다.
                   dvh 를 쓰는 이유: 폰 브라우저의 주소창이 접혔다 펴질 때 vh 는 따라오지
                   않아, 캔버스가 화면 밖으로 삐져나간다.
                 */
                 maxHeight: maxHeight ? `${maxHeight}px` : undefined,
               }}
-              className="block max-h-[46dvh] w-auto max-w-full sm:max-h-[50dvh] lg:max-h-[calc(100dvh-14rem)]"
+              className="max-h-[46dvh] w-auto max-w-full sm:max-h-[50dvh] lg:max-h-[calc(100dvh-14rem)]"
             />
           </div>
         </div>
