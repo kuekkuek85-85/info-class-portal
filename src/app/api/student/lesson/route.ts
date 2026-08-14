@@ -82,6 +82,7 @@ export async function GET() {
         video: { heading: session.video?.heading ?? "", body: session.video?.body ?? "", url: "" },
         reflectionQuestions: questions,
         reflectionPublic: session.reflectionPublic,
+        freeNavigation: session.freeNavigation ?? false,
         // 문항과 선지만. 정답·해설은 교사가 공개한 뒤 /api/student/phase 로 따로 내려간다.
         quizQuestions: publicQuestions(session),
         // 활동지·장소 선택지. 그림 자체는 /api/student/artifact 로 따로 받는다.

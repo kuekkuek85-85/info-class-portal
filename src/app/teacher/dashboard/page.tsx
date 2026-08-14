@@ -41,6 +41,8 @@ interface SessionRow {
   phase: LessonPhase;
   teacherNote: string;
   reflectionPublic: boolean;
+  /** 학생이 지나온 단계로 되돌아갈 수 있는가 */
+  freeNavigation?: boolean;
   reflectionQuestions: string[];
   moodCheckEnabled: boolean;
   date: string;
@@ -259,6 +261,25 @@ function Dashboard() {
               >
                 수업 종료 (코드 만료)
               </button>
+              {/*
+                켜면 학생이 **지나온 단계로** 되돌아갈 수 있다. 앞 단계로는 못 간다.
+
+                다 같이 한 곳을 봐야 하는 구간(퀴즈 문항을 함께 읽을 때)과 각자 속도로
+                보완해야 하는 구간이 수업 안에 섞여 있다. 그래서 켜고 끄는 스위치로 둔다.
+              */}
+              <label
+                className={`pill t-body-sm cursor-pointer ${
+                  session.freeNavigation ? "pill-primary" : "pill-secondary"
+                }`}
+                title="학생이 이미 지나온 단계로 되돌아가 보완할 수 있습니다. 아직 안 한 단계로는 갈 수 없습니다."
+              >
+                <input
+                  type="checkbox"
+                  checked={Boolean(session.freeNavigation)}
+                  onChange={(event) => patchSession({ freeNavigation: event.target.checked })}
+                />
+                {session.freeNavigation ? "되돌아가기 켬" : "되돌아가기 끔"}
+              </label>
               <label className="pill pill-secondary t-body-sm cursor-pointer">
                 <input
                   type="checkbox"

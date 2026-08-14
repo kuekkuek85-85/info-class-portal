@@ -13,6 +13,7 @@ import { ReviewView } from "@/components/review-view";
 import { useFocusTracker } from "@/hooks/use-focus-tracker";
 import { WorksheetView, type WorksheetValue } from "@/components/worksheet-view";
 import {
+  LESSON_PHASES,
   PHASE_LABELS,
   type LessonPhase,
   type Stroke,
@@ -51,6 +52,8 @@ interface LessonData {
     video: Content;
     reflectionQuestions: string[];
     reflectionPublic: boolean;
+    /** 학생이 지나온 단계로 되돌아갈 수 있는가 */
+    freeNavigation?: boolean;
     /** 문항과 선지만. 정답은 교사가 공개할 때 따로 내려온다 */
     quizQuestions: { prompt: string; choices: string[] }[];
     activity: ActivityInfo | null;
@@ -133,6 +136,17 @@ export default function LessonPage() {
   /** 성찰 공개 여부가 바뀌었는지 보려고 직전 값을 들고 있는다 */
   const wasPublic = useRef<boolean | null>(null);
 
+  /** 교사가 "되돌아가기"를 켜 두었는가 */
+  const [freeNav, setFreeNav] = useState(false);
+  /**
+   * 학생이 지금 보고 있는 단계.
+   *
+   * 기본은 교사가 정한 단계와 같다. 되돌아가기가 켜져 있을 때만 지나온 단계로 옮길 수
+   * 있고, 그 뒤에도 교사가 단계를 넘기면 **따라가던 학생만** 함께 넘어간다.
+   * 되돌아가서 보완하는 중인 학생을 끌고 가면 하던 일이 끊긴다.
+   */
+  const [viewPhase, setViewPhase] = useState<LessonPhase>("waiting");
+
   /*
    * 화면을 벗어난 시간을 잰다. 수업이 끝난 뒤에는 세지 않는다.
    *
@@ -191,6 +205,8 @@ export default function LessonPage() {
       const payload = result as LessonData;
       setData(payload);
       setPhase(payload.session.phase);
+      setViewPhase(payload.session.phase);
+      setFreeNav(Boolean(payload.session.freeNavigation));
       if (payload.session.phase === "worksheet") setWorkTab("worksheet");
       if (payload.session.phase === "gallery") setWorkTab("gallery");
       previousPhase.current = payload.session.phase;
@@ -244,7 +260,19 @@ export default function LessonPage() {
       ) {
         setWorkTab(next);
       }
+      /*
+       * 따라가던 학생만 함께 넘어간다.
+       *
+       * 되돌아가서 보완하는 중인 학생을 끌고 가면 하던 일이 그 자리에서 끊긴다.
+       * 대신 화면에 "선생님은 지금 ○○" 를 띄워 두어 언제든 따라붙을 수 있게 한다.
+       */
+      setViewPhase((current) => (current === previousPhase.current ? next : current));
       previousPhase.current = next;
+
+      // 되돌아가기가 꺼지면 모두 교사 단계로 모인다
+      const free = Boolean(result.freeNavigation);
+      if (!free) setViewPhase(next);
+      setFreeNav(free);
 
       setPhase(next);
       setClosed(Boolean(result.closed));
@@ -439,7 +467,42 @@ export default function LessonPage() {
    * 교사가 셋 중 어느 단계를 켜 두었든 학생은 그림 · 활동지 · 작품 감상을 오간다.
    * 빨리 끝낸 학생을 붙잡아 두면 떠들고, 아직 그리는 학생을 갤러리로 끌고 가면 못 끝낸다.
    */
-  const isWorkPhase = phase === "draw" || phase === "worksheet" || phase === "gallery";
+  const isWorkPhase =
+    viewPhase === "draw" || viewPhase === "worksheet" || viewPhase === "gallery";
+
+  /**
+   * 되돌아갈 수 있는 단계 목록 — 교사가 있는 곳까지, 그리고 이 차시에 실제로 쓰는 것만.
+   *
+   * 대기·마침은 뺀다. 되돌아가서 할 일이 없는 화면이고, 대기로 가면 게임이 떠서
+   * 수업 중에 그리로 도망갈 구멍이 된다.
+   */
+  const backPhases: LessonPhase[] = LESSON_PHASES.slice(
+    0,
+    LESSON_PHASES.indexOf(phase) + 1,
+  ).filter((item) => {
+    if (item === "waiting" || item === "done") return false;
+    if (item === "mood") return session.moodCheckEnabled;
+    if (item === "quiz") return session.quizQuestions.length > 0;
+    // 그리기·활동지·감상은 한 묶음이라 안에서 이미 오갈 수 있다. 목록에는 하나만 둔다.
+    if (item === "worksheet" || item === "gallery") return false;
+    if (item === "draw") return Boolean(session.activity);
+    if (item === "reflection") return session.reflectionQuestions.length > 0;
+
+    const content =
+      item === "progress"
+        ? session.progress
+        : item === "assessment"
+          ? session.assessment
+          : session.video;
+    return Boolean(
+      content &&
+        (content.heading?.trim() ||
+          content.body?.trim() ||
+          content.url?.trim() ||
+          content.cards?.length ||
+          content.tabs?.length),
+    );
+  });
   const answered = answers.filter((a) => a.trim()).length;
   const total = session.reflectionQuestions.length;
 
@@ -493,18 +556,46 @@ export default function LessonPage() {
       */}
       <main
         className={`mx-auto w-full flex-1 px-4 py-5 ${
-          phase === "draw" || phase === "worksheet" || phase === "gallery"
+          viewPhase === "draw" || viewPhase === "worksheet" || viewPhase === "gallery"
             ? "max-w-[1600px]"
             : "max-w-3xl"
         }`}
       >
+        {/*
+          되돌아가기 — 교사가 켰을 때만 나온다.
+
+          **지나온 단계만** 나열한다. 아직 안 한 퀴즈를 미리 열어 보거나 남의 작품을
+          먼저 들여다보면 수업을 끌고 갈 수가 없다.
+
+          지금 교사가 있는 단계를 늘 오른쪽 끝에 두고, 학생이 뒤로 가 있으면 그 칸이
+          "선생님은 여기"로 보인다 — 언제든 한 번에 따라붙을 수 있어야 한다.
+        */}
+        {freeNav && backPhases.length > 1 && (
+          <nav className="mb-5 flex flex-wrap items-center gap-2">
+            <span className="t-caption">되돌아가기</span>
+            {backPhases.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setViewPhase(item)}
+                className={`pill t-body-sm ${
+                  viewPhase === item ? "pill-primary" : "pill-secondary"
+                }`}
+              >
+                {PHASE_LABELS[item]}
+                {item === phase && viewPhase !== item && " ← 선생님"}
+              </button>
+            ))}
+          </nav>
+        )}
+
         {closed && (
           <p className="mb-5 rounded-md bg-surface px-4 py-3 text-center t-body-sm">
             이 수업은 끝났어요. 내가 쓴 것은 볼 수 있지만 더 저장되지는 않아요.
           </p>
         )}
 
-        {phase === "waiting" &&
+        {viewPhase === "waiting" &&
           (session.game.url ? (
             /*
               먼저 온 학생이 5분을 기다리기도 한다 (태블릿 부팅, 주소 오타).
@@ -538,11 +629,11 @@ export default function LessonPage() {
             />
           ))}
 
-        {phase === "done" && (
+        {viewPhase === "done" && (
           <Placeholder title="오늘 수업 끝!" description="고생했어요. 태블릿을 정리해 주세요." />
         )}
 
-        {phase === "mood" && session.moodCheckEnabled && (
+        {viewPhase === "mood" && session.moodCheckEnabled && (
           <>
             <MoodPicker
               value={mood}
@@ -565,7 +656,7 @@ export default function LessonPage() {
           </>
         )}
 
-        {phase === "quiz" && quiz && (
+        {viewPhase === "quiz" && quiz && (
           <QuizView
             question={session.quizQuestions[quiz.index]}
             state={quiz}
@@ -576,8 +667,8 @@ export default function LessonPage() {
           />
         )}
 
-        {phase === "progress" && <ContentView content={session.progress} fallback="진도 안내" />}
-        {phase === "assessment" && (
+        {viewPhase === "progress" && <ContentView content={session.progress} fallback="진도 안내" />}
+        {viewPhase === "assessment" && (
           <ContentView content={session.assessment} fallback="평가 안내" />
         )}
 
@@ -585,7 +676,7 @@ export default function LessonPage() {
           영상은 교실 앞 전자칠판으로 다 같이 본다. 태블릿에는 영상을 띄우지 않고,
           시청 중에 생각할 질문만 크게 보여준다. 화면을 꽉 채워 다른 데로 눈이 가지 않게 한다.
         */}
-        {phase === "video" && (
+        {viewPhase === "video" && (
           <section className="flex flex-col gap-6">
             <div className="block bg-navy text-center text-inverse-ink">
               <p className="t-display">📺 영상 시청 중</p>
@@ -696,7 +787,7 @@ export default function LessonPage() {
 
         {isWorkPhase && workTab === "gallery" && <GalleryView disabled={closed} />}
 
-        {phase === "reflection" && (
+        {viewPhase === "reflection" && (
           <section className="flex flex-col gap-6">
             <div>
               <h2 className="t-display">오늘의 성찰</h2>

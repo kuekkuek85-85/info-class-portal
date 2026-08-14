@@ -33,6 +33,8 @@ export async function GET() {
        * 순간에만 화면이 수업 내용을 한 번 다시 받아 간다.
        */
       reflectionPublic: session.reflectionPublic,
+      // 지나온 단계로 되돌아갈 수 있는가. 세션 문서에 이미 있는 값이라 추가 조회가 없다.
+      freeNavigation: session.freeNavigation ?? false,
     });
   });
 }

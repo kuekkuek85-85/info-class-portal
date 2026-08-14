@@ -123,6 +123,7 @@ export async function PATCH(request: Request) {
       teacherNote?: string;
       status?: SessionStatus;
       reflectionPublic?: boolean;
+      freeNavigation?: boolean;
       lessonPlanId?: string;
       phase?: LessonPhase;
       quizIndex?: number;
@@ -179,6 +180,10 @@ export async function PATCH(request: Request) {
     if (typeof body.teacherNote === "string") {
       await updateSession(body.id, { teacherNote: body.teacherNote.slice(0, 2000) });
     }
+    if (typeof body.freeNavigation === "boolean") {
+      await updateSession(body.id, { freeNavigation: body.freeNavigation });
+    }
+
     if (typeof body.reflectionPublic === "boolean") {
       await updateSession(body.id, { reflectionPublic: body.reflectionPublic });
     }
