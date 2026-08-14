@@ -180,6 +180,14 @@ export function DrawBoard({
   const insetRef = useRef({ left: 0, top: 0, right: 0, bottom: 0 });
 
   const [textDraft, setTextDraft] = useState<{ x: number; y: number; value: string } | null>(null);
+  /**
+   * 장소를 다시 고르는 중인가.
+   *
+   * 처음 한 번 고르면 끝이었는데, 잘못 고르거나 그리다 마음이 바뀌는 학생이 나온다.
+   * 그때 되돌릴 방법이 없으면 그림을 통째로 지우고 다시 시작한다.
+   * 장소만 바꾸고 그림은 그대로 둔다 — 학교로 골라 그린 것이 병원이 되어도 상관없다.
+   */
+  const [repicking, setRepicking] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
   const [customPlace, setCustomPlace] = useState("");
 
@@ -187,6 +195,7 @@ export function DrawBoard({
     const value = customPlace.replace(/\s+/g, " ").trim().slice(0, MAX_PLACE_LENGTH);
     if (!value) return;
     setCustomOpen(false);
+    setRepicking(false);
     onPlaceChange(value);
   }
 
@@ -215,9 +224,17 @@ export function DrawBoard({
     }
   }, [color, width]);
 
+  /*
+   * repicking 이 목록에 들어 있는 이유.
+   *
+   * 장소를 다시 고르는 동안에는 이 컴포넌트가 선택 화면을 대신 그린다. 그때 캔버스
+   * 요소가 화면에서 빠졌다가, 돌아오면 **빈 캔버스가 새로 생긴다.** 획은 strokesRef 에
+   * 그대로 있지만 다시 그려 주지 않으면 화면이 비어 보인다.
+   * 학생 눈에는 그림이 사라진 것이라 그 자리에서 손을 놓는다.
+   */
   useEffect(() => {
     redraw();
-  }, [redraw, strokeCount, textCount]);
+  }, [redraw, strokeCount, textCount, repicking]);
 
   /**
    * 화면 좌표 → 논리 좌표(1600×1200).
@@ -772,12 +789,29 @@ export function DrawBoard({
 
   // ------------------------------------------------------------- 장소 선택
 
-  if (!place) {
+  if (!place || repicking) {
     return (
       <section className="flex flex-col gap-5">
-        <div>
-          <h2 className="t-display">어디를 그릴까요?</h2>
-          <p className="t-body mt-2">{year}년의 모습을 상상해서 그릴 장소를 하나 고르세요.</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="t-display">{repicking ? "어디로 바꿀까요?" : "어디를 그릴까요?"}</h2>
+            <p className="t-body mt-2">
+              {repicking
+                ? "그리던 그림은 지워지지 않아요. 장소 이름만 바뀝니다."
+                : `${year}년의 모습을 상상해서 그릴 장소를 하나 고르세요.`}
+            </p>
+          </div>
+
+          {/* 잘못 눌러 들어온 학생이 빠져나갈 길. 이게 없으면 장소를 억지로 바꿔야 한다 */}
+          {repicking && (
+            <button
+              type="button"
+              onClick={() => setRepicking(false)}
+              className="pill pill-secondary"
+            >
+              그냥 두기
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -785,12 +819,16 @@ export function DrawBoard({
             <button
               key={item}
               type="button"
-              onClick={() => onPlaceChange(item)}
+              onClick={() => {
+                onPlaceChange(item);
+                setRepicking(false);
+              }}
               className={`block t-subhead py-8 text-center ${
                 ["bg-lime", "bg-mint", "bg-cream", "bg-lilac", "bg-pink"][index % 5]
-              }`}
+              } ${item === place ? "ring-4 ring-ink ring-inset" : ""}`}
             >
               {item}
+              {item === place && <span className="mt-1 block t-caption">지금 고른 곳</span>}
             </button>
           ))}
 
@@ -807,7 +845,9 @@ export function DrawBoard({
             <span className="t-caption mt-1 block">직접 적기</span>
           </button>
         </div>
-        <p className="t-caption text-center">한 번 고르면 수업 중에는 바꾸지 않아요.</p>
+        <p className="t-caption text-center">
+          나중에 제목 옆 <b>연필</b>을 눌러 다시 고를 수 있어요.
+        </p>
 
         {customOpen && (
           <div
@@ -867,9 +907,26 @@ export function DrawBoard({
   return (
     <section className="flex flex-col gap-3">
       <header className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="t-headline">
-          {year}년의 {place}
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="t-headline">
+            {year}년의 {place}
+          </h2>
+          {/*
+            장소를 다시 고르는 문. 제목 바로 옆에 둔다 — 바꾸고 싶은 순간 학생 눈이
+            가 있는 곳이 제목이다. 도구 쪽에 섞어 두면 찾지 못한다.
+            누르는 자리는 44px 로 잡는다. 중1 손가락에 아이콘 크기 그대로는 작다.
+          */}
+          <button
+            type="button"
+            onClick={() => setRepicking(true)}
+            disabled={disabled}
+            title="장소 다시 고르기"
+            aria-label="장소 다시 고르기"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-line bg-canvas text-lg"
+          >
+            ✏️
+          </button>
+        </div>
 
         <div className="flex items-center gap-3">
           <span className="t-caption" aria-live="polite">
