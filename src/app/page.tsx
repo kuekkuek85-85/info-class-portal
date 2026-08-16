@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { DigitDisplay, NumberPad } from "@/components/number-pad";
@@ -243,8 +244,17 @@ export default function EntryPage() {
         </p>
       )}
 
-      <footer className="mt-auto pt-6 text-center">
+      <footer className="mt-auto flex flex-col items-center gap-2 pt-6 text-center">
         <span className="t-caption">잘 안 되면 손을 들어 선생님께 알려 주세요</span>
+        {/* 학생이 자기가 쓰는 서비스의 방침을 직접 열어 보는 것이 9월 개인정보 단원의 실례가 된다 */}
+        <span className="flex gap-4 t-caption">
+          <Link href="/terms" className="underline underline-offset-4">
+            이용약관
+          </Link>
+          <Link href="/privacy" className="underline underline-offset-4">
+            개인정보처리방침
+          </Link>
+        </span>
       </footer>
     </main>
   );

@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
+import { SiteFooter } from "@/components/site-footer";
 import { signOutGoogle } from "@/lib/firebase-client";
 
 /** 교사 화면 공통 껍데기. 세션이 없으면 로그인 화면으로 돌려보낸다. */
@@ -79,6 +80,8 @@ export function TeacherShell({ children }: { children: ReactNode }) {
       </header>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
+
+      <SiteFooter />
     </div>
   );
 }

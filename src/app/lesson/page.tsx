@@ -10,6 +10,7 @@ import { GalleryView } from "@/components/gallery-view";
 import { MoodPicker } from "@/components/mood-picker";
 import { QuizView, type QuizState } from "@/components/quiz-view";
 import { ReviewView } from "@/components/review-view";
+import { SiteFooter } from "@/components/site-footer";
 import { useFocusTracker } from "@/hooks/use-focus-tracker";
 import { WorksheetView, type WorksheetValue } from "@/components/worksheet-view";
 import {
@@ -889,6 +890,13 @@ export default function LessonPage() {
           </section>
         )}
       </main>
+
+      {/*
+        수업 화면에도 방침 링크를 둔다. 다만 그리기 화면에서는 감춘다 —
+        캔버스가 남은 세로를 재서 크기를 정하는데, 아래에 줄이 하나 붙으면 그만큼
+        그리는 면이 줄어든다. 수업 중에 약관을 읽을 일은 없고, 진입 화면에 늘 있다.
+      */}
+      {!isWorkPhase && <SiteFooter />}
 
       {/* 게임으로만 끝나지 않게 — 수업이 시작되는 순간 원리를 한 번 짚어 준다 */}
       {showExplainer && (
