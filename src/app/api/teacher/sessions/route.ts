@@ -60,6 +60,7 @@ export async function POST(request: Request) {
       date?: string;
       period?: number;
       rehearsal?: boolean;
+      demo?: boolean;
     }>(request);
 
     const rehearsal = body?.rehearsal === true;
@@ -93,6 +94,8 @@ export async function POST(request: Request) {
       status: "scheduled",
       phase: "waiting",
       rehearsal,
+      // 시연용은 반드시 리허설이어야 한다 — 진짜 학생 기록과 섞이면 안 된다
+      demo: rehearsal && body?.demo === true,
       teacherNote: "",
       startedAt: null,
       endedAt: null,

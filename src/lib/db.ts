@@ -771,6 +771,38 @@ export async function addAwayEpisode(
   );
 }
 
+/**
+ * 시연 참가자에게 빈 자리(임시 학번) 하나를 준다.
+ *
+ * **`create()` 로 자리를 잡는다.** 스무 명이 같은 순간에 링크를 누르면 목록을 읽고
+ * 고르는 방식으로는 같은 번호가 둘에게 간다. 문서가 이미 있으면 Firestore 가 거부하므로,
+ * 거부당한 사람만 다음 번호로 넘어간다.
+ *
+ * 자리가 다 차면 null. 부르는 쪽에서 "자리가 가득 찼다"고 알려 준다.
+ */
+export async function claimDemoSeat(
+  session: Pick<ClassSession, "id" | "classNo" | "date">,
+  candidates: string[],
+): Promise<string | null> {
+  for (const studentId of candidates) {
+    const ref = db().collection(COLLECTIONS.attendance).doc(entryId(session.id, studentId));
+    try {
+      await ref.create({
+        studentId,
+        sessionId: session.id,
+        classNo: session.classNo,
+        date: session.date,
+        joinedAt: Date.now(),
+      });
+      return studentId;
+    } catch (error) {
+      if (isAlreadyExists(error)) continue;
+      throw error;
+    }
+  }
+  return null;
+}
+
 export async function listAttendance(sessionId: string): Promise<Attendance[]> {
   const rows = await collectAll<Attendance>(
     db().collection(COLLECTIONS.attendance).where("sessionId", "==", sessionId),

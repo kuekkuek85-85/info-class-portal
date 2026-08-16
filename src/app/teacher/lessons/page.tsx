@@ -47,6 +47,7 @@ interface SessionRow {
   lessonNo: number;
   title: string;
   rehearsal?: boolean;
+  demo?: boolean;
 }
 
 const EMPTY: Draft = {
@@ -380,6 +381,8 @@ function Rehearsal({ plans }: { plans: Plan[] }) {
   const [classNo, setClassNo] = useState(1);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  /** 교사 연수 시연용으로 열면 /demo 링크로 코드 없이 들어올 수 있다 */
+  const [demo, setDemo] = useState(false);
 
   const lessonPlanId = picked || plans[0]?.id || "";
   const { data, reload } = usePolled<{ sessions: SessionRow[] }>(
@@ -393,7 +396,7 @@ function Rehearsal({ plans }: { plans: Plan[] }) {
     const response = await fetch("/api/teacher/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lessonPlanId, classNo, rehearsal: true }),
+      body: JSON.stringify({ lessonPlanId, classNo, rehearsal: true, demo }),
     });
     const result = await response.json();
     setBusy(false);
@@ -444,6 +447,16 @@ function Rehearsal({ plans }: { plans: Plan[] }) {
             ))}
           </select>
         </label>
+        {/*
+          시연용으로 열면 /demo 링크가 살아난다. 참가자는 코드도 학번도 치지 않고,
+          서버가 빈 임시 번호를 하나씩 배정한다 — 스무 명에게 번호를 불러 주면
+          반드시 겹치고, 겹치면 그림이 서로 덮인다.
+        */}
+        <label className="flex items-center gap-2 pb-2 text-sm">
+          <input type="checkbox" checked={demo} onChange={(e) => setDemo(e.target.checked)} />
+          교사 연수 시연용 (/demo 링크로 참가)
+        </label>
+
         <button
           type="button"
           onClick={create}
@@ -466,6 +479,7 @@ function Rehearsal({ plans }: { plans: Plan[] }) {
               <span className="text-sm">
                 <b className="text-lg">코드 {item.code}</b> · {item.classNo}반 · {item.lessonNo}차시{" "}
                 {item.title}
+                {item.demo && <b className="ml-2 text-accent">· 시연용 (/demo)</b>}
               </span>
               <button
                 type="button"
