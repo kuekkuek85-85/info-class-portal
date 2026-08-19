@@ -3,6 +3,7 @@ import "server-only";
 import { FieldPath, FieldValue, type Query } from "firebase-admin/firestore";
 
 import { db } from "./firebase-admin";
+import { isPeriodOver, periodTime } from "./timetable";
 import type {
   Artifact,
   ArtifactFeedback,
@@ -165,31 +166,44 @@ export async function deleteLessonPlan(id: string): Promise<void> {
 // ------------------------------------------------------------------- 세션
 
 /**
- * 수업을 시작한 뒤 이만큼 지나면 교사가 종료를 안 눌러도 닫는다.
+ * 시각표를 모르는 수업의 최후 방어선.
  *
- * 종료 버튼을 깜빡하는 일은 반드시 생긴다. 그것만 믿으면 코드가 며칠씩 살아 있어서
- * 그 반 학생이 밤에 집에서 들어와 그림을 고칠 수 있다. 한 수업이 아무리 길어도
- * 여섯 시간을 넘지 않으므로, 잊어버린 수업만 골라 닫는 값이다.
+ * 교시 시각을 아는 수업은 그 시각으로 닫힌다(아래). 리허설처럼 시각표에 없는 교시나
+ * 시각표가 등록되지 않은 날짜는 그 규칙이 걸리지 않아, 이 값이 없으면 코드가 며칠씩
+ * 살아 있게 된다. 한 수업이 아무리 길어도 여섯 시간을 넘지 않는다.
  */
 const AUTO_CLOSE_MS = 6 * 60 * 60 * 1000;
 
 /**
- * 이 세션이 닫혔는가 — 교사가 종료했거나, 시작한 지 너무 오래됐거나.
- * 학생 쓰기 API가 공통으로 쓴다.
+ * 이 세션이 닫혔는가. 학생 쓰기 API가 공통으로 쓴다.
  *
- * **교시 시각으로는 닫지 않는다.** 예전에는 시각표상 교시가 끝나면 닫았는데, 그 규칙이
- * 내일 수업을 미리 열어 확인하려는 교사도 막았다. 이제 교사가 누른 것과 시간 상한만 본다.
+ * 닫히는 경우는 셋이다.
+ *  ① 교사가 수업 종료를 눌렀다
+ *  ② 그 교시가 끝나고 10분이 지났다 — 종료 버튼을 깜빡해도 코드가 하교 후까지
+ *    살아 있지 않다
+ *  ③ 시각표를 **모르는** 수업인데 시작한 지 여섯 시간이 지났다 (②가 안 걸리는 경우)
+ *
+ * **날짜로는 닫지 않는다.** 내일 수업을 오늘 미리 열어 확인할 수 있어야 한다 —
+ * 내일 4교시는 오늘 기준으로 아직 끝나지 않았으므로 ②에 걸리지 않는다.
  */
 export function isSessionClosed(session: ClassSession, now: Date = new Date()): boolean {
   if (session.status === "ended") return true;
   // 아직 시작하지 않은 수업은 "닫힌" 것이 아니다 — 들어갈 수 없을 뿐이다 (findSessionByCode)
   if (session.status !== "active") return false;
-  // 리허설은 방과 후에 걸어보는 것이 목적이라 시간으로도 닫지 않는다
+  // 리허설은 방과 후에 걸어보는 것이 목적이라 시각으로 닫지 않는다
   if (session.rehearsal) return false;
 
+  /*
+   * 교시 시각을 아는 수업은 **그 시각만** 본다.
+   *
+   * 시간 상한을 함께 걸면 미리 열어 둔 수업이 정작 수업 날 닫혀 있다 — 하루 전에
+   * 확인하려고 켠 것이 여섯 시간 뒤 꺼지고, 다음 날 학생이 못 들어온다.
+   */
+  const known = periodTime(session.date, session.period) !== null;
+  if (known) return isPeriodOver(session.date, session.period, now);
+
   const startedAt = session.startedAt ?? 0;
-  if (!startedAt) return false;
-  return now.getTime() - startedAt > AUTO_CLOSE_MS;
+  return startedAt > 0 && now.getTime() - startedAt > AUTO_CLOSE_MS;
 }
 
 export async function getSession(id: string): Promise<ClassSession | null> {

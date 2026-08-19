@@ -8,7 +8,7 @@ import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
 import { TeacherShell } from "@/components/teacher-shell";
 import { formatDateKorean, formatTimeKST, todayKST } from "@/lib/datetime";
 import { QUADRANTS, type Quadrant } from "@/lib/mood";
-import { describePeriod, periodTime } from "@/lib/timetable";
+import { describePeriod, isPeriodOver, periodTime } from "@/lib/timetable";
 import { usePolled } from "@/lib/use-polled";
 import { AWAY_ALERT, LESSON_PHASES, PHASE_LABELS, type LessonPhase } from "@/lib/types";
 
@@ -44,6 +44,8 @@ interface SessionRow {
   reflectionPublic: boolean;
   /** 학생이 지나온 단계로 되돌아갈 수 있는가 */
   freeNavigation?: boolean;
+  /** 리허설은 교시 시각으로 닫지 않는다 */
+  rehearsal?: boolean;
   /** 이 차시에서만 쓰는 단계 이름 (4차시 진도 안내 → AI 직업 관상 체험) */
   phaseLabels?: Partial<Record<LessonPhase, string>>;
   reflectionQuestions: string[];
@@ -131,6 +133,20 @@ function Dashboard() {
 
   // 학생 한 명이 기분 체크를 마치면 서버가 만들어 세션에 넣어 둔다 (review.ts 참조)
   const reviewSummary = session?.reviewCache?.summary ?? "";
+
+  /*
+   * 교시가 끝나 코드가 저절로 닫힌 상태.
+   *
+   * 상태는 여전히 "진행 중" 인데 학생은 못 들어온다. 그걸 알려 주지 않으면 교사는
+   * 화면에 "진행 중" 이 떠 있으니 코드가 살아 있다고 믿고, 학생은 계속 막힌다.
+   * (닫힘 판정은 서버의 isSessionClosed 와 같은 규칙이다)
+   */
+  const autoClosed = Boolean(
+    session &&
+      session.status === "active" &&
+      !session.rehearsal &&
+      isPeriodOver(session.date, session.period),
+  );
 
   /*
    * 지금 화면에 떠 있는 수업의 ID.
@@ -247,7 +263,9 @@ function Dashboard() {
                 {session.status === "scheduled" &&
                   "아직 시작 전입니다. 수업 시작을 눌러야 학생이 코드로 들어올 수 있어요."}
                 {session.status === "active" &&
-                  "지금 코드가 열려 있습니다. 수업 종료를 누르면 닫힙니다."}
+                  (autoClosed
+                    ? "교시가 끝나 코드가 저절로 닫혔습니다. 다시 열려면 수업 시작을 눌러 주세요."
+                    : "지금 코드가 열려 있습니다. 수업 종료를 누르면 닫힙니다.")}
                 {session.status === "ended" && "수업이 끝나 코드가 닫혔습니다."}
               </p>
             </div>
