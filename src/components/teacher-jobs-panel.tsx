@@ -26,7 +26,14 @@ interface JobsData {
 /** 화면에 세우는 막대 수. 더 늘리면 꼬리만 길어지고 읽히지 않는다 */
 const TOP_N = 8;
 
-export function TeacherJobsPanel({ sessionId }: { sessionId: string }) {
+export function TeacherJobsPanel({
+  sessionId,
+  /** 교실 앞 화면은 위에 이미 제목이 있다. 두 번 쓰지 않는다 */
+  hideHeading,
+}: {
+  sessionId: string;
+  hideHeading?: boolean;
+}) {
   const { data } = usePolled<JobsData>(`/api/teacher/jobs?sessionId=${sessionId}`, 15_000);
 
   if (!data) return <p className="text-sm text-muted">집계를 불러오는 중…</p>;
@@ -42,43 +49,63 @@ export function TeacherJobsPanel({ sessionId }: { sessionId: string }) {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-lg font-bold">우리 반이 고른 직업</h2>
+        {!hideHeading && <h2 className="text-lg font-bold">우리 반이 고른 직업</h2>}
         <p className="text-xs text-muted">
           {data.written}명이 적었습니다 · 이름은 나오지 않습니다
         </p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Column title="사라질 것 같은 직업" rows={data.vanish} tone="bg-rose-400" />
-        <Column title="잘 나갈 것 같은 직업" rows={data.rise} tone="bg-emerald-400" />
+        <Column title="사라질 것 같은 직업" rows={data.vanish} tone="bg-rose-400" big={hideHeading} />
+        <Column title="잘 나갈 것 같은 직업" rows={data.rise} tone="bg-emerald-400" big={hideHeading} />
       </div>
     </section>
   );
 }
 
-function Column({ title, rows, tone }: { title: string; rows: Tally[]; tone: string }) {
+function Column({
+  title,
+  rows,
+  tone,
+  big,
+}: {
+  title: string;
+  rows: Tally[];
+  tone: string;
+  /** 교실 앞 화면에서는 뒷자리에서도 읽혀야 한다 */
+  big?: boolean;
+}) {
   const top = rows.slice(0, TOP_N);
   // 가장 많이 나온 것을 100%로 잡는다. 절대 인원으로 재면 막대가 전부 짧아 비교가 안 된다
   const max = Math.max(1, ...top.map((row) => row.count));
 
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-line bg-card p-4">
-      <h3 className="text-sm font-semibold">{title}</h3>
+      <h3 className={big ? "text-lg font-bold" : "text-sm font-semibold"}>{title}</h3>
 
       {top.length === 0 && <p className="text-sm text-muted">아직 없습니다.</p>}
 
       {top.map((row) => (
         <div key={row.name} className="flex items-center gap-2">
-          <span className="w-28 shrink-0 truncate text-sm" title={row.name}>
+          <span
+            className={`shrink-0 truncate ${big ? "w-40 text-lg" : "w-28 text-sm"}`}
+            title={row.name}
+          >
             {row.name}
           </span>
-          <span className="h-5 flex-1 overflow-hidden rounded bg-surface">
+          <span
+            className={`flex-1 overflow-hidden rounded bg-surface ${big ? "h-8" : "h-5"}`}
+          >
             <span
               className={`block h-full rounded ${tone}`}
               style={{ width: `${Math.round((row.count / max) * 100)}%` }}
             />
           </span>
-          <span className="w-8 shrink-0 text-right text-sm tabular-nums">{row.count}</span>
+          <span
+            className={`shrink-0 text-right tabular-nums ${big ? "w-10 text-lg font-bold" : "w-8 text-sm"}`}
+          >
+            {row.count}
+          </span>
         </div>
       ))}
 

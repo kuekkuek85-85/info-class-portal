@@ -7,6 +7,7 @@ import { TeacherShell } from "@/components/teacher-shell";
 import { todayKST } from "@/lib/datetime";
 import { pickCurrentSession } from "@/lib/pick-session";
 import { QUADRANTS, type Quadrant } from "@/lib/mood";
+import { TeacherJobsPanel } from "@/components/teacher-jobs-panel";
 import type { Review } from "@/lib/review";
 import { usePolled } from "@/lib/use-polled";
 
@@ -39,6 +40,9 @@ interface SessionOption {
   lessonNo: number;
   title: string;
   status: "scheduled" | "active" | "ended";
+  /** 직업 집계 탭을 만들지 판단하는 데만 쓴다 */
+  activity?: { worksheet?: { key: string }[] };
+  rehearsal?: boolean;
 }
 
 const POLL_INTERVAL_MS = 5000;
@@ -62,7 +66,7 @@ export default function BoardPage() {
 
 function Board() {
   const [picked, setPicked] = useState("");
-  const [tab, setTab] = useState<"mood" | "review">("mood");
+  const [tab, setTab] = useState<"mood" | "review" | "jobs">("mood");
 
   const { data: sessionList } = usePolled<{ sessions: SessionOption[] }>(
     `/api/teacher/sessions?date=${todayKST()}`,
@@ -93,17 +97,29 @@ function Board() {
   );
   const review = reviewData?.review ?? null;
 
+  /** 이 수업이 직업 조사를 하는가 (4차시) */
+  const hasJobs = Boolean(
+    sessions
+      .find((s) => s.id === sessionId)
+      ?.activity?.worksheet?.some((q) => q.key.startsWith("vanish")),
+  );
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold">
-            {tab === "mood" ? "우리 반 기분" : "지난 시간에 우리 반은"}
+            {tab === "mood" && "우리 반 기분"}
+            {tab === "review" && "지난 시간에 우리 반은"}
+            {tab === "jobs" && "우리 반이 고른 직업"}
           </h1>
           <p className="text-sm text-muted">
-            {tab === "mood"
-              ? "이름과 적은 이유는 이 화면에 나오지 않습니다. 교실 앞 화면에 띄워도 됩니다."
-              : "학생 태블릿에 뜨는 것과 같은 화면입니다. 누가 그렸는지·썼는지는 나오지 않습니다."}
+            {tab === "mood" &&
+              "이름과 적은 이유는 이 화면에 나오지 않습니다. 교실 앞 화면에 띄워도 됩니다."}
+            {tab === "review" &&
+              "학생 태블릿에 뜨는 것과 같은 화면입니다. 누가 그렸는지·썼는지는 나오지 않습니다."}
+            {tab === "jobs" &&
+              "반 전체가 적은 직업을 모았습니다. 누가 적었는지는 나오지 않습니다."}
           </p>
         </div>
         <select
@@ -142,11 +158,29 @@ function Board() {
         >
           지난 차시 리뷰
         </button>
+
+        {/*
+          직업 집계는 활동지에 직업 칸이 있는 차시에서만 나온다.
+          2·3차시에 빈 탭이 떠 있으면 눌러 보고 빈 화면을 만난다.
+        */}
+        {hasJobs && (
+          <button
+            type="button"
+            onClick={() => setTab("jobs")}
+            className={`rounded-xl border px-4 py-2 text-sm font-medium ${
+              tab === "jobs" ? "border-accent bg-accent/10" : "border-line bg-card"
+            }`}
+          >
+            직업 집계
+          </button>
+        )}
       </div>
 
       {tab === "review" && (
         <ReviewBoard review={review} loading={Boolean(sessionId) && !reviewData} />
       )}
+
+      {tab === "jobs" && sessionId && <TeacherJobsPanel sessionId={sessionId} hideHeading />}
 
       {sessions.length === 0 && (
         <p className="rounded-xl border border-line bg-card px-4 py-6 text-center text-sm text-muted">
