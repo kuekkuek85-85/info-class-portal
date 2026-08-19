@@ -488,6 +488,12 @@ export default function LessonPage() {
    */
   const activeTab = !canDraw && workTab === "draw" ? "worksheet" : workTab;
 
+  /*
+   * 그림이 없는 차시에서는 "작품" 대신 "활동지"라고 부른다.
+   * 글만 쓰는 활동인데 "작품 감상"이라고 하면 학생이 그림을 찾는다.
+   */
+  const workNoun = canDraw ? "작품" : "활동지";
+
   /**
    * 되돌아갈 수 있는 단계 목록 — 교사가 있는 곳까지, 그리고 이 차시에 실제로 쓰는 것만.
    *
@@ -775,7 +781,7 @@ export default function LessonPage() {
               onClick={() => setWorkTab("gallery")}
               className={`pill flex-1 ${activeTab === "gallery" ? "pill-primary" : "pill-secondary"}`}
             >
-              작품 감상
+              {workNoun} 감상
             </button>
           </div>
         )}
@@ -821,7 +827,9 @@ export default function LessonPage() {
             <Placeholder title="활동지를 준비하고 있어요" description="잠시만 기다려 주세요." />
           ))}
 
-        {isWorkPhase && activeTab === "gallery" && <GalleryView disabled={closed} />}
+        {isWorkPhase && activeTab === "gallery" && (
+          <GalleryView disabled={closed} noun={workNoun} />
+        )}
 
         {viewPhase === "reflection" && (
           <section className="flex flex-col gap-6">

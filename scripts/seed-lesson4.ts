@@ -45,6 +45,28 @@ const empty = () => ({ heading: "", body: "", url: "", cards: [], tabs: [] });
  */
 const ACTIVITY_ID = "future-job";
 
+/** 직업 세 개를 (이름, 이유) 짝으로 묻는 칸을 만든다 */
+function jobFields(prefix: "vanish" | "rise", label: string, sample: [string, string]) {
+  const fields = [];
+  for (let i = 1; i <= 3; i += 1) {
+    fields.push({
+      key: `${prefix}${i}_job`,
+      label: `${label} 직업 ${i}`,
+      hint: i === 1 ? `예) ${sample[0]}` : "",
+      kind: "text" as const,
+      maxLength: 30,
+    });
+    fields.push({
+      key: `${prefix}${i}_why`,
+      label: `↳ 왜 그렇게 생각하나요?`,
+      hint: i === 1 ? `예) ${sample[1]}` : "",
+      kind: "text" as const,
+      maxLength: 80,
+    });
+  }
+  return fields;
+}
+
 const PLAN = {
   lessonNo: 4,
   title: "미래 사회와 나의 진로",
@@ -79,8 +101,11 @@ const PLAN = {
     tabs: [],
   },
 
-  // 교사 화면 버튼 이름만 바꾼다 (학생 화면에는 단계 이름이 뜨지 않는다)
-  phaseLabels: { progress: "AI 직업 관상 체험" },
+  /*
+   * 이 차시에서만 쓰는 단계 이름.
+   * 그림이 없는 차시라 "작품 감상"이 아니라 "활동지 감상"이다.
+   */
+  phaseLabels: { progress: "AI 직업 관상 체험", gallery: "활동지 감상" },
 
   /*
    * 체험 단계에서는 자리 비움을 세지 않는다.
@@ -138,20 +163,21 @@ const PLAN = {
         kind: "text",
         maxLength: 40,
       },
-      {
-        key: "vanish",
-        label: "앞으로 사라질 가능성이 높은 직업 2가지 — 이유와 함께",
-        hint: "예) 톨게이트 요금 수납원 — 하이패스가 대신하니까. 한 줄에 하나씩 적어 주세요.",
-        kind: "long",
-        maxLength: 300,
-      },
-      {
-        key: "rise",
-        label: "앞으로 생겨나거나 잘 나갈 직업 2가지 — 이유와 함께",
-        hint: "예) AI 윤리 전문가 — AI가 잘못 판단할 때 책임을 정해야 하니까.",
-        kind: "long",
-        maxLength: 300,
-      },
+      /*
+       * 직업과 이유를 **다른 칸에** 적는다.
+       *
+       * 처음에는 한 칸에 "직업 — 이유" 를 여러 줄로 적게 했는데, 중1에게는 무엇을
+       * 어디에 쓰라는 건지 헷갈린다. 칸이 나뉘면 쓸 것이 분명해지고, 교사 집계도
+       * 글을 쪼개 볼 필요 없이 직업 칸만 세면 된다.
+       */
+      ...jobFields("vanish", "사라질", [
+        "톨게이트 요금 수납원",
+        "하이패스가 대신하니까",
+      ]),
+      ...jobFields("rise", "생겨나거나 잘 나갈", [
+        "AI 윤리 전문가",
+        "AI가 잘못 판단할 때 책임을 정해야 하니까",
+      ]),
     ],
   },
 } as const;

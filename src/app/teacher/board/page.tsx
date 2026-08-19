@@ -69,9 +69,15 @@ function Board() {
   );
   const sessions = sessionList?.sessions ?? [];
 
-  // 고르지 않았으면 "지금 하는 수업"을 쓴다. 오늘 첫 수업을 기본값으로 두면 3교시에
-  // 2교시 반의 기분이 교실 앞 화면에 뜬다 — 다른 반 데이터가 노출되는 셈이다.
-  const sessionId = picked || pickCurrentSession(sessions)?.id || "";
+  /*
+   * 고르지 않았으면 "지금 하는 수업"을 쓴다. 오늘 첫 수업을 기본값으로 두면 3교시에
+   * 2교시 반의 기분이 교실 앞 화면에 뜬다 — 다른 반 데이터가 노출되는 셈이다.
+   *
+   * 다만 pickCurrentSession 은 리허설을 제외하므로, 오늘 등록된 것이 리허설뿐이면
+   * 아무것도 안 골라진다. 그러면 드롭다운에는 리허설이 보이는데 화면은 텅 비고,
+   * 지난 차시 리뷰도 "기록이 없습니다"로만 뜬다. 마지막에 첫 번째를 받아 둔다.
+   */
+  const sessionId = picked || pickCurrentSession(sessions)?.id || sessions[0]?.id || "";
 
   const { data } = usePolled<BoardData>(
     sessionId && tab === "mood" ? `/api/teacher/board?sessionId=${sessionId}` : null,

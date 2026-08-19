@@ -46,7 +46,13 @@ interface GalleryData {
   places: string[];
 }
 
-export function GalleryView({ disabled }: { disabled?: boolean }) {
+/**
+ * 그림을 그리는 차시인지에 따라 부르는 말이 달라진다.
+ *
+ * 4차시처럼 글만 쓰는 활동에서 "작품 감상 · 친구 작품" 이라고 하면 학생이 그림을 찾는다.
+ * 같은 화면을 쓰되 이름만 바꾼다.
+ */
+export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean; noun?: string }) {
   const [tab, setTab] = useState<"peers" | "mine">("peers");
   const [openId, setOpenId] = useState("");
   const [traitFilter, setTraitFilter] = useState<string[]>([]);
@@ -81,14 +87,14 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
           onClick={() => setTab("peers")}
           className={`pill flex-1 ${tab === "peers" ? "pill-primary" : "pill-secondary"}`}
         >
-          친구 작품 ({works.length})
+          친구 {noun} ({works.length})
         </button>
         <button
           type="button"
           onClick={() => setTab("mine")}
           className={`pill flex-1 ${tab === "mine" ? "pill-primary" : "pill-secondary"}`}
         >
-          내 작품 ({data.received.length})
+          내 {noun} ({data.received.length})
         </button>
       </div>
 
@@ -96,7 +102,7 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
         <>
           {works.length === 0 && (
             <p className="block bg-lilac py-12 text-center t-body-lg">
-              아직 그려진 작품이 없어요. 조금 뒤에 다시 보면 친구들 그림이 올라와 있을 거예요.
+              아직 올라온 {noun}이 없어요. 조금 뒤에 다시 보면 친구들 것이 올라와 있을 거예요.
             </p>
           )}
 
@@ -121,7 +127,7 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
                 */}
                 {filtered.length === 0 ? (
                   <p className="rounded-lg bg-surface py-12 text-center t-body">
-                    고른 조건에 맞는 작품이 없어요. 필터를 조금 풀어 보세요.
+                    고른 조건에 맞는 {noun}이 없어요. 필터를 조금 풀어 보세요.
                   </p>
                 ) : (
                   <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
@@ -226,7 +232,7 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
               )}
             </>
           ) : (
-            <p className="block bg-lilac py-10 text-center t-body-lg">아직 그린 작품이 없어요.</p>
+            <p className="block bg-lilac py-10 text-center t-body-lg">아직 낸 {noun}이 없어요.</p>
           )}
 
           <h3 className="t-eyebrow">친구들이 남긴 말</h3>
@@ -243,6 +249,7 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
         <DetailModal
           work={open}
           worksheet={data.worksheet}
+          noun={noun}
           onClose={() => setOpenId("")}
           onSaved={reload}
           disabled={disabled}
@@ -352,12 +359,14 @@ function FilterPanel({
 function DetailModal({
   work,
   worksheet,
+  noun,
   onClose,
   onSaved,
   disabled,
 }: {
   work: Work;
   worksheet: WorksheetQuestion[];
+  noun: string;
   onClose: () => void;
   onSaved: () => void;
   disabled?: boolean;
@@ -370,7 +379,7 @@ function DetailModal({
     >
       <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-lg bg-canvas p-5 sm:rounded-lg">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h3 className="t-headline">작품 보기</h3>
+          <h3 className="t-headline">{noun} 보기</h3>
           <button type="button" onClick={onClose} className="pill pill-secondary t-body-sm">
             닫기
           </button>

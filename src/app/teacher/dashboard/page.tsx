@@ -411,7 +411,7 @@ function Dashboard() {
             직업 조사 집계 — 4차시 정리용.
             활동지에 vanish·rise 칸이 있는 차시에서만 뜬다. 다른 차시에서는 셀 것이 없다.
           */}
-          {session.activity?.worksheet?.some((q) => q.key === "vanish") && (
+          {session.activity?.worksheet?.some((q) => q.key.startsWith("vanish")) && (
             <TeacherJobsPanel sessionId={session.id} />
           )}
 

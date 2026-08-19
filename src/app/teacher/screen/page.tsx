@@ -74,7 +74,15 @@ function Screen() {
   );
   const sessions = data?.sessions ?? [];
   // 대시보드와 같은 이유 — 열자마자 "지금 하는 수업"이 떠 있어야 한다
-  const session = sessions.find((s) => s.id === picked) ?? pickCurrentSession(sessions);
+  /*
+   * 고르지 않았으면 "지금 하는 수업"을 쓰되, 그것도 없으면 목록의 첫 번째를 쓴다.
+   *
+   * pickCurrentSession 은 리허설을 일부러 제외한다(지우는 것을 깜빡한 리허설이 진짜
+   * 수업을 가리지 않게). 그런데 오늘 등록된 것이 리허설뿐이면 아무것도 안 골라져서
+   * 화면이 통째로 비었다 — 드롭다운에는 리허설이 보이는데 실제로는 선택되지 않은 상태다.
+   */
+  const sessionId = picked || pickCurrentSession(sessions)?.id || sessions[0]?.id || "";
+  const session = sessions.find((s) => s.id === sessionId);
   const embed = session?.video?.url ? toEmbedUrl(session.video.url) : "";
   const showQuiz = session?.phase === "quiz" && (session.quiz?.questions.length ?? 0) > 0;
 
