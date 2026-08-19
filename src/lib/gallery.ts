@@ -135,5 +135,11 @@ export function assignPeers(submitted: Artifact[], myStudentId: string): Artifac
  */
 export function isVisible(artifact: Artifact): boolean {
   if (artifact.hidden) return false;
-  return (artifact.strokes?.length ?? 0) > 0;
+  if ((artifact.strokes?.length ?? 0) > 0) return true;
+
+  /*
+   * 그림이 없는 활동도 있다 (4차시 직업 조사처럼 글만 쓰는 활동).
+   * 획만 보고 판단하면 그런 차시에서는 갤러리가 영원히 비어 있다.
+   */
+  return Object.values(artifact.answers ?? {}).some((value) => String(value ?? "").trim());
 }

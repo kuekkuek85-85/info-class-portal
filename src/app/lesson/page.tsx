@@ -471,6 +471,18 @@ export default function LessonPage() {
   const isWorkPhase =
     viewPhase === "draw" || viewPhase === "worksheet" || viewPhase === "gallery";
 
+  /** 이 차시에 그리기가 있는가. 장소가 하나도 없으면 글만 쓰는 활동이다 */
+  const canDraw = (session.activity?.places.length ?? 0) > 0;
+
+  /*
+   * 실제로 보여 줄 탭.
+   *
+   * 그리기가 없는 차시에서는 그리기 탭에 머무를 수 없다. 교사가 "그리기" 단계를 눌러도
+   * 마찬가지다 — 4차시처럼 글만 쓰는 활동에서 그리기로 보내면 고를 장소가 없는 빈
+   * 화면이 뜬다. 렌더할 때 걸러 내는 편이 상태를 고쳐 쓰는 것보다 단순하다.
+   */
+  const activeTab = !canDraw && workTab === "draw" ? "worksheet" : workTab;
+
   /**
    * 되돌아갈 수 있는 단계 목록 — 교사가 있는 곳까지, 그리고 이 차시에 실제로 쓰는 것만.
    *
@@ -714,19 +726,26 @@ export default function LessonPage() {
         */}
         {isWorkPhase && session.activity && (
           <div className="mb-5 flex gap-2">
-            <button
-              type="button"
-              onClick={() => setWorkTab("draw")}
-              className={`pill flex-1 ${workTab === "draw" ? "pill-primary" : "pill-secondary"}`}
-            >
-              그림 그리기
-            </button>
+            {/*
+              그리기가 없는 차시도 있다 (4차시 직업 조사처럼 글만 쓰는 활동).
+              장소 목록이 비어 있으면 그리기 탭 자체를 만들지 않는다 — 눌러 봐야
+              고를 장소가 없는 빈 화면이 나온다.
+            */}
+            {canDraw && (
+              <button
+                type="button"
+                onClick={() => setWorkTab("draw")}
+                className={`pill flex-1 ${activeTab === "draw" ? "pill-primary" : "pill-secondary"}`}
+              >
+                그림 그리기
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setWorkTab("worksheet")}
               disabled={session.activity.worksheet.length === 0}
               className={`pill flex-1 ${
-                workTab === "worksheet" ? "pill-primary" : "pill-secondary"
+                activeTab === "worksheet" ? "pill-primary" : "pill-secondary"
               }`}
             >
               활동지 쓰기
@@ -738,7 +757,7 @@ export default function LessonPage() {
             <button
               type="button"
               onClick={() => setWorkTab("gallery")}
-              className={`pill flex-1 ${workTab === "gallery" ? "pill-primary" : "pill-secondary"}`}
+              className={`pill flex-1 ${activeTab === "gallery" ? "pill-primary" : "pill-secondary"}`}
             >
               작품 감상
             </button>
@@ -746,7 +765,7 @@ export default function LessonPage() {
         )}
 
         {isWorkPhase &&
-          workTab === "draw" &&
+          activeTab === "draw" &&
           (session.activity && artifact ? (
             <DrawBoard
               key={session.activity.activityId}
@@ -767,7 +786,7 @@ export default function LessonPage() {
           ))}
 
         {isWorkPhase &&
-          workTab === "worksheet" &&
+          activeTab === "worksheet" &&
           (session.activity && artifact ? (
             <WorksheetView
               questions={session.activity.worksheet}
@@ -786,7 +805,7 @@ export default function LessonPage() {
             <Placeholder title="활동지를 준비하고 있어요" description="잠시만 기다려 주세요." />
           ))}
 
-        {isWorkPhase && workTab === "gallery" && <GalleryView disabled={closed} />}
+        {isWorkPhase && activeTab === "gallery" && <GalleryView disabled={closed} />}
 
         {viewPhase === "reflection" && (
           <section className="flex flex-col gap-6">

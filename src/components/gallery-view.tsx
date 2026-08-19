@@ -137,18 +137,40 @@ export function GalleryView({ disabled }: { disabled?: boolean }) {
                             캔버스만 190MB라 태블릿 화면이 죽는다. 카드가 커진 만큼
                             640px 로 올려 흐릿해지지 않게 했다.
                           */}
-                          <ArtifactCanvas
-                            strokes={work.strokes}
-                            texts={work.texts}
-                            pixelWidth={640}
-                            className="h-auto w-full rounded bg-white"
-                          />
+                          {/*
+                            그림이 없는 차시(4차시 직업 조사)에서는 빈 캔버스 대신 쓴 글을
+                            보여준다. 새하얀 사각형이 격자를 채우면 무엇을 고를지 알 수 없다.
+                          */}
+                          {work.strokes.length > 0 || work.texts.length > 0 ? (
+                            <ArtifactCanvas
+                              strokes={work.strokes}
+                              texts={work.texts}
+                              pixelWidth={640}
+                              className="h-auto w-full rounded bg-white"
+                            />
+                          ) : (
+                            <div className="flex min-h-32 flex-col gap-1 rounded bg-white p-3">
+                              {Object.values(work.answers)
+                                .map((v) => String(v ?? "").trim())
+                                .filter(Boolean)
+                                .slice(0, 3)
+                                .map((line, i) => (
+                                  <p key={i} className="t-body-sm line-clamp-2">
+                                    {line}
+                                  </p>
+                                ))}
+                            </div>
+                          )}
                           <div className="flex flex-col gap-1">
-                            <p className="t-body-sm font-bold">
-                              {work.answers.place_year?.trim() ||
-                                `${work.year}년의 ${work.place || "어딘가"}`}
-                            </p>
-                            <p className="t-caption">{work.place}</p>
+                            {(work.strokes.length > 0 || work.place) && (
+                              <>
+                                <p className="t-body-sm font-bold">
+                                  {work.answers.place_year?.trim() ||
+                                    `${work.year}년의 ${work.place || "어딘가"}`}
+                                </p>
+                                <p className="t-caption">{work.place}</p>
+                              </>
+                            )}
                             {work.traits.length > 0 && (
                               <p className="flex flex-wrap gap-1">
                                 {work.traits.map((trait) => (

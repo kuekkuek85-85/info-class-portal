@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { TeacherArtifactPanel } from "@/components/teacher-artifact-panel";
+import { TeacherJobsPanel } from "@/components/teacher-jobs-panel";
 import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
 import { TeacherShell } from "@/components/teacher-shell";
 import { formatDateKorean, formatTimeKST, todayKST } from "@/lib/datetime";
@@ -380,6 +381,14 @@ function Dashboard() {
             (session.phase === "draw" ||
               session.phase === "worksheet" ||
               session.phase === "gallery") && <TeacherArtifactPanel sessionId={session.id} />}
+
+          {/*
+            직업 조사 집계 — 4차시 정리용.
+            활동지에 vanish·rise 칸이 있는 차시에서만 뜬다. 다른 차시에서는 셀 것이 없다.
+          */}
+          {session.activity?.worksheet?.some((q) => q.key === "vanish") && (
+            <TeacherJobsPanel sessionId={session.id} />
+          )}
 
           {stats && (
             <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">

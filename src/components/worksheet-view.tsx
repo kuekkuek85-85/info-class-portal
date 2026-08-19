@@ -113,14 +113,17 @@ export function WorksheetView({
         976px을 먹어(1366×768에서 실측) 첫 질문조차 보이지 않는다. 여기서는 그리는 게
         아니라 보고 쓰는 것이므로, 그림보다 질문이 보이는 편이 낫다.
       */}
-      <div className="flex justify-center rounded-lg border border-line p-2">
-        <ArtifactCanvas
-          strokes={strokes}
-          texts={texts}
-          pixelWidth={640}
-          className="h-auto max-h-[32dvh] w-auto max-w-full rounded bg-white"
-        />
-      </div>
+      {/* 그림이 없는 차시(4차시 직업 조사)에서는 빈 흰 상자만 남는다 — 아예 뺀다 */}
+      {(strokes.length > 0 || texts.length > 0) && (
+        <div className="flex justify-center rounded-lg border border-line p-2">
+          <ArtifactCanvas
+            strokes={strokes}
+            texts={texts}
+            pixelWidth={640}
+            className="h-auto max-h-[32dvh] w-auto max-w-full rounded bg-white"
+          />
+        </div>
+      )}
 
       {questions.map((question) => (
         <div key={question.key} className="flex flex-col gap-2">

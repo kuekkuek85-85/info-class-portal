@@ -35,17 +35,29 @@ export function CardNews({ data, worksheet, author, compact }: CardNewsProps) {
   const filled = worksheet.filter((question) =>
     question.kind === "traits" ? data.traits.length > 0 : (data.answers[question.key] ?? "").trim(),
   );
+  const hasDrawing = data.strokes.length > 0 || data.texts.length > 0;
 
   return (
     <article className="flex flex-col gap-4 rounded-lg border-2 border-line bg-canvas p-4">
-      <header className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className={compact ? "t-subhead" : "t-headline"}>
-          {data.year}년의 {data.place || "어딘가"}
-        </h3>
-        {author && <span className="t-caption">{author}</span>}
-      </header>
+      {/*
+        그림이 없는 활동(4차시 직업 조사처럼 글만 쓰는 차시)에서는 제목 줄과 캔버스를
+        통째로 뺀다. "2040년의 어딘가" 라는 빈 제목과 새하얀 사각형이 카드마다 붙으면
+        정작 읽어야 할 글이 아래로 밀린다.
+      */}
+      {hasDrawing && (
+        <>
+          <header className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className={compact ? "t-subhead" : "t-headline"}>
+              {data.year}년의 {data.place || "어딘가"}
+            </h3>
+            {author && <span className="t-caption">{author}</span>}
+          </header>
 
-      <ArtifactCanvas strokes={data.strokes} texts={data.texts} />
+          <ArtifactCanvas strokes={data.strokes} texts={data.texts} />
+        </>
+      )}
+
+      {!hasDrawing && author && <p className="t-caption">{author}</p>}
 
       {data.traits.length > 0 && (
         <p className="flex flex-wrap gap-2">
