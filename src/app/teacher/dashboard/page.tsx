@@ -409,11 +409,15 @@ function Dashboard() {
 
           {/*
             직업 조사 집계 — 4차시 정리용.
-            활동지에 vanish·rise 칸이 있는 차시에서만 뜬다. 다른 차시에서는 셀 것이 없다.
+
+            활동지에 직업 칸이 있는 차시에서만, 그리고 **학생이 쓰기 시작한 뒤부터** 뜬다.
+            대기·기분 단계에서는 셀 것이 없는데도 15초마다 반 전체 활동지를 읽어
+            읽기만 축낸다. 성찰·마침까지 남겨 두는 것은 그때가 정리하는 시점이라서다.
           */}
-          {session.activity?.worksheet?.some((q) => q.key.startsWith("vanish")) && (
-            <TeacherJobsPanel sessionId={session.id} />
-          )}
+          {session.activity?.worksheet?.some((q) => q.key.startsWith("vanish")) &&
+            ["worksheet", "gallery", "reflection", "done"].includes(session.phase) && (
+              <TeacherJobsPanel sessionId={session.id} />
+            )}
 
           {stats && (
             <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
