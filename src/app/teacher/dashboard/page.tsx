@@ -52,7 +52,7 @@ interface SessionRow {
   quiz?: { questions: { prompt: string; choices: string[]; answerIndex: number }[] };
   quizIndex?: number;
   quizRevealed?: boolean;
-  activity?: { activityId: string; worksheet?: { key: string }[] };
+  activity?: { activityId: string; places?: string[]; worksheet?: { key: string }[] };
   /** 지난 차시 복습 — 학생이 기분 체크를 마치면 서버가 만들어 넣는다. 여기서는 한 줄만 쓴다 */
   reviewCache?: { summary?: string } | null;
   /** 단계 버튼을 만들지 말지 판단하는 데만 쓴다 */
@@ -543,7 +543,11 @@ function Dashboard() {
 function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
   if (phase === "mood") return session.moodCheckEnabled;
   if (phase === "quiz") return (session.quiz?.questions.length ?? 0) > 0;
-  if (phase === "draw") return Boolean(session.activity);
+  /*
+   * 활동이 있어도 그리기가 없는 차시가 있다 (4차시 직업 조사는 글만 쓴다).
+   * 장소가 하나도 없으면 눌러 봐야 고를 것이 없는 빈 화면이 나온다.
+   */
+  if (phase === "draw") return (session.activity?.places?.length ?? 0) > 0;
   // 활동지·감상은 활동지 질문이 있는 차시(3차시)에만. 2차시는 그리기까지만 한다.
   if (phase === "worksheet" || phase === "gallery") {
     return (session.activity?.worksheet?.length ?? 0) > 0;

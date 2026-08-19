@@ -402,6 +402,15 @@ export function snapshotOf(plan: LessonPlan) {
     activity: plan.activity,
     lessonNo: plan.lessonNo,
     title: plan.title,
+    /*
+     * 차시가 스스로 붙인 단계 이름과 이탈 제외 단계.
+     *
+     * 여기 빠뜨리면 화면에서 리허설을 만들 때만 조용히 사라진다 — 시드 스크립트는
+     * 세션에 직접 써 넣어서 잘 되는데 교사가 버튼으로 만든 수업은 안 된다.
+     * 실제로 그렇게 4차시 버튼이 "진도 안내"로 떴다.
+     */
+    phaseLabels: plan.phaseLabels ?? {},
+    focusExempt: plan.focusExempt ?? [],
   };
 }
 

@@ -242,6 +242,10 @@ export interface LessonPlan {
   reflectionQuestions: string[];
   /** 다른 학생의 성찰 글을 볼 수 있는지. 기본값 false (PRD 3.4) */
   reflectionPublic: boolean;
+  /** 이 차시에서만 쓰는 단계 이름 (4차시 진도 안내 → AI 직업 관상 체험) */
+  phaseLabels?: Partial<Record<LessonPhase, string>>;
+  /** 이 차시에서만 이탈을 세지 않을 단계 */
+  focusExempt?: LessonPhase[];
   /** 타임머신 퀴즈. 없는 차시가 대부분이라 선택 항목 */
   quiz?: QuizContent;
   /** 그리기 활동. 2·3차시가 같은 activityId 를 공유한다 */
