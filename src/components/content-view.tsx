@@ -17,6 +17,8 @@ export interface Content {
   url: string;
   cards?: ContentCard[];
   tabs?: ContentTab[];
+  /** 카메라·마이크를 쓰는 사이트는 iframe 안에서 권한이 막힌다. 새 창으로 연다 */
+  openInNewTab?: boolean;
 }
 
 export function ContentView({ content, fallback }: { content: Content; fallback: string }) {
@@ -44,7 +46,23 @@ export function ContentView({ content, fallback }: { content: Content; fallback:
         <p className="card t-body-lg whitespace-pre-wrap">{content.body}</p>
       )}
 
-      {content.url && (
+      {/*
+        카메라를 쓰는 사이트는 새 창으로 연다.
+        브라우저가 iframe 안에서는 카메라 권한을 잘 내주지 않는다 — 태블릿에서는
+        아예 막히는 경우가 많아, 학생 절반이 검은 화면 앞에서 손을 든다.
+      */}
+      {content.url && content.openInNewTab && (
+        <a
+          href={content.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="pill pill-primary pill-block t-subhead py-5 text-center"
+        >
+          체험하러 가기 (새 창)
+        </a>
+      )}
+
+      {content.url && !content.openInNewTab && (
         <div className="overflow-hidden rounded-md border border-line">
           <iframe
             src={content.url}

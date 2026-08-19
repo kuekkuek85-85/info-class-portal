@@ -46,9 +46,15 @@ export interface AwayNotice {
   seq: number;
 }
 
-export function useFocusTracker(phase: LessonPhase, enabled: boolean): AwayNotice | null {
+export function useFocusTracker(
+  phase: LessonPhase,
+  enabled: boolean,
+  /** 이 차시에서만 세지 않을 단계 (기본 제외에 더한다) */
+  extraExempt: readonly LessonPhase[] = [],
+): AwayNotice | null {
   const episode = useRef<Episode | null>(null);
   const phaseRef = useRef(phase);
+  const exemptRef = useRef(extraExempt);
   const enabledRef = useRef(enabled);
   const seq = useRef(0);
   const [notice, setNotice] = useState<AwayNotice | null>(null);
@@ -57,7 +63,8 @@ export function useFocusTracker(phase: LessonPhase, enabled: boolean): AwayNotic
   useEffect(() => {
     phaseRef.current = phase;
     enabledRef.current = enabled;
-  }, [phase, enabled]);
+    exemptRef.current = extraExempt;
+  }, [phase, enabled, extraExempt]);
 
   /*
    * 이탈 중에 교사가 영상 단계로 넘기면 그 에피소드는 버린다.
@@ -66,7 +73,7 @@ export function useFocusTracker(phase: LessonPhase, enabled: boolean): AwayNotic
    * 태블릿을 안 봤다고 세는 것은 앞뒤가 맞지 않는다.
    */
   useEffect(() => {
-    if (episode.current && !countsFocus(phase)) {
+    if (episode.current && !countsFocus(phase, exemptRef.current)) {
       episode.current.exempt = true;
     }
   }, [phase]);
@@ -110,7 +117,7 @@ export function useFocusTracker(phase: LessonPhase, enabled: boolean): AwayNotic
         since: performance.now(),
         hidden,
         // 시작할 때 이미 제외 단계였으면 세지 않는다
-        exempt: !countsFocus(phaseRef.current),
+        exempt: !countsFocus(phaseRef.current, exemptRef.current),
       };
     }
 
@@ -119,7 +126,7 @@ export function useFocusTracker(phase: LessonPhase, enabled: boolean): AwayNotic
       if (!current) return;
       episode.current = null;
 
-      if (current.exempt || !countsFocus(phaseRef.current)) return;
+      if (current.exempt || !countsFocus(phaseRef.current, exemptRef.current)) return;
 
       const awayMs = Math.round(performance.now() - current.since);
       // 10초 미만은 알림 확인이나 실수 탭 전환이다. 서버에 아무것도 보내지 않는다.

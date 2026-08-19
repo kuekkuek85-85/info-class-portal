@@ -24,12 +24,21 @@ import { answersOf, hasAnswer, quizAnswersOf, type PhaseContent } from "@/lib/ty
  */
 
 function present(content: PhaseContent | undefined) {
+  /*
+   * 새 창으로 여는 링크는 주소를 그대로 보낸다.
+   *
+   * toEmbedUrl 은 유튜브 주소를 iframe 용으로 바꾸는 함수다. 새 창으로 열 주소까지
+   * 바꾸면 학생이 임베드 전용 페이지로 끌려간다.
+   */
+  const newTab = content?.openInNewTab === true;
+
   return {
     heading: content?.heading ?? "",
     body: content?.body ?? "",
-    url: content?.url ? toEmbedUrl(content.url) : "",
+    url: content?.url ? (newTab ? content.url : toEmbedUrl(content.url)) : "",
     cards: content?.cards ?? [],
     tabs: content?.tabs ?? [],
+    openInNewTab: newTab,
   };
 }
 
@@ -83,6 +92,7 @@ export async function GET() {
         reflectionQuestions: questions,
         reflectionPublic: session.reflectionPublic,
         freeNavigation: session.freeNavigation ?? false,
+        phaseLabels: session.phaseLabels ?? {},
         // 문항과 선지만. 정답·해설은 교사가 공개한 뒤 /api/student/phase 로 따로 내려간다.
         quizQuestions: publicQuestions(session),
         // 활동지·장소 선택지. 그림 자체는 /api/student/artifact 로 따로 받는다.

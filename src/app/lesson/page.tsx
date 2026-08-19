@@ -55,6 +55,8 @@ interface LessonData {
     reflectionPublic: boolean;
     /** 학생이 지나온 단계로 되돌아갈 수 있는가 */
     freeNavigation?: boolean;
+    /** 이 차시에서만 쓰는 단계 이름 (되돌아가기 줄에 쓴다) */
+    phaseLabels?: Partial<Record<LessonPhase, string>>;
     /** 문항과 선지만. 정답은 교사가 공개할 때 따로 내려온다 */
     quizQuestions: { prompt: string; choices: string[] }[];
     activity: ActivityInfo | null;
@@ -154,7 +156,9 @@ export default function LessonPage() {
    * 배너를 띄우는 것이 이 기능 효과의 대부분이다 — "기록되고 있다"를 학생이 체감하는
    * 순간 이탈 자체가 준다. 그래서 문구를 비난조로 쓰지 않는다. 감시가 아니라 피드백이다.
    */
-  const awayNotice = useFocusTracker(phase, !closed);
+  /** 이 차시에서만 이탈을 세지 않을 단계 (4차시 AI 관상 체험처럼 새 창으로 나가는 활동) */
+  const [focusExempt, setFocusExempt] = useState<LessonPhase[]>([]);
+  const awayNotice = useFocusTracker(phase, !closed, focusExempt);
   /** 이미 닫은 배너의 일련번호. 렌더 중에 계산하고, 효과는 시간이 지나면 닫기만 한다 */
   const [awayDismissed, setAwayDismissed] = useState(0);
   const awayShown =
@@ -274,6 +278,7 @@ export default function LessonPage() {
       const free = Boolean(result.freeNavigation);
       if (!free) setViewPhase(next);
       setFreeNav(free);
+      setFocusExempt((result.focusExempt as LessonPhase[] | undefined) ?? []);
 
       setPhase(next);
       setClosed(Boolean(result.closed));
@@ -496,9 +501,19 @@ export default function LessonPage() {
     if (item === "waiting" || item === "done") return false;
     if (item === "mood") return session.moodCheckEnabled;
     if (item === "quiz") return session.quizQuestions.length > 0;
-    // 그리기·활동지·감상은 한 묶음이라 안에서 이미 오갈 수 있다. 목록에는 하나만 둔다.
-    if (item === "worksheet" || item === "gallery") return false;
-    if (item === "draw") return Boolean(session.activity);
+    /*
+     * 그리기·활동지·감상은 한 묶음이라 안에서 이미 오갈 수 있다. 목록에는 하나만 둔다.
+     * 대표는 보통 "그리기"인데, 그리기가 없는 차시에서는 "활동지"가 그 자리를 맡는다.
+     */
+    if (item === "gallery") return false;
+    if (item === "worksheet") {
+      return (
+        (session.activity?.places.length ?? 0) === 0 &&
+        (session.activity?.worksheet.length ?? 0) > 0
+      );
+    }
+    // 활동이 있어도 그리기가 없는 차시가 있다 (4차시 직업 조사) — 장소로 판단한다
+    if (item === "draw") return (session.activity?.places.length ?? 0) > 0;
     if (item === "reflection") return session.reflectionQuestions.length > 0;
 
     const content =
@@ -595,7 +610,8 @@ export default function LessonPage() {
                   viewPhase === item ? "pill-primary" : "pill-secondary"
                 }`}
               >
-                {PHASE_LABELS[item]}
+                {/* 차시가 단계 이름을 바꿔 쓰는 경우가 있다 (4차시 진도 안내 → AI 관상 체험) */}
+                {session.phaseLabels?.[item] ?? PHASE_LABELS[item]}
                 {item === phase && viewPhase !== item && " ← 선생님"}
               </button>
             ))}

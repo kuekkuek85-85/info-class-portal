@@ -35,6 +35,8 @@ export async function GET() {
       reflectionPublic: session.reflectionPublic,
       // 지나온 단계로 되돌아갈 수 있는가. 세션 문서에 이미 있는 값이라 추가 조회가 없다.
       freeNavigation: session.freeNavigation ?? false,
+      // 이 차시에서만 이탈을 세지 않는 단계 — 화면 쪽에서 1차로 거른다
+      focusExempt: session.focusExempt ?? [],
     });
   });
 }

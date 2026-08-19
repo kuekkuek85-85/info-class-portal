@@ -44,6 +44,8 @@ interface SessionRow {
   reflectionPublic: boolean;
   /** 학생이 지나온 단계로 되돌아갈 수 있는가 */
   freeNavigation?: boolean;
+  /** 이 차시에서만 쓰는 단계 이름 (4차시 진도 안내 → AI 직업 관상 체험) */
+  phaseLabels?: Partial<Record<LessonPhase, string>>;
   reflectionQuestions: string[];
   moodCheckEnabled: boolean;
   date: string;
@@ -312,7 +314,7 @@ function Dashboard() {
           <section className="card flex flex-col gap-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="t-body font-bold">
-                수업 진행 — 지금 학생 화면: {PHASE_LABELS[session.phase]}
+                수업 진행 — 지금 학생 화면: {phaseLabel(session, session.phase)}
               </h2>
               <p className="t-caption">누르면 학생 태블릿이 4초 안에 따라옵니다</p>
             </div>
@@ -329,7 +331,7 @@ function Dashboard() {
                       session.phase === item ? "pill-primary" : "pill-secondary"
                     }`}
                   >
-                    {PHASE_LABELS[item]}
+                    {phaseLabel(session, item)}
                   </button>
                 ),
               )}
@@ -594,6 +596,16 @@ function Stat({ label, value, warn }: { label: string; value: string; warn?: boo
       <p className="mt-1 text-2xl font-bold tabular-nums">{value}</p>
     </div>
   );
+}
+
+/**
+ * 단계 버튼에 쓸 이름.
+ *
+ * 단계 칸은 열한 개로 고정인데 차시마다 쓰임이 다르다. 4차시는 "진도 안내" 칸에
+ * AI 관상 체험을 실었다 — 그대로 두면 수업 중에 잘못 누른다.
+ */
+function phaseLabel(session: SessionRow, phase: LessonPhase): string {
+  return session.phaseLabels?.[phase] ?? PHASE_LABELS[phase];
 }
 
 /**

@@ -109,6 +109,13 @@ export interface PhaseContent {
   url: string;
   cards?: ContentCard[];
   tabs?: ContentTab[];
+  /**
+   * 새 창으로 열 것인가.
+   *
+   * 카메라·마이크를 쓰는 사이트는 iframe 안에서 권한이 막힌다 — 태블릿에서는 아예
+   * 안 되는 경우가 많아, 학생 절반이 검은 화면 앞에서 손을 든다.
+   */
+  openInNewTab?: boolean;
 }
 
 export function emptyPhaseContent(): PhaseContent {
@@ -318,6 +325,24 @@ export interface ClassSession {
    * 들여다보면 수업을 끌고 갈 수가 없다.
    */
   freeNavigation?: boolean;
+
+  /**
+   * 이 차시에서만 쓰는 단계 이름.
+   *
+   * 단계 칸은 열한 개로 고정인데 차시마다 쓰임이 다르다. 4차시는 "진도 안내" 칸에
+   * AI 관상 체험을 실었다 — 교사 화면에 "진도 안내"로 뜨면 수업 중에 잘못 누른다.
+   * 학생 화면에는 단계 이름이 뜨지 않으므로 교사 화면과 되돌아가기 줄에만 쓴다.
+   */
+  phaseLabels?: Partial<Record<LessonPhase, string>>;
+
+  /**
+   * 이 차시에서만 이탈을 세지 않을 단계. 기본 제외(대기·영상·마침)에 더한다.
+   *
+   * 화면을 벗어나는 것이 활동 자체인 단계가 차시마다 다르게 생긴다 —
+   * 4차시 AI 관상 체험은 새 창에서 카메라를 켠다.
+   */
+  focusExempt?: LessonPhase[];
+
   /**
    * 지난 차시 복습 화면을 만들어 둔 것 (없으면 null).
    *
@@ -371,8 +396,16 @@ export interface Attendance {
  */
 export const FOCUS_EXEMPT_PHASES: readonly LessonPhase[] = ["waiting", "video", "done"];
 
-export function countsFocus(phase: LessonPhase): boolean {
-  return !FOCUS_EXEMPT_PHASES.includes(phase);
+/**
+ * 이 단계에서 이탈을 세는가.
+ *
+ * 차시마다 사정이 다르다. 4차시는 "진도 안내" 칸을 AI 관상 체험에 쓰는데, 그 체험은
+ * 새 창에서 카메라를 켠다 — 화면을 벗어나는 것이 활동 그 자체다. 세면 안 된다.
+ * 그래서 차시별로 제외 단계를 더 얹을 수 있게 열어 둔다.
+ */
+export function countsFocus(phase: LessonPhase, extraExempt?: readonly LessonPhase[]): boolean {
+  if (FOCUS_EXEMPT_PHASES.includes(phase)) return false;
+  return !(extraExempt ?? []).includes(phase);
 }
 
 /**

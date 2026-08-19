@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     if (isSessionClosed(session)) return ok({ counted: false });
 
     // 서버가 아는 지금 단계로 다시 본다. 학생이 보낸 단계 값은 쓰지 않는다.
-    if (!countsFocus(session.phase)) return ok({ counted: false });
+    if (!countsFocus(session.phase, session.focusExempt)) return ok({ counted: false });
 
     const body = await readJson<{ awayMs?: number; kind?: string }>(request);
     const raw = Number(body?.awayMs);
