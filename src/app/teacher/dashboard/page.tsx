@@ -239,11 +239,16 @@ function Dashboard() {
                 {session.classNo}반 · {describePeriod(session.date, session.period)} ·{" "}
                 {session.lessonNo}차시
               </p>
-              {/* 시각표를 아는 날짜에만 자동 만료가 걸린다. 안내와 실제 동작이 어긋나면 안 된다. */}
+              {/*
+                코드는 "수업 시작"부터 "수업 종료"까지 산다. 교시 시각과는 무관하다.
+                안내와 실제 동작이 어긋나면 교사가 학생에게 잘못 알려 준다.
+              */}
               <p className="mt-1 text-xs text-muted">
-                {periodTime(session.date, session.period)
-                  ? "교시가 끝나고 10분 뒤 코드가 저절로 만료됩니다."
-                  : "이 날짜는 시각표가 없어 자동 만료되지 않습니다. 수업 종료를 눌러 주세요."}
+                {session.status === "scheduled" &&
+                  "아직 시작 전입니다. 수업 시작을 눌러야 학생이 코드로 들어올 수 있어요."}
+                {session.status === "active" &&
+                  "지금 코드가 열려 있습니다. 수업 종료를 누르면 닫힙니다."}
+                {session.status === "ended" && "수업이 끝나 코드가 닫혔습니다."}
               </p>
             </div>
 

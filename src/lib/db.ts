@@ -3,8 +3,6 @@ import "server-only";
 import { FieldPath, FieldValue, type Query } from "firebase-admin/firestore";
 
 import { db } from "./firebase-admin";
-import { todayKST } from "./datetime";
-import { isPeriodOver } from "./timetable";
 import type {
   Artifact,
   ArtifactFeedback,
@@ -167,15 +165,31 @@ export async function deleteLessonPlan(id: string): Promise<void> {
 // ------------------------------------------------------------------- 세션
 
 /**
- * 이 세션이 닫혔는가 — 교사가 종료했거나, 시각표상 그 교시가 끝났거나.
+ * 수업을 시작한 뒤 이만큼 지나면 교사가 종료를 안 눌러도 닫는다.
+ *
+ * 종료 버튼을 깜빡하는 일은 반드시 생긴다. 그것만 믿으면 코드가 며칠씩 살아 있어서
+ * 그 반 학생이 밤에 집에서 들어와 그림을 고칠 수 있다. 한 수업이 아무리 길어도
+ * 여섯 시간을 넘지 않으므로, 잊어버린 수업만 골라 닫는 값이다.
+ */
+const AUTO_CLOSE_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * 이 세션이 닫혔는가 — 교사가 종료했거나, 시작한 지 너무 오래됐거나.
  * 학생 쓰기 API가 공통으로 쓴다.
+ *
+ * **교시 시각으로는 닫지 않는다.** 예전에는 시각표상 교시가 끝나면 닫았는데, 그 규칙이
+ * 내일 수업을 미리 열어 확인하려는 교사도 막았다. 이제 교사가 누른 것과 시간 상한만 본다.
  */
 export function isSessionClosed(session: ClassSession, now: Date = new Date()): boolean {
   if (session.status === "ended") return true;
-  // 리허설은 교시 시각으로 닫지 않는다. 방과 후에 걸어보는 것이 목적이라
-  // 시각으로 닫으면 만들자마자 만료된다. 끝내는 방법은 종료 버튼과 삭제뿐이다.
+  // 아직 시작하지 않은 수업은 "닫힌" 것이 아니다 — 들어갈 수 없을 뿐이다 (findSessionByCode)
+  if (session.status !== "active") return false;
+  // 리허설은 방과 후에 걸어보는 것이 목적이라 시간으로도 닫지 않는다
   if (session.rehearsal) return false;
-  return isPeriodOver(session.date, session.period, now);
+
+  const startedAt = session.startedAt ?? 0;
+  if (!startedAt) return false;
+  return now.getTime() - startedAt > AUTO_CLOSE_MS;
 }
 
 export async function getSession(id: string): Promise<ClassSession | null> {
@@ -203,39 +217,56 @@ export async function listAllSessions(): Promise<ClassSession[]> {
 }
 
 /**
- * 수업 코드로 오늘 세션을 찾는다.
+ * 수업 코드로 세션을 찾는다.
  *
- * 코드는 (날짜, 교시, 반)에 묶이므로 날짜까지 함께 조건에 넣는다. 어제 코드로는 들어올 수 없다.
- * 교시 종료 시 만료된다 (PRD 8 확정 사항) — 교사가 종료를 누른 세션과, 시각표상 이미 끝난
- * 교시를 모두 제외한다. 교사가 버튼 누르는 것을 깜빡해도 코드가 하교 후까지 살아 있지 않다.
+ * **코드는 "수업 시작"부터 "수업 종료"까지 산다.** 날짜로 묶지 않는다.
+ *
+ * 예전에는 오늘 날짜 + 교시 시각으로 묶었다. 교사가 종료를 깜빡해도 하교 후까지 살아
+ * 있지 않게 하려는 것이었는데, 그 규칙이 **내일 수업을 미리 열어 확인하려는 교사도**
+ * 똑같이 막았다. 그래서 리허설 수업을 따로 만들어야 했고, 그게 매번 일이 됐다.
+ *
+ * 이제 교사가 누른 것만 본다. 시작을 눌러야 열리고 종료를 누르면 닫힌다.
+ * 깜빡한 경우는 `isSessionClosed` 의 시간 상한이 받는다.
+ *
+ * 찾은 것이 없을 때 "코드가 틀렸다"와 "아직 시작 전이다"는 학생에게 완전히 다른 말이라,
+ * 시작 전 세션도 함께 돌려주고 판단은 부르는 쪽에 맡긴다.
  */
-export async function findSessionByCode(
-  code: string,
-  date: string = todayKST(),
-): Promise<ClassSession | null> {
+export async function findSessionByCode(code: string): Promise<{
+  open: ClassSession | null;
+  /** 코드는 맞지만 아직 교사가 시작을 누르지 않은 수업 */
+  notStarted: ClassSession | null;
+}> {
   const sessions = await collectAll<ClassSession>(
-    db()
-      .collection(COLLECTIONS.classSessions)
-      .where("date", "==", date)
-      .where("code", "==", code),
+    db().collection(COLLECTIONS.classSessions).where("code", "==", code),
   );
-  const usable = sessions.filter((s) => !isSessionClosed(s));
-  return usable[0] ?? null;
+
+  const open = sessions.find((s) => s.status === "active" && !isSessionClosed(s)) ?? null;
+  const notStarted = sessions.find((s) => s.status === "scheduled") ?? null;
+
+  return { open, notStarted };
 }
 
 /**
- * 같은 날 중복 없는 2자리 코드를 **원자적으로** 예약한다. 다음 날에는 재사용 가능.
+ * 중복 없는 2자리 코드를 **원자적으로** 예약한다.
+ *
+ * 코드가 더 이상 날짜에 묶이지 않으므로(findSessionByCode 참조) **아직 끝나지 않은
+ * 수업 전체에서** 유일해야 한다. 날짜별로만 챙기면 오늘 리허설과 내일 수업이 같은
+ * 코드를 받을 수 있고, 그러면 학생이 코드를 쳤을 때 어느 수업으로 갈지 알 수 없다.
  *
  * 조회 후 배정하는 방식은 두 세션을 거의 동시에 만들 때 같은 코드를 내줄 수 있다.
- * 그러면 findSessionByCode()가 둘 중 하나만 반환하고, 다른 반 학생 전원이 반 불일치로 막힌다.
  * 예약 문서 ID를 `날짜__코드`로 고정하고 create()로 만들어 Firestore가 중복을 거부하게 한다.
+ * 끝난 수업의 코드는 다시 쓸 수 있다 — 90개뿐이라 영원히 묶어 두면 금방 바닥난다.
  */
 export async function reserveCode(date: string): Promise<string> {
-  const existing = await db()
-    .collection(COLLECTIONS.codeReservations)
-    .where("date", "==", date)
-    .get();
-  const used = new Set(existing.docs.map((doc) => doc.data().code as string));
+  const [reserved, live] = await Promise.all([
+    db().collection(COLLECTIONS.codeReservations).where("date", "==", date).get(),
+    db().collection(COLLECTIONS.classSessions).where("status", "in", ["scheduled", "active"]).get(),
+  ]);
+
+  const used = new Set<string>([
+    ...reserved.docs.map((doc) => doc.data().code as string),
+    ...live.docs.map((doc) => doc.data().code as string),
+  ]);
 
   const candidates: string[] = [];
   for (let n = 10; n <= 99; n += 1) {

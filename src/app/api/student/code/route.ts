@@ -26,8 +26,22 @@ export async function POST(request: Request) {
       return fail("invalid_input", "수업 코드는 숫자 2자리예요.");
     }
 
-    const session = await findSessionByCode(code);
-    if (!session) return fail("code_not_found");
+    const { open, notStarted } = await findSessionByCode(code);
+
+    /*
+     * "코드가 틀렸다"와 "아직 시작 전이다"는 학생에게 완전히 다른 말이다.
+     *
+     * 코드는 이제 교사가 "수업 시작"을 눌러야 열린다. 그걸 깜빡한 채 수업이 시작되면
+     * 28명이 동시에 코드를 치는데 "그런 코드는 없어요"가 뜬다 — 학생은 자기가 잘못 쳤다고
+     * 생각해 계속 다시 치고, 교사는 무엇이 문제인지 모른 채 시간이 지나간다.
+     */
+    if (!open) {
+      if (notStarted) {
+        return fail("code_not_found", "아직 수업이 시작되지 않았어요. 선생님을 기다려 주세요.");
+      }
+      return fail("code_not_found");
+    }
+    const session = open;
 
     // 여기서는 세션 상태를 바꾸지 않는다. 코드를 맞히기만 한 요청(아직 학생인지 모른다)이
     // 수업을 시작 상태로 만들면, 코드를 찍어 맞힌 것만으로 차시 스냅샷이 고정된다.
