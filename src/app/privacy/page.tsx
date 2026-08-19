@@ -128,7 +128,22 @@ export default function PrivacyPage() {
         </p>
       </Section>
 
-      <Section title="7. 쿠키">
+      <Section title="7. 인공지능을 쓰는 곳">
+        <p className="t-body">
+          수업 정리 화면에서 <b>여러분이 적은 직업 이름을 모아 셀 때</b> 구글의 인공지능
+          (Gemini)을 씁니다. &ldquo;교사&rdquo;와 &ldquo;선생님&rdquo;처럼 같은 뜻으로 쓴
+          말을 하나로 묶기 위해서입니다.
+        </p>
+        <ul className="flex list-disc flex-col gap-1 pl-5 t-body-sm">
+          <li>
+            보내는 것은 <b>직업 이름뿐</b>입니다. 이름·학번·그 밖의 답은 보내지 않습니다.
+          </li>
+          <li>누가 적었는지는 함께 보내지 않아, 받는 쪽에서 알 수 없습니다.</li>
+          <li>이 기능이 꺼져 있어도 수업은 그대로 됩니다. 묶는 방식만 단순해집니다.</li>
+        </ul>
+      </Section>
+
+      <Section title="8. 쿠키">
         <p className="t-body-sm">
           로그인 상태를 유지하려고 브라우저에 작은 값을 저장합니다.{" "}
           <b>학생 쿠키는 그날 자정에 사라집니다</b> — 태블릿을 함께 쓰는 다음 사람이 남의
@@ -136,7 +151,7 @@ export default function PrivacyPage() {
         </p>
       </Section>
 
-      <Section title="8. 학생의 권리">
+      <Section title="9. 학생의 권리">
         <p className="t-body">
           자기 기록을 보여 달라고 하거나, 지워 달라고 할 수 있습니다. 수업 화면의{" "}
           <b>내 기록</b>에서 스스로 쓴 것을 언제든 볼 수 있고, 삭제는 선생님께 말하면
@@ -144,7 +159,7 @@ export default function PrivacyPage() {
         </p>
       </Section>
 
-      <Section title="9. 바뀌면 알려 드립니다">
+      <Section title="10. 바뀌면 알려 드립니다">
         <p className="t-body-sm">
           내용이 바뀌면 이 문서의 시행일을 고치고 수업 시간에 알립니다.
         </p>

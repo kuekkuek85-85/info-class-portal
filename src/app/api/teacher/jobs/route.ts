@@ -1,5 +1,6 @@
 import { fail, guard, ok } from "@/lib/api";
 import { getSession, listArtifacts } from "@/lib/db";
+import { groupJobNames } from "@/lib/job-grouping";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
 
 /**
@@ -99,7 +100,11 @@ function normalize(name: string): string {
  * "직업 — 이유" 를 여러 줄로 적게 하고 구분자로 잘랐는데, 학생이 줄표 대신 쉼표를 쓰거나
  * 이유를 먼저 적으면 엉뚱한 말이 직업으로 잡혔다.
  */
-function tally(values: string[]): { name: string; count: number }[] {
+function tally(
+  values: string[],
+  /** AI 가 만든 이름 → 대표 이름 표. 비어 있으면 글자 기준으로 묶는다 */
+  grouped: Map<string, string>,
+): { name: string; count: number }[] {
   const byKey = new Map<string, { name: string; count: number }>();
 
   for (const raw of values) {
@@ -112,8 +117,10 @@ function tally(values: string[]): { name: string; count: number }[] {
      *
      * 처음 나온 표기를 쓰면 "선생님 5" 로 뜨는데, 그 안에는 "교사"라고 쓴 학생도 섞여
      * 있다. 묶은 결과를 보여줄 때는 묶은 이름으로 부르는 편이 정직하다.
+     *
+     * AI 가 묶어 준 것이 있으면 그것을, 없으면(느리거나 죽었으면) 글자 기준을 쓴다.
      */
-    const merged = normalize(name);
+    const merged = grouped.get(name) ?? normalize(name);
     const found = byKey.get(merged);
     if (found) found.count += 1;
     else byKey.set(merged, { name: merged, count: 1 });
@@ -149,9 +156,19 @@ export async function GET(request: Request) {
         [1, 2, 3].some((i) => String(row.answers?.[`${p}${i}_job`] ?? "").trim()),
       );
 
+    /*
+     * 두 방향을 **한 번에** 묶는다.
+     *
+     * 따로 부르면 요청이 두 배가 되고, 같은 직업이 양쪽에서 다른 대표 이름을 받을 수
+     * 있다 — 한 화면에 "선생님"과 "교사"가 나란히 뜨면 묶은 의미가 없다.
+     */
+    const vanishRaw = pick("vanish");
+    const riseRaw = pick("rise");
+    const grouped = await groupJobNames([...vanishRaw, ...riseRaw]);
+
     return ok({
-      vanish: tally(pick("vanish")),
-      rise: tally(pick("rise")),
+      vanish: tally(vanishRaw, grouped),
+      rise: tally(riseRaw, grouped),
       /** 한 칸이라도 쓴 학생 수 — 집계가 몇 명분인지 알아야 해석이 된다 */
       written: artifacts.filter(wrote).length,
     });
