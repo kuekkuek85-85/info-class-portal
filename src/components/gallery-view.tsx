@@ -44,6 +44,13 @@ interface GalleryData {
   }[];
   worksheet: WorksheetQuestion[];
   places: string[];
+  feedbackPrompts: FeedbackPrompts;
+}
+
+/** 친구 것에 남기는 두 칸의 질문. 차시마다 다르다 (types.ts 의 ActivityContent 참조) */
+interface FeedbackPrompts {
+  found: { label: string; placeholder: string };
+  question: { label: string; placeholder: string };
 }
 
 /**
@@ -250,6 +257,7 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
           work={open}
           worksheet={data.worksheet}
           noun={noun}
+          prompts={data.feedbackPrompts}
           onClose={() => setOpenId("")}
           onSaved={reload}
           disabled={disabled}
@@ -360,6 +368,7 @@ function DetailModal({
   work,
   worksheet,
   noun,
+  prompts,
   onClose,
   onSaved,
   disabled,
@@ -367,6 +376,7 @@ function DetailModal({
   work: Work;
   worksheet: WorksheetQuestion[];
   noun: string;
+  prompts: FeedbackPrompts;
   onClose: () => void;
   onSaved: () => void;
   disabled?: boolean;
@@ -401,6 +411,7 @@ function DetailModal({
             artifactId={work.id}
             foundTech={work.myFoundTech}
             question={work.myQuestion}
+            prompts={prompts}
             onSaved={onSaved}
             disabled={disabled}
           />
@@ -483,19 +494,22 @@ function ReactionBar({
 /**
  * 두 칸짜리 고정 양식. 자유 댓글칸은 만들지 않는다.
  *
- * 첫 칸은 일부러 "맞혀 보기"로 물었다 — 그림을 자세히 들여다봐야 답할 수 있고,
- * 칭찬이나 평가가 아니라 관찰이 오간다.
+ * 첫 칸은 **자세히 들여다봐야 답할 수 있는 것**을 묻는다. 칭찬이나 평가가 아니라
+ * 관찰이 오가게 하려는 것이다. 무엇을 묻는지는 차시가 정한다 — 그림을 그린 차시와
+ * 글만 쓴 차시에 같은 질문을 두면 한쪽은 답할 수가 없다.
  */
 function FeedbackForm({
   artifactId,
   foundTech: initialFoundTech,
   question: initialQuestion,
+  prompts,
   onSaved,
   disabled,
 }: {
   artifactId: string;
   foundTech: string;
   question: string;
+  prompts: FeedbackPrompts;
   onSaved: () => void;
   disabled?: boolean;
 }) {
@@ -528,25 +542,25 @@ function FeedbackForm({
   return (
     <div className="flex flex-col gap-3 rounded-lg bg-surface p-4">
       <label className="flex flex-col gap-1">
-        <span className="t-body-sm font-bold">이 그림에 어떤 기술이 쓰였을까요? 맞혀 보세요</span>
+        <span className="t-body-sm font-bold">{prompts.found.label}</span>
         <input
           value={foundTech}
           onChange={(event) => setFoundTech(event.target.value)}
           maxLength={200}
           disabled={disabled}
-          placeholder="예) 천장에 달린 배달 드론인 것 같아요"
+          placeholder={prompts.found.placeholder}
           className="field"
         />
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="t-body-sm font-bold">그림을 그린 친구에게 물어보고 싶은 것</span>
+        <span className="t-body-sm font-bold">{prompts.question.label}</span>
         <input
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
           maxLength={200}
           disabled={disabled}
-          placeholder="예) 비 오는 날에도 날 수 있나요?"
+          placeholder={prompts.question.placeholder}
           className="field"
         />
       </label>

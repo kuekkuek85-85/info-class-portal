@@ -204,7 +204,32 @@ export interface ActivityContent {
   /** 기본 연도 */
   year: number;
   worksheet: WorksheetQuestion[];
+  /**
+   * 친구 것을 보고 남기는 두 칸의 질문.
+   *
+   * 기본값은 그림을 전제로 한다("이 그림에 어떤 기술이 쓰였을까요"). 4차시처럼 글만 쓰는
+   * 활동에서는 그대로 두면 답할 수가 없다 — 볼 그림이 없다.
+   *
+   * 두 칸의 성격은 유지한다. 첫 칸은 **자세히 들여다봐야 답할 수 있는 것**을 묻고,
+   * 둘째 칸은 작성자에게 던지는 질문이다. 칭찬이나 평가가 오가면 서열이 생긴다.
+   */
+  feedbackPrompts?: {
+    found: { label: string; placeholder: string };
+    question: { label: string; placeholder: string };
+  };
 }
+
+/** 그림 활동의 기본 질문. 차시가 따로 정하지 않으면 이것을 쓴다 */
+export const DEFAULT_FEEDBACK_PROMPTS = {
+  found: {
+    label: "이 그림에 어떤 기술이 쓰였을까요? 맞혀 보세요",
+    placeholder: "예) 천장에 달린 배달 드론인 것 같아요",
+  },
+  question: {
+    label: "그림을 그린 친구에게 물어보고 싶은 것",
+    placeholder: "예) 비 오는 날에도 날 수 있나요?",
+  },
+} as const;
 
 /** 명렬표. 문서 ID = 학번 문자열 (예: "10101") */
 export interface Student {

@@ -2,7 +2,7 @@ import { fail, guard, ok } from "@/lib/api";
 import { getArtifact, getSession, listArtifacts, listFeedbacksFor } from "@/lib/db";
 import { activityIdFor, assignPeers, isVisible, publicIdOf, toCard } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
-import { TEACHER_AUTHOR_ID, reactionsOf } from "@/lib/types";
+import { DEFAULT_FEEDBACK_PROMPTS, TEACHER_AUTHOR_ID, reactionsOf } from "@/lib/types";
 
 /**
  * 작품 감상 — 우리 반 작품 전체를 한 번에 내려보낸다.
@@ -111,6 +111,8 @@ export async function GET() {
           authorReply: row.authorReply ?? "",
         })),
       worksheet: session.activity?.worksheet ?? [],
+      // 친구 것에 남기는 두 칸의 질문 — 차시가 정하지 않았으면 그림용 기본값
+      feedbackPrompts: session.activity?.feedbackPrompts ?? DEFAULT_FEEDBACK_PROMPTS,
       /** 필터에 쓸 장소 목록 — 실제로 그린 장소만 (빈 칸을 보여줄 이유가 없다) */
       places: [...new Set(visible.map((row) => row.place).filter(Boolean))].sort(),
     });

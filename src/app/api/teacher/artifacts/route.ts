@@ -10,7 +10,7 @@ import {
 } from "@/lib/db";
 import { activityIdFor, displayName, toCard } from "@/lib/gallery";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
-import { TEACHER_AUTHOR_ID } from "@/lib/types";
+import { DEFAULT_FEEDBACK_PROMPTS, TEACHER_AUTHOR_ID } from "@/lib/types";
 
 /**
  * 교사용 작품 목록·열람·숨김·피드백.
@@ -58,6 +58,8 @@ export async function GET(request: Request) {
         status: artifact.status,
         hidden: artifact.hidden,
         worksheet: session.activity?.worksheet ?? [],
+        // 교사도 학생과 같은 두 칸에 남긴다 — 질문이 다르면 학생 눈에 다른 종류의 말이 된다
+        feedbackPrompts: session.activity?.feedbackPrompts ?? DEFAULT_FEEDBACK_PROMPTS,
         feedbacks: feedbacks.map((row) => ({
           id: row.id,
           mine: row.authorId === TEACHER_AUTHOR_ID,

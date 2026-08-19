@@ -30,6 +30,8 @@ interface Detail {
   status: string;
   hidden: boolean;
   worksheet: WorksheetQuestion[];
+  /** 이 차시가 쓰는 두 칸의 질문. 학생 화면과 같은 것을 쓴다 */
+  feedbackPrompts: { found: { label: string }; question: { label: string } };
   feedbacks: {
     id: string;
     mine: boolean;
@@ -159,6 +161,7 @@ export function TeacherArtifactPanel({ sessionId }: { sessionId: string }) {
 
                 <TeacherFeedbackForm
                   key={detail.card.id}
+                  prompts={detail.feedbackPrompts}
                   existing={detail.feedbacks.find((item) => item.mine)}
                   onSave={(foundTech, question) => patch(detail.card.id, { foundTech, question })}
                 />
@@ -173,9 +176,11 @@ export function TeacherArtifactPanel({ sessionId }: { sessionId: string }) {
 
 function TeacherFeedbackForm({
   existing,
+  prompts,
   onSave,
 }: {
   existing?: { foundTech: string; question: string };
+  prompts: { found: { label: string }; question: { label: string } };
   onSave: (foundTech: string, question: string) => Promise<void> | void;
 }) {
   const [foundTech, setFoundTech] = useState(existing?.foundTech ?? "");
@@ -188,14 +193,14 @@ function TeacherFeedbackForm({
         value={foundTech}
         onChange={(event) => setFoundTech(event.target.value)}
         maxLength={200}
-        placeholder="이 그림에서 찾은 기술 하나"
+        placeholder={prompts.found.label}
         className="field"
       />
       <input
         value={question}
         onChange={(event) => setQuestion(event.target.value)}
         maxLength={200}
-        placeholder="궁금한 점 하나"
+        placeholder={prompts.question.label}
         className="field"
       />
       <button
