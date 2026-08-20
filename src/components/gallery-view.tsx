@@ -332,6 +332,22 @@ function FilterPanel({
 
   const dirty = onlyAssigned || Object.values(picked).some((list) => list.length > 0);
 
+  /*
+   * 묶음이 셋 이상이면 접는다.
+   *
+   * 4차시를 한 반(28명) 분량으로 열어 보니 체크박스가 마흔한 개, 필터 열 높이가
+   * 1668px 이었다 — 화면이 720px 이다. 볼 활동지에 닿기까지 두 화면을 넘겨야 한다.
+   * 필터가 본문을 밀어내면 그건 더 이상 도구가 아니다.
+   *
+   * 둘 이하(그림 차시의 특성·장소)는 지금까지처럼 펼쳐 둔다. 짧아서 문제가 없고,
+   * 익숙한 화면을 이유 없이 바꾸지 않는다.
+   */
+  const collapsible = facets.length > 2;
+  const [opened, setOpened] = useState<Record<string, boolean>>(
+    // 첫 묶음만 열어 둔다. 전부 닫아 두면 무엇이 들어 있는 줄인지 눌러 봐야 안다
+    () => (facets[0] ? { [facets[0].key]: true } : {}),
+  );
+
   return (
     <aside className="flex shrink-0 flex-col gap-4 rounded-lg border border-line p-4 lg:w-56">
       <div className="flex items-baseline justify-between gap-2">
@@ -354,32 +370,60 @@ function FilterPanel({
         좁은 화면에서는 필터가 격자 위에 통째로 얹힌다. 세로로 세워 두면 체크박스 열 개를
         지나야 그림이 나온다 — 눕혀서 두어 줄로 만든다.
       */}
-      {facets.map((facet) => (
-        <div
-          key={facet.key}
-          className="flex flex-wrap gap-x-4 gap-y-2 border-t border-line pt-3 lg:flex-col"
-        >
-          <p className="t-caption w-full">{facet.label}</p>
-          {facet.options.map((option) => (
-            <label key={option.value} className="flex items-center gap-2 t-body-sm">
-              <input
-                type="checkbox"
-                checked={(picked[facet.key] ?? []).includes(option.value)}
-                onChange={() => toggle(facet.key, option.value)}
-              />
-              <span className="min-w-0 break-keep">{option.value}</span>
-              {/*
-                몇 명이 적었는지. 많이 나온 순으로 세우고 있어서, 숫자가 없으면 순서가
-                제멋대로로 보인다. 겸사겸사 우리 반이 어디로 쏠렸는지도 읽힌다.
-              */}
-              {option.count > 1 && <span className="t-caption shrink-0">{option.count}</span>}
-            </label>
-          ))}
-          {facet.hidden > 0 && (
-            <p className="t-caption w-full">그 밖에 {facet.hidden}가지가 더 있어요.</p>
-          )}
-        </div>
-      ))}
+      {facets.map((facet) => {
+        const chosen = picked[facet.key] ?? [];
+        const open = !collapsible || (opened[facet.key] ?? false);
+
+        return (
+          <div
+            key={facet.key}
+            className="flex flex-wrap gap-x-4 gap-y-2 border-t border-line pt-3 lg:flex-col"
+          >
+            {collapsible ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setOpened((prev) => ({ ...prev, [facet.key]: !(prev[facet.key] ?? false) }))
+                }
+                aria-expanded={open}
+                className="flex w-full items-center gap-2 text-left t-caption"
+              >
+                <span className="flex-1">{facet.label}</span>
+                {/*
+                  접힌 채로 골라 둔 것이 있으면 그것을 알려 준다. 아니면 왜 활동지가
+                  몇 개밖에 안 남았는지 알 길이 없다.
+                */}
+                {chosen.length > 0 && <span className="shrink-0">{chosen.length}개 고름</span>}
+                <span aria-hidden className="shrink-0">
+                  {open ? "▾" : "▸"}
+                </span>
+              </button>
+            ) : (
+              <p className="t-caption w-full">{facet.label}</p>
+            )}
+
+            {open &&
+              facet.options.map((option) => (
+                <label key={option.value} className="flex items-center gap-2 t-body-sm">
+                  <input
+                    type="checkbox"
+                    checked={chosen.includes(option.value)}
+                    onChange={() => toggle(facet.key, option.value)}
+                  />
+                  <span className="min-w-0 break-keep">{option.value}</span>
+                  {/*
+                    몇 명이 적었는지. 많이 나온 순으로 세우고 있어서, 숫자가 없으면 순서가
+                    제멋대로로 보인다. 겸사겸사 우리 반이 어디로 쏠렸는지도 읽힌다.
+                  */}
+                  {option.count > 1 && <span className="t-caption shrink-0">{option.count}</span>}
+                </label>
+              ))}
+            {open && facet.hidden > 0 && (
+              <p className="t-caption w-full">그 밖에 {facet.hidden}가지가 더 있어요.</p>
+            )}
+          </div>
+        );
+      })}
 
       {dirty && (
         <button

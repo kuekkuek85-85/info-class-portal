@@ -175,6 +175,13 @@ const PLAN = {
      * 일이라, 스물여덟 명이 동시에 여는 화면에서 할 수 없다. 그건 교사용 집계에서만 한다.
      */
     galleryFacets: [
+      /*
+       * 앞의 둘은 **그 학생 자신**에 대한 것이라 순서가 먼저다.
+       * "나랑 같은 직업이 나온 친구" 를 찾는 것이 학생이 가장 먼저 하고 싶어 하는 일이고,
+       * 거기서 시작해야 뒤의 사라질·생겨날 이야기가 남 얘기가 아니게 된다.
+       */
+      { key: "ai_job", label: "AI가 추천한 직업", answerKeys: ["ai_job"] },
+      { key: "my_job", label: "내가 되고 싶은 직업", answerKeys: ["my_job"] },
       { key: "vanish", label: "사라질 직업", answerKeys: ["vanish1_job", "vanish2_job", "vanish3_job"] },
       { key: "rise", label: "생겨날 직업", answerKeys: ["rise1_job", "rise2_job", "rise3_job"] },
     ],
