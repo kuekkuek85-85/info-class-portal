@@ -817,6 +817,7 @@ export default function LessonPage() {
               questions={session.activity.worksheet}
               place={artifact.place}
               year={artifact.year}
+              canDraw={canDraw}
               strokes={artifact.strokes}
               texts={artifact.texts}
               value={worksheet}

@@ -28,6 +28,14 @@ interface WorksheetViewProps {
   questions: WorksheetQuestion[];
   place: string;
   year: number;
+  /**
+   * 그리는 차시인가.
+   *
+   * 아니면 머리글이 통째로 거짓말이 된다 — 4차시(직업 조사)에서 "내 그림 설명하기 /
+   * 2040년의 내가 고른 장소 — 무엇을 그렸는지 적어 주세요" 가 떠 있었다.
+   * 그린 것도 고른 장소도 없는 화면이다.
+   */
+  canDraw: boolean;
   strokes: Stroke[];
   texts: TextItem[];
   value: WorksheetValue;
@@ -42,6 +50,7 @@ export function WorksheetView({
   questions,
   place,
   year,
+  canDraw,
   strokes,
   texts,
   value,
@@ -101,9 +110,11 @@ export function WorksheetView({
   return (
     <section className="flex flex-col gap-6">
       <div>
-        <h2 className="t-display">내 그림 설명하기</h2>
+        <h2 className="t-display">{canDraw ? "내 그림 설명하기" : "활동지 쓰기"}</h2>
         <p className="t-body mt-2">
-          {year}년의 {place || "내가 고른 장소"} — 무엇을 그렸는지 적어 주세요.
+          {canDraw
+            ? `${year}년의 ${place || "내가 고른 장소"} — 무엇을 그렸는지 적어 주세요.`
+            : "아래 질문에 차례로 답해 주세요. 쓰는 동안 자동으로 저장돼요."}
         </p>
       </div>
 
