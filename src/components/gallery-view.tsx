@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { ArtifactCanvas } from "@/components/artifact-canvas";
 import { CardNews, type CardNewsData } from "@/components/card-news";
 import { usePolled } from "@/lib/use-polled";
-import { REACTIONS, TRAITS, type WorksheetQuestion } from "@/lib/types";
+import { REACTIONS, type WorksheetQuestion } from "@/lib/types";
 
 /**
  * 작품 감상.
@@ -13,8 +13,12 @@ import { REACTIONS, TRAITS, type WorksheetQuestion } from "@/lib/types";
  * 그림을 먼저 보여준다. 제목과 이름을 줄줄이 늘어놓은 목록에서는 무엇을 볼지 고를 수가
  * 없다 — 학생이 고르는 기준은 그림이다. 그래서 격자에 그림을 깔고, 누르면 펼친다.
  *
- * 왼쪽 필터는 특성과 장소로 좁힌다. "가속화가 강한 작품만" 처럼 보면, 그냥 훑는 것과 달리
- * 특성이라는 말이 실제로 쓰인다 — 2차시 퀴즈에서 모은 다섯 개가 여기서 도구가 된다.
+ * 왼쪽 필터로 좁혀 본다. "가속화가 강한 작품만" 처럼 보면, 그냥 훑는 것과 달리 그 말이
+ * 실제로 쓰인다 — 2차시 퀴즈에서 모은 다섯 개가 여기서 도구가 된다.
+ *
+ * **무엇으로 거를지는 차시가 정한다.** 여기에 박아 두면 안 된다. 4차시(직업 조사)에는
+ * 특성도 장소도 없어서, 눌러도 목록이 그대로인 체크박스 다섯 개만 남았다.
+ * 서버가 항목까지 만들어 보내고(facets) 이 화면은 받은 대로 세운다.
  *
  * 점수·좋아요 순위는 없다. 그림 실력 대회로 읽히는 순간 못 그린다고 생각하는 학생이
  * 손을 놓는다 (PRD 9장).
@@ -24,6 +28,8 @@ interface Work extends CardNewsData {
   id: string;
   /** 꼭 봐야 할 두 편인지 */
   assigned: boolean;
+  /** 이 활동지가 어느 필터 항목에 걸리는가. 서버가 차시에 맞게 채워 보낸다 */
+  facetValues: Record<string, string[]>;
   counts: Record<string, number>;
   /** 내가 눌러 둔 이모지들 */
   myReactions: string[];
@@ -43,8 +49,17 @@ interface GalleryData {
     authorReply: string;
   }[];
   worksheet: WorksheetQuestion[];
-  places: string[];
+  facets: Facet[];
   feedbackPrompts: FeedbackPrompts;
+}
+
+/** 필터 한 묶음. 무엇으로 거를지는 차시가 정한다 (gallery 라우트의 facetsFor) */
+interface Facet {
+  key: string;
+  label: string;
+  options: { value: string; count: number }[];
+  /** 상한에 걸려 안 세운 항목 수 */
+  hidden: number;
 }
 
 /** 친구 것에 남기는 두 칸의 질문. 차시마다 다르다 (types.ts 의 ActivityContent 참조) */
@@ -62,8 +77,8 @@ interface FeedbackPrompts {
 export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean; noun?: string }) {
   const [tab, setTab] = useState<"peers" | "mine">("peers");
   const [openId, setOpenId] = useState("");
-  const [traitFilter, setTraitFilter] = useState<string[]>([]);
-  const [placeFilter, setPlaceFilter] = useState<string[]>([]);
+  /** 필터 묶음마다 고른 항목들. 키는 서버가 준 facet.key */
+  const [picked, setPicked] = useState<Record<string, string[]>>({});
   const [onlyAssigned, setOnlyAssigned] = useState(false);
 
   // 간격을 주지 않는다 — 열 때 한 번만 읽고, 남긴 뒤에만 reload() 한다
@@ -75,12 +90,19 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
   const filtered = useMemo(() => {
     return works.filter((work) => {
       if (onlyAssigned && !work.assigned) return false;
-      if (placeFilter.length > 0 && !placeFilter.includes(work.place)) return false;
-      // 특성은 "고른 것 중 하나라도 있으면" 으로 본다. 전부 만족을 요구하면 거의 안 남는다.
-      if (traitFilter.length > 0 && !traitFilter.some((t) => work.traits.includes(t))) return false;
+
+      for (const [key, values] of Object.entries(picked)) {
+        if (values.length === 0) continue;
+        /*
+         * 한 묶음 안에서는 "고른 것 중 하나라도 있으면" 으로 본다.
+         * 전부 만족을 요구하면 두 개만 골라도 남는 것이 거의 없다.
+         * 묶음끼리는 반대로 둘 다 만족해야 한다 — 그래야 좁히는 데 쓸모가 있다.
+         */
+        if (!values.some((value) => (work.facetValues?.[key] ?? []).includes(value))) return false;
+      }
       return true;
     });
-  }, [works, onlyAssigned, placeFilter, traitFilter]);
+  }, [works, onlyAssigned, picked]);
 
   const open = works.find((work) => work.id === openId) ?? null;
 
@@ -125,13 +147,12 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
           {works.length > 0 && (
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
               <FilterPanel
-                places={data.places}
-                traitFilter={traitFilter}
-                placeFilter={placeFilter}
+                facets={data.facets ?? []}
+                picked={picked}
+                onPicked={setPicked}
                 onlyAssigned={onlyAssigned}
-                onTrait={setTraitFilter}
-                onPlace={setPlaceFilter}
                 onAssigned={setOnlyAssigned}
+                noun={noun}
                 total={works.length}
                 shown={filtered.length}
               />
@@ -276,32 +297,40 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
   );
 }
 
-/** 왼쪽 필터. 넓은 화면에서는 옆에, 좁은 화면에서는 위에 접혀 붙는다 */
+/**
+ * 왼쪽 필터. 넓은 화면에서는 옆에, 좁은 화면에서는 위에 접혀 붙는다.
+ *
+ * 무엇으로 거를지는 서버가 정해 보낸다. 여기에 특성·장소를 박아 두었더니 4차시에서
+ * 아무것도 거르지 못하는 체크박스 다섯 개가 남았다.
+ */
 function FilterPanel({
-  places,
-  traitFilter,
-  placeFilter,
+  facets,
+  picked,
+  onPicked,
   onlyAssigned,
-  onTrait,
-  onPlace,
   onAssigned,
+  noun,
   total,
   shown,
 }: {
-  places: string[];
-  traitFilter: string[];
-  placeFilter: string[];
+  facets: Facet[];
+  picked: Record<string, string[]>;
+  onPicked: (next: Record<string, string[]>) => void;
   onlyAssigned: boolean;
-  onTrait: (next: string[]) => void;
-  onPlace: (next: string[]) => void;
   onAssigned: (next: boolean) => void;
+  noun: string;
   total: number;
   shown: number;
 }) {
-  const toggle = (list: string[], value: string, set: (next: string[]) => void) =>
-    set(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+  function toggle(key: string, value: string) {
+    const list = picked[key] ?? [];
+    onPicked({
+      ...picked,
+      [key]: list.includes(value) ? list.filter((v) => v !== value) : [...list, value],
+    });
+  }
 
-  const dirty = traitFilter.length > 0 || placeFilter.length > 0 || onlyAssigned;
+  const dirty = onlyAssigned || Object.values(picked).some((list) => list.length > 0);
 
   return (
     <aside className="flex shrink-0 flex-col gap-4 rounded-lg border border-line p-4 lg:w-56">
@@ -318,49 +347,45 @@ function FilterPanel({
           checked={onlyAssigned}
           onChange={(event) => onAssigned(event.target.checked)}
         />
-        꼭 봐야 할 작품만
+        꼭 봐야 할 {noun}만
       </label>
 
       {/*
         좁은 화면에서는 필터가 격자 위에 통째로 얹힌다. 세로로 세워 두면 체크박스 열 개를
         지나야 그림이 나온다 — 눕혀서 두어 줄로 만든다.
       */}
-      <div className="flex flex-wrap gap-x-4 gap-y-2 border-t border-line pt-3 lg:flex-col">
-        <p className="t-caption w-full">디지털 사회의 특성</p>
-        {TRAITS.map((trait) => (
-          <label key={trait} className="flex items-center gap-2 t-body-sm">
-            <input
-              type="checkbox"
-              checked={traitFilter.includes(trait)}
-              onChange={() => toggle(traitFilter, trait, onTrait)}
-            />
-            {trait}
-          </label>
-        ))}
-      </div>
-
-      {places.length > 0 && (
-        <div className="flex flex-wrap gap-x-4 gap-y-2 border-t border-line pt-3 lg:flex-col">
-          <p className="t-caption w-full">장소</p>
-          {places.map((place) => (
-            <label key={place} className="flex items-center gap-2 t-body-sm">
+      {facets.map((facet) => (
+        <div
+          key={facet.key}
+          className="flex flex-wrap gap-x-4 gap-y-2 border-t border-line pt-3 lg:flex-col"
+        >
+          <p className="t-caption w-full">{facet.label}</p>
+          {facet.options.map((option) => (
+            <label key={option.value} className="flex items-center gap-2 t-body-sm">
               <input
                 type="checkbox"
-                checked={placeFilter.includes(place)}
-                onChange={() => toggle(placeFilter, place, onPlace)}
+                checked={(picked[facet.key] ?? []).includes(option.value)}
+                onChange={() => toggle(facet.key, option.value)}
               />
-              {place}
+              <span className="min-w-0 break-keep">{option.value}</span>
+              {/*
+                몇 명이 적었는지. 많이 나온 순으로 세우고 있어서, 숫자가 없으면 순서가
+                제멋대로로 보인다. 겸사겸사 우리 반이 어디로 쏠렸는지도 읽힌다.
+              */}
+              {option.count > 1 && <span className="t-caption shrink-0">{option.count}</span>}
             </label>
           ))}
+          {facet.hidden > 0 && (
+            <p className="t-caption w-full">그 밖에 {facet.hidden}가지가 더 있어요.</p>
+          )}
         </div>
-      )}
+      ))}
 
       {dirty && (
         <button
           type="button"
           onClick={() => {
-            onTrait([]);
-            onPlace([]);
+            onPicked({});
             onAssigned(false);
           }}
           className="pill pill-secondary t-body-sm"

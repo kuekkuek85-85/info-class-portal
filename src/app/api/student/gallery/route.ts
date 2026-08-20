@@ -2,7 +2,104 @@ import { fail, guard, ok } from "@/lib/api";
 import { getArtifact, getSession, listArtifacts, listFeedbacksFor } from "@/lib/db";
 import { activityIdFor, assignPeers, isVisible, publicIdOf, toCard } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
-import { DEFAULT_FEEDBACK_PROMPTS, TEACHER_AUTHOR_ID, reactionsOf } from "@/lib/types";
+import {
+  DEFAULT_FEEDBACK_PROMPTS,
+  TEACHER_AUTHOR_ID,
+  TRAITS,
+  reactionsOf,
+  type Artifact,
+  type ClassSession,
+} from "@/lib/types";
+
+/**
+ * 왼쪽 필터를 무엇으로 세울지.
+ *
+ * 차시가 정해 두었으면(galleryFacets) 활동지에 적힌 말을 그대로 항목으로 쓴다.
+ * 안 정했으면 그림 활동 기준 — 특성과 장소다.
+ *
+ * 특성은 아무도 안 고른 것까지 다섯 개를 다 세운다. 고정된 다섯 가지를 배우는 것이
+ * 활동의 일부라, 우리 반이 뭘 안 골랐는지도 보이는 편이 낫다. 반대로 장소나 직업은
+ * 학생이 적어 넣은 말이라 **실제로 나온 것만** 세운다 — 없는 항목은 누르면 빈 화면이다.
+ */
+function facetValuesOf(row: Artifact, session: ClassSession): Record<string, string[]> {
+  const config = session.activity?.galleryFacets;
+  if (config?.length) {
+    return Object.fromEntries(
+      config.map((facet) => [facet.key, answerValues(row, facet.answerKeys)]),
+    );
+  }
+  return { traits: row.traits ?? [], place: row.place ? [row.place] : [] };
+}
+
+/** 활동지의 여러 칸에서 적힌 말을 모은다. 빈 칸과 앞뒤 공백은 버린다 */
+function answerValues(row: Artifact, keys: string[]): string[] {
+  const seen = new Set<string>();
+  for (const key of keys) {
+    const value = String(row.answers?.[key] ?? "")
+      .replace(/\s+/g, " ")
+      .trim();
+    // 한 사람이 같은 말을 두 칸에 적으면 한 번만 센다
+    if (value) seen.add(value);
+  }
+  return [...seen];
+}
+
+/**
+ * 필터에 세울 항목 수 상한.
+ *
+ * 한 반 스물여덟 명이 세 칸씩 적으면 서로 다른 말이 예순 개까지 나온다. 그것을 다
+ * 세우면 체크박스를 지나는 데만 화면 몇 개가 걸리고, 정작 볼 활동지는 저 아래에 있다.
+ * 많이 나온 것부터 세우고, 잘린 개수는 화면에 적는다.
+ */
+const MAX_OPTIONS = 10;
+
+function facetsFor(session: ClassSession, visible: Artifact[]) {
+  const config = session.activity?.galleryFacets;
+
+  if (config?.length) {
+    return config.map((facet) => {
+      const counts = new Map<string, number>();
+      for (const row of visible) {
+        for (const value of answerValues(row, facet.answerKeys)) {
+          counts.set(value, (counts.get(value) ?? 0) + 1);
+        }
+      }
+      const sorted = [...counts.entries()]
+        // 많이 적힌 것부터. 같으면 가나다순이라 순서가 매번 같다
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([value, count]) => ({ value, count }));
+
+      return {
+        key: facet.key,
+        label: facet.label,
+        options: sorted.slice(0, MAX_OPTIONS),
+        hidden: Math.max(0, sorted.length - MAX_OPTIONS),
+      };
+    });
+  }
+
+  const places = [...new Set(visible.map((row) => row.place).filter(Boolean))].sort();
+  return [
+    {
+      key: "traits",
+      label: "디지털 사회의 특성",
+      options: TRAITS.map((trait) => ({
+        value: trait,
+        count: visible.filter((row) => (row.traits ?? []).includes(trait)).length,
+      })),
+      hidden: 0,
+    },
+    {
+      key: "place",
+      label: "장소",
+      options: places.map((place) => ({
+        value: place,
+        count: visible.filter((row) => row.place === place).length,
+      })),
+      hidden: 0,
+    },
+  ].filter((facet) => facet.options.length > 0);
+}
 
 /**
  * 작품 감상 — 우리 반 작품 전체를 한 번에 내려보낸다.
@@ -77,6 +174,8 @@ export async function GET() {
         ...toCard(row, ""),
         // 꼭 봐야 할 두 편. 자유 선택만 두면 잘 그린 몇 명에게 몰린다 (assignPeers 참조)
         assigned: assignedIds.has(row.id),
+        /** 이 활동지가 어느 필터에 걸리는가. 화면은 이것만 보고 거른다 */
+        facetValues: facetValuesOf(row, session),
         counts: byArtifact.get(row.id)?.counts ?? {},
         myReactions: byArtifact.get(row.id)?.myReactions ?? [],
         myFoundTech: byArtifact.get(row.id)?.myFoundTech ?? "",
@@ -113,8 +212,8 @@ export async function GET() {
       worksheet: session.activity?.worksheet ?? [],
       // 친구 것에 남기는 두 칸의 질문 — 차시가 정하지 않았으면 그림용 기본값
       feedbackPrompts: session.activity?.feedbackPrompts ?? DEFAULT_FEEDBACK_PROMPTS,
-      /** 필터에 쓸 장소 목록 — 실제로 그린 장소만 (빈 칸을 보여줄 이유가 없다) */
-      places: [...new Set(visible.map((row) => row.place).filter(Boolean))].sort(),
+      /** 왼쪽 필터를 무엇으로 세울지. 차시마다 다르다 (facetsFor 참조) */
+      facets: facetsFor(session, visible),
     });
   });
 }
