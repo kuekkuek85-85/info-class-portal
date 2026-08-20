@@ -3,7 +3,6 @@
 import { useState } from "react";
 
 import { TeacherArtifactPanel } from "@/components/teacher-artifact-panel";
-import { TeacherJobsPanel } from "@/components/teacher-jobs-panel";
 import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
 import { TeacherShell } from "@/components/teacher-shell";
 import { formatDateKorean, formatTimeKST, todayKST } from "@/lib/datetime";
@@ -408,16 +407,12 @@ function Dashboard() {
               session.phase === "gallery") && <TeacherArtifactPanel sessionId={session.id} />}
 
           {/*
-            직업 조사 집계 — 4차시 정리용.
+            직업 집계는 여기 두지 않는다.
 
-            활동지에 직업 칸이 있는 차시에서만, 그리고 **학생이 쓰기 시작한 뒤부터** 뜬다.
-            대기·기분 단계에서는 셀 것이 없는데도 15초마다 반 전체 활동지를 읽어
-            읽기만 축낸다. 성찰·마침까지 남겨 두는 것은 그때가 정리하는 시점이라서다.
+            셀 때마다 AI 에게 직업 이름을 묶어 달라고 부른다. 대시보드에 두면 교사가
+            보지 않는 동안에도 화면이 떠 있는 것만으로 호출이 나간다. 교실 앞 화면
+            (/teacher/board)의 "직업 집계" 탭에서 교사가 누를 때만 센다.
           */}
-          {session.activity?.worksheet?.some((q) => q.key.startsWith("vanish")) &&
-            ["worksheet", "gallery", "reflection", "done"].includes(session.phase) && (
-              <TeacherJobsPanel sessionId={session.id} />
-            )}
 
           {stats && (
             <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">

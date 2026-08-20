@@ -11,126 +11,41 @@ import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
  *
  * **이름은 내보내지 않는다.** 누가 무엇을 적었는지가 아니라 반 전체의 그림이 목적이고,
  * 개인을 지목하는 순간 다음 시간부터 솔직하게 쓰지 않는다 (감정 집계와 같은 원칙).
+ *
+ * ## 같은 뜻으로 묶는 일은 전부 AI 가 한다
+ *
+ * 처음에는 동의어 사전을 두었다. 걷어냈다 — 글자로는 "무인매장 관리자"와 "캐셔"를
+ * 못 잡고, 무엇보다 **잘못 묶었다.** "상담사"의 동의어에 "상담원"을 넣어 두었더니,
+ * 전화 상담원을 사라질 직업으로 심리 상담사를 잘 나갈 직업으로 적은 학생의 답이
+ * 양쪽 다 "상담사"로 떠서 그 학생이 그은 구분이 사라졌다.
+ *
+ * 덜 묶이는 것은 눈으로 알아볼 수 있지만, 잘못 묶인 것은 알아볼 수가 없다.
+ * AI 가 실패하면 **아무것도 묶지 않고 쓴 그대로 보여준다.** 화면에 그 사실을 적는다.
  */
 
-/**
- * 같은 직업을 다르게 적은 것을 한 이름으로 모은다.
- *
- * 스물여덟 명이 각자 쓰면 "교사 · 선생님 · 학교 선생님" 이 세 칸으로 갈라져서, 막대가
- * 스무 개가 되고 무엇이 많은지 보이지 않는다. 집계의 쓸모가 사라진다.
- *
- * 외부 AI 로 묶지 않는다. 수업 중에 부르면 느리고, 실패하면 집계가 통째로 멈추고,
- * 같은 답이 반마다 다르게 묶여 비교가 안 된다. 사전은 느리지도 틀리지도 않는다.
- *
- * 목록에 없는 직업은 **쓴 그대로 남긴다.** 모르는 것을 억지로 묶으면 학생이 쓴 말이
- * 사라진다 — 없는 것보다 나쁘다.
- *
- * ## 한 낱말짜리 항목을 넣지 않는다
- *
- * 아래 표는 부분 일치로도 쓰인다("마트 계산원"을 "계산원"으로 모으려고). 그래서
- * "상담"이나 "기사" 같은 조각을 넣으면 **다른 직업까지 빨아들인다.**
- *
- * 실제로 그런 일이 있었다. "상담사"의 동의어에 "상담원"을 넣어 두었더니, 전화 상담원을
- * 사라질 직업으로 적고 심리 상담사를 잘 나갈 직업으로 적은 학생의 답이 양쪽 다
- * "상담사"로 뜨면서 그 학생이 그은 구분이 사라졌다.
- *
- * 접미사가 다르면(-원 / -사 / -가) 대개 다른 직업이다. 확실할 때만 넣는다.
- */
-const SYNONYMS: Record<string, string[]> = {
-  교사: ["선생님", "학교선생님"],
-  의사: ["의사선생님"],
-  수의사: ["동물의사", "동물병원의사"],
-  요리사: ["셰프", "쉐프", "조리사"],
-  제빵사: ["파티시에"],
-  프로그래머: ["개발자", "소프트웨어개발자", "코더", "웹개발자", "앱개발자"],
-  "AI 전문가": ["ai전문가", "인공지능전문가", "ai개발자", "인공지능개발자", "ai엔지니어"],
-  "AI 윤리 전문가": ["ai윤리전문가", "인공지능윤리전문가"],
-  "데이터 분석가": ["데이터과학자", "빅데이터전문가", "데이터전문가", "데이터사이언티스트"],
-  "로봇 정비사": ["로봇수리기사", "로봇정비사", "로봇정비기사"],
-  "드론 조종사": ["드론파일럿", "드론조종사"],
-  디자이너: ["웹디자이너", "그래픽디자이너"],
-  번역가: ["번역사"],
-  계산원: ["캐셔", "마트계산원", "편의점직원", "마트직원"],
-  텔레마케터: ["전화상담원", "콜센터직원", "콜센터상담원", "전화판매원"],
-  은행원: ["은행창구직원", "은행직원"],
-  운전기사: ["택시기사", "버스기사", "트럭운전사", "화물차운전사"],
-  경찰: ["경찰관"],
-  소방관: ["소방사"],
-  기자: ["리포터"],
-  작가: ["소설가"],
-  유튜버: ["스트리머", "bj"],
-  가수: ["아이돌"],
-  배우: ["연기자", "탤런트"],
-  "심리 상담사": ["심리상담사", "심리치료사", "심리상담가"],
-  "우주 비행사": ["우주인", "우주비행사"],
-  농부: ["농업인", "농사꾼"],
-  사서: ["도서관사서"],
-};
-
-/** 표기 → 대표 이름. 사전을 뒤집어 한 번만 만든다 */
-const CANONICAL = new Map<string, string>();
-for (const [name, words] of Object.entries(SYNONYMS)) {
-  const key = (s: string) => s.replace(/\s+/g, "").toLowerCase();
-  CANONICAL.set(key(name), name);
-  for (const w of words) CANONICAL.set(key(w), name);
+/** 두 글자 미만은 오타, 스무 자를 넘으면 직업 이름이 아니라 문장이다 */
+function usable(name: string): boolean {
+  return name.length >= 2 && name.length <= 20;
 }
 
-/**
- * 부분 일치용 목록 — **긴 이름부터** 본다.
- *
- * "마트 계산원"처럼 앞에 말을 붙여 쓰는 경우를 잡으려는 것인데, 짧은 것부터 보면
- * "수의사"가 "의사"에 걸려 엉뚱하게 묶인다.
- */
-const BY_LENGTH = [...CANONICAL.keys()].sort((a, b) => b.length - a.length);
-
-function normalize(name: string): string {
-  const key = name.replace(/\s+/g, "").toLowerCase().replace(/직업$/, "");
-  if (!key) return "";
-
-  const exact = CANONICAL.get(key);
-  if (exact) return exact;
-
-  for (const word of BY_LENGTH) {
-    if (key.includes(word)) return CANONICAL.get(word)!;
-  }
-  // 사전에 없는 직업은 학생이 쓴 그대로 둔다
-  return name.replace(/\s+/g, " ").trim();
-}
-
-/**
- * 직업 이름만 모아 센다.
- *
- * 활동지가 직업 칸과 이유 칸을 나눠 받으므로 글을 쪼갤 필요가 없다. 예전에는 한 칸에
- * "직업 — 이유" 를 여러 줄로 적게 하고 구분자로 잘랐는데, 학생이 줄표 대신 쉼표를 쓰거나
- * 이유를 먼저 적으면 엉뚱한 말이 직업으로 잡혔다.
- */
 function tally(
   values: string[],
-  /** AI 가 만든 이름 → 대표 이름 표. 비어 있으면 글자 기준으로 묶는다 */
+  /** 이름 → 대표 이름. 비어 있으면 묶지 않고 쓴 그대로 센다 */
   grouped: Map<string, string>,
 ): { name: string; count: number }[] {
-  const byKey = new Map<string, { name: string; count: number }>();
+  const byName = new Map<string, number>();
 
   for (const raw of values) {
     const name = raw.replace(/\s+/g, " ").trim();
-    // 두 글자 미만은 오타이거나 빈 칸이다
-    if (name.length < 2 || name.length > 20) continue;
+    if (!usable(name)) continue;
 
-    /*
-     * 표시 이름은 대표 이름을 쓴다.
-     *
-     * 처음 나온 표기를 쓰면 "선생님 5" 로 뜨는데, 그 안에는 "교사"라고 쓴 학생도 섞여
-     * 있다. 묶은 결과를 보여줄 때는 묶은 이름으로 부르는 편이 정직하다.
-     *
-     * AI 가 묶어 준 것이 있으면 그것을, 없으면(느리거나 죽었으면) 글자 기준을 쓴다.
-     */
-    const merged = grouped.get(name) ?? normalize(name);
-    const found = byKey.get(merged);
-    if (found) found.count += 1;
-    else byKey.set(merged, { name: merged, count: 1 });
+    const merged = grouped.get(name) ?? name;
+    byName.set(merged, (byName.get(merged) ?? 0) + 1);
   }
 
-  return [...byKey.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  return [...byName.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 }
 
 export async function GET(request: Request) {
@@ -145,7 +60,7 @@ export async function GET(request: Request) {
     if (!session) return fail("not_found");
 
     const activityId = session.activity?.activityId;
-    if (!activityId) return ok({ vanish: [], rise: [], written: 0 });
+    if (!activityId) return ok({ vanish: [], rise: [], written: 0, grouped: true });
 
     const artifacts = (await listArtifacts(activityId, session.classNo)).filter((row) => !row.hidden);
 
@@ -166,15 +81,24 @@ export async function GET(request: Request) {
      * 따로 부르면 요청이 두 배가 되고, 같은 직업이 양쪽에서 다른 대표 이름을 받을 수
      * 있다 — 한 화면에 "선생님"과 "교사"가 나란히 뜨면 묶은 의미가 없다.
      */
-    const vanishRaw = pick("vanish");
-    const riseRaw = pick("rise");
+    const vanishRaw = pick("vanish").filter((v) => usable(v.replace(/\s+/g, " ").trim()));
+    const riseRaw = pick("rise").filter((v) => usable(v.replace(/\s+/g, " ").trim()));
     const grouped = await groupJobNames(vanishRaw, riseRaw);
+
+    /*
+     * 묶을 이름이 둘 미만이면 애초에 부르지 않으므로(job-grouping.ts) 표가 비어 있는
+     * 것이 정상이다. 그 경우까지 "묶지 못했다"고 알리면 없는 문제를 알리는 셈이다.
+     */
+    const distinct = new Set([...vanishRaw, ...riseRaw].map((n) => n.replace(/\s+/g, " ").trim()));
+    const groupedOk = distinct.size < 2 || grouped.size > 0;
 
     return ok({
       vanish: tally(vanishRaw, grouped),
       rise: tally(riseRaw, grouped),
       /** 한 칸이라도 쓴 학생 수 — 집계가 몇 명분인지 알아야 해석이 된다 */
       written: artifacts.filter(wrote).length,
+      /** AI 묶기가 됐는가. 실패하면 화면에 알린다 */
+      grouped: groupedOk,
     });
   });
 }
