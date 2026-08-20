@@ -36,21 +36,33 @@ function cacheKey(names: string[]): string {
   return [...names].sort().join("|");
 }
 
-function buildPrompt(names: string[]): string {
+function buildPrompt(vanish: string[], rise: string[], names: string[]): string {
+  const side = (n: string) => {
+    const v = vanish.includes(n);
+    const r = rise.includes(n);
+    if (v && r) return "양쪽";
+    return v ? "사라질" : "잘 나갈";
+  };
+
   return [
-    "다음은 중학생이 '미래에 사라질 직업 / 잘 나갈 직업'으로 적은 이름 목록입니다.",
-    "같은 직업을 가리키거나 하는 일이 사실상 같은 것끼리 묶어 주세요.",
+    "중학생이 '미래에 사라질 직업'과 '앞으로 잘 나갈 직업'을 적었습니다.",
+    "아래 목록에서 **같은 직업을 다르게 적은 것끼리만** 묶어 주세요.",
     "",
     "규칙:",
-    "- 하는 일이 다르면 묶지 마세요. 애매하면 따로 두세요.",
-    "- 표현만 다른 것은 묶으세요. 예) 교사 · 선생님 · 학교 선생님",
+    "- 표현만 다른 것을 묶습니다. 예) 교사 · 선생님 · 학교 선생님",
+    "- **하는 일이 다르면 절대 묶지 마세요.** 애매하면 따로 두세요.",
+    "  덜 묶이는 것은 괜찮지만, 다른 직업이 합쳐지면 학생이 쓴 뜻이 사라집니다.",
+    "- 끝말이 다르면 대개 다른 직업입니다. 예) 상담원(전화 상담)과 상담사(심리 상담),",
+    "  요리사와 요리연구가, 기사(운전)와 기사(수리)",
+    "- 한쪽은 '사라질', 다른 쪽은 '잘 나갈'에만 나오는 이름이라면 학생이 서로 다른 직업으로",
+    "  본 것입니다. 이런 경우는 **표현만 다른 것이 확실할 때만** 묶으세요.",
     "- 대표 이름은 **목록 안에 있는 말 중에서** 가장 알아듣기 쉬운 것으로 고르세요.",
     "  목록에 없는 새 이름을 만들지 마세요.",
     "- 입력한 이름이 모두 정확히 한 번씩 어느 묶음엔가 들어가야 합니다.",
     "",
     'JSON만 출력하세요: {"groups":[{"name":"대표","members":["...","..."]}]}',
     "",
-    names.map((n) => `- ${n}`).join("\n"),
+    names.map((n) => `- ${n}  (${side(n)})`).join("\n"),
   ].join("\n");
 }
 
@@ -59,8 +71,15 @@ function buildPrompt(names: string[]): string {
  *
  * 실패하면 **빈 표**를 돌려준다. 부르는 쪽이 글자 기준으로 넘어가면 된다.
  */
-export async function groupJobNames(rawNames: string[]): Promise<Map<string, string>> {
-  const names = [...new Set(rawNames.map((n) => n.replace(/\s+/g, " ").trim()).filter(Boolean))];
+export async function groupJobNames(
+  vanishRaw: string[],
+  riseRaw: string[],
+): Promise<Map<string, string>> {
+  const clean = (list: string[]) => list.map((n) => n.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const vanish = clean(vanishRaw);
+  const rise = clean(riseRaw);
+  const names = [...new Set([...vanish, ...rise])];
+
   // 하나뿐이면 물어볼 것이 없다
   if (names.length < 2) return new Map();
 
@@ -81,7 +100,7 @@ export async function groupJobNames(rawNames: string[]): Promise<Map<string, str
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: buildPrompt(names) }] }],
+          contents: [{ parts: [{ text: buildPrompt(vanish, rise, names) }] }],
           // temperature 0 — 같은 목록에 같은 답이 나와야 막대가 안 뒤섞인다
           generationConfig: { temperature: 0, responseMimeType: "application/json" },
         }),
