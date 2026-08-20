@@ -101,7 +101,16 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
           onClick={() => setTab("mine")}
           className={`pill flex-1 ${tab === "mine" ? "pill-primary" : "pill-secondary"}`}
         >
-          내 {noun} ({data.received.length})
+          {/*
+            여기에 괄호 숫자를 붙이지 않는다.
+
+            옆 탭의 (25)는 작품 수인데 이 자리에는 '받은 말'의 수가 들어가 있었다.
+            나란히 놓인 두 숫자가 같은 것을 센다고 읽혀서, 작품을 낸 학생이
+            "내 작품(0)"을 보고 자기 것이 사라진 줄 알았다. 말풍선을 붙여
+            무엇을 센 숫자인지 보이게 하고, 받은 말이 없으면 아예 안 띄운다.
+          */}
+          내 {noun}
+          {data.received.length > 0 && <span>💬 {data.received.length}</span>}
         </button>
       </div>
 
