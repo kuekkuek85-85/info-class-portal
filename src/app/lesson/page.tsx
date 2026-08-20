@@ -353,10 +353,23 @@ export default function LessonPage() {
     };
   }, [answers, closed, data, saveReflection]);
 
-  // 그리기·활동지 단계에 처음 들어갈 때 그림을 받아 온다 (한 번만)
+  /*
+   * 그림·활동지를 처음 필요할 때 받아 온다 (한 번만).
+   *
+   * **교사 단계가 아니라 학생이 보고 있는 단계로 판단한다.** 예전에는 교사가 그리기나
+   * 활동지 단계를 켜 두었을 때만 받았는데, 감상 단계에서는 그림·활동지 탭이 그대로
+   * 보인다(isWorkPhase 에 gallery 가 들어 있다). 그래서 감상 중에 자기 활동지로
+   * 돌아간 학생에게 "활동지를 준비하고 있어요" 가 영원히 떠 있었다 —
+   * 받아 오는 요청이 아예 나가지 않으니 기다려도 바뀌지 않는다.
+   *
+   * 되돌아가기를 켜 두면 성찰 단계에서도 활동지로 갈 수 있으므로, 단계 이름을 하나씩
+   * 나열하는 대신 "그리기 이후" 로 잡는다. 그 앞 단계(퀴즈·영상)에서는 여전히 안 받는다.
+   */
   useEffect(() => {
     if (!data?.session.activity) return;
-    if (phase !== "draw" && phase !== "worksheet") return;
+    const reached = (item: LessonPhase) =>
+      LESSON_PHASES.indexOf(item) >= LESSON_PHASES.indexOf("draw");
+    if (!reached(phase) && !reached(viewPhase)) return;
     if (artifactLoaded.current) return;
     artifactLoaded.current = true;
 
@@ -385,7 +398,7 @@ export default function LessonPage() {
     return () => {
       cancelled = true;
     };
-  }, [data, phase]);
+  }, [data, phase, viewPhase]);
 
   async function choosePlace(place: string) {
     setArtifact((prev) => (prev ? { ...prev, place } : prev));
