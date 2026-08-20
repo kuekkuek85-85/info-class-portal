@@ -49,3 +49,6 @@ roster*.csv
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 리허설·정리용 임시 스크립트 (수업 데이터를 손대므로 저장소에 남기지 않는다)
+*.tmp.ts
