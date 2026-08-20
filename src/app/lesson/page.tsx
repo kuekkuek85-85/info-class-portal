@@ -35,6 +35,8 @@ export interface ActivityInfo {
   places: string[];
   year: number;
   worksheet: WorksheetQuestion[];
+  /** 그림판에서 열어 보는 첨단 기술 낱말. 비면 단추가 안 생긴다 */
+  techExamples?: string[];
 }
 
 interface LessonData {
@@ -797,6 +799,7 @@ export default function LessonPage() {
               places={session.activity.places}
               place={artifact.place}
               year={artifact.year}
+              techExamples={session.activity.techExamples}
               onPlaceChange={choosePlace}
               onExit={(strokes, texts, saveRev) =>
                 setArtifact((prev) => (prev ? { ...prev, strokes, texts, saveRev } : prev))

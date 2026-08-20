@@ -188,6 +188,17 @@ export interface WorksheetQuestion {
    */
   kind: "text" | "long" | "traits";
   maxLength: number;
+  /**
+   * 질문 아래에 붙는 낱말 보기.
+   *
+   * hint 로는 모자란 경우가 있다. 3차시에서 "그림에 넣은 핵심 기술의 이름"을 물었더니
+   * 중1이 **첨단 기술이라는 말 자체를 몰라** 칸을 비웠다. 예시 한 줄이 아니라 고를 수
+   * 있는 목록이 눈앞에 있어야 한다.
+   *
+   * 눌러서 칸에 넣어 주지는 않는다. 답으로 원하는 것은 "로봇"이 아니라 "음식을 나르는
+   * 로봇"이라서, 눌러 넣게 하면 낱말만 남고 생각이 빠진다.
+   */
+  examples?: string[];
 }
 
 export interface ActivityContent {
@@ -204,6 +215,16 @@ export interface ActivityContent {
   /** 기본 연도 */
   year: number;
   worksheet: WorksheetQuestion[];
+  /**
+   * 그림판에서 열어 보는 첨단 기술 목록.
+   *
+   * 활동지의 examples 와 같은 값을 넣는다. 나누어 둔 이유는 **필요한 때가 다르기**
+   * 때문이다. 활동지는 다 그린 뒤에 여는 화면이라, 거기에만 두면 정작 무엇을 그릴지
+   * 정해야 하는 순간에는 볼 수가 없다.
+   *
+   * 비워 두면 그림판에 단추가 안 생긴다 (4차시처럼 그림이 없는 차시).
+   */
+  techExamples?: string[];
   /**
    * 친구 것을 보고 남기는 두 칸의 질문.
    *

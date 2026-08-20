@@ -73,18 +73,47 @@ const PLACES = [
   "미용실",
 ];
 
+/**
+ * 첨단 기술 낱말 보기.
+ *
+ * 3차시를 세 반 하고 나서 넣었다. 학생들이 **첨단 기술이라는 말 자체를 몰라서** 그림에
+ * 무엇을 넣을지 정하지 못했고, 활동지의 "핵심 기술의 이름" 칸도 비웠다.
+ * 힌트 한 줄("예) 자동 배달 로봇")로는 모자랐다 — 예시 하나는 그것만 베끼게 만든다.
+ *
+ * 분야 이름으로 적는다. "음식 나르는 로봇"까지 적어 두면 그것을 그대로 옮겨 적고,
+ * 무엇을 해 주는지 생각하는 부분이 통째로 빠진다. 낱말을 문장으로 만드는 법은
+ * 화면(tech-examples.tsx)에서 한 줄로 안내한다.
+ */
+const TECH_EXAMPLES = [
+  "로봇",
+  "AI(인공지능)",
+  "생체인식",
+  "음성인식",
+  "핀테크",
+  "가상현실(VR)",
+  "증강현실(AR)",
+  "3D 프린터",
+  "홀로그램",
+  "자율주행차",
+  "드론",
+  "사물인터넷(IoT)",
+];
+
 /** 2차시 — 그리기만 한다. 활동지는 3차시에 채운다. */
 const ACTIVITY_LESSON2: ActivityContent = {
   activityId: ACTIVITY_ID,
   places: PLACES,
   year: 2040,
   worksheet: [],
+  // 2차시 성찰에서 "무엇을 넣고 싶은지"를 미리 정하게 하므로, 그림판에도 같이 둔다
+  techExamples: TECH_EXAMPLES,
 };
 
 const ACTIVITY_LESSON3: ActivityContent = {
   activityId: ACTIVITY_ID,
   places: PLACES,
   year: 2040,
+  techExamples: TECH_EXAMPLES,
   worksheet: [
     {
       key: "place_year",
@@ -99,6 +128,8 @@ const ACTIVITY_LESSON3: ActivityContent = {
       hint: "예) 자동 배달 로봇, 얼굴 인식 출입문",
       kind: "long",
       maxLength: 200,
+      // 이 칸을 비우는 학생이 가장 많았다. 첨단 기술이 무엇인지를 모르니 쓸 수가 없다.
+      examples: TECH_EXAMPLES,
     },
     {
       key: "definition",

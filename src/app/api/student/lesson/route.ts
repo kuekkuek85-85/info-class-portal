@@ -102,6 +102,12 @@ export async function GET() {
               places: session.activity.places ?? [],
               year: session.activity.year ?? 2040,
               worksheet: session.activity.worksheet ?? [],
+              /*
+                여기 빠뜨리면 그림판에 "기술 예시" 단추가 조용히 안 생긴다.
+                이 자리에서 필드를 하나씩 골라 내보내고 있어서, 활동에 값을 넣어도
+                학생 화면까지 오지 않는다 — 4차시 openInNewTab 이 그렇게 사라졌었다.
+              */
+              techExamples: session.activity.techExamples ?? [],
             }
           : null,
         date: session.date,

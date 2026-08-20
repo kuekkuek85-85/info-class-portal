@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { ArtifactCanvas } from "@/components/artifact-canvas";
+import { TechExampleChips } from "@/components/tech-examples";
 import { TRAITS, type Stroke, type TextItem, type WorksheetQuestion } from "@/lib/types";
 
 /**
@@ -131,6 +132,14 @@ export function WorksheetView({
             {question.label}
           </label>
           {question.hint && <p className="t-caption">{question.hint}</p>}
+
+          {/*
+            낱말 보기. 힌트 한 줄로는 모자란 질문에만 붙는다.
+            힌트 **아래** 입력칸 **위** 자리다 — 읽고 나서 바로 쓰게 된다.
+          */}
+          {question.examples && question.examples.length > 0 && (
+            <TechExampleChips items={question.examples} />
+          )}
 
           {question.kind === "traits" ? (
             <div className="flex flex-wrap gap-2" id={`ws-${question.key}`}>

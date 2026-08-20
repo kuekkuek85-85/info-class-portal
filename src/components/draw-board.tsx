@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { drawArtifact } from "@/components/artifact-canvas";
+import { TechExampleChips, TechExampleModal } from "@/components/tech-examples";
 import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
@@ -36,6 +37,13 @@ export interface DrawBoardProps {
   places: string[];
   place: string;
   year: number;
+  /**
+   * 첨단 기술 낱말 보기. 비어 있으면 단추가 아예 안 생긴다.
+   *
+   * 무엇을 그릴지 정하는 순간에 필요한 것이라 활동지가 아니라 여기에도 둔다 —
+   * 활동지는 다 그린 뒤에 여는 화면이다.
+   */
+  techExamples?: string[];
   onPlaceChange: (place: string) => void;
   /**
    * 화면을 떠날 때 지금 그림을 부모에게 넘긴다.
@@ -106,6 +114,7 @@ export function DrawBoard({
   places,
   place,
   year,
+  techExamples = [],
   onPlaceChange,
   onExit,
   disabled,
@@ -190,6 +199,8 @@ export function DrawBoard({
   const [repicking, setRepicking] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
   const [customPlace, setCustomPlace] = useState("");
+  /** 첨단 기술 보기를 펼쳐 뒀는가 (그리는 중에는 판으로 띄운다) */
+  const [techOpen, setTechOpen] = useState(false);
 
   function confirmCustomPlace() {
     const value = customPlace.replace(/\s+/g, " ").trim().slice(0, MAX_PLACE_LENGTH);
@@ -712,7 +723,19 @@ export function DrawBoard({
       window.removeEventListener("resize", measure);
       observer.disconnect();
     };
-  }, []);
+    /*
+     * place · repicking 이 목록에 있는 이유.
+     *
+     * 장소를 고르기 전에는 이 컴포넌트가 **선택 화면을 대신 그린다.** 캔버스가 아예
+     * 없으므로 canvasBoxRef 는 null 이고, 위의 measure() 는 첫 줄에서 돌아 나가며
+     * ResizeObserver 도 붙지 않는다. 그 뒤 장소를 고르면 캔버스가 새로 생기는데,
+     * 다시 재 주지 않으면 아무도 재지 않은 채로 끝난다.
+     *
+     * 그러면 화면에서 잰 값 대신 className 의 calc(100dvh-14rem) 이 쓰인다. 그 식은
+     * 위에 쌓인 것의 실제 높이를 모르는 어림값이라 1280×720 노트북에서 29px 넘쳤다 —
+     * 그리는 내내 스크롤해야 도구가 보인다. 캔버스가 생기고 사라질 때마다 다시 잰다.
+     */
+  }, [place, repicking]);
 
   // 주기적 전체 동기화 — 중간에 실패한 요청이 있어도 여기서 맞춰진다
   useEffect(() => {
@@ -849,6 +872,12 @@ export function DrawBoard({
           나중에 제목 옆 <b>연필</b>을 눌러 다시 고를 수 있어요.
         </p>
 
+        {/*
+          장소를 고르고 나면 곧바로 빈 캔버스다. 그 앞에서 "무엇을 넣지" 로 5분이 간다.
+          여기서 미리 읽고 넘어가라고 접지 않고 펼쳐 둔다 — 이 화면은 세로가 넉넉하다.
+        */}
+        <TechExampleChips items={techExamples} />
+
         {customOpen && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6"
@@ -929,6 +958,21 @@ export function DrawBoard({
         </div>
 
         <div className="flex items-center gap-3">
+          {/*
+            그리다 막히는 순간에 여는 문. 늘 펼쳐 두지 않는 이유는 이 화면이 세로가
+            빠듯해서다 — 캔버스 높이를 남은 공간에서 재 쓰고 있어, 위에 무엇이 쌓이면
+            그만큼 그림면이 줄어든다.
+          */}
+          {techExamples.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setTechOpen(true)}
+              className="h-11 rounded-full border-2 border-line bg-canvas px-3 text-base font-semibold"
+            >
+              💡 기술 예시
+            </button>
+          )}
+
           <span className="t-caption" aria-live="polite">
             {saveState === "saving" && "저장 중…"}
             {saveState === "saved" && "저장됨"}
@@ -1142,6 +1186,8 @@ export function DrawBoard({
           </p>
         </div>
       </div>
+
+      {techOpen && <TechExampleModal items={techExamples} onClose={() => setTechOpen(false)} />}
 
       {textDraft && (
         <div
