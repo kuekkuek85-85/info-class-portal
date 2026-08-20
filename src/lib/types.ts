@@ -226,6 +226,14 @@ export interface ActivityContent {
    */
   techExamples?: string[];
   /**
+   * 활동지 아래 출처 두 칸의 예시.
+   *
+   * 기본값은 그림 활동을 전제한다("나무위키 — 자율주행"). 4차시(직업 조사)에 그대로
+   * 두면 무엇을 찾아보라는 것인지 어긋난다 — 자율주행을 찾아본 학생은 없다.
+   * 예시가 엉뚱하면 안 쓰는 것보다 나쁘다. 중1은 예시를 지시로 읽는다.
+   */
+  sourceHints?: { site: string; ai: string };
+  /**
    * 친구 것을 보고 남기는 두 칸의 질문.
    *
    * 기본값은 그림을 전제로 한다("이 그림에 어떤 기술이 쓰였을까요"). 4차시처럼 글만 쓰는
@@ -239,6 +247,12 @@ export interface ActivityContent {
     question: { label: string; placeholder: string };
   };
 }
+
+/** 출처 두 칸의 기본 예시. 차시가 따로 정하지 않으면 이것을 쓴다 (그림 활동 기준) */
+export const DEFAULT_SOURCE_HINTS = {
+  site: "예) 나무위키 — 자율주행",
+  ai: "예) 챗지피티 — 2040년 병원은 어떻게 바뀔까?",
+} as const;
 
 /** 그림 활동의 기본 질문. 차시가 따로 정하지 않으면 이것을 쓴다 */
 export const DEFAULT_FEEDBACK_PROMPTS = {

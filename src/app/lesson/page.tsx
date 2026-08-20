@@ -37,6 +37,8 @@ export interface ActivityInfo {
   worksheet: WorksheetQuestion[];
   /** 그림판에서 열어 보는 첨단 기술 낱말. 비면 단추가 안 생긴다 */
   techExamples?: string[];
+  /** 출처 두 칸의 예시. 비면 활동지가 기본값(그림 활동 기준)을 쓴다 */
+  sourceHints?: { site: string; ai: string } | null;
 }
 
 interface LessonData {
@@ -818,6 +820,7 @@ export default function LessonPage() {
               place={artifact.place}
               year={artifact.year}
               canDraw={canDraw}
+              sourceHints={session.activity.sourceHints ?? undefined}
               strokes={artifact.strokes}
               texts={artifact.texts}
               value={worksheet}

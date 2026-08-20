@@ -4,7 +4,13 @@ import { useEffect, useRef, useState } from "react";
 
 import { ArtifactCanvas } from "@/components/artifact-canvas";
 import { TechExampleChips } from "@/components/tech-examples";
-import { TRAITS, type Stroke, type TextItem, type WorksheetQuestion } from "@/lib/types";
+import {
+  DEFAULT_SOURCE_HINTS,
+  TRAITS,
+  type Stroke,
+  type TextItem,
+  type WorksheetQuestion,
+} from "@/lib/types";
 
 /**
  * 활동지 — 그린 것을 말로 옮기는 단계.
@@ -36,6 +42,8 @@ interface WorksheetViewProps {
    * 그린 것도 고른 장소도 없는 화면이다.
    */
   canDraw: boolean;
+  /** 출처 두 칸의 예시. 차시가 안 정하면 그림 활동 기준 기본값을 쓴다 */
+  sourceHints?: { site: string; ai: string };
   strokes: Stroke[];
   texts: TextItem[];
   value: WorksheetValue;
@@ -51,6 +59,7 @@ export function WorksheetView({
   place,
   year,
   canDraw,
+  sourceHints = DEFAULT_SOURCE_HINTS,
   strokes,
   texts,
   value,
@@ -219,7 +228,7 @@ export function WorksheetView({
             }
             maxLength={300}
             disabled={disabled}
-            placeholder="예) 나무위키 — 자율주행"
+            placeholder={sourceHints.site}
             className="field disabled:opacity-60"
           />
         </label>
@@ -233,7 +242,7 @@ export function WorksheetView({
             }
             maxLength={300}
             disabled={disabled}
-            placeholder="예) 챗지피티 — 2040년 병원은 어떻게 바뀔까?"
+            placeholder={sourceHints.ai}
             className="field disabled:opacity-60"
           />
         </label>

@@ -108,6 +108,7 @@ export async function GET() {
                 학생 화면까지 오지 않는다 — 4차시 openInNewTab 이 그렇게 사라졌었다.
               */
               techExamples: session.activity.techExamples ?? [],
+              sourceHints: session.activity.sourceHints ?? null,
             }
           : null,
         date: session.date,
