@@ -60,6 +60,46 @@ interface Facet {
   options: { value: string; count: number }[];
   /** 상한에 걸려 안 세운 항목 수 */
   hidden: number;
+  /**
+   * 활동지에 쓴 말에서 나온 묶음인가.
+   *
+   * 그렇다면 카드 요약에도 그대로 쓴다. 특성·장소는 카드에 이미 따로 나오므로
+   * 요약에 또 적으면 같은 말이 두 번 나온다.
+   */
+  fromAnswers: boolean;
+}
+
+/**
+ * 그림이 없는 차시에서 카드에 띄울 요약.
+ *
+ * 예전에는 활동지 앞 세 칸의 **값만** 줄줄이 찍었다. 4차시 카드가 이렇게 나왔다.
+ *
+ *   데이터 분석가
+ *   교사
+ *   번역가
+ *
+ * 어느 것이 AI 가 추천한 직업이고 어느 것이 사라질 직업인지 알 수가 없다. 게다가 앞
+ * 세 칸만 보여주니 "생겨날 직업" 은 카드에 아예 나오지 않았다 — 활동의 절반이 안 보인다.
+ *
+ * 필터가 쓰는 이름표를 그대로 쓴다(facets). 차시가 이미 "이 칸들은 사라질 직업" 이라고
+ * 정해 두었으므로, 같은 것을 두 군데에 적지 않는다.
+ */
+function summaryOf(work: Work, facets: Facet[]): { label: string; values: string[] }[] {
+  const rows = facets
+    // 특성·장소는 카드 아래에 이미 나온다. 요약에 또 적으면 같은 말이 두 번이다.
+    .filter((facet) => facet.fromAnswers)
+    .map((facet) => ({ label: facet.label, values: work.facetValues?.[facet.key] ?? [] }))
+    // 안 쓴 칸은 이름표만 남아 빈 줄이 된다. 통째로 뺀다.
+    .filter((row) => row.values.length > 0);
+
+  if (rows.length > 0) return rows;
+
+  // 차시가 필터를 정하지 않았으면 예전처럼 앞 세 칸을 이름표 없이 보여준다
+  return Object.values(work.answers)
+    .map((value) => String(value ?? "").trim())
+    .filter(Boolean)
+    .slice(0, 3)
+    .map((value) => ({ label: "", values: [value] }));
 }
 
 /** 친구 것에 남기는 두 칸의 질문. 차시마다 다르다 (types.ts 의 ActivityContent 참조) */
@@ -192,16 +232,20 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
                               className="h-auto w-full rounded bg-white"
                             />
                           ) : (
-                            <div className="flex min-h-32 flex-col gap-1 rounded bg-white p-3">
-                              {Object.values(work.answers)
-                                .map((v) => String(v ?? "").trim())
-                                .filter(Boolean)
-                                .slice(0, 3)
-                                .map((line, i) => (
-                                  <p key={i} className="t-body-sm line-clamp-2">
-                                    {line}
-                                  </p>
-                                ))}
+                            <div className="flex min-h-32 flex-col gap-1.5 rounded bg-white p-3">
+                              {summaryOf(work, data.facets ?? []).map((row, i) => (
+                                <p key={row.label || i} className="t-body-sm">
+                                  {/*
+                                    이름표를 반드시 붙인다. 값만 늘어놓으면
+                                    "데이터 분석가 / 교사 / 번역가" 가 되어, 어느 것이 AI 가
+                                    추천한 것이고 어느 것이 사라질 직업인지 알 수가 없다.
+                                  */}
+                                  {row.label && (
+                                    <span className="font-semibold">{row.label} · </span>
+                                  )}
+                                  {row.values.join(", ")}
+                                </p>
+                              ))}
                             </div>
                           )}
                           <div className="flex flex-col gap-1">

@@ -74,6 +74,11 @@ function facetsFor(session: ClassSession, visible: Artifact[]) {
         label: facet.label,
         options: sorted.slice(0, MAX_OPTIONS),
         hidden: Math.max(0, sorted.length - MAX_OPTIONS),
+        /*
+         * 활동지에 쓴 말에서 나온 묶음이다 — 카드 요약에도 그대로 쓸 수 있다.
+         * 아래 특성·장소는 카드에 이미 따로 나오므로 요약에 또 적으면 같은 말이 두 번이다.
+         */
+        fromAnswers: true,
       };
     });
   }
@@ -88,6 +93,7 @@ function facetsFor(session: ClassSession, visible: Artifact[]) {
         count: visible.filter((row) => (row.traits ?? []).includes(trait)).length,
       })),
       hidden: 0,
+      fromAnswers: false,
     },
     {
       key: "place",
@@ -97,6 +103,7 @@ function facetsFor(session: ClassSession, visible: Artifact[]) {
         count: visible.filter((row) => row.place === place).length,
       })),
       hidden: 0,
+      fromAnswers: false,
     },
   ].filter((facet) => facet.options.length > 0);
 }
