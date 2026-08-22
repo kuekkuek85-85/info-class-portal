@@ -2,6 +2,7 @@ import "server-only";
 
 import { FieldPath, FieldValue, type Query } from "firebase-admin/firestore";
 
+import { dateKeyKST } from "./datetime";
 import { db } from "./firebase-admin";
 import { isPeriodOver, periodTime } from "./timetable";
 import type {
@@ -177,21 +178,32 @@ const AUTO_CLOSE_MS = 6 * 60 * 60 * 1000;
 /**
  * 이 세션이 닫혔는가. 학생 쓰기 API가 공통으로 쓴다.
  *
- * 닫히는 경우는 셋이다.
+ * 닫히는 경우는 넷이다.
  *  ① 교사가 수업 종료를 눌렀다
  *  ② 그 교시가 끝나고 10분이 지났다 — 종료 버튼을 깜빡해도 코드가 하교 후까지
  *    살아 있지 않다
  *  ③ 시각표를 **모르는** 수업인데 시작한 지 여섯 시간이 지났다 (②가 안 걸리는 경우)
+ *  ④ 리허설인데 날짜가 넘어갔다
  *
- * **날짜로는 닫지 않는다.** 내일 수업을 오늘 미리 열어 확인할 수 있어야 한다 —
+ * **진짜 수업은 날짜로 닫지 않는다.** 내일 수업을 오늘 미리 열어 확인할 수 있어야 한다 —
  * 내일 4교시는 오늘 기준으로 아직 끝나지 않았으므로 ②에 걸리지 않는다.
  */
 export function isSessionClosed(session: ClassSession, now: Date = new Date()): boolean {
   if (session.status === "ended") return true;
   // 아직 시작하지 않은 수업은 "닫힌" 것이 아니다 — 들어갈 수 없을 뿐이다 (findSessionByCode)
   if (session.status !== "active") return false;
-  // 리허설은 방과 후에 걸어보는 것이 목적이라 시각으로 닫지 않는다
-  if (session.rehearsal) return false;
+
+  /*
+   * 리허설은 **그날 안에서만** 산다.
+   *
+   * 시각으로 닫지 않는 이유는 방과 후에 걸어보는 것이 목적이어서다. 9교시처럼 시각표에
+   * 없는 교시를 쓰므로 ②③ 어느 쪽에도 안 걸린다. 그런데 그러면 영원히 살아서, 사흘 전
+   * 리허설이 코드를 계속 붙잡고 있게 된다 — 2자리 코드는 90개뿐이다.
+   *
+   * 날짜가 넘어가면 닫는다. "오늘 만들어 오늘 걸어 본다" 는 목적은 그대로 지켜지고,
+   * 다음 날 아침에는 저절로 치워져 있다.
+   */
+  if (session.rehearsal) return dateKeyKST(now) > session.date;
 
   /*
    * 교시 시각을 아는 수업은 **그 시각만** 본다.
@@ -220,7 +232,7 @@ export function isSessionClosed(session: ClassSession, now: Date = new Date()): 
  * 판정 기준은 `isSessionClosed` 그대로다. 여기서 규칙을 새로 쓰지 않는다 — 두 곳이
  * 조금이라도 달라지면 "학생은 못 들어오는데 화면에는 진행 중" 같은 상태가 다시 생긴다.
  *
- * 그러므로 리허설과 미리 열어 둔 다음 날 수업은 그대로 살아 있다(그쪽 주석 참조).
+ * 그러므로 미리 열어 둔 다음 날 수업은 그대로 살아 있고, 리허설은 그날이 지나면 닫힌다.
  *
  * @returns 실제로 닫은 수업 수
  */

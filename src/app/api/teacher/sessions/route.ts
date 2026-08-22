@@ -28,8 +28,11 @@ import { LESSON_PHASES, type ClassNo, type LessonPhase, type SessionStatus } fro
 /**
  * 리허설 수업이 쓰는 교시.
  *
- * 시각표(1~7교시)에 없는 번호라 자동 만료 판정을 받지 않는다. 방과 후에 걸어보는 것이
+ * 시각표(1~7교시)에 없는 번호라 **시각으로는** 만료되지 않는다. 방과 후에 걸어보는 것이
  * 목적이므로 "지금은 수업 시간이 아니라서 코드가 만료됨"이 되면 안 된다.
+ *
+ * 대신 날짜가 넘어가면 닫힌다 (isSessionClosed). 안 그러면 사흘 전 리허설이 코드를
+ * 계속 붙잡고 있다.
  */
 const REHEARSAL_PERIOD = 9;
 
