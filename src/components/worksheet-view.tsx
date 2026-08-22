@@ -44,6 +44,8 @@ interface WorksheetViewProps {
   canDraw: boolean;
   /** 출처 두 칸의 예시. 차시가 안 정하면 그림 활동 기준 기본값을 쓴다 */
   sourceHints?: { site: string; ai: string };
+  /** 지난 차시에 쓴 답. 활동지 맨 위에 읽기 전용으로 붙는다 */
+  carried?: { heading: string; rows: { label: string; value: string }[] } | null;
   strokes: Stroke[];
   texts: TextItem[];
   value: WorksheetValue;
@@ -60,6 +62,7 @@ export function WorksheetView({
   year,
   canDraw,
   sourceHints = DEFAULT_SOURCE_HINTS,
+  carried,
   strokes,
   texts,
   value,
@@ -134,6 +137,22 @@ export function WorksheetView({
         976px을 먹어(1366×768에서 실측) 첫 질문조차 보이지 않는다. 여기서는 그리는 게
         아니라 보고 쓰는 것이므로, 그림보다 질문이 보이는 편이 낫다.
       */}
+      {/*
+        지난 차시에 쓴 답. 고쳐 쓰는 칸이 아니라 **보고 이어 쓰라고** 띄운다.
+        5차시가 "내 희망 직업" 에서 출발하는데 그 답은 4차시에 이미 있다.
+      */}
+      {carried && carried.rows.length > 0 && (
+        <div className="flex flex-col gap-1 rounded-lg bg-cream px-4 py-3">
+          <p className="t-caption">{carried.heading}</p>
+          {carried.rows.map((row) => (
+            <p key={row.label} className="t-body-sm">
+              <span className="font-semibold">{row.label} · </span>
+              {row.value}
+            </p>
+          ))}
+        </div>
+      )}
+
       {/* 그림이 없는 차시(4차시 직업 조사)에서는 빈 흰 상자만 남는다 — 아예 뺀다 */}
       {(strokes.length > 0 || texts.length > 0) && (
         <div className="flex justify-center rounded-lg border border-line p-2">
@@ -148,10 +167,18 @@ export function WorksheetView({
 
       {questions.map((question) => (
         <div key={question.key} className="flex flex-col gap-2">
-          <label htmlFor={`ws-${question.key}`} className="block bg-cream t-subhead">
-            {question.label}
-          </label>
-          {question.hint && <p className="t-caption">{question.hint}</p>}
+          {/*
+            note 는 답할 것이 없다. label 로 두면 눌렀을 때 엉뚱한 칸에 커서가 가고,
+            읽는 프로그램에는 "답이 없는 입력칸" 으로 들린다.
+          */}
+          {question.kind === "note" ? (
+            <p className="block bg-cream t-subhead">{question.label}</p>
+          ) : (
+            <label htmlFor={`ws-${question.key}`} className="block bg-cream t-subhead">
+              {question.label}
+            </label>
+          )}
+          {question.hint && <p className="t-caption whitespace-pre-line">{question.hint}</p>}
 
           {/*
             낱말 보기. 힌트 한 줄로는 모자란 질문에만 붙는다.
@@ -161,7 +188,7 @@ export function WorksheetView({
             <TechExampleChips items={question.examples} />
           )}
 
-          {question.kind === "traits" ? (
+          {question.kind === "note" ? null : question.kind === "traits" ? (
             <div className="flex flex-wrap gap-2" id={`ws-${question.key}`}>
               {TRAITS.map((trait) => {
                 const on = value.traits.includes(trait);
@@ -175,6 +202,32 @@ export function WorksheetView({
                     className={`pill t-body ${on ? "pill-primary" : "pill-secondary"}`}
                   >
                     {trait}
+                  </button>
+                );
+              })}
+            </div>
+          ) : question.kind === "choice" ? (
+            /*
+              보기 중 하나. 고른 문구가 그대로 답이 된다.
+              보기 안에 판단 근거가 들어 있어서(types.ts 의 choices 참조) 고르는 순간
+              이유를 함께 고르게 된다 — 그래서 짧은 라벨로 줄이지 않는다.
+            */
+            <div className="flex flex-col gap-2" id={`ws-${question.key}`}>
+              {(question.choices ?? []).map((choice) => {
+                const on = (value.answers[question.key] ?? "") === choice;
+                return (
+                  <button
+                    key={choice}
+                    type="button"
+                    // 누른 것을 다시 누르면 고른 것이 풀린다. 잘못 눌러 놓고 못 바꾸면 답답하다
+                    onClick={() => setAnswer(question.key, on ? "" : choice)}
+                    aria-pressed={on}
+                    disabled={disabled}
+                    className={`rounded-lg border-2 px-4 py-3 text-left t-body-sm transition active:scale-[0.99] ${
+                      on ? "border-ink bg-ink text-canvas" : "border-line bg-canvas"
+                    }`}
+                  >
+                    {choice}
                   </button>
                 );
               })}

@@ -186,7 +186,22 @@ export interface WorksheetQuestion {
    * long  — 여러 줄 입력
    * traits — 특성 5개 중 다중 선택. 이 답만 answers 가 아니라 artifacts.traits 에 저장된다
    */
-  kind: "text" | "long" | "traits";
+  /**
+   * text   — 한 줄 입력
+   * long   — 여러 줄 입력
+   * traits — 특성 5개 중 다중 선택. 이 답만 answers 가 아니라 artifacts.traits 에 저장된다
+   * choice — 주어진 보기 중 하나. 고른 문구가 그대로 answers 에 들어간다
+   * note   — 입력칸 없이 안내만. 문항이 여럿 이어질 때 묶어 주는 머리글로 쓴다
+   */
+  kind: "text" | "long" | "traits" | "choice" | "note";
+  /**
+   * choice 의 보기.
+   *
+   * 보기 문구 안에 판단 근거를 넣어 둔다. 5차시에서 "곧 가져간다 / 나중에 / 사람이 계속"
+   * 처럼만 두면 중1은 근거 없이 찍는다. "순서가 정해져 있어서 — 곧 가져간다" 로 적어 두면
+   * 고르는 순간 이유를 함께 고르게 되고, 따로 설명할 필요가 없어진다.
+   */
+  choices?: string[];
   maxLength: number;
   /**
    * 질문 아래에 붙는 낱말 보기.
@@ -244,6 +259,21 @@ export interface ActivityContent {
    * 많이 나온 순으로 세운다.
    */
   galleryFacets?: { key: string; label: string; answerKeys: string[] }[];
+  /**
+   * 지난 차시에 쓴 답을 활동지 위에 읽기 전용으로 띄운다.
+   *
+   * 5차시는 "내 희망 직업" 에서 출발하는데, 그 답은 이미 4차시에 적었다. 다시 쓰라고 하면
+   * 그 자리에서 막히는 학생이 나온다 — 진로가 없어서가 아니라 지난주에 겨우 정한 것을
+   * 또 떠올려야 해서다. 옆에 띄워 두면 그냥 이어 쓴다.
+   *
+   * 리허설에서는 리허설 쪽 기록을 본다 (진짜 기록과 섞이지 않게, gallery.ts 참조).
+   */
+  carryOver?: {
+    /** 어느 활동에서 가져올지. 4차시는 future-job */
+    activityId: string;
+    heading: string;
+    fields: { key: string; label: string }[];
+  };
   /**
    * 친구 것을 보고 남기는 두 칸의 질문.
    *

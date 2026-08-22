@@ -120,6 +120,11 @@ export default function LessonPage() {
     sources: { site: "", ai: "" },
   });
   const [submitError, setSubmitError] = useState("");
+  /** 지난 차시에 쓴 답. 활동지 위에 읽기 전용으로 뜬다 (5차시가 4차시 답에서 출발한다) */
+  const [carried, setCarried] = useState<{
+    heading: string;
+    rows: { label: string; value: string }[];
+  } | null>(null);
   const artifactLoaded = useRef(false);
 
   /**
@@ -392,6 +397,7 @@ export default function LessonPage() {
         traits: result.artifact.traits ?? [],
         sources: result.artifact.sources ?? { site: "", ai: "" },
       });
+      setCarried(result.carried ?? null);
     }
 
     void loadArtifact();
@@ -834,6 +840,7 @@ export default function LessonPage() {
               year={artifact.year}
               canDraw={canDraw}
               sourceHints={session.activity.sourceHints ?? undefined}
+              carried={carried}
               strokes={artifact.strokes}
               texts={artifact.texts}
               value={worksheet}

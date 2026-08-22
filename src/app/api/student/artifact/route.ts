@@ -1,6 +1,7 @@
 import { deviceKey, fail, guard, ok, rateLimit, readJson } from "@/lib/api";
 import {
   ensureArtifact,
+  getArtifact,
   getSession,
   isSessionClosed,
   roughSize,
@@ -37,6 +38,38 @@ type SaveMode = "append" | "replace";
 /** 직접 적는 장소 이름의 길이 상한. 갤러리 카드 제목에 그대로 들어간다 */
 const MAX_PLACE_LENGTH = 12;
 
+/**
+ * 지난 차시에 쓴 답을 가져온다 (읽기 전용).
+ *
+ * 5차시가 "내 희망 직업" 에서 출발하는데 그 답은 이미 4차시에 있다. 다시 쓰라고 하면
+ * 진로가 없어서가 아니라 지난주에 겨우 정한 것을 또 떠올려야 해서 막히는 학생이 나온다.
+ *
+ * **리허설은 리허설 쪽만 본다.** 여기서 진짜 기록을 읽어 오면, 교사가 리허설로 걸어 볼 때
+ * 그 학번의 실제 답이 화면에 뜬다 (gallery.ts 의 activityIdFor 와 같은 원칙).
+ */
+async function carryOverOf(
+  session: Awaited<ReturnType<typeof getSession>>,
+  studentId: string,
+): Promise<{ heading: string; rows: { label: string; value: string }[] } | null> {
+  const config = session?.activity?.carryOver;
+  if (!config?.activityId || config.fields.length === 0) return null;
+
+  const activityId = session?.rehearsal ? `${config.activityId}__rehearsal` : config.activityId;
+  const previous = await getArtifact(activityId, studentId);
+  if (!previous) return null;
+
+  const rows = config.fields
+    .map((field) => ({
+      label: field.label,
+      value: String(previous.answers?.[field.key] ?? "").trim(),
+    }))
+    // 안 적은 칸은 이름표만 남아 빈 줄이 된다
+    .filter((row) => row.value);
+
+  // 한 칸도 없으면 상자째 뺀다 — 빈 상자가 붙어 있으면 무엇이 들어올 자리인지 알 수 없다
+  return rows.length > 0 ? { heading: config.heading, rows } : null;
+}
+
 interface SaveBody {
   mode?: SaveMode;
   strokes?: unknown;
@@ -68,7 +101,17 @@ export async function GET() {
       year: activity.year ?? 2040,
     });
 
+    /*
+     * 지난 차시에 쓴 답 (읽기 전용).
+     *
+     * 읽기 한 번이 늘지만 폴링이 아니라 활동지에 들어올 때 한 번뿐이다 (PRD 10장 D2).
+     * 아무것도 안 적었으면 통째로 빼고 보낸다 — 빈 상자가 활동지 위에 붙어 있으면
+     * 무엇이 들어올 자리인지 알 수 없다.
+     */
+    const carried = await carryOverOf(session, me.studentId);
+
     return ok({
+      carried,
       artifact: {
         id: artifact.id,
         place: artifact.place,
