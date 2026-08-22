@@ -1,5 +1,6 @@
 import { fail, guard, ok, readJson } from "@/lib/api";
 import {
+  closeExpiredSessions,
   createSession,
   deleteSession,
   getLessonPlan,
@@ -32,6 +33,25 @@ import { LESSON_PHASES, type ClassNo, type LessonPhase, type SessionStatus } fro
  */
 const REHEARSAL_PERIOD = 9;
 
+/**
+ * 지난 수업 정리를 이 간격보다 자주 하지 않는다.
+ *
+ * 이 목록은 **전자칠판이 주기적으로 부른다.** 부를 때마다 훑으면 진행 중인 수업 문서를
+ * 폴링마다 다시 읽게 되고, 정작 닫을 것은 하루에 몇 개도 안 된다 (PRD 10장 D2).
+ *
+ * 서버가 여러 개면 각자 한 번씩 돌 수 있는데, 그래도 몇 번이지 매번은 아니다.
+ * 같은 수업을 두 번 닫아도 결과는 같으므로 정확히 한 번일 필요가 없다.
+ */
+const SWEEP_INTERVAL_MS = 5 * 60_000;
+let lastSweptAt = 0;
+
+async function sweepOccasionally(): Promise<void> {
+  const now = Date.now();
+  if (now - lastSweptAt < SWEEP_INTERVAL_MS) return;
+  lastSweptAt = now;
+  await closeExpiredSessions();
+}
+
 export async function GET(request: Request) {
   return guard(async () => {
     const me = await requireTeacher();
@@ -40,6 +60,8 @@ export async function GET(request: Request) {
     const params = new URL(request.url).searchParams;
     const date = params.get("date");
     const all = params.get("all") === "1";
+
+    await sweepOccasionally();
 
     const sessions = all
       ? await listAllSessions()
@@ -81,6 +103,15 @@ export async function POST(request: Request) {
 
     const plan = await getLessonPlan(body.lessonPlanId);
     if (!plan) return fail("not_found", "차시 계획을 찾을 수 없습니다.");
+
+    /*
+     * 코드를 뽑기 전에 반드시 한 번 훑는다 (간격을 두지 않는다).
+     *
+     * reserveCode 는 아직 끝나지 않은 수업의 코드를 피한다. 종료를 깜빡한 수업이 쌓여
+     * 있으면 그 코드가 계속 묶여 있고, 2자리 코드는 90개뿐이다. 여기가 정리가 실제로
+     * 값을 하는 자리라 아끼지 않는다 — 수업을 만드는 것은 하루에 몇 번뿐이다.
+     */
+    await closeExpiredSessions();
 
     const code = await reserveCode(date);
     const session = await createSession({

@@ -206,6 +206,43 @@ export function isSessionClosed(session: ClassSession, now: Date = new Date()): 
   return startedAt > 0 && now.getTime() - startedAt > AUTO_CLOSE_MS;
 }
 
+/**
+ * 시간이 지난 수업을 실제로 종료 상태로 바꾼다.
+ *
+ * `isSessionClosed` 는 이미 **판정**은 하고 있었다 — 교시가 끝나고 10분이 지나면 학생은
+ * 들어오지도 쓰지도 못한다. 그런데 문서의 status 는 계속 "active" 로 남아서 두 가지가
+ * 어긋났다.
+ *
+ *  · 교사 화면에 며칠 전 수업이 "진행 중"으로 줄줄이 남는다
+ *  · **그 코드가 계속 묶여 있다.** reserveCode 는 끝나지 않은 수업의 코드를 피하는데,
+ *    2자리 코드는 90개뿐이라 종료를 깜빡한 수업이 쌓이면 쓸 코드가 줄어든다
+ *
+ * 판정 기준은 `isSessionClosed` 그대로다. 여기서 규칙을 새로 쓰지 않는다 — 두 곳이
+ * 조금이라도 달라지면 "학생은 못 들어오는데 화면에는 진행 중" 같은 상태가 다시 생긴다.
+ *
+ * 그러므로 리허설과 미리 열어 둔 다음 날 수업은 그대로 살아 있다(그쪽 주석 참조).
+ *
+ * @returns 실제로 닫은 수업 수
+ */
+export async function closeExpiredSessions(now: Date = new Date()): Promise<number> {
+  const live = await db()
+    .collection(COLLECTIONS.classSessions)
+    .where("status", "==", "active")
+    .get();
+
+  const expired = live.docs.filter((doc) => isSessionClosed(withId<ClassSession>(doc), now));
+  if (expired.length === 0) return 0;
+
+  const batch = db().batch();
+  for (const doc of expired) {
+    // endedAt 은 덮어쓰지 않는다 — 교사가 종료를 눌렀던 기록이 있으면 그 시각이 맞다
+    const endedAt = (doc.data().endedAt as number | null) ?? now.getTime();
+    batch.set(doc.ref, { status: "ended", endedAt }, { merge: true });
+  }
+  await batch.commit();
+  return expired.length;
+}
+
 export async function getSession(id: string): Promise<ClassSession | null> {
   const doc = await db().collection(COLLECTIONS.classSessions).doc(id).get();
   return doc.exists ? withId<ClassSession>(doc) : null;
