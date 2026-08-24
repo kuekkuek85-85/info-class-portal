@@ -103,7 +103,13 @@ export const PHASE_LABELS: Record<LessonPhase, string> = {
   assessment: "평가 안내",
   video: "영상 시청",
   problem: "문제 정의",
-  mvp: "MVP 기획",
+  /*
+   * "MVP 기획" 이라고 쓰지 않는다. 중1이 모르는 말이다.
+   *
+   * 뜻을 그대로 옮기면 "꼭 필요한 것만" 이다. 다음 단계가 "만들기" 라서
+   * "제일 작게 만들기" 로는 두 단추가 헷갈린다.
+   */
+  mvp: "꼭 필요한 것만",
   build: "만들기",
   grill: "AI 검토",
   draw: "그리기",
