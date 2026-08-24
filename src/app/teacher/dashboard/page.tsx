@@ -54,7 +54,11 @@ interface SessionRow {
   quiz?: { questions: { prompt: string; choices: string[]; answerIndex: number }[] };
   quizIndex?: number;
   quizRevealed?: boolean;
-  activity?: { activityId: string; places?: string[]; worksheet?: { key: string }[] };
+  activity?: {
+    activityId: string;
+    places?: string[];
+    worksheet?: { key: string; phase?: LessonPhase }[];
+  };
   /** 지난 차시 복습 — 학생이 기분 체크를 마치면 서버가 만들어 넣는다. 여기서는 한 줄만 쓴다 */
   reviewCache?: { summary?: string } | null;
   /** 단계 버튼을 만들지 말지 판단하는 데만 쓴다 */
@@ -415,16 +419,26 @@ function Dashboard() {
             (/teacher/board)의 "직업 집계" 탭에서 교사가 누를 때만 센다.
           */}
 
+          {/*
+            기분 체크를 안 쓰는 차시(선택과목)에서는 감정 칸을 아예 뺀다.
+            늘 0으로 떠 있으면 "아무도 안 했다" 로 읽히고, 교사가 눌러 볼 곳을 찾는다.
+          */}
           {stats && (
             <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Stat label="접속" value={`${stats.joinedCount} / ${stats.rosterCount}`} />
-              <Stat label="감정 응답" value={String(stats.moodCount)} />
-              <Stat label="성찰 제출" value={String(stats.reflectionCount)} />
-              <Stat
-                label="미확인 감정"
-                value={String(stats.unreviewed)}
-                warn={stats.unreviewed > 0}
-              />
+              {session.moodCheckEnabled && (
+                <Stat label="감정 응답" value={String(stats.moodCount)} />
+              )}
+              {session.reflectionQuestions.length > 0 && (
+                <Stat label="성찰 제출" value={String(stats.reflectionCount)} />
+              )}
+              {session.moodCheckEnabled && (
+                <Stat
+                  label="미확인 감정"
+                  value={String(stats.unreviewed)}
+                  warn={stats.unreviewed > 0}
+                />
+              )}
             </section>
           )}
 
@@ -464,8 +478,12 @@ function Dashboard() {
                     <th className="px-3 py-2">이름</th>
                     <th className="px-3 py-2">접속</th>
                     <th className="px-3 py-2">자리 비움</th>
-                    <th className="px-3 py-2">기분</th>
-                    <th className="px-3 py-2">이유</th>
+                    {session.moodCheckEnabled && (
+                      <>
+                        <th className="px-3 py-2">기분</th>
+                        <th className="px-3 py-2">이유</th>
+                      </>
+                    )}
                     <th className="px-3 py-2">성찰</th>
                   </tr>
                 </thead>
@@ -480,23 +498,27 @@ function Dashboard() {
                         {formatTimeKST(row.joinedAt)}
                       </td>
                       <AwayCell away={row.away} />
-                      <td className="px-3 py-2">
-                        {row.mood ? (
-                          <span className="inline-flex items-center gap-1.5">
-                            {row.mood.quadrant && (
-                              <span
-                                className={`h-2.5 w-2.5 rounded-full ${QUADRANTS[row.mood.quadrant].dotClassName}`}
-                              />
+                      {session.moodCheckEnabled && (
+                        <>
+                          <td className="px-3 py-2">
+                            {row.mood ? (
+                              <span className="inline-flex items-center gap-1.5">
+                                {row.mood.quadrant && (
+                                  <span
+                                    className={`h-2.5 w-2.5 rounded-full ${QUADRANTS[row.mood.quadrant].dotClassName}`}
+                                  />
+                                )}
+                                {row.mood.label}
+                              </span>
+                            ) : (
+                              <span className="text-muted">—</span>
                             )}
-                            {row.mood.label}
-                          </span>
-                        ) : (
-                          <span className="text-muted">—</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 max-w-[240px] whitespace-pre-wrap">
-                        {row.mood?.reason || <span className="text-muted">—</span>}
-                      </td>
+                          </td>
+                          <td className="px-3 py-2 max-w-[240px] whitespace-pre-wrap">
+                            {row.mood?.reason || <span className="text-muted">—</span>}
+                          </td>
+                        </>
+                      )}
                       <td className="px-3 py-2 max-w-[420px]">
                         {row.reflection && row.reflection.answers.some((a) => a.trim()) ? (
                           <>
@@ -521,7 +543,10 @@ function Dashboard() {
                   ))}
                   {rows.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-3 py-6 text-center text-muted">
+                      <td
+                        colSpan={session.moodCheckEnabled ? 6 : 4}
+                        className="px-3 py-6 text-center text-muted"
+                      >
                         아직 접속한 학생이 없습니다.
                       </td>
                     </tr>
@@ -571,10 +596,23 @@ function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
    * 장소가 하나도 없으면 눌러 봐야 고를 것이 없는 빈 화면이 나온다.
    */
   if (phase === "draw") return (session.activity?.places?.length ?? 0) > 0;
-  // 활동지·감상은 활동지 질문이 있는 차시(3차시)에만. 2차시는 그리기까지만 한다.
-  if (phase === "worksheet" || phase === "gallery") {
-    return (session.activity?.worksheet?.length ?? 0) > 0;
-  }
+
+  /*
+   * 단계별로 나눠 쓰는 차시가 있다 (선택과목은 한 시간에 문제 정의 · 꼭 필요한 것만 ·
+   * 만들기 · AI 검토를 지난다). 문항에 적힌 단계로 가른다 — 안 적힌 문항은 활동지 단계다.
+   *
+   * 이 판정이 없으면 두 가지가 어긋난다.
+   *  · 정보과 차시에도 선택과목 단추 넷이 뜬다 (문항이 없어 눌러도 빈 화면)
+   *  · 선택과목에 "활동지" 단추가 뜬다 (모든 문항이 다른 단계에 배정돼 있어 역시 빈 화면)
+   */
+  const STEP_PHASES: LessonPhase[] = ["problem", "mvp", "build", "grill"];
+  const questionsIn = (item: LessonPhase) =>
+    (session.activity?.worksheet ?? []).filter((q) => (q.phase ?? "worksheet") === item).length;
+
+  if (STEP_PHASES.includes(phase)) return questionsIn(phase) > 0;
+  if (phase === "worksheet") return questionsIn("worksheet") > 0;
+  // 감상은 볼 것이 있어야 한다 — 어느 단계에 배정됐든 활동지 문항이 있으면 열린다
+  if (phase === "gallery") return (session.activity?.worksheet?.length ?? 0) > 0;
   /*
    * 내용을 채워 넣은 차시에만 버튼을 만든다.
    *
