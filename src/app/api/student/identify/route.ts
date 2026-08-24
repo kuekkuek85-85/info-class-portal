@@ -34,8 +34,14 @@ export async function POST(request: Request) {
     const session = await getSession(codeToken.sessionId);
     if (!session || isSessionClosed(session)) return fail("session_expired");
 
-    // 반 불일치 차단 — 다른 반 코드를 알아내도 소용없게 만든다 (PRD 3.1)
-    if (parsed.classNo !== session.classNo) {
+    /*
+     * 반 불일치 차단 — 다른 반 코드를 알아내도 소용없게 만든다 (PRD 3.1).
+     *
+     * 반이 섞인 수업(선택과목)에서는 이 검사를 걸 수가 없다. 22명이 1~4반에서 모여
+     * 앉으므로 학번의 반과 수업의 반이 애초에 다르다. 그런 수업은 groupKey 로 표시해
+     * 두고 명렬표 검사만 남긴다 — 코드를 알아낸 학생이라도 명단에 없으면 못 들어온다.
+     */
+    if (!session.groupKey && parsed.classNo !== session.classNo) {
       return fail(
         "class_mismatch",
         `이 코드는 ${session.classNo}반 수업이에요. 학번을 다시 확인해 주세요.`,

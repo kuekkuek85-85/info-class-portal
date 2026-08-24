@@ -372,8 +372,12 @@ export default function LessonPage() {
    */
   useEffect(() => {
     if (!data?.session.activity) return;
+    /*
+     * 기준점이 "그리기" 가 아니라 "문제 정의" 다. 선택과목 단계(problem·mvp·build·grill)가
+     * 그리기보다 앞에 있어서, 그리기를 기준으로 두면 그 단계들에서 활동지를 안 받아 온다.
+     */
     const reached = (item: LessonPhase) =>
-      LESSON_PHASES.indexOf(item) >= LESSON_PHASES.indexOf("draw");
+      LESSON_PHASES.indexOf(item) >= LESSON_PHASES.indexOf("problem");
     if (!reached(phase) && !reached(viewPhase)) return;
     if (artifactLoaded.current) return;
     artifactLoaded.current = true;
@@ -518,6 +522,23 @@ export default function LessonPage() {
   const workNoun = canDraw ? "작품" : "활동지";
 
   /**
+   * 단계 하나에서 보여줄 활동지 문항.
+   *
+   * 선택과목은 한 시간에 문제 정의 · MVP · 만들기 · AI 검토를 차례로 지난다. 문항에
+   * 적힌 단계가 지금 보고 있는 단계와 같은 것만 남긴다 — 활동지 하나에 다 넣으면
+   * 학생이 첫 칸에서 붙잡혀 끝까지 못 간다.
+   *
+   * 단계를 안 적은 문항은 지금까지처럼 활동지 단계에 나온다.
+   */
+  const questionsFor = (item: LessonPhase) =>
+    (session.activity?.worksheet ?? []).filter(
+      (q) => (q.phase ?? "worksheet") === item,
+    );
+  /** 선택과목이 쓰는 단계. 활동지 화면을 그 단계 문항만으로 다시 쓴다 */
+  const STEP_PHASES: LessonPhase[] = ["problem", "mvp", "build", "grill"];
+  const stepQuestions = STEP_PHASES.includes(viewPhase) ? questionsFor(viewPhase) : [];
+
+  /**
    * 되돌아갈 수 있는 단계 목록 — 교사가 있는 곳까지, 그리고 이 차시에 실제로 쓰는 것만.
    *
    * 대기·마침은 뺀다. 되돌아가서 할 일이 없는 화면이고, 대기로 가면 게임이 떠서
@@ -535,10 +556,12 @@ export default function LessonPage() {
      * 대표는 보통 "그리기"인데, 그리기가 없는 차시에서는 "활동지"가 그 자리를 맡는다.
      */
     if (item === "gallery") return false;
+    // 선택과목 단계 — 그 단계에 쓸 문항이 있을 때만 버튼에 남는다
+    if (STEP_PHASES.includes(item)) return questionsFor(item).length > 0;
     if (item === "worksheet") {
       return (
         (session.activity?.places.length ?? 0) === 0 &&
-        (session.activity?.worksheet.length ?? 0) > 0
+        questionsFor("worksheet").length > 0
       );
     }
     // 활동이 있어도 그리기가 없는 차시가 있다 (4차시 직업 조사) — 장소로 판단한다
@@ -769,6 +792,39 @@ export default function LessonPage() {
           교사가 단계를 바꾸면 화면은 그쪽으로 따라가되(수업 신호), 그 뒤로는 학생이
           자유롭게 오갈 수 있다.
         */}
+        {/*
+          선택과목 단계 — 문제 정의 · MVP 기획 · 만들기 · AI 검토.
+          같은 활동지 화면을 쓰되 그 단계 문항만 보여준다. 교사가 단계를 넘겨야 다음 칸이
+          열리므로 시간을 끌고 갈 수 있다 (한 화면에 다 넣으면 첫 칸에서 붙잡힌다).
+        */}
+        {STEP_PHASES.includes(viewPhase) &&
+          (session.activity && artifact && stepQuestions.length > 0 ? (
+            <WorksheetView
+              questions={stepQuestions}
+              place={artifact.place}
+              year={artifact.year}
+              canDraw={false}
+              sourceHints={session.activity.sourceHints ?? undefined}
+              carried={carried}
+              strokes={[]}
+              texts={[]}
+              value={worksheet}
+              onChange={setWorksheet}
+              onSubmit={submitArtifact}
+              submitted={artifact.status === "submitted"}
+              submitError={submitError}
+              disabled={closed}
+              /*
+                제출 단추는 마지막 단계에서만 띄운다. 문제 정의를 쓰자마자 "다 했어요" 가
+                보이면 거기서 끝내는 학생이 나온다.
+              */
+              hideSubmit={viewPhase !== "grill"}
+              heading={session.phaseLabels?.[viewPhase] ?? PHASE_LABELS[viewPhase]}
+            />
+          ) : (
+            <Placeholder title="준비하고 있어요" description="잠시만 기다려 주세요." />
+          ))}
+
         {isWorkPhase && session.activity && (
           <div className="mb-5 flex gap-2">
             {/*

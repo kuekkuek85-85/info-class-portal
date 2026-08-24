@@ -20,6 +20,8 @@ interface CodeInfo {
   lessonNo: number;
   title: string;
   period: number;
+  /** 반이 섞인 수업(선택과목). 반·차시 번호를 감춘다 */
+  mixed?: boolean;
 }
 
 interface Identified {
@@ -154,8 +156,19 @@ export default function EntryPage() {
         <section className="flex flex-col gap-5">
           {codeInfo && (
             <p className="block bg-lime t-body-sm text-center">
-              <b className="font-bold">1학년 {codeInfo.classNo}반</b> · {codeInfo.lessonNo}차시{" "}
-              {codeInfo.title}
+              {/*
+                반이 섞인 수업(선택과목)에서는 반도 차시 번호도 감춘다.
+                "1학년 1반" 이라고 뜨면 나머지 세 반 학생은 코드를 잘못 눌렀다고 생각하고,
+                차시 번호는 정보과와 겹치지 않게 100번대를 쓰고 있어 학생에게 뜻이 없다.
+              */}
+              {codeInfo.mixed ? (
+                <b className="font-bold">{codeInfo.title}</b>
+              ) : (
+                <>
+                  <b className="font-bold">1학년 {codeInfo.classNo}반</b> · {codeInfo.lessonNo}차시{" "}
+                  {codeInfo.title}
+                </>
+              )}
             </p>
           )}
           <h2 className="t-subhead text-center">

@@ -26,6 +26,16 @@ export type LessonPhase =
   | "progress"
   | "assessment"
   | "video"
+  /*
+   * 아래 넷은 선택과목 「인간과 인공지능」이 쓴다.
+   *
+   * 정보과 차시는 이 단계에 내용을 넣지 않으므로 교사 버튼에서 저절로 빠진다
+   * (available 판정 참조). 기존 단계는 하나도 건드리지 않았다.
+   */
+  | "problem"
+  | "mvp"
+  | "build"
+  | "grill"
   | "draw"
   | "worksheet"
   | "gallery"
@@ -55,6 +65,15 @@ export const LESSON_PHASES: readonly LessonPhase[] = [
   "assessment",
   "quiz",
   "video",
+  /*
+   * 선택과목 단계는 "만들어 보고 나서 검토한다" 는 순서로 둔다.
+   * 검토(grill)를 만들기(build) 앞에 두면 학생은 상상으로 답한다. 뒤에 두면 눈앞의
+   * 결과를 보며 답한다 — 이 수업 설계의 핵심이라 순서를 지킨다.
+   */
+  "problem",
+  "mvp",
+  "build",
+  "grill",
   "draw",
   "worksheet",
   "gallery",
@@ -69,6 +88,10 @@ export const PHASE_LABELS: Record<LessonPhase, string> = {
   progress: "진도 안내",
   assessment: "평가 안내",
   video: "영상 시청",
+  problem: "문제 정의",
+  mvp: "MVP 기획",
+  build: "만들기",
+  grill: "AI 검토",
   draw: "그리기",
   worksheet: "활동지",
   gallery: "작품 감상",
@@ -214,6 +237,16 @@ export interface WorksheetQuestion {
    * 로봇"이라서, 눌러 넣게 하면 낱말만 남고 생각이 빠진다.
    */
   examples?: string[];
+  /**
+   * 이 문항을 어느 단계에서 보여줄지.
+   *
+   * 비우면 활동지(worksheet) 단계에 나온다 — 지금까지의 차시가 전부 그렇다.
+   *
+   * 선택과목은 한 시간에 문제 정의 · MVP 기획 · 만들기 · AI 검토를 차례로 지나간다.
+   * 이걸 활동지 하나에 다 넣으면 학생이 첫 칸에서 붙잡혀 끝까지 못 간다. 교사가 단계를
+   * 넘기면 그 단계 문항만 보이게 해야 시간을 끌고 갈 수 있다.
+   */
+  phase?: LessonPhase;
 }
 
 export interface ActivityContent {
@@ -364,7 +397,27 @@ export interface LessonPlan {
 export interface ClassSession {
   id: string;
   lessonPlanId: string;
+  /**
+   * 이 수업이 묶이는 반.
+   *
+   * 학생의 소속 반이기도 하고 수업의 단위이기도 했다. 선택과목이 생기면서 둘이 갈라진다 —
+   * 여러 반에서 온 학생이 한 수업에 앉는다. 그때는 groupKey 를 쓴다.
+   *
+   * 값 자체는 그대로 둔다. 출석·작품·감정이 전부 이 값으로 묶여 있어서, 여기를 건드리면
+   * 운영 중인 정보과가 멈춘다. 선택과목 수업도 반 하나를 골라 적어 두고, 그 값으로 묶는다.
+   */
   classNo: ClassNo;
+  /**
+   * 반이 섞인 수업인지. 선택과목처럼 여러 반 학생이 한자리에 앉는 경우에만 적는다.
+   *
+   * 이 값이 있으면 학번의 반과 수업의 반이 달라도 들어올 수 있다. 없으면 지금까지처럼
+   * 반이 맞아야 한다 — 다른 반 코드를 알아내도 소용없게 하는 장치다 (PRD 3.1).
+   *
+   * **세션 문서 ID 는 바꾸지 않는다.** 계획서에는 `날짜__교시__groupKey` 로 바꾸자고
+   * 되어 있는데, 그러면 운영 중인 정보과 문서를 전부 옮겨야 한다. 반이 섞인 수업에
+   * 필요한 것은 "반 검사를 건너뛰는 것" 하나뿐이라, 필드만 얹는다.
+   */
+  groupKey?: string;
   /** "2026-08-11" (KST 기준) */
   date: string;
   /** 교시 */

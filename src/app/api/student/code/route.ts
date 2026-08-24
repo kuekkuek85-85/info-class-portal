@@ -53,6 +53,14 @@ export async function POST(request: Request) {
       lessonNo: session.lessonNo,
       title: session.title,
       period: session.period,
+      /*
+       * 반이 섞인 수업인지.
+       *
+       * 화면에 "1학년 1반" 이라고 뜨면 나머지 세 반 학생은 코드를 잘못 눌렀다고 생각한다.
+       * 차시 번호도 마찬가지다 — 정보과와 겹치지 않게 100번대를 쓰는데, 학생에게
+       * "102차시" 는 아무 뜻이 없다. 둘 다 감추고 제목만 보여준다.
+       */
+      mixed: Boolean(session.groupKey),
     });
   });
 }

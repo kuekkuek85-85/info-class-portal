@@ -29,7 +29,8 @@ export async function POST(request: Request) {
     // 교시가 끝났다면 출석을 새로 기록해서는 안 된다.
     const session = await getSession(codeToken.sessionId);
     if (!session || isSessionClosed(session)) return fail("session_expired");
-    if (parsed.classNo !== session.classNo) return fail("class_mismatch");
+    // 반이 섞인 수업(선택과목)은 반 검사를 걸 수 없다 — identify 쪽 주석 참조
+    if (!session.groupKey && parsed.classNo !== session.classNo) return fail("class_mismatch");
 
     let name = "";
     if (parsed.temporary) {

@@ -46,6 +46,15 @@ interface WorksheetViewProps {
   sourceHints?: { site: string; ai: string };
   /** 지난 차시에 쓴 답. 활동지 맨 위에 읽기 전용으로 붙는다 */
   carried?: { heading: string; rows: { label: string; value: string }[] } | null;
+  /**
+   * 제출 단추를 감춘다.
+   *
+   * 선택과목은 한 시간에 네 단계를 지나는데, 단계마다 "다 했어요" 가 뜨면 문제 정의만
+   * 쓰고 끝내는 학생이 나온다. 마지막 단계에서만 띄운다.
+   */
+  hideSubmit?: boolean;
+  /** 맨 위 제목. 안 주면 차시 성격에 따라 "내 그림 설명하기" / "활동지 쓰기" */
+  heading?: string;
   strokes: Stroke[];
   texts: TextItem[];
   value: WorksheetValue;
@@ -63,6 +72,8 @@ export function WorksheetView({
   canDraw,
   sourceHints = DEFAULT_SOURCE_HINTS,
   carried,
+  hideSubmit,
+  heading,
   strokes,
   texts,
   value,
@@ -122,7 +133,7 @@ export function WorksheetView({
   return (
     <section className="flex flex-col gap-6">
       <div>
-        <h2 className="t-display">{canDraw ? "내 그림 설명하기" : "활동지 쓰기"}</h2>
+        <h2 className="t-display">{heading ?? (canDraw ? "내 그림 설명하기" : "활동지 쓰기")}</h2>
         <p className="t-body mt-2">
           {canDraw
             ? `${year}년의 ${place || "내가 고른 장소"} — 무엇을 그렸는지 적어 주세요.`
@@ -267,8 +278,14 @@ export function WorksheetView({
       {/*
         출처 두 칸은 고정이다. 수행평가1이 "출처 밝히기 태도"를 평가하므로,
         쓸 자리가 없어서 못 썼다는 상황을 만들지 않는다 (PRD 7).
+
+        단계를 쪼개 쓰는 차시에서는 마지막 단계에만 붙인다 — 문제 정의 칸 아래에도
+        "어디에서 찾아봤나요" 가 나오면 매 단계 같은 상자를 지나야 한다.
       */}
-      <div className="flex flex-col gap-3 rounded-lg border border-line p-4">
+      <div
+        className="flex flex-col gap-3 rounded-lg border border-line p-4"
+        hidden={hideSubmit}
+      >
         <h3 className="t-subhead">어디에서 찾아봤나요?</h3>
         <p className="t-caption">안 찾아봤으면 비워 둬도 됩니다. 찾아봤으면 꼭 적어 주세요.</p>
 
@@ -309,23 +326,27 @@ export function WorksheetView({
 
       {submitError && <p className="rounded-md bg-pink px-4 py-3 t-body-sm">{submitError}</p>}
 
-      <button
-        type="button"
-        onClick={() => void onSubmit()}
-        disabled={disabled}
-        className="pill pill-primary pill-block"
-      >
-        {/*
-          그림은 그리는 순간 이미 갤러리에 올라간다. 이 버튼은 "다 했어요" 표시라,
-          문구도 그렇게 바꾼다 — 누르지 않으면 안 보인다고 오해하면 조급해진다.
-        */}
-        {submitted ? "다시 냈어요" : "다 했어요 — 선생님께 알리기"}
-      </button>
+      {!hideSubmit && (
+        <>
+          <button
+            type="button"
+            onClick={() => void onSubmit()}
+            disabled={disabled}
+            className="pill pill-primary pill-block"
+          >
+            {/*
+              그림은 그리는 순간 이미 갤러리에 올라간다. 이 버튼은 "다 했어요" 표시라,
+              문구도 그렇게 바꾼다 — 누르지 않으면 안 보인다고 오해하면 조급해진다.
+            */}
+            {submitted ? "다시 냈어요" : "다 했어요 — 선생님께 알리기"}
+          </button>
 
-      {submitted && (
-        <p className="t-body-sm text-center">
-          선생님께 알렸어요. 수업이 끝나기 전까지는 계속 고칠 수 있습니다.
-        </p>
+          {submitted && (
+            <p className="t-body-sm text-center">
+              선생님께 알렸어요. 수업이 끝나기 전까지는 계속 고칠 수 있습니다.
+            </p>
+          )}
+        </>
       )}
     </section>
   );
