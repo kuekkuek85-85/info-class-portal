@@ -193,6 +193,22 @@ export function WorksheetView({
           {question.hint && <p className="t-caption whitespace-pre-line">{question.hint}</p>}
 
           {/*
+            주소를 글자로 보여주지 않고 누를 수 있게 한다. 캔바 초대 주소는 토큰이 붙어
+            100자가 넘어서, 옮겨 적으라고 하면 그 자리에서 수업이 멈춘다.
+            새 창으로 연다 — 같은 창에서 나가면 쓰던 답이 날아간다.
+          */}
+          {question.linkUrl && (
+            <a
+              href={question.linkUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="pill pill-primary pill-block text-center"
+            >
+              {question.linkLabel || "열기"}
+            </a>
+          )}
+
+          {/*
             낱말 보기. 힌트 한 줄로는 모자란 질문에만 붙는다.
             힌트 **아래** 입력칸 **위** 자리다 — 읽고 나서 바로 쓰게 된다.
           */}

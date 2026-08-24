@@ -248,6 +248,16 @@ export interface WorksheetQuestion {
    */
   echoKeys?: { key: string; label: string }[];
   /**
+   * 문항 아래에 붙는 큰 링크 단추.
+   *
+   * 캔바 초대 주소처럼 **글자로 보여주면 안 되는** 주소가 있다. 토큰이 붙어 100자가
+   * 넘는데, 중1에게 그걸 손으로 옮겨 적으라고 하면 그 자리에서 수업이 멈춘다.
+   *
+   * 새 창으로 연다 — 같은 창에서 나가면 쓰던 답이 날아간다.
+   */
+  linkUrl?: string;
+  linkLabel?: string;
+  /**
    * choice 의 보기.
    *
    * 보기 문구 안에 판단 근거를 넣어 둔다. 5차시에서 "곧 가져간다 / 나중에 / 사람이 계속"

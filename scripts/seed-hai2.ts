@@ -49,6 +49,17 @@ const app = initializeApp({
 const db = getFirestore(app);
 db.settings({ ignoreUndefinedProperties: true });
 
+/**
+ * 캔바 학교 팀 초대 주소.
+ *
+ * **저장소에 적어 두지 않는다.** 주소에 붙은 토큰만 있으면 누구나 학교 캔바 팀에
+ * 들어올 수 있는데, 이 저장소는 공개되어 있다. .env.local 에 넣고 여기서 읽는다
+ * (`.env*` 는 무시 목록에 있다).
+ *
+ *   CANVA_INVITE_URL=https://www.canva.com/brand/join?token=...
+ */
+const CANVA_INVITE_URL = process.env.CANVA_INVITE_URL ?? "";
+
 /** 7차시를 관통하는 활동 ID. 3차시 이후에도 같은 값을 쓰면 답이 이어진다 */
 const ACTIVITY_ID = "hai-2026-1기";
 /** 차시 번호가 정보과와 겹치므로(정보 2차시 vs 인간과AI 2차시) 100번대로 띄운다 */
@@ -154,6 +165,37 @@ const WORKSHEET: WorksheetQuestion[] = [
     ],
     maxLength: 0,
   },
+  /*
+   * 캔바 사용법을 화면에 적어 둔다.
+   *
+   * 말로만 하면 22명 중 몇은 반드시 놓친다. 놓친 학생이 손을 들면 교사는 그 자리로 가고,
+   * 그동안 나머지는 멈춘다 — 45분에서 뽑기에 쓸 수 있는 시간은 12분뿐이다.
+   * 로그인·만들기·링크 가져오기를 셋으로 나눠, 막힌 학생이 어느 대목인지 스스로 짚게 한다.
+   */
+  {
+    key: "_build_login",
+    phase: "build",
+    label: "① 캔바에 들어가기",
+    hint:
+      "아래 단추를 누르고 [Microsoft로 계속하기] 를 고릅니다.\n" +
+      "학교 계정으로 로그인해요 — 26 뒤에 내 학번 5자리를 붙입니다.\n" +
+      "예) 학번이 10130이면 → 2610130@jangpyung.sen.ms.kr\n" +
+      "비밀번호는 학교 계정 비밀번호예요.",
+    kind: "note",
+    linkUrl: CANVA_INVITE_URL,
+    linkLabel: "캔바 열기 (새 창)",
+    maxLength: 0,
+  },
+  {
+    key: "_build_make",
+    phase: "build",
+    label: "② 웹 앱 만들기",
+    hint:
+      "왼쪽 메뉴에서 [Canva AI] → [</> 코드] 를 누릅니다.\n" +
+      "아래에 쓴 한 줄 프롬프트를 복사해서 붙여 넣고 만들어요.",
+    kind: "note",
+    maxLength: 0,
+  },
   {
     key: "build_prompt",
     phase: "build",
@@ -167,10 +209,20 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 120,
   },
   {
+    key: "_build_publish",
+    phase: "build",
+    label: "③ 링크 가져오기",
+    hint:
+      "오른쪽 위 파란색 [게시] 단추를 누릅니다.\n" +
+      "그러면 주소(URL)가 나와요. 그걸 복사해서 아래 칸에 붙여 넣습니다.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
     key: "build_url",
     phase: "build",
     label: "만들어진 화면 링크 (v0.1)",
-    hint: "캔바에서 공유 링크를 복사해 붙여 넣으세요. 이게 오늘의 결과물입니다.",
+    hint: "이게 오늘의 결과물입니다. 다음 시간에도 이 주소를 씁니다.",
     kind: "text",
     maxLength: 300,
   },
@@ -342,6 +394,16 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 };
 
 async function main(): Promise<void> {
+  if (!CANVA_INVITE_URL) {
+    console.error(
+      "✗ CANVA_INVITE_URL 이 없습니다.\n" +
+        "  .env.local 에 캔바 학교 팀 초대 주소를 넣어 주세요:\n" +
+        "  CANVA_INVITE_URL=https://www.canva.com/brand/join?token=...\n" +
+        "  (저장소가 공개라 코드에 직접 적지 않습니다)",
+    );
+    process.exit(1);
+  }
+
   const existing = await db.collection("lessonPlans").where("lessonNo", "==", LESSON_NO).get();
   const now = Date.now();
 
