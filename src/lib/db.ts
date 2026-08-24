@@ -38,6 +38,8 @@ export const COLLECTIONS = {
   quizAnswers: "quizAnswers",
   artifacts: "artifacts",
   artifactFeedbacks: "artifactFeedbacks",
+  /** 분반 수강 명단. 문서 ID = `분반열쇠__학번` */
+  enrollments: "enrollments",
   meta: "meta",
 } as const;
 
@@ -76,6 +78,31 @@ export async function listStudents(classNo?: ClassNo): Promise<Student[]> {
   const query = classNo ? base.where("classNo", "==", classNo) : base;
   const students = await collectAll<Student>(query);
   return students.sort((a, b) => a.studentId.localeCompare(b.studentId));
+}
+
+/**
+ * 이 수업에 앉아 있어야 할 학생 명단.
+ *
+ * 정보과는 "그 반 전체" 다. 선택과목은 다르다 — 22명이 5~8반에서 골라 모이므로
+ * 반으로는 누가 와야 하는지 알 수 없다. 그래서 분반은 수강 명단을 따로 둔다.
+ *
+ * 이게 없을 때 대시보드의 "아직 안 들어온 학생" 에 **엉뚱한 1반 28명**이 떴다.
+ * 수업 단위의 classNo(데이터 통 번호)를 반으로 읽은 탓이다.
+ *
+ * 수강 명단을 `students` 에 배열로 넣지 않는 이유: 수강이 바뀔 때마다 명렬표를 건드리게
+ * 되고, 명렬표는 정보과가 매 수업 쓰는 문서다.
+ */
+export async function listRoster(session: {
+  classNo: ClassNo;
+  groupKey?: string;
+}): Promise<Student[]> {
+  if (!session.groupKey) return listStudents(session.classNo);
+
+  const rows = await collectAll<{ studentId: string }>(
+    db().collection(COLLECTIONS.enrollments).where("groupKey", "==", session.groupKey),
+  );
+  const byId = await studentNameMap(rows.map((r) => r.studentId));
+  return [...byId.values()].sort((a, b) => a.studentId.localeCompare(b.studentId));
 }
 
 /** 학번 → 이름 조회용 맵. 활동 기록에 이름을 조인할 때 쓴다. */

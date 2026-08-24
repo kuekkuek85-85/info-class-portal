@@ -8,6 +8,14 @@
  *
  * **기존 학생은 건드리지 않는다.** 이미 있는 학번이면 건너뛴다. 정보과 명렬표를
  * 덮어쓰면 그쪽 수업이 통째로 흔들린다.
+ *
+ * ## 수강 명단도 함께 만든다
+ *
+ * 명렬표에 올리는 것과 "이 분반 수업에 앉아 있어야 할 사람" 은 다른 이야기다.
+ * 정보과는 반이 곧 명단이지만 선택과목은 여러 반에서 골라 모이므로, 누가 와야 하는지를
+ * 반으로는 알 수 없다.
+ *
+ * 이게 없을 때 대시보드의 "아직 안 들어온 학생" 에 엉뚱한 1반 28명이 떴다.
  */
 
 import { cert, initializeApp } from "firebase-admin/app";
@@ -31,6 +39,10 @@ const app = initializeApp({
 });
 const db = getFirestore(app);
 db.settings({ ignoreUndefinedProperties: true });
+
+/** 이 명단이 속한 분반 */
+const GROUP_KEY = "hai-tue-1";
+const GROUP_LABEL = "화요일 1기";
 
 /** [반, 번호, 이름] — 교사가 준 명단 그대로 */
 const ROSTER: [number, number, string][] = [
@@ -88,7 +100,23 @@ async function main(): Promise<void> {
     added += 1;
   }
 
-  console.log(`\n새로 올림 ${added}명 · 건너뜀 ${skipped}명 (전체 ${ROSTER.length}명)`);
+  console.log(`\n명렬표 — 새로 올림 ${added}명 · 건너뜀 ${skipped}명 (전체 ${ROSTER.length}명)`);
+
+  /*
+   * 수강 명단. 문서 ID 를 `분반열쇠__학번` 으로 고정해 두 번 돌려도 늘어나지 않는다.
+   * 이 명단이 대시보드의 "아직 안 들어온 학생" 을 만든다.
+   */
+  for (const [classNo, number] of ROSTER) {
+    const studentId = `1${String(classNo).padStart(2, "0")}${String(number).padStart(2, "0")}`;
+    await db.collection("enrollments").doc(`${GROUP_KEY}__${studentId}`).set({
+      groupKey: GROUP_KEY,
+      groupLabel: GROUP_LABEL,
+      studentId,
+      createdAt: Date.now(),
+    });
+  }
+  console.log(`수강 명단 — ${GROUP_LABEL}(${GROUP_KEY}) ${ROSTER.length}명`);
+
   process.exit(0);
 }
 

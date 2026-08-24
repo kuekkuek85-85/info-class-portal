@@ -6,7 +6,7 @@ import {
   listMoodEntries,
   listReflections,
   listSessionsByDate,
-  listStudents,
+  listRoster,
 } from "@/lib/db";
 import { getMood } from "@/lib/mood";
 import { pickCurrentSession } from "@/lib/pick-session";
@@ -49,7 +49,8 @@ export async function GET(request: Request) {
       listAttendance(session.id),
       listMoodEntries(session.id),
       listReflections(session.id),
-      listStudents(session.classNo),
+      // 분반 수업은 반이 아니라 수강 명단을 본다 (여러 반에서 모여 앉는다)
+      listRoster(session),
     ]);
 
     const nameOf = new Map(roster.map((s) => [s.studentId, s.name]));
