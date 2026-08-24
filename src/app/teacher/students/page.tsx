@@ -89,6 +89,15 @@ function Students() {
   const temporary = students.filter((s) => s.temporary);
   const visible = filter === 0 ? students : students.filter((s) => s.classNo === filter);
 
+  /*
+   * 반 단추는 **명단에 실제로 있는 반**으로 세운다.
+   *
+   * 1~4반으로 박아 두었더니, 선택과목 때문에 올린 5~8반 학생이 "전체" 에만 보이고
+   * 반으로 좁혀 볼 수가 없었다. 정보과만 쓰던 화면이라 그동안은 문제가 안 됐다.
+   * 명단에서 뽑아 쓰면 반이 늘어도 화면이 저절로 따라온다.
+   */
+  const classNumbers = [...new Set(students.map((s) => s.classNo))].sort((a, b) => a - b);
+
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-3">
@@ -172,7 +181,7 @@ function Students() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">등록된 학생 {students.length}명</h2>
           <div className="flex gap-1">
-            {[0, 1, 2, 3, 4].map((n) => (
+            {[0, ...classNumbers].map((n) => (
               <button
                 key={n}
                 type="button"
