@@ -722,6 +722,15 @@ export default function LessonPage() {
           <Placeholder title="오늘 수업 끝!" description="고생했어요. 태블릿을 정리해 주세요." />
         )}
 
+        {/*
+          기분 체크를 안 쓰는 차시인데 교사 화면이 그 단계에 있으면, 학생 화면에 아무것도
+          안 그려져 텅 빈다. 대시보드는 이 단계 단추를 안 만들지만, 예전에 눌러 둔 채로
+          차시 설정이 바뀌면 그 상태가 남는다 — 실제로 그렇게 남아 있었다.
+        */}
+        {viewPhase === "mood" && !session.moodCheckEnabled && (
+          <Placeholder title="잠시만 기다려 주세요" description="선생님이 다음 화면으로 넘길 거예요." />
+        )}
+
         {viewPhase === "mood" && session.moodCheckEnabled && (
           <>
             <MoodPicker

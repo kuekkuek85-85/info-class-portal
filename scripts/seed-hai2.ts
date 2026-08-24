@@ -189,7 +189,14 @@ const WORKSHEET: WorksheetQuestion[] = [
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   lessonNo: LESSON_NO,
   title: "인간과 인공지능 2차시 — 문제 찾기부터 딸깍까지",
-  moodCheckEnabled: true,
+  /*
+   * 기분 체크를 넣지 않는다.
+   *
+   * 45분에 다섯 단계를 지나야 하고, 뽑기(12분)를 반드시 오늘 안에 끝내야 한다.
+   * 무엇보다 이 활동은 정보과에서 한 학기 내내 하고 있다 — 같은 학생이 화요일에 또
+   * 같은 화면을 만나면 성의껏 고르지 않게 되고, 그러면 정보과 쪽 집계까지 무뎌진다.
+   */
+  moodCheckEnabled: false,
 
   /*
    * 이 과목은 반이 아니라 **분반**으로 연다. 네 분반 각각에 여러 반 학생이 섞여 앉는다.
@@ -309,7 +316,8 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} · 차시 번호 ${LESSON_NO} (정보과와 안 겹치게)`);
-  console.log("단계: 대기 → 기분 → 오늘 할 일 → 문제 정의 → MVP 기획 → 만들기 → AI 검토 → 서로 구경하기 → 회고");
+  console.log("단계: 대기 → 오늘 할 일 → 문제 정의 → MVP 기획 → 만들기 → AI 검토 → 서로 구경하기 → 회고");
+  console.log("기분 체크는 넣지 않았습니다 (정보과에서 이미 하는 활동).");
   process.exit(0);
 }
 
