@@ -144,27 +144,6 @@ const WORKSHEET: WorksheetQuestion[] = [
   { key: "mvp_must3", phase: "mvp", label: "꼭 필요한 기능 ③", hint: "", kind: "text", maxLength: 40 },
 
   // ── 만들기 · 딸깍 v0.1 (16~28분) ──────────────────────
-  {
-    key: "_build_recap",
-    phase: "build",
-    /*
-     * 앞 단계에서 쓴 것을 다시 띄운다.
-     *
-     * 이게 없으면 "앞에서 쓴 한 줄을 그대로 넣어도 돼요" 가 없는 것을 가리키는 말이 된다.
-     * 단계가 넘어가면 앞 칸은 화면에서 사라지고, 진짜 수업은 되돌아가기가 꺼져 있어서
-     * 학생이 볼 방법이 아예 없다. 기억으로 다시 쓰거나 새로 지어내게 된다.
-     */
-    label: "앞에서 이렇게 적었어요",
-    hint: "",
-    kind: "echo",
-    echoKeys: [
-      { key: "mvp_one", label: "제일 작게 만들면" },
-      { key: "mvp_must1", label: "꼭 필요한 기능 ①" },
-      { key: "mvp_must2", label: "꼭 필요한 기능 ②" },
-      { key: "mvp_must3", label: "꼭 필요한 기능 ③" },
-    ],
-    maxLength: 0,
-  },
   /*
    * 캔바 사용법을 화면에 적어 둔다.
    *
@@ -192,7 +171,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "② 웹 앱 만들기",
     hint:
       "왼쪽 메뉴에서 [Canva AI] → [</> 코드] 를 누릅니다.\n" +
-      "아래에 쓴 한 줄 프롬프트를 복사해서 붙여 넣고 만들어요.",
+      "아래 프롬프트의 [복사하기] 를 누른 뒤 캔바에 붙여 넣고 만들어요.",
     kind: "note",
     maxLength: 0,
   },
@@ -200,13 +179,21 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "build_prompt",
     phase: "build",
     /*
-     * 프롬프트를 **한 줄로** 못 박는다. 오늘은 일부러 대충 뽑는 시간이다.
-     * 여기서 잘 쓰려고 하면 다음 시간 PRD 의 값이 사라진다.
+     * 앞에서 쓴 답으로 미리 채워 둔다.
+     *
+     * 읽기 전용으로 옆에 보여주기만 했더니 옮겨 적어야 하는 칸이 되었다. 45분에 뽑기까지
+     * 가야 하는데 그 시간이 아깝고, 옮겨 적다가 내용이 달라지기도 한다.
+     *
+     * 고칠 수 있게 둔다 — 그대로 넣어도 되고 손봐도 된다. 다만 오늘은 일부러 대충 가는
+     * 시간이라 잘 쓰라고 부추기지 않는다. 여기서 잘 쓰면 다음 시간 PRD 의 값이 사라진다.
      */
-    label: "캔바에 넣을 한 줄 프롬프트",
-    hint: "오늘은 일부러 대충 갑니다. 앞에서 쓴 ‘제일 작게 만들면’ 한 줄을 그대로 넣어도 돼요.\n잘 쓰려고 애쓰지 마세요 — 왜 부족한지 찾는 게 오늘 할 일입니다.",
-    kind: "text",
-    maxLength: 120,
+    label: "캔바에 넣을 프롬프트",
+    hint: "앞에서 쓴 것으로 미리 채워 뒀어요. 그대로 써도 되고 고쳐도 됩니다.\n오늘은 일부러 대충 갑니다 — 잘 쓰려고 애쓰지 마세요. 왜 부족한지 찾는 게 오늘 할 일이에요.",
+    kind: "long",
+    maxLength: 300,
+    prefillTemplate:
+      "{mvp_one} 을(를) 만들어줘.\n꼭 필요한 기능은 {mvp_must1} 이야.\n{mvp_must2} 도 있으면 좋겠어.\n{mvp_must3} 도 넣어줘.",
+    copyable: true,
   },
   {
     key: "_build_publish",

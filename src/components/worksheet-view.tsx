@@ -123,6 +123,79 @@ export function WorksheetView({
     onChange({ ...value, answers: { ...value.answers, [key]: text } });
   }
 
+  /**
+   * 앞 답으로 칸을 미리 채운다.
+   *
+   * 읽기 전용으로 옆에 보여주기만 하면 학생은 그것을 손으로 옮겨 적는다. 45분에 뽑기까지
+   * 가야 하는 수업에서 그 시간이 아깝고, 옮겨 적다가 내용이 달라지기도 한다.
+   *
+   * **이미 쓴 것은 절대 덮지 않는다.** 그리고 채운 칸은 기억해 둔다 — 학생이 일부러
+   * 지웠는데 다음 렌더에서 되살아나면 지울 수가 없다.
+   */
+  const prefilled = useRef(new Set<string>());
+  useEffect(() => {
+    if (disabled) return;
+
+    const filled: Record<string, string> = {};
+    for (const question of questions) {
+      if (!question.prefillTemplate) continue;
+      if (prefilled.current.has(question.key)) continue;
+      if ((value.answers[question.key] ?? "").trim()) continue;
+
+      // {키} 를 그 칸의 답으로 바꾸고, 안 쓴 칸이 들어간 줄은 통째로 뺀다
+      const text = question.prefillTemplate
+        .split("\n")
+        .map((line) => {
+          let missing = false;
+          const filledLine = line.replace(/\{(\w+)\}/g, (_, key: string) => {
+            const answer = (value.answers[key] ?? "").trim();
+            if (!answer) missing = true;
+            return answer;
+          });
+          return missing ? "" : filledLine;
+        })
+        .filter(Boolean)
+        .join("\n")
+        .trim();
+
+      if (!text) continue;
+      prefilled.current.add(question.key);
+      filled[question.key] = text;
+    }
+
+    if (Object.keys(filled).length > 0) {
+      onChange({ ...value, answers: { ...value.answers, ...filled } });
+    }
+  }, [questions, value, disabled, onChange]);
+
+  /** 방금 복사한 칸 — 눌렀는데 아무 일도 안 일어난 것처럼 보이면 또 누른다 */
+  const [copied, setCopied] = useState("");
+
+  async function copy(key: string) {
+    const text = value.answers[key] ?? "";
+    if (!text.trim()) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      setTimeout(() => setCopied(""), 1500);
+    } catch {
+      /*
+       * 클립보드가 막히는 경우가 있다 (창이 포커스를 안 받았거나 브라우저 설정).
+       *
+       * 그냥 삼키면 학생 눈에는 **눌렀는데 아무 일도 안 일어난 것**으로 보이고,
+       * 그러면 계속 누른다. 대신 칸의 글자를 통째로 선택해 준다 —
+       * 그 상태에서 Ctrl+C 한 번이면 되고, 무엇을 하라는지도 눈에 보인다.
+       */
+      const field = document.getElementById(`ws-${key}`);
+      if (field instanceof HTMLTextAreaElement || field instanceof HTMLInputElement) {
+        field.focus();
+        field.select();
+      }
+      setCopied(`${key}__manual`);
+      setTimeout(() => setCopied(""), 4000);
+    }
+  }
+
   function toggleTrait(trait: string) {
     const next = value.traits.includes(trait)
       ? value.traits.filter((item) => item !== trait)
@@ -324,6 +397,25 @@ export function WorksheetView({
                 </span>
               )}
             </>
+          )}
+
+          {/*
+            다른 곳에 붙여 넣을 값이면 복사 단추를 준다. 긁어서 복사하는 것은 태블릿에서
+            잘 안 된다 — 손가락으로 끝을 맞추다 글자가 지워지기도 한다.
+          */}
+          {question.copyable && (
+            <button
+              type="button"
+              onClick={() => void copy(question.key)}
+              disabled={disabled || !(value.answers[question.key] ?? "").trim()}
+              className="pill pill-secondary t-body-sm self-start disabled:opacity-35"
+            >
+              {copied === question.key
+                ? "복사됐어요"
+                : copied === `${question.key}__manual`
+                  ? "글자를 골라 뒀어요 — Ctrl+C 를 누르세요"
+                  : "복사하기"}
+            </button>
           )}
         </div>
       ))}
