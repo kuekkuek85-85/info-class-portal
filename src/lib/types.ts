@@ -234,10 +234,12 @@ export interface WorksheetQuestion {
    * long   — 여러 줄 입력
    * traits — 특성 5개 중 다중 선택. 이 답만 answers 가 아니라 artifacts.traits 에 저장된다
    * choice — 주어진 보기 중 하나. 고른 문구가 그대로 answers 에 들어간다
-   * note   — 입력칸 없이 안내만. 문항이 여럿 이어질 때 묶어 주는 머리글로 쓴다
-   * echo   — 앞 단계에서 쓴 답을 읽기 전용으로 다시 보여준다 (echoKeys)
+   * note      — 입력칸 없이 안내만. 문항이 여럿 이어질 때 묶어 주는 머리글로 쓴다
+   * echo      — 앞 단계에서 쓴 답을 읽기 전용으로 다시 보여준다 (echoKeys)
+   * ai_review — 단추를 누르면 앞서 쓴 답들을 모아 AI에게 보내고, 아직 안 짚은 것을
+   *             질문 2개로 돌려받는다 (reviewFields). AI는 평가·칭찬 없이 질문만 한다.
    */
-  kind: "text" | "long" | "traits" | "choice" | "note" | "echo";
+  kind: "text" | "long" | "traits" | "choice" | "note" | "echo" | "ai_review";
   /**
    * echo 가 다시 보여줄 답들.
    *
@@ -271,6 +273,11 @@ export interface WorksheetQuestion {
   prefillTemplate?: string;
   /** 칸 옆에 복사 단추를 붙인다 (다른 곳에 붙여 넣을 값일 때) */
   copyable?: boolean;
+  /**
+   * ai_review 가 AI 에게 보낼 답들. 순서대로 이름표를 붙여 함께 보낸다.
+   * 안 쓴 칸은 자동으로 빠진다 — 학생이 비워 둔 것까지 "왜 안 썼냐"고 묻지 않는다.
+   */
+  reviewFields?: { key: string; label: string }[];
   /**
    * choice 의 보기.
    *

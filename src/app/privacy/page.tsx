@@ -130,16 +130,28 @@ export default function PrivacyPage() {
 
       <Section title="7. 인공지능을 쓰는 곳">
         <p className="t-body">
-          수업 정리 화면에서 <b>여러분이 적은 직업 이름을 모아 셀 때</b> 구글의 인공지능
-          (Gemini)을 씁니다. &ldquo;교사&rdquo;와 &ldquo;선생님&rdquo;처럼 같은 뜻으로 쓴
-          말을 하나로 묶기 위해서입니다.
+          두 곳에서 구글의 인공지능(Gemini)을 씁니다.
         </p>
         <ul className="flex list-disc flex-col gap-1 pl-5 t-body-sm">
           <li>
-            보내는 것은 <b>직업 이름뿐</b>입니다. 이름·학번·그 밖의 답은 보내지 않습니다.
+            수업 정리 화면에서 <b>여러분이 적은 직업 이름을 모아 셀 때</b>. &ldquo;교사&rdquo;와
+            &ldquo;선생님&rdquo;처럼 같은 뜻으로 쓴 말을 하나로 묶기 위해서입니다.
+          </li>
+          <li>
+            &ldquo;인간과 인공지능&rdquo; 수업의 <b>AI 검토</b> 단계에서, 여러분이 활동지에
+            쓴 답을 보고 아직 생각하지 못했을 질문을 만들어 줄 때. 점수나 평가를 주지
+            않고 질문만 합니다.
+          </li>
+        </ul>
+        <ul className="flex list-disc flex-col gap-1 pl-5 t-body-sm">
+          <li>
+            보내는 것은 <b>활동지에 쓴 답 텍스트뿐</b>입니다. 이름·학번은 보내지 않습니다.
           </li>
           <li>누가 적었는지는 함께 보내지 않아, 받는 쪽에서 알 수 없습니다.</li>
-          <li>이 기능이 꺼져 있어도 수업은 그대로 됩니다. 묶는 방식만 단순해집니다.</li>
+          <li>
+            AI 검토는 언제 불렀는지만 기록에 남고, 무엇을 물었는지는 남기지 않습니다.
+          </li>
+          <li>이 기능이 꺼져 있어도 수업은 그대로 됩니다. 직업 집계는 묶는 방식만 단순해지고, AI 검토는 그 단계만 건너뜁니다.</li>
         </ul>
       </Section>
 

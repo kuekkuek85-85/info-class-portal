@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { AiReviewPanel } from "@/components/ai-review-panel";
 import { ArtifactCanvas } from "@/components/artifact-canvas";
 import { TechExampleChips } from "@/components/tech-examples";
 import {
@@ -325,6 +326,13 @@ export function WorksheetView({
                 );
               })}
             </div>
+          ) : question.kind === "ai_review" ? (
+            <AiReviewPanel
+              questionKey={question.key}
+              raw={value.answers[question.key] ?? ""}
+              onResult={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
           ) : question.kind === "traits" ? (
             <div className="flex flex-wrap gap-2" id={`ws-${question.key}`}>
               {TRAITS.map((trait) => {

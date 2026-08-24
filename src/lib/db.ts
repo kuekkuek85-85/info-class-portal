@@ -40,6 +40,8 @@ export const COLLECTIONS = {
   artifactFeedbacks: "artifactFeedbacks",
   /** 분반 수강 명단. 문서 ID = `분반열쇠__학번` */
   enrollments: "enrollments",
+  /** AI 호출 기록. 무엇을 물었는지는 안 남기고 누가·언제·무엇 때문에 불렀는지만 남긴다 */
+  aiCallLogs: "aiCallLogs",
   meta: "meta",
 } as const;
 
@@ -679,6 +681,23 @@ export async function ensureArtifact(input: {
     if (created) return created;
     throw error;
   }
+}
+
+/**
+ * AI 호출 한 번을 기록한다.
+ *
+ * **무엇을 물었는지는 안 남긴다.** 누가·언제·어느 기능 때문에 불렀는지만 남는다 —
+ * 남용을 확인하는 데는 그것으로 충분하고, 학생이 실제로 쓴 문장을 따로 저장할 이유가
+ * 없다 (개인정보처리방침 §7과 같은 원칙).
+ */
+export async function logAiCall(input: {
+  studentId: string;
+  lessonNo: number;
+  feature: string;
+}): Promise<void> {
+  await db()
+    .collection(COLLECTIONS.aiCallLogs)
+    .add({ ...input, createdAt: Date.now() });
 }
 
 export async function updateArtifact(
