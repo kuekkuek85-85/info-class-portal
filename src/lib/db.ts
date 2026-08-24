@@ -932,6 +932,27 @@ export async function addAwayEpisode(
 }
 
 /**
+ * 감정 렌즈에서 위기 신호가 걸린 것을 출석 문서에 표시한다.
+ *
+ * 이탈 누적치와 같은 자리에 얹는다 — 대시보드가 이미 출석 문서를 읽고 있어서
+ * **추가 읽기가 0건**이다. 이 표시가 없으면 교사가 알 방법이 아예 없다.
+ * 학생 화면에는 "선생님과 이야기하자" 만 뜨는데, 그 학생이 손을 들지 않으면 그걸로 끝이다.
+ *
+ * **글 내용은 넘기지 않는다.** 시각과 횟수만 남긴다 (개인정보처리방침 §7).
+ */
+export async function flagCareAlert(sessionId: string, studentId: string): Promise<void> {
+  const ref = db().collection(COLLECTIONS.attendance).doc(entryId(sessionId, studentId));
+  const snap = await ref.get();
+  // 출석 기록이 없으면 만들지 않는다 (addAwayEpisode 와 같은 이유)
+  if (!snap.exists) return;
+
+  await ref.set(
+    { careAlertAt: Date.now(), careAlertCount: FieldValue.increment(1) },
+    { merge: true },
+  );
+}
+
+/**
  * 시연 참가자에게 빈 자리(임시 학번) 하나를 준다.
  *
  * **`create()` 로 자리를 잡는다.** 스무 명이 같은 순간에 링크를 누르면 목록을 읽고

@@ -1,5 +1,12 @@
 import { deviceKey, fail, guard, ok, rateLimit, readJson } from "@/lib/api";
-import { getArtifact, getSession, isSessionClosed, logAiCall, updateArtifact } from "@/lib/db";
+import {
+  flagCareAlert,
+  getArtifact,
+  getSession,
+  isSessionClosed,
+  logAiCall,
+  updateArtifact,
+} from "@/lib/db";
 import { checkCrisis, guessEmotion } from "@/lib/emotion-lens";
 import { activityIdFor } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
@@ -79,6 +86,15 @@ export async function POST(request: Request) {
         lessonNo: session.lessonNo,
         feature: "emotion_lens_blocked",
       }).catch(() => undefined);
+
+      /*
+       * 교사 대시보드에 띄운다.
+       *
+       * 이게 없으면 교사가 알 방법이 없다 — 학생 화면에는 "선생님과 이야기하자" 만
+       * 뜨는데, 그 학생이 손을 들지 않으면 아무 일도 일어나지 않는다. 정작 손을 들기
+       * 어려워하는 학생일수록 그렇다. 안내를 띄우는 것과 교사에게 닿는 것은 다른 일이다.
+       */
+      await flagCareAlert(session.id, me.studentId).catch(() => undefined);
 
       return ok({
         blocked: true,

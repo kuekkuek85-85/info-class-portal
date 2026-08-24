@@ -92,6 +92,12 @@ interface StudentRow {
   reflection: { answers: string[]; draft: boolean; updatedAt: number } | null;
   /** 이탈 누적치 — 출석 문서에 얹혀 있어 추가 읽기가 없다 */
   away?: { ms: number; count: number; longestMs: number };
+  /**
+   * 감정 렌즈에서 위기 신호가 걸린 기록. 걸린 적 없으면 null.
+   *
+   * 무엇을 썼는지는 오지 않는다 — 원문은 활동지에 있고, 판단은 그것을 읽은 교사가 한다.
+   */
+  careAlert?: { at: number; count: number } | null;
 }
 
 interface DashboardData {
@@ -459,6 +465,34 @@ function Dashboard() {
                 모두 확인 처리
               </button>
             </div>
+          )}
+
+          {/*
+            위기 신호 — 감정 렌즈가 학생 글에서 자·타해 암시를 보고 AI 호출을 멈춘 경우.
+
+            표 안의 칸이 아니라 맨 위 배너로 띄운다. 스물두 줄짜리 표에서 한 칸이
+            달라진 것은 수업 중에 못 본다. 이건 놓치면 안 되는 신호다.
+
+            무엇을 썼는지는 여기 띄우지 않는다 — 학생 이름과 글을 나란히 화면에
+            띄워 두면 지나가는 다른 학생이 읽는다. 원문은 활동지에서 따로 본다.
+          */}
+          {data?.rows && data.rows.some((r) => r.careAlert) && (
+            <section className="rounded-xl border-2 border-ink bg-pink px-4 py-3">
+              <h2 className="text-sm font-semibold">
+                오늘 이야기를 나눠야 할 학생이 있어요
+              </h2>
+              <p className="mt-2 text-sm">
+                {data.rows
+                  .filter((r) => r.careAlert)
+                  .map((r) => `${r.name || r.studentId}(${formatTimeKST(r.careAlert!.at)})`)
+                  .join(", ")}
+              </p>
+              <p className="mt-2 text-xs text-muted">
+                감정 렌즈에 힘든 이야기가 담겨 있어 AI에게 보내지 않고 멈췄습니다. 학생
+                화면에는 선생님과 이야기하자는 안내만 떴어요. 쓴 내용은 이 화면에 띄우지
+                않습니다 — 활동지에서 직접 확인해 주세요.
+              </p>
+            </section>
           )}
 
           {data?.missing && data.missing.length > 0 && (

@@ -677,6 +677,21 @@ export interface Attendance {
   longestAwayMs?: number;
   /** 마지막 이탈 시각 */
   lastAwayAt?: number;
+
+  /*
+   * 감정 렌즈에서 위기 신호가 걸린 기록 (emotion-lens.ts 의 checkCrisis).
+   *
+   * 이탈 누적치와 같은 이유로 출석 문서에 얹는다 — 대시보드 폴링이 이미 이 문서를
+   * 읽고 있어서 **추가 읽기가 0건**이다. 따로 컬렉션을 두면 폴링마다 22건이 더 붙는다.
+   *
+   * 여기에는 **시각과 횟수만** 둔다. 학생이 쓴 글은 절대 얹지 않는다 —
+   * 원문은 활동지에 그대로 있고, 판단은 그것을 읽은 교사가 한다 (PRD 5.4).
+   * 교사 화면에서만 쓴다. 교실 앞 공유 화면(/api/teacher/board)에는 내보내지 않는다.
+   */
+  /** 마지막으로 위기 신호가 걸린 시각 */
+  careAlertAt?: number;
+  /** 몇 번 걸렸는지 */
+  careAlertCount?: number;
 }
 
 /**

@@ -81,6 +81,13 @@ export async function GET(request: Request) {
           count: entry.awayCount ?? 0,
           longestMs: entry.longestAwayMs ?? 0,
         },
+        /*
+         * 감정 렌즈에서 위기 신호가 걸린 학생. 출석 문서에 얹혀 있어 추가 읽기가 없다.
+         * 이탈과 마찬가지로 이 화면에서만 쓴다 — 교실 앞 공유 화면에는 절대 안 나간다.
+         */
+        careAlert: entry.careAlertAt
+          ? { at: entry.careAlertAt, count: entry.careAlertCount ?? 1 }
+          : null,
         mood: mood
           ? {
               key: mood.mood,
