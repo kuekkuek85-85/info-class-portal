@@ -402,14 +402,34 @@ async function main(): Promise<void> {
       await doc.ref.set({ ...PLAN, updatedAt: now }, { merge: true });
       console.log(`↻ 갱신 — ${PLAN.title} (${doc.id})`);
 
-      // 아직 시작하지 않은 수업에만 다시 복사한다 (PRD 5.1)
-      const sessions = await db
-        .collection("classSessions")
-        .where("lessonPlanId", "==", doc.id)
-        .where("status", "==", "scheduled")
-        .get();
-      for (const s of sessions.docs) await s.ref.set({ ...PLAN }, { merge: true });
-      console.log(`   아직 시작하지 않은 수업 ${sessions.size}개에 반영`);
+      /*
+       * 아직 시작하지 않은 수업에만 다시 복사한다 (PRD 5.1).
+       *
+       * 여기서 0개가 나오면 **계획만 바뀌고 수업은 옛 화면 그대로**다. 학생이 보는 것은
+       * 수업 스냅샷이라, 계획을 아무리 고쳐도 화면이 안 바뀐다.
+       *
+       * 실제로 그렇게 당했다 — 수업이 잠깐 "진행 중" 이었던 사이에 시드를 돌렸더니
+       * 0개가 나왔고, 그 뒤에 상태를 되돌려 놓아서 아무도 눈치채지 못했다.
+       * 조용히 지나가지 않게 크게 알린다.
+       */
+      const all = await db.collection("classSessions").where("lessonPlanId", "==", doc.id).get();
+      const scheduled = all.docs.filter(
+        (s) => (s.data() as { status: string }).status === "scheduled",
+      );
+      for (const s of scheduled) await s.ref.set({ ...PLAN }, { merge: true });
+      console.log(`   아직 시작하지 않은 수업 ${scheduled.length}개에 반영`);
+
+      const skipped = all.docs.filter(
+        (s) => (s.data() as { status: string }).status !== "scheduled",
+      );
+      for (const s of skipped) {
+        const x = s.data() as { status: string; code: string };
+        console.warn(
+          `   ⚠ ${s.id} (코드 ${x.code}) 는 ${x.status} 상태라 건너뛰었습니다.\n` +
+            `     학생 화면은 옛 내용 그대로입니다. 아직 수업 전이라면 대시보드에서\n` +
+            `     "수업 종료" 후 다시 열거나, 상태를 대기로 되돌리고 이 스크립트를 다시 실행하세요.`,
+        );
+      }
     }
   }
 
