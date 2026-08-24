@@ -235,8 +235,18 @@ export interface WorksheetQuestion {
    * traits — 특성 5개 중 다중 선택. 이 답만 answers 가 아니라 artifacts.traits 에 저장된다
    * choice — 주어진 보기 중 하나. 고른 문구가 그대로 answers 에 들어간다
    * note   — 입력칸 없이 안내만. 문항이 여럿 이어질 때 묶어 주는 머리글로 쓴다
+   * echo   — 앞 단계에서 쓴 답을 읽기 전용으로 다시 보여준다 (echoKeys)
    */
-  kind: "text" | "long" | "traits" | "choice" | "note";
+  kind: "text" | "long" | "traits" | "choice" | "note" | "echo";
+  /**
+   * echo 가 다시 보여줄 답들.
+   *
+   * 한 시간에 여러 단계를 지나는 차시에서는 **앞 단계 답이 화면에서 사라진다.**
+   * "앞에서 쓴 한 줄을 그대로 넣어도 돼요" 라고 안내해 놓고 그 한 줄을 안 보여주면,
+   * 학생은 기억으로 다시 쓰거나 그냥 새로 지어낸다. 되돌아가기가 꺼진 수업에서는
+   * 볼 방법 자체가 없다.
+   */
+  echoKeys?: { key: string; label: string }[];
   /**
    * choice 의 보기.
    *

@@ -184,7 +184,8 @@ export function WorksheetView({
           */}
           {question.kind === "note" ? (
             <p className="block bg-cream t-subhead">{question.label}</p>
-          ) : (
+          ) : /* 제목 없이 답만 다시 보여주는 경우가 있다 (앞 문항 바로 아래에 붙일 때) */
+          question.kind === "echo" && !question.label ? null : (
             <label htmlFor={`ws-${question.key}`} className="block bg-cream t-subhead">
               {question.label}
             </label>
@@ -199,7 +200,43 @@ export function WorksheetView({
             <TechExampleChips items={question.examples} />
           )}
 
-          {question.kind === "note" ? null : question.kind === "traits" ? (
+          {question.kind === "note" ? null : question.kind === "echo" ? (
+            /*
+              앞 단계에서 쓴 답. 고치는 칸이 아니라 **보고 옮겨 적으라고** 띄운다.
+              한 시간에 여러 단계를 지나면 앞 단계 답이 화면에서 사라지는데,
+              되돌아가기가 꺼진 수업에서는 학생이 볼 방법이 아예 없다.
+            */
+            <div className="flex flex-col gap-1 rounded-lg bg-cream px-4 py-3">
+              {(question.echoKeys ?? []).map((row) => {
+                const written = (value.answers[row.key] ?? "").trim();
+                return (
+                  <p key={row.key} className="t-body-sm">
+                    <span className="font-semibold">{row.label} · </span>
+                    {/* 안 쓴 칸은 비워 두지 않는다 — 빈 줄만 보면 고장으로 읽는다 */}
+                    {!written && <span className="text-muted">(아직 안 썼어요)</span>}
+                    {/*
+                      주소는 눌러서 열 수 있게 한다. "만든 화면을 띄워 놓고 답해 주세요" 라고
+                      해 놓고 주소를 글자로만 보여주면 학생이 손으로 옮겨 적는다.
+                      새 창으로 연다 — 여기서 나가면 쓰던 답이 날아간다.
+                    */}
+                    {written &&
+                      (/^https?:\/\//.test(written) ? (
+                        <a
+                          href={written}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="break-all underline"
+                        >
+                          {written}
+                        </a>
+                      ) : (
+                        written
+                      ))}
+                  </p>
+                );
+              })}
+            </div>
+          ) : question.kind === "traits" ? (
             <div className="flex flex-wrap gap-2" id={`ws-${question.key}`}>
               {TRAITS.map((trait) => {
                 const on = value.traits.includes(trait);

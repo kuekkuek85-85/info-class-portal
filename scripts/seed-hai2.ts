@@ -134,6 +134,27 @@ const WORKSHEET: WorksheetQuestion[] = [
 
   // ── 만들기 · 딸깍 v0.1 (16~28분) ──────────────────────
   {
+    key: "_build_recap",
+    phase: "build",
+    /*
+     * 앞 단계에서 쓴 것을 다시 띄운다.
+     *
+     * 이게 없으면 "앞에서 쓴 한 줄을 그대로 넣어도 돼요" 가 없는 것을 가리키는 말이 된다.
+     * 단계가 넘어가면 앞 칸은 화면에서 사라지고, 진짜 수업은 되돌아가기가 꺼져 있어서
+     * 학생이 볼 방법이 아예 없다. 기억으로 다시 쓰거나 새로 지어내게 된다.
+     */
+    label: "앞에서 이렇게 적었어요",
+    hint: "",
+    kind: "echo",
+    echoKeys: [
+      { key: "mvp_one", label: "제일 작게 만들면" },
+      { key: "mvp_must1", label: "꼭 필요한 기능 ①" },
+      { key: "mvp_must2", label: "꼭 필요한 기능 ②" },
+      { key: "mvp_must3", label: "꼭 필요한 기능 ③" },
+    ],
+    maxLength: 0,
+  },
+  {
     key: "build_prompt",
     phase: "build",
     /*
@@ -161,6 +182,19 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "만든 화면을 띄워 놓고 답해 주세요",
     hint: "고치는 시간이 아닙니다. 무엇이 어긋났는지 찾는 시간이에요.\n답이 막히는 자리가 곧 내 기획의 구멍입니다.",
     kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "_grill_recap",
+    phase: "grill",
+    // 방금 만든 화면 주소. 눌러서 새 창으로 연다 — 여기서 나가면 쓰던 답이 날아간다
+    label: "",
+    hint: "",
+    kind: "echo",
+    echoKeys: [
+      { key: "build_url", label: "내가 만든 화면" },
+      { key: "mvp_one", label: "내가 만들려던 것" },
+    ],
     maxLength: 0,
   },
   {
