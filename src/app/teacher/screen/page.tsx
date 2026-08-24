@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 
@@ -8,6 +8,7 @@ import { toEmbedUrl } from "@/lib/embed";
 import { usePolled } from "@/lib/use-polled";
 import { pickCurrentSession } from "@/lib/pick-session";
 import type { LessonPhase } from "@/lib/types";
+import { groupName } from "@/lib/group-label";
 
 /**
  * 교실 앞 전자칠판에 띄우는 화면.
@@ -104,7 +105,7 @@ function Screen() {
         >
           {sessions.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.period}교시 · {item.classNo}반 · {item.lessonNo}차시
+              {item.period}교시 · {groupName(item)} · {item.lessonNo}차시
             </option>
           ))}
         </select>

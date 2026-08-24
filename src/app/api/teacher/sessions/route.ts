@@ -140,6 +140,7 @@ export async function POST(request: Request) {
       classNo,
       // 이 값이 있으면 학생 로그인에서 반 검사를 건너뛴다 (여러 반이 섞여 앉는다)
       groupKey: group?.key,
+      groupLabel: group?.label,
       date,
       period,
       code,

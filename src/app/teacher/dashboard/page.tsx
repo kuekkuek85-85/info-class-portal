@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 
@@ -10,6 +10,7 @@ import { QUADRANTS, type Quadrant } from "@/lib/mood";
 import { describePeriod, isPeriodOver, periodTime } from "@/lib/timetable";
 import { usePolled } from "@/lib/use-polled";
 import { AWAY_ALERT, LESSON_PHASES, PHASE_LABELS, type LessonPhase } from "@/lib/types";
+import { groupName } from "@/lib/group-label";
 
 /**
  * 교사 대시보드 — 출석 확인 겸 접속자 실시간 명단, 감정 개별 응답, 성찰 모아보기, 교사 메모.
@@ -228,7 +229,7 @@ function Dashboard() {
                 }`}
               >
                 <p className="text-sm font-semibold">
-                  {item.period}교시 · {item.classNo}반
+                  {item.period}교시 · {groupName(item)}
                 </p>
                 <p className="text-xs text-muted">
                   {time ? `${time.start}~${time.end} · ` : ""}
@@ -251,7 +252,7 @@ function Dashboard() {
               <p className="t-eyebrow">수업 코드</p>
               <p className="text-6xl font-black tracking-widest tabular-nums">{session.code}</p>
               <p className="mt-1 text-xs text-muted">
-                {session.classNo}반 · {describePeriod(session.date, session.period)} ·{" "}
+                {groupName(session)} · {describePeriod(session.date, session.period)} ·{" "}
                 {session.lessonNo}차시
               </p>
               {/*

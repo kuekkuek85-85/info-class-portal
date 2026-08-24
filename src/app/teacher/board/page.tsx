@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 
@@ -10,6 +10,7 @@ import { QUADRANTS, type Quadrant } from "@/lib/mood";
 import { TeacherJobsPanel } from "@/components/teacher-jobs-panel";
 import type { Review } from "@/lib/review";
 import { usePolled } from "@/lib/use-polled";
+import { groupName } from "@/lib/group-label";
 
 /**
  * 교실 앞 화면에 띄우는 공유용 감정 집계 — **익명**.
@@ -27,7 +28,15 @@ interface Count {
 }
 
 interface BoardData {
-  session: { id: string; classNo: number; lessonNo: number; title: string; period: number };
+  session: {
+    id: string;
+    classNo: number;
+    /** 분반으로 여는 수업이면 그 이름 ("화요일 1기") */
+    groupLabel?: string;
+    lessonNo: number;
+    title: string;
+    period: number;
+  };
   total: number;
   counts: Count[];
   byQuadrant: Record<Quadrant, number>;
@@ -129,7 +138,7 @@ function Board() {
         >
           {sessions.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.period}교시 · {item.classNo}반 · {item.lessonNo}차시
+              {item.period}교시 · {groupName(item)} · {item.lessonNo}차시
             </option>
           ))}
         </select>
@@ -193,7 +202,7 @@ function Board() {
       {tab === "mood" && data && (
         <>
           <p className="text-sm text-muted">
-            {data.session.classNo}반 · 응답 <b className="text-foreground">{data.total}</b>명
+            {groupName(data.session)} · 응답 <b className="text-foreground">{data.total}</b>명
           </p>
 
           <div className="grid grid-cols-2 gap-2">

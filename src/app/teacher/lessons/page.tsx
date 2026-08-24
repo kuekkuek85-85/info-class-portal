@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 
 import { TeacherShell } from "@/components/teacher-shell";
 import { todayKST } from "@/lib/datetime";
 import { usePolled } from "@/lib/use-polled";
+import { groupName } from "@/lib/group-label";
 import {
   emptyPhaseContent,
   type ActivityContent,
@@ -542,7 +543,7 @@ function Rehearsal({ plans }: { plans: Plan[] }) {
               className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface px-3 py-2"
             >
               <span className="text-sm">
-                <b className="text-lg">코드 {item.code}</b> · {item.classNo}반 · {item.lessonNo}차시{" "}
+                <b className="text-lg">코드 {item.code}</b> · {groupName(item)} · {item.lessonNo}차시{" "}
                 {item.title}
                 {item.demo && <b className="ml-2 text-accent">· 시연용 (/demo)</b>}
               </span>

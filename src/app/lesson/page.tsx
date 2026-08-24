@@ -49,6 +49,8 @@ interface LessonData {
     closed: boolean;
     lessonNo: number;
     title: string;
+    /** 분반으로 여는 수업이면 그 이름 ("화요일 1기"). 있으면 반·차시 번호를 감춘다 */
+    groupLabel?: string;
     moodCheckEnabled: boolean;
     game: Content;
     gameExplainer: Content;
@@ -614,11 +616,17 @@ export default function LessonPage() {
       <header className="sticky top-0 z-10 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
           <div className="min-w-0">
+            {/*
+              분반으로 여는 수업(선택과목)에서는 반도 차시 번호도 감춘다.
+              "1학년 1반" 은 이 수업에 없는 반이고(22명이 5~8반에서 모인다), 차시 번호는
+              정보과와 안 겹치게 100번대를 쓰고 있어 학생에게 뜻이 없다.
+            */}
             <p className="t-body-sm truncate font-bold">
-              {session.lessonNo}차시 · {session.title}
+              {session.groupLabel ? session.title : `${session.lessonNo}차시 · ${session.title}`}
             </p>
             <p className="t-caption mt-0.5">
-              1학년 {me.classNo}반 {me.name || "(임시 번호)"} · {PHASE_LABELS[phase]}
+              {session.groupLabel || `1학년 ${me.classNo}반`} {me.name || "(임시 번호)"} ·{" "}
+              {session.phaseLabels?.[phase] ?? PHASE_LABELS[phase]}
             </p>
           </div>
           <Link href="/lesson/history" className="pill pill-secondary t-body-sm shrink-0">

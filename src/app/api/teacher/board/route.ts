@@ -49,6 +49,8 @@ export async function GET(request: Request) {
       session: {
         id: session.id,
         classNo: session.classNo,
+        // 분반으로 여는 수업은 "1반" 이 아니라 "화요일 1기" 로 불러야 한다
+        groupLabel: session.groupLabel ?? "",
         lessonNo: session.lessonNo,
         title: session.title,
         period: session.period,

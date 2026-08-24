@@ -81,6 +81,12 @@ export async function GET() {
         closed: isSessionClosed(session),
         lessonNo: session.lessonNo,
         title: session.title,
+        /*
+          분반으로 여는 수업이면 그 이름 ("화요일 1기").
+          학생 화면 머리글이 "1학년 1반" 이라고 찍고 있었는데, 이 수업에는 1반이라는 것이
+          없다 — 22명이 5~8반에서 모여 앉는다. 반 번호는 데이터 통 번호일 뿐이다.
+        */
+        groupLabel: session.groupLabel ?? "",
         moodCheckEnabled: session.moodCheckEnabled,
         game: present(session.game),
         gameExplainer: present(session.gameExplainer),
