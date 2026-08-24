@@ -34,6 +34,8 @@ interface Plan {
   /** 시드로만 등록된다. 이 화면에서는 있다는 표시만 하고 수정하지 않는다 */
   quiz?: QuizContent;
   activity?: ActivityContent;
+  /** 분반으로 여는 차시(선택과목). 있으면 반 대신 이 목록에서 고른다 */
+  groups?: { key: string; label: string; classNo: number }[];
 }
 
 /** 편집기가 다루는 필드만. 퀴즈·활동은 서버가 기존 값을 그대로 유지한다 */
@@ -48,6 +50,67 @@ interface SessionRow {
   title: string;
   rehearsal?: boolean;
   demo?: boolean;
+}
+
+/**
+ * 반이냐 분반이냐를 고르는 칸.
+ *
+ * 정보과는 1~4반으로 열지만 선택과목은 분반(화요일 1기 …)으로 연다. 차시가 분반 목록을
+ * 들고 있으면 그것을 세우고, 없으면 지금까지처럼 반을 세운다.
+ *
+ * 「인간과 인공지능」을 고른 채로 "1반" 을 고르라고 하면 고를 것이 없다 —
+ * 그 수업에는 1반이라는 것이 없다.
+ */
+function GroupPicker({
+  plan,
+  classNo,
+  groupKey,
+  onClassNo,
+  onGroupKey,
+}: {
+  plan: Plan | undefined;
+  classNo: number;
+  groupKey: string;
+  onClassNo: (n: number) => void;
+  onGroupKey: (key: string) => void;
+}) {
+  const groups = plan?.groups ?? [];
+
+  if (groups.length > 0) {
+    return (
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="text-muted">분반</span>
+        <select
+          value={groupKey || groups[0].key}
+          onChange={(event) => onGroupKey(event.target.value)}
+          className="rounded-lg border border-line bg-background px-3 py-2"
+        >
+          {groups.map((g) => (
+            <option key={g.key} value={g.key}>
+              {g.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
+
+  return (
+    <label className="flex flex-col gap-1 text-sm">
+      <span className="text-muted">반</span>
+      <select
+        value={classNo}
+        onChange={(event) => onClassNo(Number(event.target.value))}
+        className="rounded-lg border border-line bg-background px-3 py-2"
+      >
+        {[1, 2, 3, 4].map((n) => (
+          <option key={n} value={n}>
+            {n}반
+          </option>
+        ))}
+      </select>
+    </label>
+  );
 }
 
 const EMPTY: Draft = {
@@ -379,12 +442,14 @@ function Lessons() {
 function Rehearsal({ plans }: { plans: Plan[] }) {
   const [picked, setPicked] = useState("");
   const [classNo, setClassNo] = useState(1);
+  const [groupKey, setGroupKey] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   /** 교사 연수 시연용으로 열면 /demo 링크로 코드 없이 들어올 수 있다 */
   const [demo, setDemo] = useState(false);
 
   const lessonPlanId = picked || plans[0]?.id || "";
+  const plan = plans.find((p) => p.id === lessonPlanId);
   const { data, reload } = usePolled<{ sessions: SessionRow[] }>(
     `/api/teacher/sessions?date=${todayKST()}`,
   );
@@ -396,7 +461,14 @@ function Rehearsal({ plans }: { plans: Plan[] }) {
     const response = await fetch("/api/teacher/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lessonPlanId, classNo, rehearsal: true, demo }),
+      body: JSON.stringify({
+        lessonPlanId,
+        classNo,
+        // 분반제 차시면 고른 분반을, 아니면 아무것도 안 보낸다
+        groupKey: plan?.groups?.length ? groupKey || plan.groups[0].key : undefined,
+        rehearsal: true,
+        demo,
+      }),
     });
     const result = await response.json();
     setBusy(false);
@@ -433,20 +505,13 @@ function Rehearsal({ plans }: { plans: Plan[] }) {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-muted">반</span>
-          <select
-            value={classNo}
-            onChange={(event) => setClassNo(Number(event.target.value))}
-            className="rounded-lg border border-line bg-background px-3 py-2"
-          >
-            {[1, 2, 3, 4].map((n) => (
-              <option key={n} value={n}>
-                {n}반
-              </option>
-            ))}
-          </select>
-        </label>
+        <GroupPicker
+          plan={plan}
+          classNo={classNo}
+          groupKey={groupKey}
+          onClassNo={setClassNo}
+          onGroupKey={setGroupKey}
+        />
         {/*
           시연용으로 열면 /demo 링크가 살아난다. 참가자는 코드도 학번도 치지 않고,
           서버가 빈 임시 번호를 하나씩 배정한다 — 스무 명에게 번호를 불러 주면
@@ -541,19 +606,27 @@ function ContentEditor({
 function QuickSession({ plans }: { plans: Plan[] }) {
   const [picked, setPicked] = useState("");
   const [classNo, setClassNo] = useState(1);
+  const [groupKey, setGroupKey] = useState("");
   const [date, setDate] = useState(todayKST());
   const [period, setPeriod] = useState(1);
   const [message, setMessage] = useState("");
 
   // 고르지 않았으면 첫 차시를 쓴다. 기본값을 effect로 채우면 연쇄 렌더가 생긴다.
   const lessonPlanId = picked || plans[0]?.id || "";
+  const plan = plans.find((p) => p.id === lessonPlanId);
 
   async function create() {
     setMessage("");
     const response = await fetch("/api/teacher/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lessonPlanId, classNo, date, period }),
+      body: JSON.stringify({
+        lessonPlanId,
+        classNo,
+        groupKey: plan?.groups?.length ? groupKey || plan.groups[0].key : undefined,
+        date,
+        period,
+      }),
     });
     const result = await response.json();
     setMessage(
@@ -585,20 +658,13 @@ function QuickSession({ plans }: { plans: Plan[] }) {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-muted">반</span>
-          <select
-            value={classNo}
-            onChange={(event) => setClassNo(Number(event.target.value))}
-            className="rounded-lg border border-line bg-background px-3 py-2"
-          >
-            {[1, 2, 3, 4].map((n) => (
-              <option key={n} value={n}>
-                {n}반
-              </option>
-            ))}
-          </select>
-        </label>
+        <GroupPicker
+          plan={plan}
+          classNo={classNo}
+          groupKey={groupKey}
+          onClassNo={setClassNo}
+          onGroupKey={setGroupKey}
+        />
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-muted">날짜</span>
           <input

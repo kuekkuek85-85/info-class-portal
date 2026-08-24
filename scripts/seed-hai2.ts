@@ -191,6 +191,20 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   title: "인간과 인공지능 2차시 — 문제 찾기부터 딸깍까지",
   moodCheckEnabled: true,
 
+  /*
+   * 이 과목은 반이 아니라 **분반**으로 연다. 네 분반 각각에 여러 반 학생이 섞여 앉는다.
+   *
+   * classNo 는 화면에 안 보이는 데이터 통 번호다. 출석·활동지·감정이 전부 이 값으로
+   * 묶이므로 분반마다 다른 값을 준다 — 같은 값을 주면 화요일 1기가 목요일 2기 활동지를
+   * 보게 된다. 정보과와 겹칠 걱정은 없다. 활동 ID 가 달라서 같은 통에 담기지 않는다.
+   */
+  groups: [
+    { key: "hai-tue-1", label: "화요일 1기", classNo: 1 },
+    { key: "hai-tue-2", label: "화요일 2기", classNo: 2 },
+    { key: "hai-thu-1", label: "목요일 1기", classNo: 3 },
+    { key: "hai-thu-2", label: "목요일 2기", classNo: 4 },
+  ],
+
   game: {
     heading: "기다리는 동안 — 2048",
     body: "같은 숫자끼리 밀어서 합치세요.\n오늘은 512만 넘어도 잘한 거예요.",

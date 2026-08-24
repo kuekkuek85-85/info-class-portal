@@ -82,6 +82,8 @@ export async function POST(request: Request) {
     const body = await readJson<{
       lessonPlanId?: string;
       classNo?: number;
+      /** 분반으로 여는 차시(선택과목)에서 반 대신 온다 */
+      groupKey?: string;
       date?: string;
       period?: number;
       rehearsal?: boolean;
@@ -89,14 +91,14 @@ export async function POST(request: Request) {
     }>(request);
 
     const rehearsal = body?.rehearsal === true;
-    const classNo = Number(body?.classNo) as ClassNo;
+    /** 분반으로 여는 수업이면 반 대신 이 값이 온다 (선택과목) */
+    const groupKey = String(body?.groupKey ?? "").trim();
     // 리허설은 오늘, 시각표에 없는 교시로 고정한다. 진짜 수업과 시간이 겹칠 일이 없고,
     // 목록에서도 한눈에 구분된다.
     const period = rehearsal ? REHEARSAL_PERIOD : Number(body?.period);
     const date = rehearsal ? todayKST() : (body?.date ?? "");
 
     if (!body?.lessonPlanId) return fail("invalid_input", "차시를 선택해 주세요.");
-    if (![1, 2, 3, 4].includes(classNo)) return fail("invalid_input", "반은 1~4 중 하나입니다.");
     if (!isDateKey(date)) return fail("invalid_input", "날짜 형식은 2026-08-11 입니다.");
     // 리허설 교시(9)는 리허설로 만들 때만 쓸 수 있다. 진짜 수업에 열어 두면 시각 만료가
     // 면제되지 않는 9교시 수업이 생겨 코드가 하교 후까지 살아 있게 된다.
@@ -106,6 +108,22 @@ export async function POST(request: Request) {
 
     const plan = await getLessonPlan(body.lessonPlanId);
     if (!plan) return fail("not_found", "차시 계획을 찾을 수 없습니다.");
+
+    /*
+     * 반이냐 분반이냐는 **차시가 정한다.**
+     *
+     * 선택과목은 분반(화요일 1기 …)으로 열고, 그 분반이 쓸 데이터 통 번호를 차시 계획이
+     * 들고 있다. 화면이 보내 온 반 번호를 그대로 믿으면, 분반 넷이 같은 통을 쓰게 되어
+     * 화요일 1기가 목요일 2기 작품을 보게 된다.
+     */
+    const group = plan.groups?.find((g) => g.key === groupKey) ?? null;
+    if (plan.groups?.length && !group) {
+      return fail("invalid_input", "분반을 선택해 주세요.");
+    }
+    const classNo = (group ? group.classNo : Number(body?.classNo)) as ClassNo;
+    if (!group && ![1, 2, 3, 4].includes(classNo)) {
+      return fail("invalid_input", "반은 1~4 중 하나입니다.");
+    }
 
     /*
      * 코드를 뽑기 전에 반드시 한 번 훑는다 (간격을 두지 않는다).
@@ -120,6 +138,8 @@ export async function POST(request: Request) {
     const session = await createSession({
       lessonPlanId: plan.id,
       classNo,
+      // 이 값이 있으면 학생 로그인에서 반 검사를 건너뛴다 (여러 반이 섞여 앉는다)
+      groupKey: group?.key,
       date,
       period,
       code,

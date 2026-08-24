@@ -367,9 +367,20 @@ async function releaseCode(date: string, code: string): Promise<void> {
   await db().collection(COLLECTIONS.codeReservations).doc(codeReservationId(date, code)).delete();
 }
 
-/** 세션 문서 ID. (날짜, 교시, 반)이 곧 식별자라 중복 생성이 Firestore 단계에서 막힌다. */
-export function sessionDocId(date: string, period: number, classNo: ClassNo): string {
-  return `${date}__${period}__${classNo}`;
+/**
+ * 세션 문서 ID. (날짜, 교시, 반)이 곧 식별자라 중복 생성이 Firestore 단계에서 막힌다.
+ *
+ * 분반으로 여는 수업(선택과목)은 반 자리에 분반 열쇠를 쓴다. 분반은 데이터 통으로
+ * classNo 1~4 를 나눠 쓰는데, 그대로 두면 같은 날 같은 교시의 정보과 수업과 문서 ID 가
+ * 겹칠 수 있다. 이름이 다르면 겹칠 일이 없다.
+ */
+export function sessionDocId(
+  date: string,
+  period: number,
+  classNo: ClassNo,
+  groupKey?: string,
+): string {
+  return `${date}__${period}__${groupKey || classNo}`;
 }
 
 /** 같은 (날짜, 교시, 반) 세션이 이미 있으면 null을 반환한다. 코드 예약도 함께 되돌린다. */
@@ -377,7 +388,7 @@ export async function createSession(
   input: Omit<ClassSession, "id" | "createdAt">,
 ): Promise<ClassSession | null> {
   const now = Date.now();
-  const id = sessionDocId(input.date, input.period, input.classNo);
+  const id = sessionDocId(input.date, input.period, input.classNo, input.groupKey);
 
   try {
     await db()

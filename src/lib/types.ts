@@ -394,6 +394,18 @@ export interface LessonPlan {
   phaseLabels?: Partial<Record<LessonPhase, string>>;
   /** 이 차시에서만 이탈을 세지 않을 단계 */
   focusExempt?: LessonPhase[];
+  /**
+   * 이 차시를 여는 단위. 선택과목처럼 반이 아니라 **분반**으로 여는 경우에만 적는다.
+   *
+   * 「인간과 인공지능」은 화요일 1기 · 화요일 2기 · 목요일 1기 · 목요일 2기 넷으로
+   * 나뉘고, 각 분반에 여러 반 학생이 섞여 있다. 수업을 열 때 "1반~4반" 을 고르라고 하면
+   * 고를 것이 없다.
+   *
+   * `classNo` 는 화면에 보이지 않는 **데이터 통 번호**다. 출석·작품·감정이 전부 이
+   * 값으로 묶이므로 분반마다 다른 값을 줘야 한다 — 같은 값을 주면 화요일 1기가
+   * 목요일 2기 작품을 보게 된다.
+   */
+  groups?: { key: string; label: string; classNo: ClassNo }[];
   /** 타임머신 퀴즈. 없는 차시가 대부분이라 선택 항목 */
   quiz?: QuizContent;
   /** 그리기 활동. 2·3차시가 같은 activityId 를 공유한다 */
