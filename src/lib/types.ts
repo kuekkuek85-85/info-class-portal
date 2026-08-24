@@ -50,6 +50,14 @@ export type LessonPhase =
   | "mvp"
   | "build"
   | "grill"
+  /*
+   * 「디지털 마음 톡톡」(자유학기 주제선택)이 쓴다.
+   *
+   * 학생이 쓴 경험 글을 AI가 읽고 감정을 추측해 주면, 학생이 그 추측과 자기 마음을
+   * 견줘 보는 단계다. 다른 과목 차시는 이 단계에 문항을 넣지 않으므로 교사 버튼에서
+   * 저절로 빠진다 (available 판정 참조).
+   */
+  | "emotion"
   | "draw"
   | "worksheet"
   | "gallery"
@@ -90,6 +98,14 @@ export const LESSON_PHASES: readonly LessonPhase[] = [
   "grill",
   "draw",
   "worksheet",
+  /*
+   * 감정 렌즈는 **활동지 뒤**다. 학생이 자기 경험 글을 먼저 쓴 다음에 AI에게 보여준다.
+   *
+   * 앞에 두면 AI가 던진 낱말을 그대로 베껴 쓰게 되고, "정답은 나에게 있다" 는 이 수업의
+   * 결론이 뒤집힌다. 순서가 곧 설계라서 목록 자리로 못 박아 둔다 — 되돌아가기 목록도
+   * 이 순서를 따르므로, 앞에 두면 학생이 글을 쓰기 전에 렌즈로 건너뛸 수 있게 된다.
+   */
+  "emotion",
   "gallery",
   "reflection",
   "done",
@@ -112,6 +128,7 @@ export const PHASE_LABELS: Record<LessonPhase, string> = {
   mvp: "꼭 필요한 것만",
   build: "만들기",
   grill: "AI 검토",
+  emotion: "AI 감정 렌즈",
   draw: "그리기",
   worksheet: "활동지",
   gallery: "작품 감상",
@@ -238,8 +255,19 @@ export interface WorksheetQuestion {
    * echo      — 앞 단계에서 쓴 답을 읽기 전용으로 다시 보여준다 (echoKeys)
    * ai_review — 단추를 누르면 앞서 쓴 답들을 모아 AI에게 보내고, 아직 안 짚은 것을
    *             질문 2개로 돌려받는다 (reviewFields). AI는 평가·칭찬 없이 질문만 한다.
+   * emotion_lens — 앞 칸에 쓴 경험 글(lensSourceKey)을 AI에게 보내고, 감정 추측
+   *             2개와 공감 한 줄을 돌려받는다. 맞히는 것이 목적이 아니라 **학생이
+   *             그 추측과 자기 마음을 견줘 보게** 하는 것이 목적이다.
    */
-  kind: "text" | "long" | "traits" | "choice" | "note" | "echo" | "ai_review";
+  kind:
+    | "text"
+    | "long"
+    | "traits"
+    | "choice"
+    | "note"
+    | "echo"
+    | "ai_review"
+    | "emotion_lens";
   /**
    * echo 가 다시 보여줄 답들.
    *
@@ -279,6 +307,14 @@ export interface WorksheetQuestion {
    */
   reviewFields?: { key: string; label: string }[];
   /**
+   * emotion_lens 가 AI 에게 보낼 글이 들어 있는 칸.
+   *
+   * 즉석에서 새로 쓰게 하지 않는다. 앞 단계에서 **고민해서 쓴 글**을 그대로 보낸다 —
+   * 렌즈 화면에 빈 칸을 하나 더 두면 학생은 거기에 한 줄로 대충 적고, 그러면 추측이
+   * 얕아져서 견줄 것이 없어진다.
+   */
+  lensSourceKey?: string;
+  /**
    * choice 의 보기.
    *
    * 보기 문구 안에 판단 근거를 넣어 둔다. 5차시에서 "곧 가져간다 / 나중에 / 사람이 계속"
@@ -298,6 +334,13 @@ export interface WorksheetQuestion {
    * 로봇"이라서, 눌러 넣게 하면 낱말만 남고 생각이 빠진다.
    */
   examples?: string[];
+  /**
+   * examples 상자의 안내 문구. 안 적으면 그림 차시 기본값(첨단 기술 · 로봇 예시)이 나온다.
+   *
+   * 감정 낱말을 보여주는 차시에 기본값이 그대로 나가면 "첨단 기술이란 이런 것들이에요"
+   * 가 감정 낱말 위에 붙는다. 중1은 안내를 지시로 읽으므로 엉뚱한 안내는 없는 것보다 나쁘다.
+   */
+  examplesNote?: { heading: string; hint: string };
   /**
    * 이 문항을 어느 단계에서 보여줄지.
    *
@@ -353,6 +396,17 @@ export interface ActivityContent {
    * 많이 나온 순으로 세운다.
    */
   galleryFacets?: { key: string; label: string; answerKeys: string[] }[];
+  /**
+   * 서로 구경하기를 여는가. 안 적으면 열린다 (지금까지의 차시가 전부 그렇다).
+   *
+   * **감정을 쓰는 차시에서는 반드시 false 로 막는다.** 「디지털 마음 톡톡」의 활동지에는
+   * "최근 있었던 일" 과 그때의 감정이 들어간다 — 성찰 글과 같은 등급이라 친구에게 보이면
+   * 안 되는 내용인데, 지금까지의 판정은 "활동지 문항이 있으면 감상을 연다" 였다.
+   * 그대로 두면 마음 이야기가 반 전체에 그대로 걸린다.
+   *
+   * 학생 화면의 감상 탭, 교사 대시보드의 감상 단추, 감상 API 가 모두 이 값을 본다.
+   */
+  galleryEnabled?: boolean;
   /**
    * 지난 차시에 쓴 답을 활동지 위에 읽기 전용으로 띄운다.
    *

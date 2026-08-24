@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { AiReviewPanel } from "@/components/ai-review-panel";
+import { EmotionLensPanel } from "@/components/emotion-lens-panel";
 import { ArtifactCanvas } from "@/components/artifact-canvas";
 import { TechExampleChips } from "@/components/tech-examples";
 import {
@@ -287,7 +288,7 @@ export function WorksheetView({
             힌트 **아래** 입력칸 **위** 자리다 — 읽고 나서 바로 쓰게 된다.
           */}
           {question.examples && question.examples.length > 0 && (
-            <TechExampleChips items={question.examples} />
+            <TechExampleChips items={question.examples} note={question.examplesNote} />
           )}
 
           {question.kind === "note" ? null : question.kind === "echo" ? (
@@ -328,6 +329,13 @@ export function WorksheetView({
             </div>
           ) : question.kind === "ai_review" ? (
             <AiReviewPanel
+              questionKey={question.key}
+              raw={value.answers[question.key] ?? ""}
+              onResult={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
+          ) : question.kind === "emotion_lens" ? (
+            <EmotionLensPanel
               questionKey={question.key}
               raw={value.answers[question.key] ?? ""}
               onResult={(raw) => setAnswer(question.key, raw)}

@@ -16,14 +16,33 @@ import { useEffect } from "react";
  * 아래에 한 줄로 적어 둔다.
  */
 
-/** 낱말 목록 자체. 두 화면(그림판 · 활동지)이 같은 모양으로 쓴다 */
-export function TechExampleChips({ items }: { items: string[] }) {
+/**
+ * 낱말 목록 자체. 두 화면(그림판 · 활동지)이 같은 모양으로 쓴다.
+ *
+ * 안내 문구는 차시가 바꿀 수 있다. 기본값은 그림 차시(첨단 기술) 기준인데, 감정
+ * 낱말을 보여주는 차시에 그대로 나가면 "첨단 기술이란 이런 것들이에요 / 로봇 →
+ * 음식을 나르는 로봇" 이 감정 낱말 위에 붙는다. 엉뚱한 예시는 안 쓰는 것보다 나쁘다 —
+ * 중1은 안내를 지시로 읽는다.
+ */
+export function TechExampleChips({
+  items,
+  note,
+}: {
+  items: string[];
+  note?: { heading: string; hint: string };
+}) {
   if (items.length === 0) return null;
 
   return (
     <div className="flex flex-col gap-2 rounded-lg bg-cream px-4 py-3">
       <p className="t-body-sm">
-        <b>첨단 기술</b>이란 이런 것들이에요. 이 중에서 골라 보세요.
+        {note ? (
+          note.heading
+        ) : (
+          <>
+            <b>첨단 기술</b>이란 이런 것들이에요. 이 중에서 골라 보세요.
+          </>
+        )}
       </p>
       <ul className="flex flex-wrap gap-2">
         {items.map((item) => (
@@ -36,10 +55,16 @@ export function TechExampleChips({ items }: { items: string[] }) {
         낱말만 적고 끝내는 것을 막는 한 줄.
         "로봇" 은 기술 분야이지 그림에 그릴 수 있는 물건이 아니다.
       */}
-      <p className="t-caption">
-        고른 낱말에 <b>무엇을 해 주는지</b>를 붙이면 그릴 수 있는 것이 돼요.
-        <br />
-        로봇 → <b>음식을 나르는</b> 로봇 · 생체인식 → <b>얼굴로 문을 여는</b> 출입문
+      <p className="t-caption whitespace-pre-line">
+        {note ? (
+          note.hint
+        ) : (
+          <>
+            고른 낱말에 <b>무엇을 해 주는지</b>를 붙이면 그릴 수 있는 것이 돼요.
+            <br />
+            로봇 → <b>음식을 나르는</b> 로봇 · 생체인식 → <b>얼굴로 문을 여는</b> 출입문
+          </>
+        )}
       </p>
     </div>
   );

@@ -130,7 +130,7 @@ export default function PrivacyPage() {
 
       <Section title="7. 인공지능을 쓰는 곳">
         <p className="t-body">
-          두 곳에서 구글의 인공지능(Gemini)을 씁니다.
+          세 곳에서 구글의 인공지능(Gemini)을 씁니다.
         </p>
         <ul className="flex list-disc flex-col gap-1 pl-5 t-body-sm">
           <li>
@@ -142,6 +142,12 @@ export default function PrivacyPage() {
             쓴 답을 보고 아직 생각하지 못했을 질문을 만들어 줄 때. 점수나 평가를 주지
             않고 질문만 합니다.
           </li>
+          <li>
+            &ldquo;디지털 마음 톡톡&rdquo; 수업의 <b>AI 감정 렌즈</b>에서, 여러분이 쓴
+            경험 글을 읽고 <b>어떤 기분이었을지 추측</b>할 때. 맞히는 것이 목적이 아니라
+            내 마음과 견줘 보는 것이 목적이고, <b>병이나 진단에 대한 말은 하지
+            않습니다.</b>
+          </li>
         </ul>
         <ul className="flex list-disc flex-col gap-1 pl-5 t-body-sm">
           <li>
@@ -149,9 +155,16 @@ export default function PrivacyPage() {
           </li>
           <li>누가 적었는지는 함께 보내지 않아, 받는 쪽에서 알 수 없습니다.</li>
           <li>
-            AI 검토는 언제 불렀는지만 기록에 남고, 무엇을 물었는지는 남기지 않습니다.
+            AI 검토와 감정 렌즈는 <b>언제 불렀는지만</b> 기록에 남고, 무엇을 보냈는지는
+            남기지 않습니다.
           </li>
-          <li>이 기능이 꺼져 있어도 수업은 그대로 됩니다. 직업 집계는 묶는 방식만 단순해지고, AI 검토는 그 단계만 건너뜁니다.</li>
+          <li>
+            감정 렌즈에서 <b>스스로를 해치는 이야기</b>가 보이면, 그 글은{" "}
+            <b>인공지능에게 보내지 않고 멈춥니다.</b> 화면에는 선생님과 이야기하자는
+            안내만 뜨고, 기록에는 학번과 시각만 남습니다 — 무엇을 썼는지는 남기지
+            않습니다. 그때는 선생님이 직접 찾아가 이야기합니다.
+          </li>
+          <li>이 기능이 꺼져 있어도 수업은 그대로 됩니다. 직업 집계는 묶는 방식만 단순해지고, AI 검토와 감정 렌즈는 그 단계만 건너뜁니다.</li>
         </ul>
       </Section>
 

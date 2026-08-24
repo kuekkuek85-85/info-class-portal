@@ -39,6 +39,11 @@ export interface ActivityInfo {
   techExamples?: string[];
   /** 출처 두 칸의 예시. 비면 활동지가 기본값(그림 활동 기준)을 쓴다 */
   sourceHints?: { site: string; ai: string } | null;
+  /**
+   * 서로 구경하기를 여는가. 안 오면 연다 (지금까지의 차시).
+   * 감정을 쓰는 차시는 false — 마음 이야기는 친구에게 보이지 않는다.
+   */
+  galleryEnabled?: boolean;
 }
 
 interface LessonData {
@@ -508,6 +513,14 @@ export default function LessonPage() {
   /** 이 차시에 그리기가 있는가. 장소가 하나도 없으면 글만 쓰는 활동이다 */
   const canDraw = (session.activity?.places.length ?? 0) > 0;
 
+  /**
+   * 서로 구경하기를 여는가.
+   *
+   * 감정을 쓰는 차시(마음 톡톡)는 막는다. 활동지에 "최근 있었던 일" 과 그때의 감정이
+   * 들어가는데, 그건 성찰 글과 같은 등급이라 친구에게 보이면 안 된다.
+   */
+  const canShare = session.activity?.galleryEnabled !== false;
+
   /*
    * 실제로 보여 줄 탭.
    *
@@ -515,7 +528,10 @@ export default function LessonPage() {
    * 마찬가지다 — 4차시처럼 글만 쓰는 활동에서 그리기로 보내면 고를 장소가 없는 빈
    * 화면이 뜬다. 렌더할 때 걸러 내는 편이 상태를 고쳐 쓰는 것보다 단순하다.
    */
-  const activeTab = !canDraw && workTab === "draw" ? "worksheet" : workTab;
+  const activeTab =
+    (!canDraw && workTab === "draw") || (!canShare && workTab === "gallery")
+      ? "worksheet"
+      : workTab;
 
   /*
    * 그림이 없는 차시에서는 "작품" 대신 "활동지"라고 부른다.
@@ -537,8 +553,35 @@ export default function LessonPage() {
       (q) => (q.phase ?? "worksheet") === item,
     );
   /** 선택과목이 쓰는 단계. 활동지 화면을 그 단계 문항만으로 다시 쓴다 */
-  const STEP_PHASES: LessonPhase[] = ["problem", "mvp", "build", "grill"];
+  const STEP_PHASES: LessonPhase[] = ["problem", "mvp", "build", "grill", "emotion"];
   const stepQuestions = STEP_PHASES.includes(viewPhase) ? questionsFor(viewPhase) : [];
+  /**
+   * 제출 단추를 띄울 단계 — 이 차시가 실제로 쓰는 단계 중 **마지막**.
+   *
+   * "grill 이면 띄운다" 로 박아 두었더니, grill 이 없는 차시(마음 톡톡은 emotion 으로
+   * 끝난다)에서는 제출 단추가 어느 화면에도 안 나왔다. 차시마다 마지막 단계가 다르므로
+   * 목록에서 찾는다.
+   */
+  const lastStepPhase = [...STEP_PHASES].reverse().find((item) => questionsFor(item).length > 0);
+
+  /**
+   * 활동지 탭(그리기·활동지·감상 묶음)에 띄울 문항.
+   *
+   * 이 자리는 지금까지 **문항 전부**를 그렸다. 단계를 쪼개 쓰는 차시가 문항을 전부
+   * 단계에 배정해 두었기 때문에 그래도 문제가 없었다 — 활동지 단계에 남는 문항이
+   * 하나도 없어서, 이 화면은 "지금까지 쓴 것 전체를 훑어보는 곳" 으로만 쓰였다.
+   *
+   * 활동지 단계와 쪼갠 단계를 **함께** 쓰는 차시(마음 톡톡)가 생기면서 그 전제가
+   * 깨졌다. 감정 렌즈까지 활동지 화면에 한꺼번에 떠서, 글을 쓰기도 전에 AI 추측을
+   * 먼저 보게 됐다 — 순서가 곧 설계인 수업에서 이건 활동 자체를 무너뜨린다.
+   *
+   * 그래서 **활동지 단계에 배정된 문항이 있으면 그것만** 그린다. 하나도 없는 차시
+   * (인간과 인공지능)에서는 지금까지처럼 전부 그려, 훑어보는 쓰임이 그대로 남는다.
+   */
+  const plainWorksheetQuestions =
+    questionsFor("worksheet").length > 0
+      ? questionsFor("worksheet")
+      : (session.activity?.worksheet ?? []);
 
   /**
    * 되돌아갈 수 있는 단계 목록 — 교사가 있는 곳까지, 그리고 이 차시에 실제로 쓰는 것만.
@@ -835,7 +878,7 @@ export default function LessonPage() {
                 제출 단추는 마지막 단계에서만 띄운다. 문제 정의를 쓰자마자 "다 했어요" 가
                 보이면 거기서 끝내는 학생이 나온다.
               */
-              hideSubmit={viewPhase !== "grill"}
+              hideSubmit={viewPhase !== lastStepPhase}
               heading={session.phaseLabels?.[viewPhase] ?? PHASE_LABELS[viewPhase]}
             />
           ) : (
@@ -871,14 +914,19 @@ export default function LessonPage() {
             {/*
               먼저 끝낸 학생이 갈 곳. 그림은 그리는 순간 갤러리에 올라가므로
               (gallery.ts 의 isVisible) 아직 그리는 중인 반에서도 볼 것이 있다.
+
+              감정을 쓰는 차시에서는 이 탭 자체를 만들지 않는다 — 마음 이야기는
+              친구에게 보이면 안 된다 (galleryEnabled 참조).
             */}
-            <button
-              type="button"
-              onClick={() => setWorkTab("gallery")}
-              className={`pill flex-1 ${activeTab === "gallery" ? "pill-primary" : "pill-secondary"}`}
-            >
-              {workNoun} 감상
-            </button>
+            {canShare && (
+              <button
+                type="button"
+                onClick={() => setWorkTab("gallery")}
+                className={`pill flex-1 ${activeTab === "gallery" ? "pill-primary" : "pill-secondary"}`}
+              >
+                {workNoun} 감상
+              </button>
+            )}
           </div>
         )}
 
@@ -908,7 +956,7 @@ export default function LessonPage() {
           activeTab === "worksheet" &&
           (session.activity && artifact ? (
             <WorksheetView
-              questions={session.activity.worksheet}
+              questions={plainWorksheetQuestions}
               place={artifact.place}
               year={artifact.year}
               canDraw={canDraw}
@@ -922,6 +970,18 @@ export default function LessonPage() {
               submitted={artifact.status === "submitted"}
               submitError={submitError}
               disabled={closed}
+              /*
+                활동지 뒤에 아직 단계가 남은 차시에서는 제출 단추를 숨긴다.
+
+                마음 톡톡은 활동지(감정 낱말·경험 글) 다음에 AI 감정 렌즈가 온다.
+                여기에 "다 했어요" 가 보이면 글만 쓰고 제출해 버리는 학생이 나오고,
+                그러면 오늘 활동의 절반을 건너뛴 채로 끝난다.
+
+                활동지 문항만 있는 차시(정보과)에서는 여기가 마지막이라 그대로 띄운다.
+                문항이 전부 단계에 배정된 차시(인간과 인공지능)에서도 이 화면은
+                "지금까지 쓴 것 훑어보기" 라 지금까지처럼 띄운다.
+              */
+              hideSubmit={questionsFor("worksheet").length > 0 && Boolean(lastStepPhase)}
             />
           ) : (
             <Placeholder title="활동지를 준비하고 있어요" description="잠시만 기다려 주세요." />

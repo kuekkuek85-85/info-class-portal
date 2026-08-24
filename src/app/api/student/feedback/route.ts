@@ -73,6 +73,11 @@ export async function POST(request: Request) {
     // ------------------------------------------------ 친구 작품에 남기기
     if (!body.artifactId) return fail("invalid_input");
 
+    // 감정을 쓰는 차시는 서로 주고받는 것 자체가 없다 (gallery 라우트와 같은 이유)
+    if (session.activity?.galleryEnabled === false) {
+      return fail("not_found", "이 수업에서는 서로 구경하기를 하지 않아요.");
+    }
+
     /*
      * 학생이 보내오는 것은 진짜 문서 ID 가 아니라 되돌릴 수 없는 작품 번호다(익명화).
      * 그래서 같은 반의 볼 수 있는 작품만 모아 놓고 그 안에서 찾는다 —

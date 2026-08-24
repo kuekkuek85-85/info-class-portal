@@ -58,6 +58,8 @@ interface SessionRow {
     activityId: string;
     places?: string[];
     worksheet?: { key: string; phase?: LessonPhase }[];
+    /** 감정을 쓰는 차시는 감상을 막는다 (types.ts 의 galleryEnabled) */
+    galleryEnabled?: boolean;
   };
   /** 지난 차시 복습 — 학생이 기분 체크를 마치면 서버가 만들어 넣는다. 여기서는 한 줄만 쓴다 */
   reviewCache?: { summary?: string } | null;
@@ -605,14 +607,21 @@ function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
    *  · 정보과 차시에도 선택과목 단추 넷이 뜬다 (문항이 없어 눌러도 빈 화면)
    *  · 선택과목에 "활동지" 단추가 뜬다 (모든 문항이 다른 단계에 배정돼 있어 역시 빈 화면)
    */
-  const STEP_PHASES: LessonPhase[] = ["problem", "mvp", "build", "grill"];
+  const STEP_PHASES: LessonPhase[] = ["problem", "mvp", "build", "grill", "emotion"];
   const questionsIn = (item: LessonPhase) =>
     (session.activity?.worksheet ?? []).filter((q) => (q.phase ?? "worksheet") === item).length;
 
   if (STEP_PHASES.includes(phase)) return questionsIn(phase) > 0;
   if (phase === "worksheet") return questionsIn("worksheet") > 0;
-  // 감상은 볼 것이 있어야 한다 — 어느 단계에 배정됐든 활동지 문항이 있으면 열린다
-  if (phase === "gallery") return (session.activity?.worksheet?.length ?? 0) > 0;
+  /*
+   * 감상은 볼 것이 있어야 한다 — 어느 단계에 배정됐든 활동지 문항이 있으면 열린다.
+   * 다만 감정을 쓰는 차시는 차시 쪽에서 막아 둔다 (galleryEnabled). 마음 이야기가
+   * 반 전체에 걸리는 것을 단추 하나 잘못 눌러서 일어나게 두면 안 된다.
+   */
+  if (phase === "gallery") {
+    if (session.activity?.galleryEnabled === false) return false;
+    return (session.activity?.worksheet?.length ?? 0) > 0;
+  }
   /*
    * 내용을 채워 넣은 차시에만 버튼을 만든다.
    *

@@ -134,6 +134,16 @@ export async function GET() {
     const activityId = activityIdFor(session);
     if (!activityId) return fail("not_found", "이 차시에는 그리기 활동이 없어요.");
 
+    /*
+     * 감정을 쓰는 차시는 서로 구경하기를 열지 않는다.
+     *
+     * 화면 쪽에서 이미 탭을 안 만들지만 여기서 한 번 더 막는다 — 주소를 직접 치면
+     * 그만인 화면 검사와 달리, 이 줄이 없으면 마음 이야기가 실제로 나간다.
+     */
+    if (session.activity?.galleryEnabled === false) {
+      return fail("not_found", "이 수업에서는 서로 구경하기를 하지 않아요.");
+    }
+
     // 같은 반 것만 읽는다. 다른 반 담벼락은 보이지 않는다 (PRD 3.5)
     const visible = (await listArtifacts(activityId, session.classNo)).filter(isVisible);
     const mine = await getArtifact(activityId, me.studentId);
