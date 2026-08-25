@@ -26,6 +26,40 @@ import {
 
 const AUTOSAVE_MS = 1500;
 
+/**
+ * 마지막으로 자동으로 채워 넣은 글을 적어 두는 자리.
+ *
+ * 학생이 그 뒤에 손을 댔는지 가리는 데 쓴다 — 지금 칸에 있는 글이 이것과 같으면
+ * 손대지 않은 것이다. 문항으로 만들지 않았으므로 화면에는 안 나오고, CSV 내보내기는
+ * 성찰만 내보내므로 밖으로도 안 나간다.
+ */
+function autoKeyOf(key: string): string {
+  return `__auto_${key}`;
+}
+
+/**
+ * `{키}` 를 그 칸의 답으로 바꾼다. 안 쓴 칸이 들어간 줄은 통째로 뺀다.
+ *
+ * 줄 단위로 빼는 이유: "꼭 필요한 기능은 {mvp_must1} 이야." 에서 기능을 안 썼을 때
+ * "꼭 필요한 기능은  이야." 가 남으면, 학생이 그걸 그대로 캔바에 넣는다.
+ */
+function renderPrefill(template: string, answers: Record<string, string>): string {
+  return template
+    .split("\n")
+    .map((line) => {
+      let missing = false;
+      const filled = line.replace(/\{(\w+)\}/g, (_, key: string) => {
+        const answer = (answers[key] ?? "").trim();
+        if (!answer) missing = true;
+        return answer;
+      });
+      return missing ? "" : filled;
+    })
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
 export interface WorksheetValue {
   answers: Record<string, string>;
   traits: string[];
@@ -126,49 +160,79 @@ export function WorksheetView({
   }
 
   /**
-   * 앞 답으로 칸을 미리 채운다.
+   * 앞 답으로 칸을 미리 채운다. 그리고 **앞 답이 바뀌면 따라서 고쳐 준다.**
    *
    * 읽기 전용으로 옆에 보여주기만 하면 학생은 그것을 손으로 옮겨 적는다. 45분에 뽑기까지
    * 가야 하는 수업에서 그 시간이 아깝고, 옮겨 적다가 내용이 달라지기도 한다.
    *
-   * **이미 쓴 것은 절대 덮지 않는다.** 그리고 채운 칸은 기억해 둔다 — 학생이 일부러
-   * 지웠는데 다음 렌더에서 되살아나면 지울 수가 없다.
+   * ## 되돌아가서 고친 것이 따라와야 한다
+   *
+   * 되돌아가기로 "꼭 필요한 기능" 을 고쳐 놓고 만들기 화면에 오면, 프롬프트는 옛 기능이
+   * 적힌 채 그대로였다. 학생은 고쳤다고 생각하고 그대로 캔바에 넣는다 — 고친 것이
+   * 결과물에 반영이 안 된다.
+   *
+   * 그렇다고 무조건 덮으면 학생이 프롬프트를 손봐 둔 것을 날린다. 그래서 **우리가 채워
+   * 넣은 글 그대로인지** 를 기준으로 가른다 (`__auto_키` 에 마지막으로 채운 글을 남겨 둔다).
+   *  · 손대지 않았으면 → 조용히 다시 만든다. 학생은 늘 최신 프롬프트를 본다
+   *  · 손댔으면 → 덮지 않고, 아래에 "다시 만들기" 단추만 띄운다 (canRefresh)
+   *
+   * 일부러 지운 칸도 되살리지 않는다 — 지웠는데 다음 렌더에서 살아나면 지울 수가 없다.
    */
-  const prefilled = useRef(new Set<string>());
   useEffect(() => {
     if (disabled) return;
 
-    const filled: Record<string, string> = {};
+    const next: Record<string, string> = {};
     for (const question of questions) {
       if (!question.prefillTemplate) continue;
-      if (prefilled.current.has(question.key)) continue;
-      if ((value.answers[question.key] ?? "").trim()) continue;
 
-      // {키} 를 그 칸의 답으로 바꾸고, 안 쓴 칸이 들어간 줄은 통째로 뺀다
-      const text = question.prefillTemplate
-        .split("\n")
-        .map((line) => {
-          let missing = false;
-          const filledLine = line.replace(/\{(\w+)\}/g, (_, key: string) => {
-            const answer = (value.answers[key] ?? "").trim();
-            if (!answer) missing = true;
-            return answer;
-          });
-          return missing ? "" : filledLine;
-        })
-        .filter(Boolean)
-        .join("\n")
-        .trim();
+      const fresh = renderPrefill(question.prefillTemplate, value.answers);
+      if (!fresh) continue;
 
-      if (!text) continue;
-      prefilled.current.add(question.key);
-      filled[question.key] = text;
+      const current = value.answers[question.key] ?? "";
+      const auto = value.answers[autoKeyOf(question.key)] ?? "";
+
+      // 아직 한 번도 안 채웠고 칸이 비어 있다 → 처음 채운다
+      const firstFill = !current.trim() && !auto;
+      // 우리가 채운 그대로다 → 앞 답이 바뀌었으면 따라서 고친다
+      const untouched = current === auto && current !== fresh;
+
+      if (!firstFill && !untouched) continue;
+      next[question.key] = fresh;
+      next[autoKeyOf(question.key)] = fresh;
     }
 
-    if (Object.keys(filled).length > 0) {
-      onChange({ ...value, answers: { ...value.answers, ...filled } });
+    if (Object.keys(next).length > 0) {
+      onChange({ ...value, answers: { ...value.answers, ...next } });
     }
   }, [questions, value, disabled, onChange]);
+
+  /**
+   * "다시 만들기" 단추를 띄울 칸인가.
+   *
+   * 앞 답이 바뀌었는데 **자동 갱신이 안 되는** 경우에만 뜬다 — 학생이 직접 손봤거나
+   * 일부러 지운 칸이다. 손대지 않은 칸은 위 effect 가 알아서 고치므로 여기서 걸리지 않는다.
+   */
+  function canRefresh(question: WorksheetQuestion): boolean {
+    if (!question.prefillTemplate || disabled) return false;
+    const fresh = renderPrefill(question.prefillTemplate, value.answers);
+    if (!fresh) return false;
+    const current = value.answers[question.key] ?? "";
+    return fresh !== current && current !== (value.answers[autoKeyOf(question.key)] ?? "");
+  }
+
+  /** 학생이 손본 프롬프트를 앞 답으로 다시 만든다 (canRefresh 일 때만 단추가 보인다) */
+  function refreshPrefill(question: WorksheetQuestion) {
+    const fresh = renderPrefill(question.prefillTemplate ?? "", value.answers);
+    if (!fresh) return;
+    onChange({
+      ...value,
+      answers: {
+        ...value.answers,
+        [question.key]: fresh,
+        [autoKeyOf(question.key)]: fresh,
+      },
+    });
+  }
 
   /** 방금 복사한 칸 — 눌렀는데 아무 일도 안 일어난 것처럼 보이면 또 누른다 */
   const [copied, setCopied] = useState("");
@@ -413,6 +477,30 @@ export function WorksheetView({
                 </span>
               )}
             </>
+          )}
+
+          {/*
+            앞 답을 고쳤는데 이 칸은 학생이 손봐 둔 경우.
+
+            손본 것을 말없이 덮으면 안 되고, 그렇다고 옛 내용인 채로 두면 고친 것이
+            결과물에 반영이 안 된다. 그래서 알려만 주고 고를 수 있게 한다.
+            손대지 않은 칸은 저절로 갱신되므로 여기까지 오지 않는다.
+          */}
+          {canRefresh(question) && (
+            <div className="flex flex-col gap-2 rounded-lg bg-cream px-4 py-3">
+              <p className="t-body-sm">
+                앞에서 고친 내용이 이 칸에는 아직 안 들어갔어요. 직접 고친 글이라 그대로
+                두었습니다.
+              </p>
+              <button
+                type="button"
+                onClick={() => refreshPrefill(question)}
+                disabled={disabled}
+                className="pill pill-secondary t-body-sm self-start"
+              >
+                앞 답으로 다시 만들기
+              </button>
+            </div>
           )}
 
           {/*

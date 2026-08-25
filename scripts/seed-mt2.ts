@@ -284,10 +284,18 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     { key: "mt-thu-2", label: "목요일 2기", classNo: 4 },
   ],
 
+  /*
+   * 대기 시간 미니게임.
+   *
+   * 노트북 수령·부팅으로 도착 시각이 5분씩 벌어진다. 먼저 온 학생의 그 시간을 그냥
+   * 버리지 않는다 — 「인간과 인공지능」과 같은 2048 을 쓴다.
+   *
+   * 수업이 시작되면 화면이 저절로 넘어가므로 학생이 게임을 끄고 나올 필요가 없다.
+   */
   game: {
-    heading: "기다리는 동안",
-    body: "노트북이 다 켜질 때까지 잠시 기다려 주세요.\n오늘은 내 마음을 들여다보는 시간이에요.",
-    url: "",
+    heading: "기다리는 동안 — 2048",
+    body: "같은 숫자끼리 밀어서 합치세요.\n오늘은 512만 넘어도 잘한 거예요.",
+    url: "https://2048-game-gilt-kappa.vercel.app/",
   },
   gameExplainer: empty(),
 
