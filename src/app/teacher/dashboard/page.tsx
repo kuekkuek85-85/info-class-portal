@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 
@@ -641,7 +641,15 @@ function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
    *  · 정보과 차시에도 선택과목 단추 넷이 뜬다 (문항이 없어 눌러도 빈 화면)
    *  · 선택과목에 "활동지" 단추가 뜬다 (모든 문항이 다른 단계에 배정돼 있어 역시 빈 화면)
    */
-  const STEP_PHASES: LessonPhase[] = ["problem", "mvp", "build", "grill", "emotion"];
+  const STEP_PHASES: LessonPhase[] = [
+    "wordquiz",
+    "recheck",
+    "problem",
+    "mvp",
+    "build",
+    "grill",
+    "emotion",
+  ];
   const questionsIn = (item: LessonPhase) =>
     (session.activity?.worksheet ?? []).filter((q) => (q.phase ?? "worksheet") === item).length;
 

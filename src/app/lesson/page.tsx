@@ -86,6 +86,25 @@ interface LessonData {
   peers: { name: string; answers: string[] }[];
 }
 
+/**
+ * 활동지 문항을 **그 단계 것만** 골라 띄우는 단계들.
+ *
+ * 한 시간에 여러 단계를 지나가는 차시가 쓴다. 활동지 하나에 다 넣으면 학생이 첫 칸에서
+ * 붙잡혀 끝까지 못 간다.
+ *
+ * 컴포넌트 밖에 두는 이유: 활동지를 언제 받아 올지 정하는 효과가 이 값을 쓴다.
+ * 안에 두면 그 효과에서 안 보인다.
+ */
+const STEP_PHASES: LessonPhase[] = [
+  "wordquiz",
+  "recheck",
+  "problem",
+  "mvp",
+  "build",
+  "grill",
+  "emotion",
+];
+
 /** 입력이 멈춘 뒤 이만큼 지나면 임시저장한다. 종이 울려도 쓰던 내용이 남아야 한다. */
 const AUTOSAVE_DELAY_MS = 1500;
 /** 교사가 단계를 넘긴 것을 학생 화면이 알아채는 주기 */
@@ -384,11 +403,21 @@ export default function LessonPage() {
   useEffect(() => {
     if (!data?.session.activity) return;
     /*
-     * 기준점이 "그리기" 가 아니라 "문제 정의" 다. 선택과목 단계(problem·mvp·build·grill)가
-     * 그리기보다 앞에 있어서, 그리기를 기준으로 두면 그 단계들에서 활동지를 안 받아 온다.
+     * 기준점은 **활동지 문항을 띄우는 단계 중 가장 앞의 것**이다.
+     *
+     * 처음에는 "그리기" 였다. 선택과목 단계(problem·mvp·build·grill)가 그리기보다
+     * 앞에 있어서 "문제 정의" 로 당겼는데, 마음 톡톡이 기분 체크 바로 뒤에 활동지
+     * 단계를 두면서(wordquiz·recheck) 그것도 늦어졌다 — 퀴즈 화면이 "준비하고
+     * 있어요" 에서 안 넘어갔다.
+     *
+     * 그래서 이름을 박지 않고 STEP_PHASES 중 목록에서 가장 앞선 것을 쓴다.
+     * 단계를 또 늘려도 여기를 같이 고칠 필요가 없다.
      */
-    const reached = (item: LessonPhase) =>
-      LESSON_PHASES.indexOf(item) >= LESSON_PHASES.indexOf("problem");
+    const earliest = Math.min(
+      ...STEP_PHASES.map((item) => LESSON_PHASES.indexOf(item)),
+      LESSON_PHASES.indexOf("draw"),
+    );
+    const reached = (item: LessonPhase) => LESSON_PHASES.indexOf(item) >= earliest;
     if (!reached(phase) && !reached(viewPhase)) return;
     if (artifactLoaded.current) return;
     artifactLoaded.current = true;
@@ -560,8 +589,6 @@ export default function LessonPage() {
     (session.activity?.worksheet ?? []).filter(
       (q) => (q.phase ?? "worksheet") === item,
     );
-  /** 선택과목이 쓰는 단계. 활동지 화면을 그 단계 문항만으로 다시 쓴다 */
-  const STEP_PHASES: LessonPhase[] = ["problem", "mvp", "build", "grill", "emotion"];
   const stepQuestions = STEP_PHASES.includes(viewPhase) ? questionsFor(viewPhase) : [];
   /**
    * 제출 단추를 띄울 단계 — 이 차시가 실제로 쓰는 단계 중 **마지막**.
@@ -900,6 +927,8 @@ export default function LessonPage() {
                 보이면 거기서 끝내는 학생이 나온다.
               */
               hideSubmit={viewPhase !== lastStepPhase}
+              // 기분 다시 고르기 문항이 오늘 처음 고른 낱말을 나란히 띄운다
+              firstMood={mood}
               heading={session.phaseLabels?.[viewPhase] ?? PHASE_LABELS[viewPhase]}
             />
           ) : (

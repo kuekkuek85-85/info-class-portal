@@ -36,6 +36,14 @@ export type SessionStatus = "scheduled" | "active" | "ended";
 export type LessonPhase =
   | "waiting"
   | "mood"
+  /*
+   * 「디지털 마음 톡톡」이 기분 체크와 영상 사이에 쓰는 두 칸.
+   *
+   * 낱말을 배우기 **전에** 한 번 고르고, 퀴즈로 낱말을 익힌 뒤 **다시** 고른다.
+   * 그 사이의 차이가 곧 오늘 배운 것이라, 두 번째 체크인은 활동이지 중복이 아니다.
+   */
+  | "wordquiz"
+  | "recheck"
   | "quiz"
   | "progress"
   | "assessment"
@@ -83,6 +91,15 @@ export type LessonPhase =
 export const LESSON_PHASES: readonly LessonPhase[] = [
   "waiting",
   "mood",
+  /*
+   * 기분 체크 바로 뒤. 낱말 퀴즈 → 다시 기분 체크 순서를 여기서 못 박는다.
+   *
+   * 다른 칸을 빌려 쓸 수가 없었다. 기분과 영상 사이에 있는 칸(진도 안내·평가 안내·
+   * 퀴즈)은 전부 활동지 문항을 못 띄우고, 활동지를 띄울 수 있는 칸(만들기·검토)은
+   * 「인간과 인공지능」이 쓰는 순서가 있어 앞으로 옮길 수 없다.
+   */
+  "wordquiz",
+  "recheck",
   "progress",
   "assessment",
   "quiz",
@@ -124,6 +141,8 @@ export const LESSON_PHASES: readonly LessonPhase[] = [
 export const PHASE_LABELS: Record<LessonPhase, string> = {
   waiting: "대기",
   mood: "기분",
+  wordquiz: "감정 낱말 퀴즈",
+  recheck: "기분 다시 고르기",
   quiz: "타임머신 퀴즈",
   progress: "진도 안내",
   assessment: "평가 안내",
@@ -270,6 +289,8 @@ export interface WorksheetQuestion {
    *             그 추측과 자기 마음을 견줘 보게** 하는 것이 목적이다.
    * emotion_quiz — 감정 낱말 퀴즈 (quizItems). 하 → 중 → 상 을 차례로 깨고,
    *             한 단계를 다 맞혀야 다음이 열린다. 틀린 문항만 다시 푼다.
+   * mood_recheck — 무드미터 표를 다시 띄워 기분을 한 번 더 고르게 한다. 처음
+   *             체크인에서 고른 낱말을 나란히 보여준다 — 그 차이가 배운 것이다.
    */
   kind:
     | "text"
@@ -280,7 +301,8 @@ export interface WorksheetQuestion {
     | "echo"
     | "ai_review"
     | "emotion_lens"
-    | "emotion_quiz";
+    | "emotion_quiz"
+    | "mood_recheck";
   /**
    * echo 가 다시 보여줄 답들.
    *

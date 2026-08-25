@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { AiReviewPanel } from "@/components/ai-review-panel";
 import { EmotionLensPanel } from "@/components/emotion-lens-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
+import { MoodRecheck } from "@/components/mood-recheck";
 import { ArtifactCanvas } from "@/components/artifact-canvas";
 import { TechExampleChips } from "@/components/tech-examples";
 import {
@@ -90,6 +91,11 @@ interface WorksheetViewProps {
    * 쓰고 끝내는 학생이 나온다. 마지막 단계에서만 띄운다.
    */
   hideSubmit?: boolean;
+  /**
+   * 오늘 처음 기분 체크에서 고른 낱말. mood_recheck 문항이 나란히 띄운다.
+   * 기분 기록은 활동지가 아니라 moodEntries 에 있어서 여기로 받아 온다.
+   */
+  firstMood?: string;
   /** 맨 위 제목. 안 주면 차시 성격에 따라 "내 그림 설명하기" / "활동지 쓰기" */
   heading?: string;
   strokes: Stroke[];
@@ -110,6 +116,7 @@ export function WorksheetView({
   sourceHints = DEFAULT_SOURCE_HINTS,
   carried,
   hideSubmit,
+  firstMood,
   heading,
   strokes,
   texts,
@@ -411,6 +418,13 @@ export function WorksheetView({
               question={question}
               raw={value.answers[question.key] ?? ""}
               onResult={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
+          ) : question.kind === "mood_recheck" ? (
+            <MoodRecheck
+              value={value.answers[question.key] ?? ""}
+              firstMood={firstMood ?? ""}
+              onChange={(mood) => setAnswer(question.key, mood)}
               disabled={disabled}
             />
           ) : question.kind === "traits" ? (
