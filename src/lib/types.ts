@@ -268,6 +268,8 @@ export interface WorksheetQuestion {
    * emotion_lens — 앞 칸에 쓴 경험 글(lensSourceKey)을 AI에게 보내고, 감정 추측
    *             2개와 공감 한 줄을 돌려받는다. 맞히는 것이 목적이 아니라 **학생이
    *             그 추측과 자기 마음을 견줘 보게** 하는 것이 목적이다.
+   * emotion_quiz — 감정 낱말 퀴즈 (quizItems). 하 → 중 → 상 을 차례로 깨고,
+   *             한 단계를 다 맞혀야 다음이 열린다. 틀린 문항만 다시 푼다.
    */
   kind:
     | "text"
@@ -277,7 +279,8 @@ export interface WorksheetQuestion {
     | "note"
     | "echo"
     | "ai_review"
-    | "emotion_lens";
+    | "emotion_lens"
+    | "emotion_quiz";
   /**
    * echo 가 다시 보여줄 답들.
    *
@@ -336,6 +339,21 @@ export interface WorksheetQuestion {
    * 얕아져서 견줄 것이 없어진다.
    */
   lensSourceKey?: string;
+  /**
+   * emotion_quiz 의 문항. `level` 순서(easy → mid → hard)로 단계가 열린다.
+   *
+   * **한 단계를 다 맞혀야 다음이 열린다.** 점수를 매겨 줄을 세우려는 것이 아니라,
+   * 감정 낱말을 정확히 알고 넘어가게 하려는 것이다 — 표현은 낱말을 알아야 시작된다.
+   * 그래서 틀리면 해설을 보고 **그 문항만** 다시 푼다. 맞힌 것은 다시 안 묻는다.
+   */
+  quizItems?: {
+    level: "easy" | "mid" | "hard";
+    prompt: string;
+    choices: string[];
+    answerIndex: number;
+    /** 왜 그 낱말인지. 맞히든 틀리든 채점 뒤에 보여준다 */
+    explain: string;
+  }[];
   /**
    * choice 의 보기.
    *

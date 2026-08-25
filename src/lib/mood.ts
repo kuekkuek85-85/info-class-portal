@@ -119,7 +119,7 @@ const GRID: [string, string][][] = [
     ["여유로운", "Relaxed"], ["차분한", "Chill"], ["편안한", "Restful"], ["축복받은", "Blessed"], ["안정적인", "Balanced"],
   ],
   [
-    ["의기소침한", "Despondent"], ["우울한", "Depressed"], ["둔한", "Sullen"], ["기진맥진한", "Exhausted"], ["지친", "Fatigued"],
+    ["의기소침한", "Despondent"], ["우울한", "Depressed"], ["뚱한", "Sullen"], ["기진맥진한", "Exhausted"], ["지친", "Fatigued"],
     ["한가로운", "Mellow"], ["생각에 잠긴", "Thoughtful"], ["평화로운", "Peaceful"], ["편한", "Comfortable"], ["근심 걱정 없는", "Carefree"],
   ],
   [

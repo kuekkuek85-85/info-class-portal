@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { AiReviewPanel } from "@/components/ai-review-panel";
 import { EmotionLensPanel } from "@/components/emotion-lens-panel";
+import { EmotionQuiz } from "@/components/emotion-quiz";
 import { ArtifactCanvas } from "@/components/artifact-canvas";
 import { TechExampleChips } from "@/components/tech-examples";
 import {
@@ -401,6 +402,13 @@ export function WorksheetView({
           ) : question.kind === "emotion_lens" ? (
             <EmotionLensPanel
               questionKey={question.key}
+              raw={value.answers[question.key] ?? ""}
+              onResult={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
+          ) : question.kind === "emotion_quiz" ? (
+            <EmotionQuiz
+              question={question}
               raw={value.answers[question.key] ?? ""}
               onResult={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}
