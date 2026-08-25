@@ -50,6 +50,8 @@ interface GalleryData {
   }[];
   worksheet: WorksheetQuestion[];
   facets: Facet[];
+  /** 친구에게 열어 둔 답 칸의 차례. 비면 필터 값으로 요약한다 */
+  sharedKeys?: string[];
   feedbackPrompts: FeedbackPrompts;
 }
 
@@ -84,7 +86,26 @@ interface Facet {
  * 필터가 쓰는 이름표를 그대로 쓴다(facets). 차시가 이미 "이 칸들은 사라질 직업" 이라고
  * 정해 두었으므로, 같은 것을 두 군데에 적지 않는다.
  */
-function summaryOf(work: Work, facets: Facet[]): { label: string; values: string[] }[] {
+function summaryOf(
+  work: Work,
+  facets: Facet[],
+  sharedKeys: string[],
+): { label: string; values: string[] }[] {
+  /*
+   * 차시가 "이 칸만 친구에게 보인다" 고 골라 둔 경우에는 그 칸을 차례대로 그대로 보여준다.
+   *
+   * 이름표는 붙이지 않는다. 골라 둔 칸의 질문 이름표는 쓰라고 시키는 문장이라
+   * ("그 감정을 한 줄로 적어 주세요 — 이 줄만 친구들에게 보입니다") 카드에 붙이면
+   * 읽을 것보다 안내가 길어진다. 값만 두 줄로 세우면 "지침 / 요즘 학원이 늘어서
+   * 계속 지친다" 가 되어 그대로 읽힌다.
+   */
+  if (sharedKeys.length > 0) {
+    return sharedKeys
+      .map((key) => (work.answers[key] ?? "").trim())
+      .filter(Boolean)
+      .map((value) => ({ label: "", values: [value] }));
+  }
+
   const rows = facets
     // 특성·장소는 카드 아래에 이미 나온다. 요약에 또 적으면 같은 말이 두 번이다.
     .filter((facet) => facet.fromAnswers)
@@ -233,7 +254,7 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
                             />
                           ) : (
                             <div className="flex min-h-32 flex-col gap-1.5 rounded bg-white p-3">
-                              {summaryOf(work, data.facets ?? []).map((row, i) => (
+                              {summaryOf(work, data.facets ?? [], data.sharedKeys ?? []).map((row, i) => (
                                 <p key={row.label || i} className="t-body-sm">
                                   {/*
                                     이름표를 반드시 붙인다. 값만 늘어놓으면
@@ -321,7 +342,14 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
             <p className="t-body">아직 없어요. 조금만 기다려 보세요.</p>
           )}
           {data.received.map((item) => (
-            <ReceivedCard key={item.id} item={item} onSaved={reload} disabled={disabled} />
+            <ReceivedCard
+              key={item.id}
+              item={item}
+              foundLabel={data.feedbackPrompts.found.label}
+              questionLabel={data.feedbackPrompts.question.label}
+              onSaved={reload}
+              disabled={disabled}
+            />
           ))}
         </>
       )}
@@ -332,6 +360,7 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
           worksheet={data.worksheet}
           noun={noun}
           prompts={data.feedbackPrompts}
+          hideLabels={(data.sharedKeys ?? []).length > 0}
           onClose={() => setOpenId("")}
           onSaved={reload}
           disabled={disabled}
@@ -491,6 +520,7 @@ function DetailModal({
   worksheet,
   noun,
   prompts,
+  hideLabels,
   onClose,
   onSaved,
   disabled,
@@ -499,6 +529,8 @@ function DetailModal({
   worksheet: WorksheetQuestion[];
   noun: string;
   prompts: FeedbackPrompts;
+  /** 친구 것을 볼 때 질문 이름표를 뗄지 (차시가 공유 칸을 골라 둔 경우) */
+  hideLabels: boolean;
   onClose: () => void;
   onSaved: () => void;
   disabled?: boolean;
@@ -518,7 +550,8 @@ function DetailModal({
         </div>
 
         <div className="flex flex-col gap-4">
-          <CardNews data={work} worksheet={worksheet} />
+          {/* 친구 것은 이름표 없이 답만 — 골라 연 칸의 이름표는 쓰라고 시키는 문장이다 */}
+          <CardNews data={work} worksheet={worksheet} hideQuestionLabels={hideLabels} />
 
           <ReactionBar
             artifactId={work.id}
@@ -675,17 +708,26 @@ function FeedbackForm({
         />
       </label>
 
-      <label className="flex flex-col gap-1">
-        <span className="t-body-sm font-bold">{prompts.question.label}</span>
-        <input
-          value={question}
-          onChange={(event) => setQuestion(event.target.value)}
-          maxLength={200}
-          disabled={disabled}
-          placeholder={prompts.question.placeholder}
-          className="field"
-        />
-      </label>
+      {/*
+        둘째 칸은 차시가 이름표를 비우면 통째로 빠진다.
+
+        기본은 두 칸이다 — 관찰 하나, 질문 하나. 그런데 감정을 나누는 활동에서는
+        "물어보고 싶은 것" 이 캐묻는 칸이 된다. 힘든 이야기를 꺼낸 친구에게
+        "왜 그런 일이 있었어?" 가 달리면 위로가 아니라 취조다. 그런 차시는 한 칸만 쓴다.
+      */}
+      {prompts.question.label && (
+        <label className="flex flex-col gap-1">
+          <span className="t-body-sm font-bold">{prompts.question.label}</span>
+          <input
+            value={question}
+            onChange={(event) => setQuestion(event.target.value)}
+            maxLength={200}
+            disabled={disabled}
+            placeholder={prompts.question.placeholder}
+            className="field"
+          />
+        </label>
+      )}
 
       <div className="flex items-center gap-3">
         <button
@@ -704,6 +746,8 @@ function FeedbackForm({
 
 function ReceivedCard({
   item,
+  foundLabel,
+  questionLabel,
   onSaved,
   disabled,
 }: {
@@ -715,6 +759,8 @@ function ReceivedCard({
     reactions: string[];
     authorReply: string;
   };
+  foundLabel: string;
+  questionLabel: string;
   onSaved: () => void;
   disabled?: boolean;
 }) {
@@ -737,15 +783,19 @@ function ReceivedCard({
       <p className="t-caption">
         {item.from} {item.reactions.join(" ")}
       </p>
+      {/*
+        이름표를 박아 두지 않는다. 차시마다 두 칸이 무엇을 묻는지가 다르다 —
+        감정을 나누는 활동에서 "찾은 기술 · 힘내!" 가 뜨면 무슨 말인지 알 수가 없다.
+      */}
       {item.foundTech && (
         <p className="t-body">
-          <span className="font-bold">찾은 기술 · </span>
+          <span className="font-bold">{foundLabel} · </span>
           {item.foundTech}
         </p>
       )}
       {item.question && (
         <p className="t-body">
-          <span className="font-bold">물어본 것 · </span>
+          <span className="font-bold">{questionLabel} · </span>
           {item.question}
         </p>
       )}

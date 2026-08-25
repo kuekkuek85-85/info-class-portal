@@ -1,5 +1,12 @@
 import { fail, guard, ok } from "@/lib/api";
-import { getArtifact, getSession, listArtifacts, listFeedbacksFor } from "@/lib/db";
+import {
+  flagCareAlert,
+  getArtifact,
+  getSession,
+  listArtifacts,
+  listFeedbacksFor,
+} from "@/lib/db";
+import { checkCrisis } from "@/lib/emotion-lens";
 import { activityIdFor, assignPeers, isVisible, publicIdOf, toCard } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
 import {
@@ -123,6 +130,9 @@ function facetsFor(session: ClassSession, visible: Artifact[]) {
  * 반대쪽 문제가 컸다 — 그림을 못 그렸다고 생각하는 학생이 자기 이름이 붙는 것을 민망해한다.
  * 장난은 두 칸짜리 정해진 양식과 교사 숨김으로 막고, 교사 화면에서는 그대로 보인다.
  */
+/** 위기 신호로 가린 학생을 교사에게 이미 알렸는지. `수업:학번` */
+const flagged = new Set<string>();
+
 export async function GET() {
   return guard(async () => {
     const me = await readStudentSession();
@@ -144,9 +154,47 @@ export async function GET() {
       return fail("not_found", "이 수업에서는 서로 구경하기를 하지 않아요.");
     }
 
+    /** 친구에게 보여줄 답 칸. 안 정했으면 지금까지처럼 전부 (types.ts 의 galleryAnswerKeys) */
+    const allowKeys = session.activity?.galleryAnswerKeys;
+
     // 같은 반 것만 읽는다. 다른 반 담벼락은 보이지 않는다 (PRD 3.5)
-    const visible = (await listArtifacts(activityId, session.classNo)).filter(isVisible);
+    const all = (await listArtifacts(activityId, session.classNo)).filter(isVisible);
     const mine = await getArtifact(activityId, me.studentId);
+
+    /*
+     * 친구에게 넘어가기 전에 위기 신호를 거른다.
+     *
+     * 감정을 나누는 차시에서는 학생이 쓴 글이 그대로 친구에게 간다. "죽고 싶다" 가
+     * 담긴 줄이 스물두 명에게 걸리면, 그 뒤에 일어나는 일을 교사가 통제할 수 없다.
+     * 본인 화면에는 그대로 보이고(자기 글은 자기 것이다), 친구 목록에서만 빠진다.
+     *
+     * 감정 렌즈와 같은 문턱을 쓴다 — 거기서만 막고 여기는 열어 두면 앞문을 잠그고
+     * 뒷문을 연 셈이 된다. 공유하는 칸만 검사한다.
+     */
+    const shared = (row: (typeof all)[number]) =>
+      (allowKeys ?? Object.keys(row.answers ?? {}))
+        .map((k) => row.answers?.[k] ?? "")
+        .join("\n");
+
+    const visible: typeof all = [];
+    for (const row of all) {
+      if (!checkCrisis(shared(row))) {
+        visible.push(row);
+        continue;
+      }
+      /*
+       * 가리는 것만으로는 모자라다. 그 학생은 친구 목록에서 빠지므로 아무 말도 못
+       * 받는데, 정작 도움이 필요한 사람이 혼자 남는 셈이 된다. 교사에게 알린다.
+       *
+       * 이 화면은 스물두 명이 번갈아 폴링하므로 한 번만 세도록 기억해 둔다.
+       * 서버 인스턴스마다 따로 놀아서 몇 번 더 셀 수는 있는데, 못 세는 것보다 낫다.
+       */
+      const once = `${session.id}:${row.studentId}`;
+      if (!flagged.has(once)) {
+        flagged.add(once);
+        await flagCareAlert(session.id, row.studentId).catch(() => undefined);
+      }
+    }
 
     // 반응·피드백은 한 번에 모아 읽는다 (작품마다 따로 읽으면 읽기 수가 곱해진다)
     const feedbacks = await listFeedbacksFor([
@@ -188,7 +236,8 @@ export async function GET() {
     const works = visible
       .filter((row) => row.studentId !== me.studentId)
       .map((row) => ({
-        ...toCard(row, ""),
+        // 정해진 답 칸만 싣는다 — 감정 낱말은 열고 경험 글은 닫는다
+        ...toCard(row, "", allowKeys),
         // 꼭 봐야 할 두 편. 자유 선택만 두면 잘 그린 몇 명에게 몰린다 (assignPeers 참조)
         assigned: assignedIds.has(row.id),
         /** 이 활동지가 어느 필터에 걸리는가. 화면은 이것만 보고 거른다 */
@@ -227,6 +276,11 @@ export async function GET() {
           authorReply: row.authorReply ?? "",
         })),
       worksheet: session.activity?.worksheet ?? [],
+      /**
+       * 친구에게 열어 둔 답 칸의 차례. 화면은 카드 요약을 이 차례로 그린다.
+       * 안 정한 차시에서는 비어 있고, 지금까지처럼 필터 값으로 요약한다.
+       */
+      sharedKeys: allowKeys ?? [],
       // 친구 것에 남기는 두 칸의 질문 — 차시가 정하지 않았으면 그림용 기본값
       feedbackPrompts: session.activity?.feedbackPrompts ?? DEFAULT_FEEDBACK_PROMPTS,
       /** 왼쪽 필터를 무엇으로 세울지. 차시마다 다르다 (facetsFor 참조) */

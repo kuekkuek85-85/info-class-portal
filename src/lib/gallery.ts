@@ -62,8 +62,17 @@ export function findByPublicId(artifacts: Artifact[], publicId: string): Artifac
   return artifacts.find((row) => publicIdOf(row.id) === publicId) ?? null;
 }
 
-/** 카드뉴스 한 장에 필요한 것만 추린다 */
-export function toCard(artifact: Artifact, author: string) {
+/**
+ * 카드뉴스 한 장에 필요한 것만 추린다.
+ *
+ * `allowKeys` 를 주면 **그 답 칸만** 싣는다. 감정을 나누는 차시에서 감정 낱말만
+ * 열고 경험 글은 닫기 위한 것이다 (types.ts 의 galleryAnswerKeys).
+ *
+ * 거르는 자리가 화면이 아니라 여기인 것이 중요하다. 화면에서 고르면 안 보일 뿐
+ * 응답에는 실려 있어서, 개발자 도구를 여는 학생 하나면 다 읽힌다.
+ */
+export function toCard(artifact: Artifact, author: string, allowKeys?: string[]) {
+  const answers = artifact.answers ?? {};
   return {
     id: publicIdOf(artifact.id),
     author,
@@ -71,7 +80,9 @@ export function toCard(artifact: Artifact, author: string) {
     year: artifact.year,
     strokes: artifact.strokes ?? [],
     texts: artifact.texts ?? [],
-    answers: artifact.answers ?? {},
+    answers: allowKeys
+      ? Object.fromEntries(allowKeys.filter((k) => answers[k]).map((k) => [k, answers[k]]))
+      : answers,
     traits: artifact.traits ?? [],
     sources: artifact.sources ?? { site: "", ai: "" },
   };

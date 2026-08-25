@@ -136,6 +136,7 @@ export async function GET() {
                 반 전체에 걸린다 — 빠뜨렸을 때 조용히 열리는 쪽이라 특히 위험하다.
               */
               galleryEnabled: session.activity.galleryEnabled ?? true,
+              galleryNoun: session.activity.galleryNoun ?? "",
             }
           : null,
         date: session.date,

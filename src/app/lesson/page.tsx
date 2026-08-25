@@ -44,6 +44,8 @@ export interface ActivityInfo {
    * 감정을 쓰는 차시는 false — 마음 이야기는 친구에게 보이지 않는다.
    */
   galleryEnabled?: boolean;
+  /** 감상 화면에서 부르는 말 ("이야기"). 비면 그림 여부로 정한다 */
+  galleryNoun?: string;
 }
 
 interface LessonData {
@@ -539,7 +541,11 @@ export default function LessonPage() {
    * 그림이 없는 차시에서는 "작품" 대신 "활동지"라고 부른다.
    * 글만 쓰는 활동인데 "작품 감상"이라고 하면 학생이 그림을 찾는다.
    */
-  const workNoun = canDraw ? "작품" : "활동지";
+  /*
+   * 차시가 정한 이름이 있으면 그것을 쓴다. 감정을 나누는 활동에 "친구 활동지" 라고
+   * 하면 서로 숙제 검사하는 것처럼 읽힌다.
+   */
+  const workNoun = session.activity?.galleryNoun || (canDraw ? "작품" : "활동지");
 
   /**
    * 단계 하나에서 보여줄 활동지 문항.

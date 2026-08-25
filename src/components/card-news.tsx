@@ -29,9 +29,24 @@ interface CardNewsProps {
   /** "2반 7번 김○○" 같은 표시명. 서버가 조인해서 만든 문자열만 받는다 */
   author?: string;
   compact?: boolean;
+  /**
+   * 질문 이름표를 떼고 답만 보여준다.
+   *
+   * 친구 것을 볼 때 쓴다. 차시가 골라 연 칸의 이름표는 **쓰라고 시키는 문장**이라
+   * ("그 감정을 한 줄로 적어 주세요 — 이 줄만 친구들에게 보입니다") 남의 글 위에
+   * 붙으면 읽는 사람에게 하는 지시로 읽힌다. 내 것을 볼 때는 이름표가 있어야 하므로
+   * 화면이 자리마다 정한다.
+   */
+  hideQuestionLabels?: boolean;
 }
 
-export function CardNews({ data, worksheet, author, compact }: CardNewsProps) {
+export function CardNews({
+  data,
+  worksheet,
+  author,
+  compact,
+  hideQuestionLabels,
+}: CardNewsProps) {
   const filled = worksheet.filter((question) =>
     question.kind === "traits" ? data.traits.length > 0 : (data.answers[question.key] ?? "").trim(),
   );
@@ -73,7 +88,7 @@ export function CardNews({ data, worksheet, author, compact }: CardNewsProps) {
         <dl className="flex flex-col gap-3">
           {filled.map((question) => (
             <div key={question.key}>
-              <dt className="t-caption">{question.label}</dt>
+              {!hideQuestionLabels && <dt className="t-caption">{question.label}</dt>}
               <dd className="t-body mt-1 whitespace-pre-wrap">
                 {question.kind === "traits"
                   ? data.traits.join(" · ")
