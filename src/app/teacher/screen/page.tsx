@@ -38,6 +38,8 @@ interface SessionRow {
   status: "scheduled" | "active" | "ended";
   phase: LessonPhase;
   video?: Content;
+  /** 영상 볼 때 학생 화면에 뜨는 질문. 비면 성찰 질문으로 물러난다 */
+  videoPrompts?: string[];
   reflectionQuestions?: string[];
   quiz?: {
     questions: {
@@ -85,6 +87,11 @@ function Screen() {
   const sessionId = picked || pickCurrentSession(sessions)?.id || sessions[0]?.id || "";
   const session = sessions.find((s) => s.id === sessionId);
   const embed = session?.video?.url ? toEmbedUrl(session.video.url) : "";
+  /** 학생 화면에 지금 떠 있는 질문. 판정 규칙을 lesson/page.tsx 와 똑같이 맞춘다 */
+  const videoPrompts =
+    session?.videoPrompts && session.videoPrompts.length > 0
+      ? session.videoPrompts
+      : (session?.reflectionQuestions ?? []);
   const showQuiz = session?.phase === "quiz" && (session.quiz?.questions.length ?? 0) > 0;
 
   return (
@@ -151,11 +158,22 @@ function Screen() {
             )}
           </div>
 
-          {(session.reflectionQuestions?.length ?? 0) > 0 && (
+          {/*
+            **학생 화면과 같은 것을 보여야 한다.**
+
+            여기는 "학생 태블릿에 지금 뭐가 떠 있나" 를 교사에게 알려 주는 자리다.
+            그런데 성찰 질문을 찍고 있어서, 차시가 영상용 질문을 따로 정한 뒤로는
+            교사 화면과 학생 화면에 서로 다른 질문이 떠 있었다. 학생에게 "2번 질문
+            생각해 보세요" 라고 하면 학생 화면에는 그런 번호가 없다.
+
+            판정은 학생 화면(lesson/page.tsx)과 같은 규칙이다 — 차시가 정한 것이
+            있으면 그것, 없으면 성찰 질문.
+          */}
+          {videoPrompts.length > 0 && (
             <section className="flex flex-col gap-2">
               <h2 className="text-sm font-semibold">학생 태블릿에 함께 떠 있는 질문</h2>
               <ol className="flex flex-col gap-2">
-                {session.reflectionQuestions?.map((question, index) => (
+                {videoPrompts.map((question, index) => (
                   <li
                     key={index}
                     className="rounded-xl border border-line bg-card px-4 py-3 text-base"
