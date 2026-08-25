@@ -94,6 +94,17 @@ function empty(): PhaseContent {
 }
 
 /**
+ * 「디지털 마음 톡톡」 화요일 1기의 캔바 초대 주소.
+ *
+ * 「인간과 인공지능」과 **다른 그룹**이다. 두 명단은 넷만 겹치고, 나머지 열여덟은
+ * 캔바를 처음 쓴다 — 로그인에 시간이 걸린다는 뜻이다.
+ *
+ * 저장소에 적지 않는다. 주소에 붙은 토큰만 있으면 누구나 학교 캔바 팀에 들어오는데
+ * 이 저장소는 공개되어 있다 (`.env*` 는 무시 목록).
+ */
+const CANVA_MT = process.env.CANVA_INVITE_MT_TUE_1 ?? "";
+
+/**
  * 무드미터 16낱말. 활동지 보기로 그대로 내려 준다.
  *
  * 원본 자료가 감정 단어 목록을 나눠 주는 자리다. **눌러서 칸에 넣어 주지 않는다** —
@@ -143,6 +154,84 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint: "처음에 고른 낱말이 위에 뜹니다. 바뀌어도 좋고 그대로여도 좋아요.",
     kind: "mood_recheck",
     maxLength: 0,
+  },
+
+  /*
+   * ── 감정 캐릭터 만들기 · 캔바 AI (20분, 2교시) ────────────
+   *
+   * 인사이드 아웃 2가 한 일을 학생이 직접 해 본다 — **감정에 얼굴을 붙이는 것**이다.
+   * 추상적인 감정을 눈에 보이게 만드는 것이라, 오늘 목표(감정 인식)의 그림 버전이다.
+   *
+   * 프롬프트에 **무드미터 사분면 색**을 넣게 한 것이 핵심이다. 배운 것이 한 번 더
+   * 쓰이고, "빨강 칸이니까 붉게" 를 스스로 말하려면 자기 감정이 어느 칸인지 알아야 한다.
+   *
+   * 자리는 만들기(build) 칸이다. 앞의 "다시 마음 체크인" 에서 낱말을 이미 정했으므로
+   * 그릴 것이 있고, 서로의 마음 읽기보다 앞이라 친구 것도 볼 수 있다.
+   *
+   * **2교시에 한다.** 열여덟 명이 캔바 첫 로그인이라 앞부분(체크인·퀴즈)에 끼워 넣으면
+   * 조용히 자기 마음을 들여다보는 리듬이 로그인 삽질로 깨진다.
+   */
+  {
+    key: "_canva_login",
+    phase: "build",
+    label: "① 캔바에 들어가기",
+    hint:
+      "아래 단추를 누르고 [Microsoft로 계속하기] 를 고릅니다.\n" +
+      "학교 계정으로 로그인해요 — 26 뒤에 내 학번 5자리를 붙입니다.\n" +
+      "예) 학번이 10822이면 → 2610822@jangpyung.sen.ms.kr\n" +
+      "비밀번호는 학교 계정 비밀번호예요.",
+    kind: "note",
+    linkUrl: CANVA_MT,
+    linkLabel: "캔바 열기 (새 창)",
+    maxLength: 0,
+  },
+  {
+    key: "_canva_make",
+    phase: "build",
+    label: "② 내 감정을 캐릭터로 만들기",
+    hint:
+      "왼쪽 메뉴에서 [Canva AI] → [이미지] 를 누릅니다.\n" +
+      "아래 칸에 프롬프트를 쓰고, 그대로 복사해서 캔바에 붙여 넣어요.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "canva_prompt",
+    phase: "build",
+    /*
+     * 프롬프트를 미리 채워 주지 않는다.
+     *
+     * 감정 낱말과 사분면 색을 **자기가 골라 문장에 넣는 것**이 이 활동이다.
+     * 채워 주면 단추 한 번 누르고 끝나고, 그러면 배운 것이 안 쓰인다.
+     */
+    label: "캔바에 넣을 프롬프트를 써 보세요",
+    hint:
+      "세 가지를 꼭 넣습니다 — ① 내 감정 낱말 ② 무드미터 사분면 색 ③ 표정\n\n" +
+      "예) 좌절한 감정을 인사이드 아웃 스타일 캐릭터로 그려줘.\n" +
+      "무드미터 빨강 칸이라 색은 붉게, 표정은 애쓰다 막힌 얼굴로.\n\n" +
+      "🔴 빨강(기운↑·기분↓) · 🟡 노랑(기운↑·기분↑) · 🔵 파랑(기운↓·기분↓) · 🟢 초록(기운↓·기분↑)",
+    kind: "long",
+    maxLength: 300,
+    copyable: true,
+  },
+  {
+    key: "_canva_share",
+    phase: "build",
+    label: "③ 링크 가져오기",
+    hint:
+      "만든 이미지를 누른 다음, 오른쪽 위 [공유] 를 누릅니다.\n" +
+      "링크가 나오면 복사해서 아래 칸에 붙여 넣어요.\n" +
+      "이 링크는 친구들도 눌러서 볼 수 있게 됩니다.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "canva_url",
+    phase: "build",
+    label: "만든 감정 캐릭터 링크",
+    hint: "붙여 넣기가 안 되면 손을 들어 주세요.",
+    kind: "text",
+    maxLength: 300,
   },
 
   /*
@@ -702,6 +791,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     problem: "영화 활동지",
     // 자기가 고른 장면으로 하는 활동. 시간이 모자라면 이 단계만 건너뛸 수 있다
     mvp: "영화·예능 속 내 마음",
+    build: "감정 캐릭터 만들기",
     worksheet: "나의 감정 쓰기",
     gallery: "서로의 마음 읽기",
     reflection: "마음일기",
@@ -728,7 +818,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
      * 마음일기는 그대로 닫혀 있다 (reflectionPublic: false).
      */
     galleryEnabled: true,
-    galleryAnswerKeys: ["share_feel", "share_line"],
+    galleryAnswerKeys: ["share_feel", "share_line", "canva_url"],
     galleryNoun: "이야기",
 
     /*
