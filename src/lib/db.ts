@@ -513,15 +513,52 @@ export async function syncScheduledSessions(plan: LessonPlan): Promise<number> {
 
   const batch = db().batch();
   for (const doc of snap.docs) {
-    batch.set(doc.ref, snapshotOf(plan), { merge: true });
+    // 세션마다 분반이 다르다 — 분반별 주소는 그 세션의 분반 것으로 골라 넣는다
+    const groupKey = (doc.data() as { groupKey?: string }).groupKey;
+    batch.set(doc.ref, snapshotOf(plan, groupKey), { merge: true });
   }
   await batch.commit();
   return snap.size;
 }
 
-/** 차시 계획에서 세션으로 복사되는 부분. 생성·재배정·동기화가 모두 이 한 곳을 쓴다. */
-export function snapshotOf(plan: LessonPlan) {
+/**
+ * 분반마다 다른 주소를 **그 분반 것 하나로 줄인다.**
+ *
+ * 캔바 초대 주소가 분반별 그룹으로 따로 나 있어서, 차시 계획은 넷을 다 들고 있다.
+ * 활동지는 학생 화면으로 통째로 내려가므로 그대로 두면 화요일 1기 학생의 브라우저에
+ * 목요일 2기 초대 토큰까지 실려 간다 — 남의 분반 캔바 그룹에 들어갈 수 있다.
+ *
+ * 그래서 고른 뒤 **표 자체를 지운다.** 세션 문서에도 남기지 않는다.
+ *
+ * 반으로 여는 수업(정보과)에는 분반이 없다. 그때는 표를 지우기만 하고 linkUrl 은
+ * 계획에 적힌 값을 그대로 쓴다.
+ */
+function resolveGroupLinks(
+  activity: LessonPlan["activity"],
+  groupKey?: string,
+): LessonPlan["activity"] {
+  if (!activity?.worksheet?.some((q) => q.linkUrlByGroup)) return activity;
+
   return {
+    ...activity,
+    worksheet: activity.worksheet.map((question) => {
+      if (!question.linkUrlByGroup) return question;
+      const { linkUrlByGroup, ...rest } = question;
+      const picked = groupKey ? linkUrlByGroup[groupKey] : "";
+      // 그 분반 주소가 없으면 계획에 적힌 기본 주소로 물러난다 (단추가 사라지는 것보다 낫다)
+      return picked ? { ...rest, linkUrl: picked } : rest;
+    }),
+  };
+}
+
+/**
+ * 차시 계획에서 세션으로 복사되는 부분. 생성·재배정·동기화가 모두 이 한 곳을 쓴다.
+ *
+ * `groupKey` 는 분반으로 여는 수업(선택과목)에서만 온다. 분반별로 다른 주소를 고르는 데 쓴다.
+ */
+export function snapshotOf(plan: LessonPlan, groupKey?: string) {
+  return {
+    activity: resolveGroupLinks(plan.activity, groupKey),
     moodCheckEnabled: plan.moodCheckEnabled,
     game: plan.game,
     gameExplainer: plan.gameExplainer,
@@ -533,7 +570,6 @@ export function snapshotOf(plan: LessonPlan) {
     // 퀴즈·활동도 스냅샷에 포함한다. 교사가 2반 수업 전에 문항을 고쳐도 1반이 실제로
     // 답한 문항이 그대로 남아야 응답 분포를 읽을 수 있다 (PRD 5.1).
     quiz: plan.quiz,
-    activity: plan.activity,
     lessonNo: plan.lessonNo,
     title: plan.title,
     /*

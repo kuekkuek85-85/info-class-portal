@@ -144,8 +144,12 @@ export async function POST(request: Request) {
       date,
       period,
       code,
-      // ↓ 여기서 복사한 값이 그 반이 실제로 본 내용으로 고정된다
-      ...snapshotOf(plan),
+      /*
+        ↓ 여기서 복사한 값이 그 반이 실제로 본 내용으로 고정된다.
+        분반을 함께 넘긴다 — 캔바 초대 주소가 분반마다 달라서, 여기서 그 분반 것 하나만
+        남기고 나머지는 지운다. 안 지우면 학생 화면에 남의 분반 초대 토큰이 실려 간다.
+      */
+      ...snapshotOf(plan, group?.key),
       status: "scheduled",
       phase: "waiting",
       rehearsal,
@@ -201,7 +205,11 @@ export async function PATCH(request: Request) {
       const plan = await getLessonPlan(body.lessonPlanId);
       if (!plan) return fail("not_found", "차시 계획을 찾을 수 없습니다.");
 
-      await updateSession(body.id, { lessonPlanId: plan.id, ...snapshotOf(plan) });
+      // 이 수업이 어느 분반이었는지는 세션에 적혀 있다 — 분반별 주소를 다시 고를 때 쓴다
+      await updateSession(body.id, {
+        lessonPlanId: plan.id,
+        ...snapshotOf(plan, session.groupKey),
+      });
     }
 
     if (body.phase) {

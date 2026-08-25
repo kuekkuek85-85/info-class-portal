@@ -66,6 +66,25 @@ db.settings({ ignoreUndefinedProperties: true });
  */
 const CANVA_INVITE_URL = process.env.CANVA_INVITE_URL ?? "";
 
+/**
+ * 분반별 캔바 초대 주소. 분반마다 캔바 그룹이 따로 나 있다.
+ *
+ *   CANVA_INVITE_TUE_1=...   화요일 1기
+ *   CANVA_INVITE_TUE_2=...   화요일 2기
+ *   CANVA_INVITE_THU_1=...   목요일 1기
+ *   CANVA_INVITE_THU_2=...   목요일 2기
+ *
+ * 아직 안 받은 분반은 비워 둔다 — 그 분반 수업을 만들면 위 CANVA_INVITE_URL 로 물러난다.
+ * 넷을 다 계획에 적어 두지만, **수업을 만들 때 그 분반 것 하나만 남고 나머지는 지워진다**
+ * (db.ts 의 snapshotOf). 안 지우면 학생 화면에 남의 분반 초대 토큰이 실려 간다.
+ */
+const CANVA_BY_GROUP: Record<string, string> = {
+  "hai-tue-1": process.env.CANVA_INVITE_TUE_1 ?? "",
+  "hai-tue-2": process.env.CANVA_INVITE_TUE_2 ?? "",
+  "hai-thu-1": process.env.CANVA_INVITE_THU_1 ?? "",
+  "hai-thu-2": process.env.CANVA_INVITE_THU_2 ?? "",
+};
+
 /** 7차시를 관통하는 활동 ID. 3차시 이후에도 같은 값을 쓰면 답이 이어진다 */
 const ACTIVITY_ID = "hai-2026-1기";
 /** 차시 번호가 정보과와 겹치므로(정보 2차시 vs 인간과AI 2차시) 100번대로 띄운다 */
@@ -170,7 +189,11 @@ const WORKSHEET: WorksheetQuestion[] = [
       "예) 학번이 10130이면 → 2610130@jangpyung.sen.ms.kr\n" +
       "비밀번호는 학교 계정 비밀번호예요.",
     kind: "note",
+    // 분반 주소가 있으면 그것으로, 없으면 아래 기본 주소로 (수업 만들 때 하나만 남는다)
     linkUrl: CANVA_INVITE_URL,
+    linkUrlByGroup: Object.fromEntries(
+      Object.entries(CANVA_BY_GROUP).filter(([, url]) => url),
+    ),
     linkLabel: "캔바 열기 (새 창)",
     maxLength: 0,
   },
@@ -478,6 +501,19 @@ async function main(): Promise<void> {
         );
       }
     }
+  }
+
+  console.log("\n캔바 초대 주소");
+  for (const [key, label] of [
+    ["hai-tue-1", "화요일 1기"],
+    ["hai-tue-2", "화요일 2기"],
+    ["hai-thu-1", "목요일 1기"],
+    ["hai-thu-2", "목요일 2기"],
+  ] as const) {
+    const url = CANVA_BY_GROUP[key];
+    // 토큰은 앞 네 글자만 찍는다. 저장소·로그에 통째로 남기지 않는다
+    const shown = url ? url.replace(/token=([^&]{4})[^&]*/, "token=$1…") : "없음 — 기본 주소로 물러남";
+    console.log(`  ${label}  ${shown}`);
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} · 차시 번호 ${LESSON_NO} (정보과와 안 겹치게)`);

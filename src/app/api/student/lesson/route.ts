@@ -107,7 +107,20 @@ export async function GET() {
               activityId: session.activity.activityId,
               places: session.activity.places ?? [],
               year: session.activity.year ?? 2040,
-              worksheet: session.activity.worksheet ?? [],
+              /*
+                분반별 주소 표는 학생에게 내려보내지 않는다.
+
+                수업을 만들 때 이미 그 분반 것만 남기고 지우지만(db.ts 의 snapshotOf),
+                그 전에 만들어진 수업 문서에는 표가 그대로 남아 있다. 활동지는 여기서
+                통째로 내려가므로, 한 줄이 빠지면 화요일 1기 학생의 브라우저에
+                목요일 2기 캔바 초대 토큰이 실려 간다.
+              */
+              worksheet: (session.activity.worksheet ?? []).map((q) => {
+                if (!q.linkUrlByGroup) return q;
+                const rest = { ...q };
+                delete rest.linkUrlByGroup;
+                return rest;
+              }),
               /*
                 여기 빠뜨리면 그림판에 "기술 예시" 단추가 조용히 안 생긴다.
                 이 자리에서 필드를 하나씩 골라 내보내고 있어서, 활동에 값을 넣어도
