@@ -1,29 +1,21 @@
 "use client";
 
-import { MOOD_NOTICE, MOOD_OPTIONS, QUADRANTS, type Quadrant } from "@/lib/mood";
+import { MOOD_GRID, MOOD_NOTICE, getMood, moodCellStyle } from "@/lib/mood";
 
 /**
- * 무드미터 4사분면 감정 선택.
+ * 무드미터 감정 선택 — 원본 표(10×10) 그대로.
  *
- * 가로축은 기분(불쾌↔쾌), 세로축은 기운(낮음↔높음)이다. 사분면 색은 무드미터 관례를 따르되,
- * 디자인 시스템의 파스텔 면으로 톤을 맞췄다 — 여기서 색은 장식이 아니라 축을 읽는 단서다.
- * 16개를 한 화면에 펼쳐 스크롤 없이 한 번에 고르게 했다.
+ * 가로축은 기분(불쾌↔쾌), 세로축은 기운(낮음↔높음)이다. **배치가 곧 축이라서**
+ * 줄과 칸을 흐트러뜨리면 화면 안내("위로 갈수록 기운이 높고…")와 어긋난다.
+ *
+ * 색은 장식이 아니다. 가운데에서 멀수록 진해지는 그러데이션이 "얼마나 센 감정인가" 를
+ * 읽는 단서다 (mood.ts 의 moodCellStyle).
+ *
+ * ## 좁은 화면
+ *
+ * 열 칸을 한 줄에 넣으면 태블릿 세로에서 글자가 뭉갠다. 표를 가로로 밀 수 있게 두고
+ * 최소 너비를 준다 — 칸을 접거나 줄여서 표 모양이 깨지면 축을 읽을 수 없게 된다.
  */
-
-/**
- * 화면 배치가 곧 축이다. 위 = 기운 높음(고활성), 오른쪽 = 기분 좋음(쾌).
- *
- *        불쾌 ←→ 쾌
- *   높음  빨강   노랑
- *   낮음  파랑   초록
- *
- * 이 순서를 바꾸면 화면 안내("위로 갈수록 기운이 높고…")와 어긋나 학생이 엉뚱한 칸을 본다.
- * `/teacher/board` 의 GRID 도 같은 순서를 쓴다 — 한쪽만 고치면 두 화면이 달라진다.
- */
-const ORDER: Quadrant[][] = [
-  ["red", "yellow"],
-  ["blue", "green"],
-];
 
 interface MoodPickerProps {
   value: string;
@@ -47,46 +39,68 @@ export function MoodPicker({
   saved,
   disabled,
 }: MoodPickerProps) {
+  const picked = getMood(value);
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h2 className="t-display">오늘 기분은 어때요?</h2>
         <p className="t-body mt-2">위로 갈수록 기운이 높고, 오른쪽으로 갈수록 기분이 좋아요.</p>
+        <p className="t-body-sm mt-1">
+          꼭 맞는 낱말이 없어도 괜찮아요. 가장 가까운 칸을 골라 주세요.
+        </p>
       </div>
 
-      <div className="flex flex-col gap-3">
-        {ORDER.map((row, rowIndex) => (
-          <div key={rowIndex} className="grid grid-cols-2 gap-3">
-            {row.map((quadrant) => (
-              <fieldset
-                key={quadrant}
-                className={`rounded-lg p-3 ${QUADRANTS[quadrant].className}`}
-              >
-                <legend className="sr-only">{QUADRANTS[quadrant].description}</legend>
-                <div className="grid grid-cols-2 gap-2">
-                  {MOOD_OPTIONS.filter((option) => option.quadrant === quadrant).map((option) => {
-                    const selected = value === option.key;
-                    return (
-                      <button
-                        key={option.key}
-                        type="button"
-                        aria-pressed={selected}
-                        disabled={disabled}
-                        onClick={() => onChange(option.key)}
-                        className={`h-14 rounded-full px-1 text-base font-semibold transition active:scale-95 disabled:opacity-50 ${
-                          selected ? "bg-ink text-canvas" : "bg-canvas text-ink"
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </fieldset>
-            ))}
-          </div>
-        ))}
+      {/*
+        고른 낱말을 표 위에 크게 띄운다. 백 칸 중 하나가 테두리만 달라지는 것으로는
+        무엇을 골랐는지 확인하기 어렵고, 밀어서 보다 보면 고른 칸이 화면 밖으로 나간다.
+      */}
+      <p
+        className="rounded-lg border-2 border-ink px-4 py-3 t-body"
+        role="status"
+        style={picked ? moodCellStyle(picked) : undefined}
+      >
+        {picked ? (
+          <>
+            <b>{picked.label}</b> <span className="t-caption">{picked.en}</span>
+          </>
+        ) : (
+          "아래 표에서 지금 내 기분과 가장 가까운 낱말을 눌러 주세요."
+        )}
+      </p>
+
+      <div className="-mx-4 overflow-x-auto px-4">
+        <div
+          className="grid min-w-[52rem] gap-1"
+          style={{ gridTemplateColumns: "repeat(10, minmax(0, 1fr))" }}
+          role="group"
+          aria-label="무드미터 감정 표"
+        >
+          {MOOD_GRID.flatMap((row) =>
+            row.map((option) => {
+              const selected = value === option.key;
+              const cell = moodCellStyle(option);
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  aria-pressed={selected}
+                  disabled={disabled}
+                  title={`${option.label} (${option.en})`}
+                  onClick={() => onChange(option.key)}
+                  style={selected ? undefined : cell}
+                  className={`flex min-h-16 items-center justify-center rounded px-0.5 py-1 text-center text-[11px] leading-tight font-semibold break-keep transition active:scale-95 disabled:opacity-50 ${
+                    selected ? "bg-ink text-canvas ring-4 ring-ink ring-offset-2" : ""
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            }),
+          )}
+        </div>
       </div>
+      <p className="t-caption">표가 잘리면 좌우로 밀어서 볼 수 있어요.</p>
 
       <div className="flex flex-col gap-3">
         <label htmlFor="mood-reason" className="t-body font-bold">

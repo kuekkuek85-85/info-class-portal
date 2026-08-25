@@ -220,28 +220,32 @@ function Board() {
                   </span>
                 </header>
 
-                <div className="grid grid-cols-2 gap-2">
+                {/*
+                  **고른 낱말만** 띄운다.
+
+                  예전에는 사분면마다 네 칸이 고정이라 빈 칸까지 그려도 됐다. 무드미터
+                  표를 100칸으로 늘린 뒤로는 사분면마다 스물다섯 칸이라, 다 그리면
+                  교실 앞 화면이 아무도 안 고른 낱말로 뒤덮여 정작 오늘의 분포가 묻힌다.
+
+                  많이 고른 순으로 세운다 — 교사가 보려는 것은 "오늘 우리 반이 어디에
+                  몰려 있나" 이지 낱말 목록이 아니다.
+                */}
+                <div className="flex flex-wrap gap-2">
                   {data.counts
-                    .filter((item) => item.quadrant === quadrant)
+                    .filter((item) => item.quadrant === quadrant && item.count > 0)
+                    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
                     .map((item) => (
                       <div
                         key={item.key}
-                        className={`flex h-20 flex-col items-center justify-center rounded-xl ${
-                          item.count > 0 ? "bg-white dark:bg-black/40" : "bg-white/40 dark:bg-black/10"
-                        }`}
+                        className="flex min-w-20 flex-col items-center justify-center rounded-xl bg-white px-2 py-2 dark:bg-black/40"
                       >
-                        <span className="text-2xl font-bold tabular-nums">
-                          {item.count > 0 ? item.count : ""}
-                        </span>
-                        <span
-                          className={`text-xs ${
-                            item.count > 0 ? "" : "text-zinc-400 dark:text-zinc-600"
-                          }`}
-                        >
-                          {item.label}
-                        </span>
+                        <span className="text-2xl font-bold tabular-nums">{item.count}</span>
+                        <span className="text-center text-xs break-keep">{item.label}</span>
                       </div>
                     ))}
+                  {data.byQuadrant[quadrant] === 0 && (
+                    <p className="py-3 text-xs text-zinc-500 dark:text-zinc-400">아직 없어요</p>
+                  )}
                 </div>
               </section>
             ))}
