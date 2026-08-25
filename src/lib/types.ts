@@ -499,6 +499,15 @@ export interface LessonPlan {
   progress: PhaseContent;
   assessment: PhaseContent;
   video: PhaseContent;
+  /**
+   * 영상을 보는 동안 화면에 띄울 "생각할 것".
+   *
+   * 안 적으면 성찰 질문을 그대로 띄운다 — 영상 직후에 성찰을 쓰는 차시(정보과 2차시)는
+   * 그게 맞다. 하지만 영상이 **수업 맨 앞**에 오는 차시에서는 어긋난다.
+   * 마음 톡톡은 영상이 첫 활동인데 성찰(마음일기)은 90분 뒤라, 시작하자마자
+   * "지금 내 기분은 어떤가요?" 가 세 개나 떠서 학생이 지금 답해야 하는 줄 안다.
+   */
+  videoPrompts?: string[];
   /** 성찰 질문. 학생은 각 질문에 따로 답한다. */
   reflectionQuestions: string[];
   /** 다른 학생의 성찰 글을 볼 수 있는지. 기본값 false (PRD 3.4) */
@@ -577,6 +586,8 @@ export interface ClassSession {
   progress: PhaseContent;
   assessment: PhaseContent;
   video: PhaseContent;
+  /** 영상 볼 때 띄울 "생각할 것". 없으면 성찰 질문을 쓴다 (LessonPlan 쪽 설명 참조) */
+  videoPrompts?: string[];
   reflectionQuestions: string[];
   reflectionPublic: boolean;
   quiz?: QuizContent;

@@ -565,6 +565,7 @@ export function snapshotOf(plan: LessonPlan, groupKey?: string) {
     progress: plan.progress,
     assessment: plan.assessment,
     video: plan.video,
+    videoPrompts: plan.videoPrompts ?? [],
     reflectionQuestions: plan.reflectionQuestions,
     reflectionPublic: plan.reflectionPublic,
     // 퀴즈·활동도 스냅샷에 포함한다. 교사가 2반 수업 전에 문항을 고쳐도 1반이 실제로

@@ -62,6 +62,8 @@ interface LessonData {
     progress: Content;
     assessment: Content;
     video: Content;
+    /** 영상 볼 때 띄울 "생각할 것". 비면 성찰 질문으로 물러난다 */
+    videoPrompts?: string[];
     reflectionQuestions: string[];
     reflectionPublic: boolean;
     /** 학생이 지나온 단계로 되돌아갈 수 있는가 */
@@ -578,6 +580,12 @@ export default function LessonPage() {
    * 그래서 **활동지 단계에 배정된 문항이 있으면 그것만** 그린다. 하나도 없는 차시
    * (인간과 인공지능)에서는 지금까지처럼 전부 그려, 훑어보는 쓰임이 그대로 남는다.
    */
+  /** 영상 화면에 띄울 "생각할 것". 차시가 안 정했으면 지금까지처럼 성찰 질문을 쓴다 */
+  const videoPrompts =
+    session.videoPrompts && session.videoPrompts.length > 0
+      ? session.videoPrompts
+      : session.reflectionQuestions;
+
   const plainWorksheetQuestions =
     questionsFor("worksheet").length > 0
       ? questionsFor("worksheet")
@@ -829,10 +837,17 @@ export default function LessonPage() {
               )}
             </div>
 
-            {session.reflectionQuestions.length > 0 && (
+            {/*
+              차시가 따로 정한 "생각할 것" 이 있으면 그것을, 없으면 성찰 질문을 띄운다.
+
+              영상 직후에 성찰을 쓰는 차시(정보과 2차시)는 성찰 질문이 그대로 맞다.
+              영상이 수업 맨 앞에 오는 차시에서는 어긋난다 — 시작하자마자
+              "지금 내 기분은?" 이 떠서 학생이 지금 답해야 하는 줄 안다.
+            */}
+            {videoPrompts.length > 0 && (
               <div className="flex flex-col gap-3">
                 <h2 className="t-eyebrow text-center">영상을 보면서 생각할 것</h2>
-                {session.reflectionQuestions.map((question, index) => (
+                {videoPrompts.map((question, index) => (
                   <div key={index} className="block bg-lime t-subhead">
                     <span className="mr-2 font-bold">{index + 1}.</span>
                     {question}

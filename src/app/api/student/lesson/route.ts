@@ -95,6 +95,8 @@ export async function GET() {
         // 영상 주소는 학생에게 내려보내지 않는다. 전자칠판으로 같이 보는 구조라
         // 태블릿에 주소가 있으면 각자 다른 지점을 보거나 유튜브로 빠져나간다 (PRD 3.2).
         video: { heading: session.video?.heading ?? "", body: session.video?.body ?? "", url: "" },
+        // 영상 볼 때 띄울 "생각할 것". 비어 있으면 화면이 성찰 질문으로 물러난다
+        videoPrompts: session.videoPrompts ?? [],
         reflectionQuestions: questions,
         reflectionPublic: session.reflectionPublic,
         freeNavigation: session.freeNavigation ?? false,
