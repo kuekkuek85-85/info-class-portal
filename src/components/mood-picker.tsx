@@ -50,7 +50,7 @@ export function MoodPicker({
         </p>
       </div>
 
-      <MoodBanner value={value} empty="아래 표에서 지금 내 기분과 가장 가까운 낱말을 눌러 주세요." />
+      <MoodBanner value={value} empty="아래 표에서 지금 내 기분과 가장 가까운 낱말을 눌러 주세요. 뜻을 모르는 낱말은 눌러 보면 설명이 여기 뜹니다." />
       <MoodGrid value={value} onChange={onChange} disabled={disabled} />
 
       <div className="flex flex-col gap-3">
