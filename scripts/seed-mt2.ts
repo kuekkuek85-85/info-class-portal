@@ -330,20 +330,16 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "long",
     maxLength: 300,
   },
-  {
-    key: "myword",
-    phase: "emotion",
-    /*
-     * "정답은 나에게 있다" 를 문장이 아니라 칸으로 만든 자리.
-     * AI 추측을 다 본 뒤에 **내가 최종적으로 정한다.**
-     */
-    label: "그래서, 지금 이 경험에 내가 붙이는 감정 낱말은?",
-    hint: "AI가 준 낱말을 골라도 되고, 완전히 다른 낱말을 써도 됩니다. 정하는 사람은 나예요.",
-    kind: "text",
-    examples: MOOD_WORDS,
-    examplesNote: MOOD_WORDS_NOTE,
-    maxLength: 60,
-  },
+  /*
+   * 여기 "그래서, 지금 이 경험에 내가 붙이는 감정 낱말은?" 이 있었다. 뺐다.
+   *
+   * "정답은 나에게 있다" 를 칸으로 만들려던 자리였는데, 화면에 나오는 모습은
+   * 그 의도를 전하지 못했다. 쓰기①에서 이미 감정 낱말을 세 개 쓴 뒤라 무드미터
+   * 낱말 상자가 또 떴고, 학생 눈에는 "아까 그거 또 하네" 로 보였다.
+   * 경험 글이 쓰기① 세 사건 중 하나면 답까지 똑같아진다.
+   *
+   * 결론은 compare_hit·compare_why 가 이미 받아 간다.
+   */
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
