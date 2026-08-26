@@ -98,6 +98,12 @@ interface WorksheetViewProps {
    */
   studentName?: string;
   /**
+   * 차시가 정한 활동지 첫 화면 문구. heading 과 기본값 둘 다를 이긴다 (ActivityContent
+   * 의 worksheetIntro). 그림을 재료 삼아 다른 글을 쓰는 활동지에서 기본 문구가
+   * "무엇을 그렸는지 적어 주세요" 라고 거짓말하는 것을 막는다.
+   */
+  intro?: { heading: string; body: string } | null;
+  /**
    * 오늘 처음 기분 체크에서 고른 낱말. mood_recheck 문항이 나란히 띄운다.
    * 기분 기록은 활동지가 아니라 moodEntries 에 있어서 여기로 받아 온다.
    */
@@ -166,6 +172,7 @@ export function WorksheetView({
   hideSubmit,
   firstMood,
   studentName = "",
+  intro,
   heading,
   strokes,
   texts,
@@ -328,12 +335,21 @@ export function WorksheetView({
 
   return (
     <section className="flex flex-col gap-6">
+      {/*
+        머리글은 셋 중 하나다.
+         · 차시가 정한 문구 (intro) — 그림을 재료로 다른 글을 쓰는 활동지가 있다
+         · 단계 이름 (heading) — 한 시간에 여러 활동지를 지나는 선택과목
+         · 기본값 — 그림을 설명하는 활동지
+      */}
       <div>
-        <h2 className="t-display">{heading ?? (canDraw ? "내 그림 설명하기" : "활동지 쓰기")}</h2>
-        <p className="t-body mt-2">
-          {canDraw
-            ? `${year}년의 ${place || "내가 고른 장소"} — 무엇을 그렸는지 적어 주세요.`
-            : "아래 질문에 차례로 답해 주세요. 쓰는 동안 자동으로 저장돼요."}
+        <h2 className="t-display">
+          {intro?.heading ?? heading ?? (canDraw ? "내 그림 설명하기" : "활동지 쓰기")}
+        </h2>
+        <p className="t-body mt-2 whitespace-pre-line">
+          {intro?.body ??
+            (canDraw
+              ? `${year}년의 ${place || "내가 고른 장소"} — 무엇을 그렸는지 적어 주세요.`
+              : "아래 질문에 차례로 답해 주세요. 쓰는 동안 자동으로 저장돼요.")}
         </p>
       </div>
 

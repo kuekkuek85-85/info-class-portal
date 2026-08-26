@@ -132,6 +132,9 @@ export async function GET() {
               // 그리기 첫 화면 문구. 안 보내면 학생이 "어디를 그릴까요?" 만 보고
               // 3차시처럼 아무 미래 도시를 그린다 (types.ts 의 drawPrompt)
               drawPrompt: session.activity.drawPrompt ?? null,
+              // 활동지 첫 화면 문구. 안 보내면 "무엇을 그렸는지 적어 주세요" 가 그대로
+              // 뜨고, 그림 설명이 아닌 활동지(6차시 기사 쓰기)에서 거짓말이 된다
+              worksheetIntro: session.activity.worksheetIntro ?? null,
               sourceHints: session.activity.sourceHints ?? null,
               /*
                 감정을 쓰는 차시는 서로 구경하기를 막는다. 이 줄을 빠뜨리면 화면 쪽에서

@@ -46,6 +46,7 @@ export interface ActivityInfo {
   galleryEnabled?: boolean;
   /** 그리기 첫 화면(장소 고르기) 문구. 비면 기본값 */
   drawPrompt?: { heading: string; body: string };
+  worksheetIntro?: { heading: string; body: string } | null;
   /** 감상 화면에서 부르는 말 ("이야기"). 비면 그림 여부로 정한다 */
   galleryNoun?: string;
 }
@@ -917,6 +918,9 @@ export default function LessonPage() {
               sourceHints={session.activity.sourceHints ?? undefined}
               carried={carried}
               studentName={me.name}
+              // 여기는 intro 를 쓰지 않는다. 한 시간에 활동지 여러 장을 지나는 화면이라
+              // 머리글이 지금 어느 단계인지를 말해 줘야 하고, 아래 heading 이 그 일을 한다.
+              // 차시 공통 문구를 씌우면 네 단계가 다 같은 제목이 된다.
               strokes={[]}
               texts={[]}
               value={worksheet}
@@ -1017,6 +1021,7 @@ export default function LessonPage() {
               sourceHints={session.activity.sourceHints ?? undefined}
               carried={carried}
               studentName={me.name}
+              intro={session.activity.worksheetIntro}
               strokes={artifact.strokes}
               texts={artifact.texts}
               value={worksheet}
