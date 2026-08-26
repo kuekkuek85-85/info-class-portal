@@ -916,6 +916,7 @@ export default function LessonPage() {
               canDraw={false}
               sourceHints={session.activity.sourceHints ?? undefined}
               carried={carried}
+              studentName={me.name}
               strokes={[]}
               texts={[]}
               value={worksheet}
@@ -1015,6 +1016,7 @@ export default function LessonPage() {
               canDraw={canDraw}
               sourceHints={session.activity.sourceHints ?? undefined}
               carried={carried}
+              studentName={me.name}
               strokes={artifact.strokes}
               texts={artifact.texts}
               value={worksheet}

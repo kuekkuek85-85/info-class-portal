@@ -92,6 +92,12 @@ interface WorksheetViewProps {
    */
   hideSubmit?: boolean;
   /**
+   * 이 학생 이름. 문항 글의 {이름} 자리에 들어간다 (named 참조).
+   *
+   * 답으로 저장되지도, 어디로 보내지도 않는다 — 자기 화면에 자기 이름을 띄우는 것뿐이다.
+   */
+  studentName?: string;
+  /**
    * 오늘 처음 기분 체크에서 고른 낱말. mood_recheck 문항이 나란히 띄운다.
    * 기분 기록은 활동지가 아니라 moodEntries 에 있어서 여기로 받아 온다.
    */
@@ -108,6 +114,48 @@ interface WorksheetViewProps {
   disabled?: boolean;
 }
 
+/** 앞말에 받침이 있을 때 / 없을 때 쓰는 조사 짝 */
+const PARTICLE_PAIRS: Record<string, [string, string]> = {
+  은: ["은", "는"],
+  는: ["은", "는"],
+  이: ["이", "가"],
+  가: ["이", "가"],
+  을: ["을", "를"],
+  를: ["을", "를"],
+  과: ["과", "와"],
+  와: ["과", "와"],
+};
+
+/**
+ * 문항 글에 박힌 {이름} 을 그 학생 이름으로 바꾼다.
+ *
+ * 6차시 수행평가 준비에서 "이야기 주인공을 내 이름으로 써라" 를 시킨다. 그때 안내가
+ * "내 이름을 넣으세요" 이면 중1은 그냥 "나는" 이라고 쓴다. 예문에 자기 이름이 박혀
+ * 나와야 무엇을 하라는 것인지 한 번에 안다.
+ *
+ * ## 조사까지 같이 고른다
+ *
+ * "{이름}은" 이라고 적어 두고 이름만 끼워 넣으면 받침 없는 이름에서 "이서은" 이 된다.
+ * 자기 이름이 틀린 문장으로 화면에 떠 있으면 중1은 그 지시를 안 믿는다. 그래서
+ * 이름 뒤에 붙은 조사도 받침을 보고 고른다 — 한글 음절은 (코드 - 가) % 28 이 0 이
+ * 아니면 받침이 있다.
+ *
+ * 이름을 아직 모르면(불러오는 중) "내 이름" 으로 물러난다. 빈칸으로 두면
+ * "2036년, 은 …" 같은 문장이 뜬다.
+ */
+function named(text: string, studentName: string): string {
+  if (!text.includes("{이름}")) return text;
+
+  const name = studentName.trim() || "내 이름";
+  const last = name.codePointAt(name.length - 1) ?? 0;
+  const hasFinal = last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
+
+  return text.replaceAll(/\{이름\}([은는이가을를과와])?/g, (_match, particle?: string) => {
+    const pair = particle ? PARTICLE_PAIRS[particle] : undefined;
+    return pair ? name + (hasFinal ? pair[0] : pair[1]) : name;
+  });
+}
+
 export function WorksheetView({
   questions,
   place,
@@ -117,6 +165,7 @@ export function WorksheetView({
   carried,
   hideSubmit,
   firstMood,
+  studentName = "",
   heading,
   strokes,
   texts,
@@ -330,14 +379,16 @@ export function WorksheetView({
             읽는 프로그램에는 "답이 없는 입력칸" 으로 들린다.
           */}
           {question.kind === "note" ? (
-            <p className="block bg-cream t-subhead">{question.label}</p>
+            <p className="block bg-cream t-subhead">{named(question.label, studentName)}</p>
           ) : /* 제목 없이 답만 다시 보여주는 경우가 있다 (앞 문항 바로 아래에 붙일 때) */
           question.kind === "echo" && !question.label ? null : (
             <label htmlFor={`ws-${question.key}`} className="block bg-cream t-subhead">
-              {question.label}
+              {named(question.label, studentName)}
             </label>
           )}
-          {question.hint && <p className="t-caption whitespace-pre-line">{question.hint}</p>}
+          {question.hint && (
+            <p className="t-caption whitespace-pre-line">{named(question.hint, studentName)}</p>
+          )}
 
           {/*
             주소를 글자로 보여주지 않고 누를 수 있게 한다. 캔바 초대 주소는 토큰이 붙어

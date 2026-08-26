@@ -8,7 +8,10 @@ import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   PALETTE,
+  PALETTE_SHADES,
+  QUICK_COLORS,
   SIMPLIFY_EPSILON,
+  STROKE_WIDTH_ORDER,
   STROKE_WIDTHS,
   TEXT_SIZES,
   UNDO_LIMIT,
@@ -150,6 +153,8 @@ export function DrawBoard({
   const [penOnly, setPenOnly] = useState(false);
   /** 펜 전용 모드 때문에 손가락 입력이 막혔다 — 왜 안 그려지는지 알려 주기 위해 */
   const [penOnlyBlocked, setPenOnlyBlocked] = useState(false);
+  /** 넓은 팔레트 팝업 */
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [sizeWarn, setSizeWarn] = useState(false);
@@ -1082,7 +1087,7 @@ export function DrawBoard({
              · 넓은 화면(도구가 옆으로 가는 256px 열): 다시 6칸씩 두 줄
           */}
           <div className="grid grid-cols-6 gap-2 sm:grid-cols-12 lg:grid-cols-6">
-            {PALETTE.map((hex, index) => (
+            {PALETTE.slice(0, QUICK_COLORS).map((hex, index) => (
               <button
                 key={hex}
                 type="button"
@@ -1100,12 +1105,40 @@ export function DrawBoard({
             ))}
           </div>
 
+          {/*
+            넓은 팔레트는 여기서 연다.
+
+            열두 칸을 예순일곱 칸으로 늘리지 않고 팝업으로 뺀 이유는 세로 높이다. 도구창이
+            차지한 만큼 캔버스가 줄어들도록 재고 있어서(toolsRef), 색을 다 펼쳐 두면 그리는
+            자리가 그만큼 사라진다. 자주 쓰는 열두 개는 손 닿는 곳에 두고 나머지는 접는다.
+
+            단추 안에 지금 색을 함께 보여 준다. 팝업에서 고른 색은 위 열두 칸 중 어디에도
+            불이 들어오지 않아서, 이것이 없으면 무슨 색을 쥐고 있는지 알 길이 없다.
+          */}
+          <button
+            type="button"
+            onClick={() => setPaletteOpen(true)}
+            className="flex h-10 items-center justify-center gap-2 rounded-lg border-2 border-line bg-canvas"
+          >
+            <span
+              aria-hidden
+              style={{ background: PALETTE[color] }}
+              className="h-5 w-5 shrink-0 rounded-full border border-line"
+            />
+            <span className="t-body-sm font-semibold">색 더 고르기</span>
+          </button>
+
           <div className="flex items-center gap-2">
             <span className="t-caption w-9 shrink-0">굵기</span>
-            {STROKE_WIDTHS.map((value, index) => (
+            {/*
+              STROKE_WIDTHS 는 저장된 그림 때문에 굵은 차례로 담겨 있지 않다.
+              화면에는 얇은 것부터 세우고, 누를 때는 원래 자리 번호를 넘긴다.
+            */}
+            {STROKE_WIDTH_ORDER.map((index, position) => (
               <button
-                key={value}
+                key={index}
                 type="button"
+                aria-label={`굵기 ${position + 1}단계`}
                 aria-pressed={width === index}
                 onClick={() => setWidth(index)}
                 className={`flex h-10 flex-1 items-center justify-center rounded-lg border-2 ${
@@ -1114,7 +1147,7 @@ export function DrawBoard({
               >
                 <span
                   className="rounded-full bg-ink"
-                  style={{ width: 4 + index * 6, height: 4 + index * 6 }}
+                  style={{ width: 3 + position * 5, height: 3 + position * 5 }}
                 />
               </button>
             ))}
@@ -1194,6 +1227,19 @@ export function DrawBoard({
 
       {techOpen && <TechExampleModal items={techExamples} onClose={() => setTechOpen(false)} />}
 
+      {paletteOpen && (
+        <ColorPaletteModal
+          color={color}
+          onPick={(index) => {
+            setColor(index);
+            // 색을 골랐다는 것은 그리겠다는 뜻이다. 지우개를 쥔 채였다면 펜으로 돌려준다
+            setTool("pen");
+            setPaletteOpen(false);
+          }}
+          onClose={() => setPaletteOpen(false)}
+        />
+      )}
+
       {textDraft && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6"
@@ -1272,6 +1318,85 @@ function sendFinalSave(strokes: Stroke[], texts: TextItem[], rev: number): void 
  * "지우개"가 두 줄로 접히고, 글자 크기도 1.125rem 으로 고정돼 있어 압축이 안 된다.
  * 게다가 `.pill` 은 Tailwind 레이어 밖에 있어서 유틸리티로 덮어쓸 수도 없다.
  */
+/**
+ * 넓은 팔레트.
+ *
+ * 색깔 갈래를 세로 줄로 세우고, 위에서 아래로 옅은 것 → 진한 것으로 내려간다.
+ * 물감통을 눕혀 놓은 모양이라 설명하지 않아도 어디를 눌러야 할지 안다.
+ *
+ * 고르면 바로 닫는다. 중1은 "고르기 → 확인" 두 걸음을 두면 확인을 안 누르고 나가서
+ * 색이 안 바뀐 줄 알고 다시 연다.
+ */
+function ColorPaletteModal({
+  color,
+  onPick,
+  onClose,
+}: {
+  color: number;
+  onPick: (index: number) => void;
+  onClose: () => void;
+}) {
+  // 그리다가 열었다. 손이 키보드에 없을 수도 있으니 바깥 누르기와 Escape 를 둘 다 연다
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="palette-title"
+      onClick={onClose}
+    >
+      <div
+        className="flex w-full max-w-md flex-col gap-3 rounded-lg bg-canvas p-5 sm:max-w-xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <h2 id="palette-title" className="t-subhead">
+          색 고르기
+        </h2>
+        <p className="t-caption">위쪽이 옅은 색, 아래쪽이 진한 색이에요.</p>
+
+        {/*
+          한 갈래가 한 줄(세로). 칸 크기를 고정하지 않고 폭을 나눠 갖게 둔다.
+
+          폰에서는 열한 갈래를 한 줄에 세우지 않는다. 375px 폭에서 칸이 24px까지
+          줄어 손가락으로는 옆 칸이 눌린다. 여섯씩 접으면 세로로 길어지는 대신
+          칸이 50px 가까이 커진다 — 넘치는 만큼은 팝업이 스크롤된다.
+        */}
+        <div className="grid grid-cols-6 gap-1 sm:grid-cols-11">
+          {PALETTE_SHADES.map(([name, indexes]) => (
+            <div key={name} className="flex flex-col gap-1">
+              {indexes.map((index, step) => (
+                <button
+                  key={index}
+                  type="button"
+                  aria-label={`${name} ${step + 1}단계`}
+                  aria-pressed={color === index}
+                  onClick={() => onPick(index)}
+                  style={{ background: PALETTE[index] }}
+                  className={`aspect-square w-full rounded border-2 ${
+                    color === index ? "border-ink ring-2 ring-ink" : "border-transparent"
+                  }`}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <button type="button" onClick={onClose} className="pill pill-secondary">
+          닫기
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ToolButton({
   active,
   onClick,
