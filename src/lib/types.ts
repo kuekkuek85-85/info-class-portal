@@ -377,6 +377,13 @@ export interface WorksheetQuestion {
     explain: string;
   }[];
   /**
+   * 세 단계를 다 깬 뒤에 할 말. 안 적으면 감정 낱말 퀴즈용 기본 문구가 나온다.
+   *
+   * 같은 퀴즈 부품을 낱말 익히기에도, 수행평가 채점 기준 익히기에도 쓴다.
+   * 끝나고 할 말이 서로 다르다.
+   */
+  quizDoneMessage?: string;
+  /**
    * choice 의 보기.
    *
    * 보기 문구 안에 판단 근거를 넣어 둔다. 5차시에서 "곧 가져간다 / 나중에 / 사람이 계속"

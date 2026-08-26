@@ -5,7 +5,10 @@ import { useState } from "react";
 import type { WorksheetQuestion } from "@/lib/types";
 
 /**
- * 감정 낱말 퀴즈 — 하 → 중 → 상 을 차례로 깨는 게임.
+ * 하 → 중 → 상 을 차례로 깨는 숙달 퀴즈.
+ *
+ * 감정 낱말(마음 톡톡 2회기)에 처음 썼고, 지금은 수행평가 채점 기준 익히기(정보과
+ * 6차시)에도 쓴다. 반드시 알고 넘어가야 하는 것이 있을 때 쓰는 부품이다.
  *
  * ## 점수를 매기려는 것이 아니다
  *
@@ -126,8 +129,10 @@ export function EmotionQuiz({
       {done ? (
         <div className="flex flex-col gap-2 rounded-lg bg-lime px-4 py-5 text-center">
           <p className="t-headline">100점! 다 깼어요 🎉</p>
+          {/* 다 깬 뒤 할 말은 차시가 정한다 — 낱말 퀴즈와 채점 기준 퀴즈가 할 말이 다르다 */}
           <p className="t-body-sm">
-            이제 감정 낱말을 더 정확하게 고를 수 있어요. 아래 활동지에 써 봅시다.
+            {question.quizDoneMessage ||
+              "이제 감정 낱말을 더 정확하게 고를 수 있어요. 아래 활동지에 써 봅시다."}
           </p>
         </div>
       ) : (
