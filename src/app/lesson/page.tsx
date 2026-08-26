@@ -44,6 +44,8 @@ export interface ActivityInfo {
    * 감정을 쓰는 차시는 false — 마음 이야기는 친구에게 보이지 않는다.
    */
   galleryEnabled?: boolean;
+  /** 그리기 첫 화면(장소 고르기) 문구. 비면 기본값 */
+  drawPrompt?: { heading: string; body: string };
   /** 감상 화면에서 부르는 말 ("이야기"). 비면 그림 여부로 정한다 */
   galleryNoun?: string;
 }
@@ -992,6 +994,7 @@ export default function LessonPage() {
               place={artifact.place}
               year={artifact.year}
               techExamples={session.activity.techExamples}
+              drawPrompt={session.activity.drawPrompt}
               onPlaceChange={choosePlace}
               onExit={(strokes, texts, saveRev) =>
                 setArtifact((prev) => (prev ? { ...prev, strokes, texts, saveRev } : prev))

@@ -44,6 +44,8 @@ export interface DrawBoardProps {
    * 활동지는 다 그린 뒤에 여는 화면이다.
    */
   techExamples?: string[];
+  /** 장소 고르기 화면 문구. 안 오면 기본값 (types.ts 의 drawPrompt) */
+  drawPrompt?: { heading: string; body: string };
   onPlaceChange: (place: string) => void;
   /**
    * 화면을 떠날 때 지금 그림을 부모에게 넘긴다.
@@ -115,6 +117,7 @@ export function DrawBoard({
   place,
   year,
   techExamples = [],
+  drawPrompt,
   onPlaceChange,
   onExit,
   disabled,
@@ -817,11 +820,13 @@ export function DrawBoard({
       <section className="flex flex-col gap-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="t-display">{repicking ? "어디로 바꿀까요?" : "어디를 그릴까요?"}</h2>
-            <p className="t-body mt-2">
+            <h2 className="t-display">
+              {repicking ? "어디로 바꿀까요?" : (drawPrompt?.heading ?? "어디를 그릴까요?")}
+            </h2>
+            <p className="t-body mt-2 whitespace-pre-line">
               {repicking
                 ? "그리던 그림은 지워지지 않아요. 장소 이름만 바뀝니다."
-                : `${year}년의 모습을 상상해서 그릴 장소를 하나 고르세요.`}
+                : (drawPrompt?.body ?? `${year}년의 모습을 상상해서 그릴 장소를 하나 고르세요.`)}
             </p>
           </div>
 

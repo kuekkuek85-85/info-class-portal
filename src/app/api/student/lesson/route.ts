@@ -129,6 +129,9 @@ export async function GET() {
                 학생 화면까지 오지 않는다 — 4차시 openInNewTab 이 그렇게 사라졌었다.
               */
               techExamples: session.activity.techExamples ?? [],
+              // 그리기 첫 화면 문구. 안 보내면 학생이 "어디를 그릴까요?" 만 보고
+              // 3차시처럼 아무 미래 도시를 그린다 (types.ts 의 drawPrompt)
+              drawPrompt: session.activity.drawPrompt ?? null,
               sourceHints: session.activity.sourceHints ?? null,
               /*
                 감정을 쓰는 차시는 서로 구경하기를 막는다. 이 줄을 빠뜨리면 화면 쪽에서
