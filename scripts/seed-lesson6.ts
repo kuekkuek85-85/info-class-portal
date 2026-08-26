@@ -62,6 +62,18 @@ db.settings({ ignoreUndefinedProperties: true });
 const ACTIVITY_ID = "career-plan";
 const LESSON_NO = 6;
 
+/**
+ * 정보과(1~4반)용 캔바 초대 주소.
+ *
+ * 선택과목과 **다른 그룹**이다. 1~4반 113명 중 캔바를 써 본 학생은 열 명뿐이고
+ * (선택과목 수강생), 나머지 103명은 첫 로그인이다 — 반마다 스물대여섯 명이다.
+ * 그래서 로그인을 수행평가 당일이 아니라 **이 시간에 미리** 끝내 둔다.
+ *
+ * 저장소에 적지 않는다. 토큰만 있으면 누구나 학교 팀에 들어오는데 저장소는 공개다.
+ * 아직 못 받았으면 비워 두면 된다 — 단추 대신 안내가 뜬다.
+ */
+const CANVA_INFO = process.env.CANVA_INVITE_INFO ?? "";
+
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
@@ -93,6 +105,98 @@ const SAMPLE_HIGH =
   "이번 달에는 집에서 새로운 재료 조합으로 한 가지를 만들어 볼 계획이다.";
 
 const WORKSHEET: WorksheetQuestion[] = [
+  /*
+   * ── 캔바 가입·로그인·카드뉴스 맛보기 (15분) ───────────────
+   *
+   * **채점 기준보다 먼저 한다.** 로그인은 학생마다 걸리는 시간이 제각각이라, 먼저
+   * 풀어 두면 빨리 된 학생이 기능을 이것저것 눌러 보는 동안 선생님이 막힌 학생을 본다.
+   * 뒤에 두면 그 편차가 그대로 수업 끝을 잡아먹는다.
+   *
+   * 그리고 다 같이 집중해야 하는 채점 기준이 **수업 끝에** 오는 편이 낫다 —
+   * 다음 시간이 그 평가라, 마지막에 배운 것이 가장 가깝게 남는다.
+   *
+   * 만드는 것은 **5차시에 쓴 내 희망 직업** 카드다. 연습용 아무 주제로 만들면
+   * 15분이 그냥 사라진다. 이미 쓴 재료로 만들면 캔바 기능도 익히고 리포트 ②나
+   * 발표에서 다시 쓸 수 있는 것이 하나 남는다.
+   */
+  {
+    key: "_canva_login",
+    phase: "build",
+    label: "① 캔바에 들어가기",
+    hint: CANVA_INFO
+      ? "아래 단추를 누르고 [Microsoft로 계속하기] 를 고릅니다.\n" +
+        "학교 계정으로 로그인해요 — 26 뒤에 내 학번 5자리를 붙입니다.\n" +
+        "예) 학번이 10203이면 → 2610203@jangpyung.sen.ms.kr\n" +
+        "비밀번호는 학교 계정 비밀번호예요. 안 되면 바로 손을 들어 주세요."
+      : "선생님이 화면에 띄워 주는 주소로 들어갑니다.\n" +
+        "[Microsoft로 계속하기] → 26 + 내 학번 5자리 @jangpyung.sen.ms.kr",
+    kind: "note",
+    linkUrl: CANVA_INFO,
+    linkLabel: "캔바 열기 (새 창)",
+    maxLength: 0,
+  },
+  {
+    key: "_canva_how",
+    phase: "build",
+    label: "② 카드 한 장 만들어 보기",
+    hint:
+      "오늘은 연습이에요. 잘 만들 필요 없습니다 — 어디에 무엇이 있는지만 익혀 둡시다.\n\n" +
+      "1. [디자인 만들기] → 검색창에 “카드뉴스” 를 치고 마음에 드는 템플릿을 고릅니다\n" +
+      "2. 글자를 눌러 내 이야기로 바꿉니다 (아래 ③ 참고)\n" +
+      "3. 왼쪽 [요소] 에서 사진·도형을 넣어 봅니다\n" +
+      "4. 왼쪽 [Canva AI] → [이미지] 로 그림을 만들어 넣어 봅니다\n" +
+      "5. 오른쪽 위 [공유] → [링크 복사]",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "_canva_recap",
+    phase: "build",
+    // 5차시 답. 활동 ID 가 같아서 그대로 읽힌다 — 카드에 넣을 재료다
+    label: "",
+    hint: "",
+    kind: "echo",
+    echoKeys: [
+      { key: "job", label: "내 희망 직업" },
+      { key: "strength", label: "내가 키워야 할 능력" },
+      { key: "prep_now", label: "이번 달에 할 것" },
+    ],
+    maxLength: 0,
+  },
+  {
+    key: "_canva_what",
+    phase: "build",
+    label: "③ 카드에 넣을 내용",
+    hint:
+      "위에 있는 내가 쓴 것을 그대로 씁니다. 새로 지어내지 마세요.\n\n" +
+      "  제목 — 내 희망 직업\n" +
+      "  한 줄 — 인공지능이 와도 내가 계속할 일\n" +
+      "  한 줄 — 그래서 이번 달에 할 것\n\n" +
+      "카드는 한 장이면 충분합니다.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "canva_url",
+    phase: "build",
+    label: "만든 카드 링크",
+    hint: "[공유] → [링크 복사] 로 나온 주소를 붙여 넣어 주세요.\n다음 시간 수행평가에는 안 쓰지만, 나중에 다시 씁니다.",
+    kind: "text",
+    maxLength: 300,
+  },
+  {
+    key: "canva_found",
+    phase: "build",
+    /*
+     * 기능 설명을 듣기만 하면 안 남는다. 하나라도 직접 찾아 적게 하면 그 하나는 남고,
+     * 스물여덟 명이 적은 것을 모으면 다음 시간에 서로 알려 줄 거리가 된다.
+     */
+    label: "캔바에서 새로 알게 된 기능 하나를 적어 주세요",
+    hint: "예) 글자를 누르면 위에 글꼴 바꾸는 칸이 나온다 / [요소] 에서 검색하면 그림이 나온다",
+    kind: "text",
+    maxLength: 100,
+  },
+
   {
     key: "_rubric_note",
     phase: "worksheet",
@@ -384,6 +488,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   focusExempt: ["worksheet"],
   phaseLabels: {
     assessment: "수행평가 예고",
+    build: "캔바 익히기",
     worksheet: "채점 기준 익히기",
   },
 
@@ -439,8 +544,15 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (5차시와 같은 통 — echo 로 지난 답을 띄웁니다)`);
-  console.log("단계: 대기 → 기분 → 수행평가 예고 → 채점 기준 익히기 → 성찰 → 마침");
-  console.log("오늘은 리포트를 쓰지 않습니다. 채점 기준을 익히고 쓸 사례만 골라 둡니다.");
+  console.log("단계: 대기 → 기분 → 수행평가 예고 → 캔바 익히기 → 채점 기준 익히기 → 성찰 → 마침");
+  console.log("오늘은 리포트를 쓰지 않습니다. 캔바 로그인을 끝내 두고, 채점 기준을 익히고, 쓸 사례만 골라 둡니다.");
+  console.log("40분 배분 — 기분 3 · 예고 6 · 캔바 15 · 채점 기준 12 · 성찰 3");
+
+  if (!CANVA_INFO) {
+    console.warn("\n⚠ CANVA_INVITE_INFO 가 없습니다. 캔바 단추 대신 안내 문구만 뜹니다.");
+    console.warn("  정보과(1~4반)용 초대 주소를 .env.local 에 넣고 다시 실행하세요:");
+    console.warn("  CANVA_INVITE_INFO=https://www.canva.com/brand/join?token=...");
+  }
   process.exit(0);
 }
 
