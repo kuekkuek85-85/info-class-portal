@@ -58,18 +58,17 @@ export function SendevDeck({ code, presenter }: { code: string; presenter?: bool
 
   if (!entered) return <Gate code={code} onPass={() => setEntered(true)} />;
 
+  /*
+   * 빈 곳을 눌러도 넘어가지 않는다.
+   *
+   * 처음에는 클릭으로도 넘길 수 있게 했는데, 노트북 터치패드나 터치 화면에서 손이
+   * 스치기만 해도 슬라이드가 넘어갔다. 진행 중에 한 장이 훌쩍 넘어가면 되돌리는
+   * 동안 흐름이 끊기고, 무엇보다 참가자 열두 명 화면이 함께 넘어간다.
+   *
+   * 넘기는 것은 이전·다음 단추와 방향키뿐이다.
+   */
   return (
-    <main
-      className="relative flex min-h-dvh flex-col bg-canvas"
-      onClick={(event) => {
-        /*
-          빈 곳을 눌렀을 때만 넘긴다. "정답 공개" 를 누르자마자 슬라이드가 넘어가면
-          아무도 정답을 못 본다.
-        */
-        const hit = (event.target as HTMLElement).closest("button, input, a, textarea, summary");
-        if (!hit) go(1);
-      }}
-    >
+    <main className="relative flex min-h-dvh flex-col bg-canvas">
       <header className="flex items-center justify-between gap-4 px-8 pt-6">
         <p className="t-eyebrow">
           {presenter ? "강사 화면" : "교사개발자 1기 나눔 세션"}

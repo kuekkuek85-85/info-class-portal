@@ -358,7 +358,7 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
         <div className="flex flex-col items-center gap-6 text-center">
           <p className="t-eyebrow">2026 · 08 · 28 · 금</p>
           <h1 className="t-display">제1호 교사개발자 홈커밍데이</h1>
-          <p className="t-headline">오시는 대로 빙고판을 받아가세요 🎉</p>
+          <p className="t-headline">오시는 대로 편히 앉으세요 🎉</p>
           {/*
             참가자용 QR. 휴대폰으로 들어오면 이 뒤로는 진행자가 넘기는 대로 따라온다.
             휴대폰 화면에는 이 QR 을 그리지 않는다 — 이미 들어온 사람에게는 쓸모가 없다.
