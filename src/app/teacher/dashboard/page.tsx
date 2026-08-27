@@ -77,15 +77,24 @@ interface SessionContent {
   tabs?: unknown[];
 }
 
-/** 신호등 다섯 칸. 교사가 봐야 할 것은 앞의 둘이다 */
+/**
+ * 신호등 다섯 칸. 교사가 봐야 할 것은 앞의 셋이다.
+ *
+ * **글자를 붙이지 않는다.** "많이 뒤처짐" 같은 말이 묶음 머리에 걸려 있으면, 이 화면을
+ * 전자칠판에 띄우는 순간 그 말이 학생에게 붙는다. 이름을 번호로 가려도 마찬가지다 —
+ * 자기 번호는 본인이 안다. 색과 인원수만 두면 교사는 똑같이 읽고 학생은 판정을 안 읽는다.
+ *
+ * 읽어 주는 프로그램을 위한 이름은 색 이름으로만 둔다. 교사가 입으로 말할 때도
+ * "빨강 쪽 먼저 돌자" 이지 "많이 뒤처진 학생" 이 아니다.
+ */
 type Bucket = "red" | "orange" | "yellow" | "lime" | "green";
 
-const BUCKETS: { key: Bucket; label: string; dot: string; bg: string }[] = [
-  { key: "red", label: "많이 뒤처짐", dot: "#d92d20", bg: "#fde8e6" },
-  { key: "orange", label: "뒤처짐", dot: "#e8720c", bg: "#fdeddb" },
-  { key: "yellow", label: "중간", dot: "#e3b306", bg: "#fdf5da" },
-  { key: "lime", label: "거의 다 함", dot: "#84c11c", bg: "#f0f8dd" },
-  { key: "green", label: "다 함", dot: "#1ea64a", bg: "#e2f5e8" },
+const BUCKETS: { key: Bucket; aria: string; dot: string; bg: string }[] = [
+  { key: "red", aria: "빨강", dot: "#d92d20", bg: "#fde8e6" },
+  { key: "orange", aria: "주황", dot: "#e8720c", bg: "#fdeddb" },
+  { key: "yellow", aria: "노랑", dot: "#e3b306", bg: "#fdf5da" },
+  { key: "lime", aria: "연두", dot: "#84c11c", bg: "#f0f8dd" },
+  { key: "green", aria: "초록", dot: "#1ea64a", bg: "#e2f5e8" },
 ];
 
 interface StudentRow {
@@ -184,24 +193,36 @@ function ProgressBoard({
           {BUCKETS.map((bucket) => {
             const members = scored.filter((row) => row.work?.bucket === bucket.key);
             if (members.length === 0) return null;
-            // 다 한 쪽은 셀 수만 있으면 된다 — 이름을 늘어놓으면 정작 볼 것이 밀린다
+            /*
+             * 빨강·주황·노랑까지 펼친다. 노랑은 아직 절반쯤이라 곧 뒤처질 쪽이고,
+             * 순회하다 들여다볼 학생이 그 안에 있다.
+             *
+             * 연두·초록은 접는다. 다 한 쪽은 셀 수만 있으면 되고, 이름을 늘어놓으면
+             * 정작 봐야 할 위쪽이 화면 밖으로 밀린다.
+             */
             const foldable = bucket.key === "green" || bucket.key === "lime";
 
             return (
               <details
                 key={bucket.key}
                 open={!foldable}
-                className="rounded-xl border border-line"
-                style={{ background: bucket.bg }}
+                className="overflow-hidden rounded-xl border border-line border-l-8"
+                style={{ background: bucket.bg, borderLeftColor: bucket.dot }}
               >
-                <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-4 py-3">
+                {/*
+                  글자가 없으니 색이 유일한 표시다. 점을 키우고 왼쪽에 같은 색 띠를 둬서
+                  스치듯 봐도 어느 묶음인지 잡히게 한다.
+                */}
+                <summary
+                  className="flex cursor-pointer flex-wrap items-center gap-3 px-4 py-3"
+                  aria-label={`${bucket.aria} ${members.length}명`}
+                >
                   <span
                     aria-hidden
-                    className="h-3.5 w-3.5 shrink-0 rounded-full"
+                    className="h-5 w-5 shrink-0 rounded-full"
                     style={{ background: bucket.dot }}
                   />
-                  <span className="font-semibold">{bucket.label}</span>
-                  <span className="tabular-nums text-sm">{members.length}명</span>
+                  <span className="tabular-nums font-semibold">{members.length}명</span>
                 </summary>
                 <ul className="flex flex-wrap gap-2 px-4 pb-4">
                   {members.map((row) => {
