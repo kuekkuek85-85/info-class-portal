@@ -1,11 +1,12 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 
 import { TeacherShell } from "@/components/teacher-shell";
-import { todayKST } from "@/lib/datetime";
 import { toEmbedUrl } from "@/lib/embed";
 import { usePolled } from "@/lib/use-polled";
+import { formatDateKorean } from "@/lib/datetime";
+import { useTeacherDate } from "@/lib/teacher-date";
 import { pickCurrentSession } from "@/lib/pick-session";
 import type { LessonPhase } from "@/lib/types";
 import { groupName } from "@/lib/group-label";
@@ -71,8 +72,10 @@ export default function ScreenPage() {
 function Screen() {
   const [picked, setPicked] = useState("");
 
+  // 날짜는 교사 화면들이 함께 쓴다 (teacher-date.ts) — 대시보드에서 고른 날이 여기로 온다
+  const [date] = useTeacherDate();
   const { data } = usePolled<{ sessions: SessionRow[] }>(
-    `/api/teacher/sessions?date=${todayKST()}`,
+    `/api/teacher/sessions?date=${date}`,
     POLL_MS,
   );
   const sessions = data?.sessions ?? [];
@@ -120,7 +123,8 @@ function Screen() {
 
       {sessions.length === 0 && (
         <p className="rounded-xl border border-line bg-card px-4 py-6 text-center text-sm text-muted">
-          오늘 등록된 수업이 없습니다.
+          {/* 날짜를 고를 수 있게 된 뒤로는 "오늘" 이 거짓말이 된다 */}
+          {formatDateKorean(date)}에 등록된 수업이 없습니다.
         </p>
       )}
 

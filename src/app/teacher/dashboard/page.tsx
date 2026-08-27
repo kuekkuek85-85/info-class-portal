@@ -5,7 +5,8 @@ import { useState } from "react";
 import { TeacherArtifactPanel } from "@/components/teacher-artifact-panel";
 import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
 import { TeacherShell } from "@/components/teacher-shell";
-import { formatDateKorean, formatTimeKST, todayKST } from "@/lib/datetime";
+import { useTeacherDate } from "@/lib/teacher-date";
+import { formatDateKorean, formatTimeKST } from "@/lib/datetime";
 import { QUADRANTS, type Quadrant } from "@/lib/mood";
 import { describePeriod, isPeriodOver, periodTime } from "@/lib/timetable";
 import { usePolled } from "@/lib/use-polled";
@@ -265,8 +266,22 @@ function ProgressBoard({
 }
 
 function Dashboard() {
-  const [date, setDate] = useState(todayKST());
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  // 날짜는 껍데기(TeacherShell)가 들고 있다. 공유 화면·영상 재생도 같은 값을 본다
+  const [date] = useTeacherDate();
+  /*
+   * 교사가 직접 고른 수업. **어느 날짜에서 골랐는지까지** 함께 들고 있는다.
+   *
+   * 어제 3교시를 고른 채로 날짜만 오늘로 옮기면 없는 수업 ID 를 붙들고 있어서 화면이
+   * 빈다. 예전에는 날짜 칸이 이 화면에 있어서 바꾸는 자리에서 함께 비웠는데, 칸을
+   * 껍데기로 옮기면서 그 자리가 없어졌다.
+   *
+   * 효과로 비우지 않고 **날짜가 다르면 안 고른 것으로 친다.** 효과에서 setState 를 하면
+   * 렌더가 한 번 더 돌고, 그 사이 한 프레임 동안 옛 수업이 보인다.
+   */
+  const [pickedSession, setPickedSession] = useState<{ date: string; id: string } | null>(null);
+  const sessionId = pickedSession?.date === date ? pickedSession.id : null;
+  const setSessionId = (id: string | null) =>
+    setPickedSession(id ? { date, id } : null);
   /** null이면 서버 값을 그대로 보여준다. 교사가 타이핑을 시작하면 그때부터 로컬 값이 이긴다. */
   const [noteDraft, setNoteDraft] = useState<string | null>(null);
   /*
@@ -349,20 +364,11 @@ function Dashboard() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* 날짜 고르는 칸은 껍데기로 옮겼다 — 공유 화면·영상 재생과 같은 값을 써야 한다 */}
       <section className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-muted">날짜</span>
-          <input
-            type="date"
-            value={date}
-            onChange={(event) => {
-              setDate(event.target.value);
-              setSessionId(null);
-            }}
-            className="rounded-lg border border-line bg-card px-3 py-2"
-          />
-        </label>
-        <p className="pb-2 text-sm text-muted">{formatDateKorean(date)} 수업 {sessions.length}개</p>
+        <p className="text-sm text-muted">
+          {formatDateKorean(date)} 수업 {sessions.length}개
+        </p>
       </section>
 
       {sessions.length === 0 && (

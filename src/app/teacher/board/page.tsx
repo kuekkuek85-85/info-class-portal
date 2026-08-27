@@ -1,15 +1,16 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
 import { ArtifactCanvas } from "@/components/artifact-canvas";
 import { TeacherShell } from "@/components/teacher-shell";
-import { todayKST } from "@/lib/datetime";
 import { pickCurrentSession } from "@/lib/pick-session";
 import { QUADRANTS, type Quadrant } from "@/lib/mood";
 import { TeacherJobsPanel } from "@/components/teacher-jobs-panel";
 import type { Review } from "@/lib/review";
 import { usePolled } from "@/lib/use-polled";
+import { formatDateKorean } from "@/lib/datetime";
+import { useTeacherDate } from "@/lib/teacher-date";
 import { groupName } from "@/lib/group-label";
 
 /**
@@ -77,8 +78,10 @@ function Board() {
   const [picked, setPicked] = useState("");
   const [tab, setTab] = useState<"mood" | "review" | "jobs">("mood");
 
+  // 날짜는 교사 화면들이 함께 쓴다 (teacher-date.ts) — 대시보드에서 고른 날이 여기로 온다
+  const [date] = useTeacherDate();
   const { data: sessionList } = usePolled<{ sessions: SessionOption[] }>(
-    `/api/teacher/sessions?date=${todayKST()}`,
+    `/api/teacher/sessions?date=${date}`,
   );
   const sessions = sessionList?.sessions ?? [];
 
@@ -193,7 +196,8 @@ function Board() {
 
       {sessions.length === 0 && (
         <p className="rounded-xl border border-line bg-card px-4 py-6 text-center text-sm text-muted">
-          오늘 등록된 수업이 없습니다.
+          {/* 날짜를 고를 수 있게 된 뒤로는 "오늘" 이 거짓말이 된다 */}
+          {formatDateKorean(date)}에 등록된 수업이 없습니다.
         </p>
       )}
 
