@@ -30,3 +30,23 @@ export function HanoiQr({ className }: { className?: string }) {
     </svg>
   );
 }
+
+/**
+ * 참가자 입장 주소의 QR.
+ *
+ * 이걸 찍고 들어오면 진행자가 넘기는 대로 화면이 따라온다. 하노이 QR 과 같은 이유로
+ * 빌드 시 정적으로 뽑아 넣는다 — 코드 두 개 때문에 라이브러리를 번들에 실을 이유가 없다.
+ */
+export function JoinQr({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 35 35"
+      shapeRendering="crispEdges"
+      className={className}
+      role="img"
+      aria-label="나눔 세션 참가 주소 QR 코드"
+    >
+      <path d="M1 1.5h7m2 0h1m3 0h1m2 0h2m1 0h2m2 0h1m2 0h7M1 2.5h1m5 0h1m6 0h3m1 0h1m2 0h3m3 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m1 0h2m3 0h1m3 0h5m4 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h5m1 0h3m2 0h2m1 0h3m1 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m1 0h1m3 0h1m2 0h1m2 0h1m2 0h1m1 0h1m2 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m1 0h1m1 0h1m2 0h1m1 0h4m1 0h1m5 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h1m2 0h1m2 0h2m2 0h1m2 0h3M1 9.5h1m1 0h5m3 0h2m1 0h5m4 0h3m1 0h5M1 10.5h4m1 0h1m2 0h1m1 0h1m1 0h1m3 0h1m2 0h2m2 0h2m1 0h2m1 0h2m1 0h1M2 11.5h1m2 0h1m1 0h2m1 0h3m3 0h2m1 0h1m2 0h1m3 0h1m2 0h1m1 0h2M1 12.5h1m2 0h2m4 0h1m4 0h3m4 0h3m1 0h1m2 0h3m1 0h1M4 13.5h2m1 0h3m1 0h1m4 0h1m2 0h1m3 0h4m1 0h3m1 0h2M1 14.5h1m3 0h2m2 0h1m2 0h1m2 0h3m3 0h1m1 0h3m1 0h1m3 0h3M1 15.5h3m1 0h3m1 0h2m2 0h3m4 0h1m1 0h2m1 0h3m1 0h4M1 16.5h5m2 0h7m2 0h1m1 0h4m1 0h1m1 0h3m1 0h2M1 17.5h1m1 0h2m2 0h1m4 0h4m2 0h1m1 0h2m1 0h1m1 0h2m1 0h3m2 0h1M1 18.5h1m4 0h1m1 0h2m1 0h2m2 0h1m1 0h6m1 0h1m2 0h2m1 0h2m1 0h1M2 19.5h1m1 0h2m1 0h1m3 0h1m1 0h2m1 0h1m1 0h1m2 0h1m1 0h1m1 0h5m1 0h1M2 20.5h1m1 0h1m1 0h1m1 0h6m3 0h3m1 0h2m1 0h1m2 0h5M1 21.5h4m1 0h3m1 0h1m3 0h4m2 0h2m1 0h1m2 0h1m2 0h2m1 0h2M1 22.5h2m3 0h1m2 0h4m1 0h3m2 0h1m2 0h1m1 0h1m2 0h1m3 0h1m1 0h1M1 23.5h1m1 0h1m1 0h3m1 0h1m2 0h2m1 0h3m1 0h1m1 0h2m4 0h1m1 0h1m1 0h2M1 24.5h1m1 0h2m1 0h1m2 0h1m2 0h5m5 0h2m2 0h1m2 0h3M1 25.5h1m2 0h1m1 0h3m3 0h1m3 0h3m4 0h1m1 0h6M9 26.5h6m2 0h1m1 0h2m1 0h2m1 0h1m3 0h1m1 0h1m1 0h1M1 27.5h7m3 0h4m1 0h1m2 0h1m1 0h5m1 0h1m1 0h1m1 0h2M1 28.5h1m5 0h1m1 0h1m2 0h1m2 0h1m1 0h1m2 0h1m1 0h4m3 0h4M1 29.5h1m1 0h3m1 0h1m1 0h3m1 0h3m3 0h1m2 0h1m2 0h6m1 0h1M1 30.5h1m1 0h3m1 0h1m1 0h3m1 0h6m2 0h2m3 0h1m2 0h1m1 0h3M1 31.5h1m1 0h3m1 0h1m1 0h4m7 0h1m3 0h1m2 0h2m2 0h1M1 32.5h1m5 0h1m3 0h5m1 0h1m1 0h5m2 0h1m2 0h1m1 0h1M1 33.5h7m1 0h1m1 0h1m1 0h2m3 0h4m1 0h3m2 0h1m3 0h1" stroke="currentColor" strokeWidth="1" fill="none" />
+    </svg>
+  );
+}
