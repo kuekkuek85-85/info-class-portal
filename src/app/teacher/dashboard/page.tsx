@@ -565,11 +565,25 @@ function Dashboard() {
             />
           )}
 
-          {/* 그리기 이후 단계에서만. 그 전에는 볼 작품이 없다 */}
+          {/*
+            학생이 뭔가 쓰기 시작한 뒤로는 계속 띄운다.
+
+            원래 draw·worksheet·gallery 세 단계에서만 띄웠는데, 그러면 **끝난 수업의 작품을
+            볼 방법이 아예 없었다.** 수업을 마치면 단계가 done 이 되고, 그 순간 이 패널이
+            화면에서 사라진다. 날짜를 되돌려 지난 수업을 골라도 마찬가지다 — 연수에서
+            지난 학급 작품을 보여주려다 막힌 자리가 여기다.
+
+            선택과목도 못 봤다. 「인간과 인공지능」은 problem·mvp·build·grill 에서 만드는데
+            셋 중 어느 것도 아니어서 한 번도 안 떴다.
+
+            그래서 **작업이 시작되는 단계(problem)부터 끝(done)까지** 로 넓힌다. 그 앞의
+            대기·기분·안내·영상 단계에서는 여전히 안 띄운다 — 볼 것이 없는데 스물여덟 편을
+            읽어 오는 것은 읽기 낭비다 (PRD 10장 D2).
+          */}
           {session.activity &&
-            (session.phase === "draw" ||
-              session.phase === "worksheet" ||
-              session.phase === "gallery") && <TeacherArtifactPanel sessionId={session.id} />}
+            LESSON_PHASES.indexOf(session.phase) >= LESSON_PHASES.indexOf("problem") && (
+              <TeacherArtifactPanel sessionId={session.id} />
+            )}
 
           {/*
             직업 집계는 여기 두지 않는다.
