@@ -1,6 +1,7 @@
 "use client";
 
 import { HanoiQr, JoinQr } from "./hanoi-qr";
+import { HANDS, HandsInput, HandsResult, usePoll, useWho } from "./poll";
 
 /**
  * 슬라이드 내용.
@@ -51,8 +52,12 @@ export const TIMER_MINUTES: Partial<Record<SlideKey, number>> = {
 export const NOTES: Partial<Record<SlideKey, string>> = {
   welcome: "QR 을 띄워 두세요. 오시는 대로 휴대폰으로 들어오시면 화면이 같이 넘어갑니다.",
   handsup:
-    "한 줄씩 열고 잠깐 기다리세요. 손이 올라가는 것을 서로 볼 시간이 필요합니다.\n" +
-    "마지막 줄까지 가면 가장 많이 손 든 분께 고양이발을 드립니다 — 정체는 아직 비밀입니다.",
+    "휴대폰으로 답하면 앞 화면에 실시간으로 모입니다. 상품은 없습니다 — 기념품은 마지막에 다 같이.\n\n" +
+    "질문마다 답이 올라오는 것을 보고 한마디씩 하세요. 그게 이 코너의 전부입니다.\n" +
+    "  · 1~3번은 숫자만 올라갑니다\n" +
+    "  · 4·6번은 말풍선으로 흩어집니다 — 재미있는 것을 짚어 읽어 주세요\n" +
+    "  · 5번 월세는 최고 금액이 크게 뜹니다. 합계도 함께 나오니 그걸로 한마디\n\n" +
+    "답이 안 올라오면 「다음 질문」을 누르지 말고 조금 기다리세요. 2초마다 갱신됩니다.",
   talk1: "「발표 자료 열기」를 누르면 프로젝터에도 같이 뜹니다. 발표자 노트북으로 하실 거면 안 눌러도 됩니다.",
   talk2: "자료를 화면에 띄우려면 「발표 자료 열기」. 닫기는 오른쪽 위입니다.",
   talk3: "자료를 화면에 띄우려면 「발표 자료 열기」. 닫기는 오른쪽 위입니다.",
@@ -243,6 +248,79 @@ function TalkSlide({
   );
 }
 
+/**
+ * 손 들어 주세요 — 휴대폰으로 답하고 앞 화면에서 함께 본다.
+ *
+ * 지금 몇 번째 질문인지는 revealed 에 쌓인 `hands-N` 개수로 정한다. 슬라이드 안에
+ * 상태를 두면 프로젝터와 휴대폰이 서로 다른 질문을 띄운다.
+ *
+ * 큰 화면은 **결과만** 크게, 휴대폰은 **답하는 칸만** 크게. 같은 것을 양쪽에 다 그리면
+ * 휴대폰에서는 결과가 작아 안 보이고, 앞 화면에는 아무도 못 누르는 입력칸이 뜬다.
+ */
+function HandsUp({
+  revealed,
+  onReveal,
+  compact,
+}: {
+  revealed: string[];
+  onReveal?: (key: string) => void;
+  compact?: boolean;
+}) {
+  const shown = HANDS.filter((_, i) => revealed.includes(`hands-${i}`)).length;
+  const index = Math.max(0, shown - 1);
+  const question = HANDS[index];
+  const poll = usePoll();
+  const who = useWho();
+
+  if (shown === 0) {
+    return (
+      <div className="flex flex-col items-center gap-6 text-center">
+        <h1 className="t-display">손 들어 주세요</h1>
+        <p className="t-body-lg text-muted">
+          휴대폰으로 답하시면 앞 화면에 함께 모입니다. 이름은 안 받습니다.
+        </p>
+        {onReveal && (
+          <button
+            type="button"
+            onClick={() => onReveal("hands-0")}
+            className="pill pill-primary"
+          >
+            시작
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-1">
+        <p className="t-eyebrow">
+          {index + 1} / {HANDS.length}
+        </p>
+        <h1 className={compact ? "t-headline" : "t-display"}>{question.q}</h1>
+      </div>
+
+      {compact ? (
+        // key 로 질문마다 새로 만든다 — 앞 질문에 쓰던 글이 남아 있으면 그대로 다시 간다
+        <HandsInput key={question.id} question={question} who={who} poll={poll} />
+      ) : (
+        <HandsResult question={question} poll={poll} />
+      )}
+
+      {onReveal && shown < HANDS.length && (
+        <button
+          type="button"
+          onClick={() => onReveal(`hands-${shown}`)}
+          className="pill pill-primary self-start"
+        >
+          다음 질문
+        </button>
+      )}
+    </div>
+  );
+}
+
 function Quiz({
   id,
   q,
@@ -299,38 +377,14 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
       /*
        * 빙고를 대신한다.
        *
-       * 원래는 종이 빙고판을 들고 다니며 사인을 받는 활동이었는데, 자리가 좁아 서로
-       * 오갈 수가 없다. 빙고가 하려던 일은 **서로를 알게 하는 것**이었지 종이를 채우는
-       * 것이 아니었다. 그래서 자리에 앉은 채로 같은 일을 하게 만든다.
+       * 종이 빙고판을 들고 다니며 사인을 받는 활동이었는데 자리가 좁아 오갈 수가 없다.
+       * 빙고가 하려던 일은 **서로를 알게 하는 것**이었지 종이를 채우는 것이 아니었으므로,
+       * 앉은 채로 휴대폰으로 답하고 그 결과를 앞 화면에 함께 본다.
        *
-       * 진행자가 한 줄씩 열고, 해당하는 사람이 손을 든다. 열두 명이라 방 전체가 한눈에
-       * 들어오고, 손이 올라가는 것만으로 "저 분도 그렇구나" 가 된다. 참가자 휴대폰에도
-       * 같은 줄이 뜨므로 뒷자리에서 화면이 안 보여도 따라올 수 있다.
+       * 질문을 한 번에 하나만 띄운다. 여섯 개를 늘어놓으면 뭘 답해야 하는지 모르고,
+       * 앞 질문 결과를 보며 이야기할 틈도 없다. 진행자가 「다음 질문」으로 넘긴다.
        */
-      return (
-        <div className="flex flex-col gap-5">
-          <h1 className="t-display">손 들어 주세요</h1>
-          <p className="t-body-lg text-muted">
-            해당되시면 손을 들어 주세요. 자리에서 그대로, 서로 얼굴만 한 번씩 봅니다.
-          </p>
-          <Steps
-            id="hands"
-            lines={[
-              "오늘 처음 오신 분",
-              "초등학교에 계신 분 / 중·고등학교에 계신 분",
-              "바이브코딩으로 만든 것을 수업에 실제로 써 보신 분",
-              "코드를 한 줄도 안 쓰고 앱을 만들어 보신 분",
-              "밤새 안 되는 것 붙들고 있어 보신 분",
-              "학생이 만든 것을 보고 놀라 보신 분",
-              "오늘 발표자 세 분 중 한 분이라도 오늘 처음 뵙는 분",
-              "그래도 내일 또 만들 것 같은 분",
-            ]}
-            big
-            {...r}
-          />
-          <p className="t-body-lg">가장 많이 손 드신 분께 의문의 고양이발 증정 🐾</p>
-        </div>
-      );
+      return <HandsUp revealed={revealed} onReveal={onReveal} compact={compact} />;
 
     case "opening":
       return (

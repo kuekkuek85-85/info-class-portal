@@ -127,8 +127,14 @@ export function useDriver(code: string, total: number) {
   useEffect(() => {
     let alive = true;
 
+    /*
+     * 넘기는 화면은 창이 뒤에 있어도 쉬지 않는다.
+     *
+     * 프로젝터와 강사 노트북 둘뿐이라 아낄 것이 없고, 쉬게 했더니 창을 잠깐 바꾸는
+     * 사이에 서로 다른 슬라이드를 띄우고 있었다. 쉬는 것은 휴대폰 쪽(useFollower)만이다.
+     */
     async function pull() {
-      if (document.hidden || Date.now() < mineUntil.current) return;
+      if (Date.now() < mineUntil.current) return;
       try {
         const response = await fetch("/api/sendev/live", { cache: "no-store" });
         const result = await response.json();
