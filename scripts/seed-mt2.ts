@@ -94,15 +94,25 @@ function empty(): PhaseContent {
 }
 
 /**
- * 「디지털 마음 톡톡」 화요일 1기의 캔바 초대 주소.
+ * 「디지털 마음 톡톡」 분반별 캔바 초대 주소.
  *
- * 「인간과 인공지능」과 **다른 그룹**이다. 두 명단은 넷만 겹치고, 나머지 열여덟은
- * 캔바를 처음 쓴다 — 로그인에 시간이 걸린다는 뜻이다.
+ * 「인간과 인공지능」과 **다른 그룹**이고, 분반끼리도 서로 다른 그룹이다. 한 주소를
+ * 돌려 쓰면 목요일 1기 학생이 화요일 1기 팀에 들어가 남의 작품을 보게 된다.
  *
  * 저장소에 적지 않는다. 주소에 붙은 토큰만 있으면 누구나 학교 캔바 팀에 들어오는데
  * 이 저장소는 공개되어 있다 (`.env*` 는 무시 목록).
+ *
+ * 수업을 만들 때 그 분반 것 하나만 남기고 표를 지운다 (db.ts 의 snapshotOf).
+ * 안 지우면 학생 화면에 남의 분반 초대 토큰이 실려 간다.
  */
-const CANVA_MT = process.env.CANVA_INVITE_MT_TUE_1 ?? "";
+const CANVA_BY_GROUP: Record<string, string> = {
+  "mt-tue-1": process.env.CANVA_INVITE_MT_TUE_1 ?? "",
+  "mt-thu-1": process.env.CANVA_INVITE_MT_THU_1 ?? "",
+  "mt-tue-2": process.env.CANVA_INVITE_MT_TUE_2 ?? "",
+  "mt-thu-2": process.env.CANVA_INVITE_MT_THU_2 ?? "",
+};
+/** 분반 주소가 없을 때 물러날 자리. 단추가 아예 사라지는 것보다는 낫다 */
+const CANVA_MT = CANVA_BY_GROUP["mt-tue-1"];
 
 /**
  * 무드미터 16낱말. 활동지 보기로 그대로 내려 준다.
@@ -181,7 +191,9 @@ const WORKSHEET: WorksheetQuestion[] = [
       "예) 학번이 10822이면 → 2610822@jangpyung.sen.ms.kr\n" +
       "비밀번호는 학교 계정 비밀번호예요.",
     kind: "note",
+    // 분반 주소가 있으면 그것으로, 없으면 위 기본 주소로 (수업 만들 때 하나만 남는다)
     linkUrl: CANVA_MT,
+    linkUrlByGroup: Object.fromEntries(Object.entries(CANVA_BY_GROUP).filter(([, url]) => url)),
     linkLabel: "캔바 열기 (새 창)",
     maxLength: 0,
   },
@@ -989,6 +1001,19 @@ async function main(): Promise<void> {
   console.log("  시간이 모자라면 뒤쪽 총평(10:03~11:18, 감정의 조화)만 틀어도 활동지는 굴러갑니다.");
   console.log("서로의 마음 읽기: share_feel · share_line 두 칸만 친구에게 보입니다.");
   console.log("블록타임이라 세션은 7교시로 하나만 여세요 — 6교시로 열면 코드가 중간에 만료됩니다.");
+
+  console.log("\n캔바 초대 주소");
+  for (const [key, label] of [
+    ["mt-tue-1", "화요일 1기"],
+    ["mt-thu-1", "목요일 1기"],
+    ["mt-tue-2", "화요일 2기"],
+    ["mt-thu-2", "목요일 2기"],
+  ] as const) {
+    const url = CANVA_BY_GROUP[key];
+    // 토큰은 앞 네 글자만 찍는다. 저장소·로그에 통째로 남기지 않는다
+    const shown = url ? url.replace(/token=([^&]{4})[^&]*/, "token=$1…") : "없음 — 화요일 1기 주소로 물러납니다";
+    console.log(`  ${label}  ${shown}`);
+  }
   process.exit(0);
 }
 
