@@ -512,6 +512,47 @@ export function WorksheetView({
                 );
               })}
             </div>
+          ) : question.kind === "multi" ? (
+            /*
+              보기 중 여럿. 고른 것들을 " · " 로 이어 한 칸에 담는다.
+
+              traits 를 못 쓴다. 그쪽은 미래 특성 다섯 개에 고정돼 있고 답이 answers 가
+              아니라 artifacts.traits 로 따로 간다 — 차시마다 다른 보기를 줄 수가 없다.
+
+              하나만 고르게 하면 "이것도 저것도 나 같은데" 에서 학생이 멈춘다. 감정은
+              원래 섞여 있어서, 섞어서 고르는 것이 오히려 정확한 답이다.
+            */
+            (() => {
+              const picked = (value.answers[question.key] ?? "")
+                .split(" · ")
+                .map((s) => s.trim())
+                .filter(Boolean);
+              return (
+                <div className="flex flex-wrap gap-2" id={`ws-${question.key}`}>
+                  {(question.choices ?? []).map((choice) => {
+                    const on = picked.includes(choice);
+                    return (
+                      <button
+                        key={choice}
+                        type="button"
+                        onClick={() => {
+                          // 고른 차례가 아니라 **보기 차례**로 담는다. 답이 늘 같은 순서로 읽힌다
+                          const next = (question.choices ?? []).filter((c) =>
+                            c === choice ? !on : picked.includes(c),
+                          );
+                          setAnswer(question.key, next.join(" · "));
+                        }}
+                        aria-pressed={on}
+                        disabled={disabled}
+                        className={`pill t-body ${on ? "pill-primary" : "pill-secondary"}`}
+                      >
+                        {choice}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()
           ) : question.kind === "choice" ? (
             /*
               보기 중 하나. 고른 문구가 그대로 답이 된다.

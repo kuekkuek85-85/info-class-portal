@@ -280,6 +280,8 @@ export interface WorksheetQuestion {
    * long   — 여러 줄 입력
    * traits — 특성 5개 중 다중 선택. 이 답만 answers 가 아니라 artifacts.traits 에 저장된다
    * choice — 주어진 보기 중 하나. 고른 문구가 그대로 answers 에 들어간다
+   * multi  — 주어진 보기 중 **여럿**. 고른 것들을 " · " 로 이어 한 칸에 담는다.
+   *          traits 와 다르다 — 보기를 차시가 정하고, 답도 answers 로 들어간다.
    * note      — 입력칸 없이 안내만. 문항이 여럿 이어질 때 묶어 주는 머리글로 쓴다
    * echo      — 앞 단계에서 쓴 답을 읽기 전용으로 다시 보여준다 (echoKeys)
    * ai_review — 단추를 누르면 앞서 쓴 답들을 모아 AI에게 보내고, 아직 안 짚은 것을
@@ -297,6 +299,7 @@ export interface WorksheetQuestion {
     | "long"
     | "traits"
     | "choice"
+    | "multi"
     | "note"
     | "echo"
     | "ai_review"
