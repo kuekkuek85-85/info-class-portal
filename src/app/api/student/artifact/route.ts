@@ -4,6 +4,7 @@ import {
   getArtifact,
   getSession,
   isSessionClosed,
+  recordWorkProgress,
   roughSize,
   updateArtifact,
   writeStrokes,
@@ -215,9 +216,23 @@ export async function POST(request: Request) {
       await updateArtifact(artifact.id, patch);
     }
 
+    /*
+     * 진도를 출석 문서에 적는다 — 교사 대시보드의 신호등이 이것으로 돈다.
+     *
+     * 방금 저장한 값으로 센다. artifact 는 저장 전에 읽은 것이라 patch 를 안 보면
+     * 늘 한 박자 뒤처진다 — 마지막으로 쓴 칸이 진도에 안 들어간다.
+     *
+     * 밑줄로 시작하는 열쇠는 안내문이라 답할 것이 없다. 세면 아무도 100% 가 못 된다.
+     */
+    const savedAnswers = (patch.answers as Record<string, string> | undefined) ?? artifact.answers ?? {};
+    const answeredKeys = Object.entries(savedAnswers)
+      .filter(([key, value]) => !key.startsWith("_") && String(value ?? "").trim())
+      .map(([key]) => key);
+
     // -------------------------------------------------------------- 그림
 
     if (!hasStrokes) {
+      await recordWorkProgress(me.sessionId, me.studentId, { answeredKeys });
       return ok({ size: roughSize(artifact.strokes ?? []), warn: false, rejected: false });
     }
 
@@ -236,6 +251,11 @@ export async function POST(request: Request) {
       },
       { warn: SIZE_WARN_BYTES, reject: SIZE_REJECT_BYTES },
     );
+
+    await recordWorkProgress(me.sessionId, me.studentId, {
+      answeredKeys,
+      strokeCount: result.total,
+    });
 
     return ok({
       size: result.size,

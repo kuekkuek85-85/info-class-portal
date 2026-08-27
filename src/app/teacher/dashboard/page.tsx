@@ -77,11 +77,26 @@ interface SessionContent {
   tabs?: unknown[];
 }
 
+/** 신호등 다섯 칸. 교사가 봐야 할 것은 앞의 둘이다 */
+type Bucket = "red" | "orange" | "yellow" | "lime" | "green";
+
+const BUCKETS: { key: Bucket; label: string; dot: string; bg: string }[] = [
+  { key: "red", label: "많이 뒤처짐", dot: "#d92d20", bg: "#fde8e6" },
+  { key: "orange", label: "뒤처짐", dot: "#e8720c", bg: "#fdeddb" },
+  { key: "yellow", label: "중간", dot: "#e3b306", bg: "#fdf5da" },
+  { key: "lime", label: "거의 다 함", dot: "#84c11c", bg: "#f0f8dd" },
+  { key: "green", label: "다 함", dot: "#1ea64a", bg: "#e2f5e8" },
+];
+
 interface StudentRow {
   studentId: string;
   name: string;
+  /** 이름을 가릴 때 대신 쓰는 출석 번호 */
+  number?: number | null;
   temporary: boolean;
   joinedAt: number;
+  /** 활동지 진도 — 출석 문서에 얹혀 온다 (Attendance 의 answeredKeys) */
+  work?: { done: number; total: number; bucket: Bucket | null; idleMs: number | null };
   mood: {
     key: string;
     label: string;
@@ -123,11 +138,127 @@ export default function DashboardPage() {
   );
 }
 
+/**
+ * 신호등 — 수업 중에 "지금 누구에게 가야 하나" 하나만 답한다.
+ *
+ * 전체 명단 표는 잘 정리돼 있지만 수업 중에는 쓸 수가 없다. 스물여덟 줄을 눈으로 훑어
+ * 뒤처진 학생을 찾는 동안 이미 몇 분이 지나간다. 그래서 **묶어서** 보여준다.
+ *
+ * 빨강·주황을 맨 위에 크게 놓고 초록은 접는다. 교사가 봐야 할 것은 못 따라오는 쪽이고,
+ * 다 한 학생은 셀 수만 있으면 된다.
+ *
+ * "몇 분째 손을 안 댐" 을 함께 찍는 이유: 진도가 낮아도 지금 열심히 쓰는 중인 학생과
+ * 5분째 화면만 보고 있는 학생은 다르다. 뒤쪽이 진짜 가 봐야 할 학생이다.
+ */
+function ProgressBoard({
+  rows,
+  masked,
+  onMasked,
+}: {
+  rows: StudentRow[];
+  masked: boolean;
+  onMasked: (next: boolean) => void;
+}) {
+  const scored = rows.filter((row) => row.work && row.work.bucket);
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold">지금 진도 — 신호등</h2>
+        <button
+          type="button"
+          onClick={() => onMasked(!masked)}
+          aria-pressed={masked}
+          className="pill pill-secondary text-sm"
+        >
+          {masked ? "이름 보이기" : "이름 가리기"}
+        </button>
+      </div>
+
+      {scored.length === 0 ? (
+        <p className="rounded-xl border border-line bg-card px-4 py-6 text-center text-sm text-muted">
+          아직 셀 것이 없습니다. 활동지나 그리기 단계로 넘어가면 채워집니다.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {BUCKETS.map((bucket) => {
+            const members = scored.filter((row) => row.work?.bucket === bucket.key);
+            if (members.length === 0) return null;
+            // 다 한 쪽은 셀 수만 있으면 된다 — 이름을 늘어놓으면 정작 볼 것이 밀린다
+            const foldable = bucket.key === "green" || bucket.key === "lime";
+
+            return (
+              <details
+                key={bucket.key}
+                open={!foldable}
+                className="rounded-xl border border-line"
+                style={{ background: bucket.bg }}
+              >
+                <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-4 py-3">
+                  <span
+                    aria-hidden
+                    className="h-3.5 w-3.5 shrink-0 rounded-full"
+                    style={{ background: bucket.dot }}
+                  />
+                  <span className="font-semibold">{bucket.label}</span>
+                  <span className="tabular-nums text-sm">{members.length}명</span>
+                </summary>
+                <ul className="flex flex-wrap gap-2 px-4 pb-4">
+                  {members.map((row) => {
+                    const work = row.work!;
+                    const idleMin =
+                      work.idleMs === null ? null : Math.floor(work.idleMs / 60_000);
+                    return (
+                      <li
+                        key={row.studentId}
+                        className="flex items-baseline gap-2 rounded-lg bg-canvas px-3 py-2"
+                      >
+                        <span className="font-semibold">
+                          {masked
+                            ? `${row.number ?? row.studentId.slice(3)}번`
+                            : row.name || "임시"}
+                        </span>
+                        <span className="tabular-nums text-sm text-muted">
+                          {work.done}/{work.total}
+                        </span>
+                        {/*
+                          손을 놓은 지 오래된 학생만 표시한다. 3분 미만은 쓰는 중이라고 보고
+                          찍지 않는다 — 모두에게 붙으면 아무것도 가리키지 못한다.
+                        */}
+                        {idleMin !== null && idleMin >= 3 && (
+                          <span className="tabular-nums text-sm font-semibold">
+                            {idleMin}분째 멈춤
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </details>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function Dashboard() {
   const [date, setDate] = useState(todayKST());
   const [sessionId, setSessionId] = useState<string | null>(null);
   /** null이면 서버 값을 그대로 보여준다. 교사가 타이핑을 시작하면 그때부터 로컬 값이 이긴다. */
   const [noteDraft, setNoteDraft] = useState<string | null>(null);
+  /*
+   * 이름 가리기.
+   *
+   * 이 화면을 전자칠판에 띄우는 순간이 있다. 그때 "많이 뒤처짐" 칸에 실명이 걸려 있으면
+   * 그 자체로 공개 망신이 된다 (PRD 9장 — 서열화는 피한다).
+   *
+   * 완전히 지우지 않고 **번호만** 남긴다. 점으로 가리면 교사도 누구에게 가야 할지
+   * 알 수 없어서 신호등이 쓸모없어진다. 번호는 학생 본인만 자기 것을 알고, 교사는
+   * 출석부로 바로 찾는다.
+   */
+  const [masked, setMasked] = useState(false);
 
   const params = new URLSearchParams({ date });
   if (sessionId) params.set("sessionId", sessionId);
@@ -504,8 +635,10 @@ function Dashboard() {
             </section>
           )}
 
+          <ProgressBoard rows={rows} masked={masked} onMasked={setMasked} />
+
           <section className="flex flex-col gap-2">
-            <h2 className="text-sm font-semibold">접속자 · 응답</h2>
+            <h2 className="text-sm font-semibold">접속자 · 응답 — 수업 뒤 정리용</h2>
             <div className="overflow-x-auto rounded-xl border border-line">
               <table className="w-full min-w-[720px] border-collapse text-sm">
                 <thead className="bg-card text-left text-xs text-muted">
@@ -527,8 +660,13 @@ function Dashboard() {
                   {rows.map((row) => (
                     <tr key={row.studentId} className="border-t border-line align-top">
                       <td className="px-3 py-2 tabular-nums">{row.studentId}</td>
+                      {/* 가리기는 신호등과 함께 켜진다 — 한쪽만 가리면 다른 쪽에서 그대로 보인다 */}
                       <td className="px-3 py-2">
-                        {row.name || <span className="text-muted">임시</span>}
+                        {masked ? (
+                          <span className="tabular-nums">{row.number ?? row.studentId.slice(3)}번</span>
+                        ) : (
+                          row.name || <span className="text-muted">임시</span>
+                        )}
                       </td>
                       <td className="px-3 py-2 tabular-nums text-muted">
                         {formatTimeKST(row.joinedAt)}

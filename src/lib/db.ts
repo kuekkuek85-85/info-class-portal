@@ -990,6 +990,40 @@ export async function flagCareAlert(sessionId: string, studentId: string): Promi
 }
 
 /**
+ * 활동지 진도를 출석 문서에 적어 둔다 (Attendance 의 answeredKeys 참조).
+ *
+ * 학생이 자동 저장할 때마다 함께 부른다. 쓰기가 한 건 늘지만, 이것이 없으면 교사가
+ * "누가 못 따라오고 있나" 를 알 방법이 대시보드에 아예 없다 — 활동지를 폴링해서 보려면
+ * 읽기 한도를 넘긴다.
+ *
+ * 답 내용은 넘기지 않는다. 채운 칸의 열쇠와 획 수만 남긴다.
+ */
+export async function recordWorkProgress(
+  sessionId: string,
+  studentId: string,
+  progress: { answeredKeys: string[]; strokeCount?: number },
+): Promise<void> {
+  const ref = db().collection(COLLECTIONS.attendance).doc(entryId(sessionId, studentId));
+  const snap = await ref.get();
+  // 출석 기록이 없으면 만들지 않는다 (flagCareAlert 와 같은 이유)
+  if (!snap.exists) return;
+
+  const patch: Record<string, unknown> = {
+    answeredKeys: progress.answeredKeys,
+    workedAt: Date.now(),
+  };
+  /*
+   * 획 수는 그림을 보낸 요청에서만 갱신한다.
+   *
+   * 활동지만 저장한 요청에 0 을 적으면, 그리기를 끝내고 글을 쓰는 학생의 그림이
+   * 없어진 것처럼 보인다 — 그리기 단계 진도가 초록에서 빨강으로 떨어진다.
+   */
+  if (typeof progress.strokeCount === "number") patch.strokeCount = progress.strokeCount;
+
+  await ref.set(patch, { merge: true });
+}
+
+/**
  * 시연 참가자에게 빈 자리(임시 학번) 하나를 준다.
  *
  * **`create()` 로 자리를 잡는다.** 스무 명이 같은 순간에 링크를 누르면 목록을 읽고
