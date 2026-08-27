@@ -103,7 +103,15 @@ function summaryOf(
     return sharedKeys
       .map((key) => (work.answers[key] ?? "").trim())
       .filter(Boolean)
-      .map((value) => ({ label: "", values: [value] }));
+      /*
+       * 주소는 주소로 보여주지 않는다.
+       *
+       * 캔바 공유 주소는 토큰이 붙어 백 자가 넘는다. 그대로 두면 카드 한 장이 알아볼 수
+       * 없는 글자로 꽉 차서, 정작 읽어야 할 프롬프트가 안 보인다. 카드는 `<button>` 이라
+       * 안에 링크를 넣을 수도 없다 — 여기서는 표시만 하고, 실제로 여는 것은 카드를 눌러
+       * 들어간 상세 화면이 맡는다 (card-news.tsx).
+       */
+      .map((value) => ({ label: "", values: [/^https?:\/\//.test(value) ? "🎨 눌러서 작품 보기" : value] }));
   }
 
   const rows = facets

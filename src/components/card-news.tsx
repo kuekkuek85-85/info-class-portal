@@ -90,9 +90,29 @@ export function CardNews({
             <div key={question.key}>
               {!hideQuestionLabels && <dt className="t-caption">{question.label}</dt>}
               <dd className="t-body mt-1 whitespace-pre-wrap">
-                {question.kind === "traits"
-                  ? data.traits.join(" · ")
-                  : data.answers[question.key]}
+                {question.kind === "traits" ? (
+                  data.traits.join(" · ")
+                ) : /^https?:\/\//.test((data.answers[question.key] ?? "").trim()) ? (
+                  /*
+                    주소는 눌러서 열 수 있게 한다.
+
+                    캔바로 만든 감정 캐릭터처럼 **결과물이 다른 곳에 있는** 활동이 있다.
+                    주소를 글자로만 보여주면 친구 작품을 보러 갈 방법이 손으로 옮겨 적는 것
+                    뿐이고, 토큰이 붙은 백 자짜리 주소는 옮겨 적을 수 없다.
+
+                    새 창으로 연다 — 같은 창에서 나가면 쓰던 감상이 날아간다.
+                  */
+                  <a
+                    href={(data.answers[question.key] ?? "").trim()}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="pill pill-primary pill-block text-center"
+                  >
+                    🎨 작품 보러 가기 (새 창)
+                  </a>
+                ) : (
+                  data.answers[question.key]
+                )}
               </dd>
             </div>
           ))}
