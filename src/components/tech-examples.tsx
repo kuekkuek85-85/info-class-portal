@@ -62,7 +62,7 @@ export function TechExampleChips({
         낱말만 적고 끝내는 것을 막는 한 줄.
         "로봇" 은 기술 분야이지 그림에 그릴 수 있는 물건이 아니다.
       */}
-      <p className="t-caption whitespace-pre-line">
+      <p className="t-note whitespace-pre-line">
         {note ? (
           note.hint
         ) : (

@@ -20,9 +20,26 @@
   --canvas: #ffffff;
   --inverse-canvas: #000000;
   --inverse-ink: #ffffff;
-  --hairline: #e6e6e6;
-  --hairline-soft: #f1f1f1;
+  /*
+   * 테두리를 한 단계 진하게.
+   *
+   * #e6e6e6 은 교실 밝기에서 보이지 않는다. 창가 자리 태블릿에서는 입력칸이 어디부터
+   * 어디까지인지 안 보여서, 학생이 칸을 못 찾고 손을 든다.
+   */
+  --hairline: #d4d4d4;
+  --hairline-soft: #e8e8e8;
   --surface-soft: #f7f7f5;
+
+  /*
+   * 뒤로 물러나는 글자.
+   *
+   * 원래 이 값이 --ink 를 그대로 가리켰다. 그래서 "(아직 안 썼어요)" 같은 보조 문구가
+   * 본문과 똑같은 순검정으로 나왔다. **다 똑같이 진하면 아무것도 눈에 안 들어온다** —
+   * 눈은 대비의 차이로 중요한 것을 찾는데, 차이가 없으면 화면 전체를 훑게 된다.
+   *
+   * 흰 바탕 대비 5.7:1 — 본문으로 읽어도 되는 밝기이면서 검정보다는 물러난다.
+   */
+  --muted-ink: #6b6b6b;
 
   --block-lime: #dceeb1;
   --block-lilac: #c5b0f4;
@@ -58,7 +75,7 @@
   /* 기존 마크업이 쓰던 이름은 새 토큰으로 이어 붙인다 */
   --color-background: var(--canvas);
   --color-foreground: var(--ink);
-  --color-muted: var(--ink);
+  --color-muted: var(--muted-ink);
   --color-card: var(--canvas);
   --color-accent: var(--ink);
 
@@ -66,19 +83,39 @@
   --radius-lg: 24px;
   --radius-xl: 32px;
 
+  /*
+   * 한글이 있는 글꼴을 먼저 세운다.
+   *
+   * 학생 기기는 갤럭시 탭이 대부분이고 가끔 노트북·휴대폰이다. 안드로이드에서
+   * -apple-system·Segoe UI·Malgun Gothic 은 전부 없어서 지나치고, 마지막 sans-serif
+   * (Roboto)에는 한글이 없어 **글자마다 폴백**이 일어난다. 라틴과 한글의 기준선이
+   * 어긋나 문장이 들쭉날쭉해 보이는 원인이다.
+   *
+   * 그래서 안드로이드가 실제로 가진 이름(Noto Sans CJK KR · Samsung Sans)을 앞쪽에 둔다.
+   * 웹폰트는 여전히 쓰지 않는다 — 28명이 동시에 들어오는 첫 화면이 그만큼 늦어진다
+   * (PRD 1 설계 제약).
+   */
   --font-sans:
-    -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Segoe UI",
-    "Malgun Gothic", "Noto Sans KR", sans-serif;
+    "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Noto Sans KR", "Noto Sans CJK KR", "Samsung Sans", "SamsungOne",
+    "Segoe UI", "Malgun Gothic", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
 }
 
+/*
+ * 행간과 자간은 한글 기준으로 잡는다.
+ *
+ * 원문(라틴)의 1.45 행간과 -0.01em 자간을 그대로 쓰고 있었다. 한글은 받침이 있어서
+ * 1.45 면 윗줄 받침과 아랫줄 초성이 붙고, 음수 자간에서는 낱자가 뭉친다.
+ * 1.6 / 0 이 같은 크기에서 훨씬 잘 읽힌다. 음수 자간은 큰 제목에만 남긴다.
+ */
 body {
   background: var(--canvas);
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: 18px;
-  line-height: 1.45;
-  letter-spacing: -0.01em;
+  line-height: 1.6;
+  letter-spacing: 0;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -92,20 +129,26 @@ body {
 .t-display {
   font-size: clamp(2rem, 7vw, 3.25rem);
   font-weight: 700;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 .t-headline {
   font-size: 1.625rem;
   font-weight: 700;
-  line-height: 1.35;
-  letter-spacing: -0.02em;
-}
-.t-subhead {
-  font-size: 1.375rem;
-  font-weight: 400;
   line-height: 1.4;
   letter-spacing: -0.015em;
+}
+/*
+ * 문항 제목. 굵기를 400 → 500 으로 올린다.
+ *
+ * 활동지에서 이 클래스가 질문 제목을 맡는데, 굵기가 본문과 같아서 크기 차이(22 vs 18)
+ * 하나로만 갈렸다. 스크롤하며 "다음 질문이 어디부터인지" 를 찾을 때 그 4px 로는 부족하다.
+ */
+.t-subhead {
+  font-size: 1.375rem;
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
 }
 .t-card-title {
   font-size: 1.5rem;
@@ -114,16 +157,37 @@ body {
 }
 .t-body-lg {
   font-size: 1.25rem;
-  line-height: 1.45;
+  line-height: 1.6;
 }
 .t-body {
   font-size: 1.125rem;
-  line-height: 1.5;
+  line-height: 1.65;
 }
 .t-body-sm {
   font-size: 1rem;
-  line-height: 1.5;
+  line-height: 1.6;
 }
+
+/*
+ * 안내·힌트·뜻풀이.
+ *
+ * 이 자리가 이 앱에서 **가장 많이 읽어야 할 글**이다 — 활동지 문항마다 붙는 예시,
+ * 무드미터 낱말 뜻풀이, 퀴즈 해설, 그림판 사용법. 그런데 t-caption(12px 고정폭)으로
+ * 나가고 있었다.
+ *
+ * 한글 고정폭 시스템 글꼴은 없다. ui-monospace 가 잡히면 한글은 글자마다 폴백으로
+ * 떨어지고, 거기에 자간 +0.06em 까지 벌어져 낱자가 흩어진다. 12px 에 흩어진 폴백 한글이
+ * "글자가 눈에 안 들어온다" 의 정체였다.
+ *
+ * 본문 글꼴 16px 로 올리고 자간을 0 으로 돌린다. 줄이 길어지는 글이라 행간은 본문보다
+ * 더 준다.
+ */
+.t-note {
+  font-size: 1rem;
+  line-height: 1.7;
+  letter-spacing: 0;
+}
+
 /* 모노는 분류 표시에만. 본문에 쓰지 않는다. */
 .t-eyebrow {
   font-family: var(--font-mono);
@@ -132,10 +196,22 @@ body {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+/*
+ * 작은 라벨 — 글자 수 세기, 저장됨 표시, 표 머리글.
+ *
+ * 여기서도 고정폭을 뺀다. 이 클래스가 화면 쉰 곳 넘게 쓰이는데 그 대부분이 한글이고,
+ * 한글에 고정폭을 씌워서 얻는 것이 없다. 14px 은 본문(18)·보조본문(16) 아래 한 단으로
+ * 남겨 위계는 지킨다.
+ */
 .t-caption {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+/* 숫자가 줄 맞아야 하는 자리 (점수·시간·개수) */
+.t-num {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
 }
 
 /* 모든 CTA 는 알약. 사각 버튼은 쓰지 않는다. */

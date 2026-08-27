@@ -403,7 +403,7 @@ export function WorksheetView({
             </label>
           )}
           {question.hint && (
-            <p className="t-caption whitespace-pre-line">{named(question.hint, studentName)}</p>
+            <p className="t-note whitespace-pre-line">{named(question.hint, studentName)}</p>
           )}
 
           {/*
@@ -666,7 +666,7 @@ export function WorksheetView({
         hidden={hideSubmit}
       >
         <h3 className="t-subhead">어디에서 찾아봤나요?</h3>
-        <p className="t-caption">안 찾아봤으면 비워 둬도 됩니다. 찾아봤으면 꼭 적어 주세요.</p>
+        <p className="t-note">안 찾아봤으면 비워 둬도 됩니다. 찾아봤으면 꼭 적어 주세요.</p>
 
         <label className="flex flex-col gap-1">
           <span className="t-body-sm">인터넷에서 찾은 곳</span>
