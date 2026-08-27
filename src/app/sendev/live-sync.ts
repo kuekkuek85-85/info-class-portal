@@ -163,10 +163,18 @@ export function useDriver(code: string, total: number) {
     [push, state],
   );
 
+  /**
+   * 열기 / 닫기.
+   *
+   * 정답 공개는 한 번 열면 단추가 사라지니 사실상 여는 것뿐이다. 발표 자료처럼 **닫아야
+   * 하는 것**이 생기면서 같은 열쇠를 다시 눌러 접을 수 있어야 했다.
+   */
   const reveal = useCallback(
     (key: string) => {
-      if (state.revealed.includes(key)) return;
-      push({ ...state, revealed: [...state.revealed, key] });
+      const revealed = state.revealed.includes(key)
+        ? state.revealed.filter((k) => k !== key)
+        : [...state.revealed, key];
+      push({ ...state, revealed });
     },
     [push, state],
   );

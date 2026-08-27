@@ -19,7 +19,7 @@ const HANOI_URL = "https://hanoi-tower-game-rosy.vercel.app/";
 
 export const SLIDES = [
   { key: "welcome", corner: "웰컴" },
-  { key: "bingo", corner: "개발자 빙고" },
+  { key: "handsup", corner: "손 들어 주세요" },
   { key: "opening", corner: "오프닝" },
   { key: "talk1", corner: "발표 ①" },
   { key: "quiz1", corner: "3초 퀴즈 ①" },
@@ -50,6 +50,12 @@ export const TIMER_MINUTES: Partial<Record<SlideKey, number>> = {
 /** 진행자만 보는 말할 거리 */
 export const NOTES: Partial<Record<SlideKey, string>> = {
   welcome: "QR 을 띄워 두세요. 오시는 대로 휴대폰으로 들어오시면 화면이 같이 넘어갑니다.",
+  handsup:
+    "한 줄씩 열고 잠깐 기다리세요. 손이 올라가는 것을 서로 볼 시간이 필요합니다.\n" +
+    "마지막 줄까지 가면 가장 많이 손 든 분께 고양이발을 드립니다 — 정체는 아직 비밀입니다.",
+  talk1: "「발표 자료 열기」를 누르면 프로젝터에도 같이 뜹니다. 발표자 노트북으로 하실 거면 안 눌러도 됩니다.",
+  talk2: "자료를 화면에 띄우려면 「발표 자료 열기」. 닫기는 오른쪽 위입니다.",
+  talk3: "자료를 화면에 띄우려면 「발표 자료 열기」. 닫기는 오른쪽 위입니다.",
   why:
     "올해부터 코딩 문법을 가르치지 않습니다. 문제를 찾고 정의하는 것, 추상화하는 것,\n" +
     "알고리즘을 세우고 바이브 코딩으로 만드는 것을 가르칩니다.\n\n" +
@@ -140,25 +146,100 @@ function Steps({
   );
 }
 
-/** 발표자 소개. 시상은 여기 없다 — 뒤로 몰았다 */
+/**
+ * 발표자 소개 + 발표 자료.
+ *
+ * 시상은 여기 없다 — 뒤로 몰았다.
+ *
+ * ## 자료는 원본 그대로 띄운다
+ *
+ * 세 분이 만든 자료를 우리 테마로 옮겨 그리지 않는다. 발표자의 자료는 발표자의 것이고,
+ * 글꼴과 색까지가 그분의 발표다. 그래서 PDF 를 그대로 화면에 얹는다.
+ *
+ * 여닫는 상태는 서버에 둔다 (revealed). 강사가 노트북에서 열면 프로젝터도 함께 열려야
+ * 하는데, 각자 자기 상태를 들고 있으면 강사 화면만 열린다.
+ *
+ * 휴대폰에는 통째로 얹지 않는다. 79쪽짜리를 작은 화면의 iframe 에 넣으면 스크롤이
+ * 엉키기만 한다. 새 창으로 여는 단추만 준다 — 각자 보고 싶으면 각자 속도로 본다.
+ */
 function TalkSlide({
   who,
   where,
   title,
   line,
+  doc,
+  revealed,
+  onReveal,
+  compact,
 }: {
   who: string;
   where: string;
   title: string;
   line: string;
+  doc: string;
+  revealed: string[];
+  onReveal?: (key: string) => void;
+  compact?: boolean;
 }) {
+  const open = revealed.includes(`doc-${doc}`);
+
   return (
-    <div className="flex flex-col gap-4">
-      <p className="t-eyebrow">{where}</p>
-      <h1 className="t-display">{title}</h1>
-      <p className="t-headline">{who}</p>
-      <p className="t-body-lg text-muted">{line}</p>
-    </div>
+    <>
+      <div className="flex flex-col gap-4">
+        <p className="t-eyebrow">{where}</p>
+        <h1 className="t-display">{title}</h1>
+        <p className="t-headline">{who}</p>
+        <p className="t-body-lg text-muted">{line}</p>
+
+        <div className="mt-2 flex flex-wrap gap-2">
+          {onReveal && (
+            <button
+              type="button"
+              onClick={() => onReveal(`doc-${doc}`)}
+              className="pill pill-primary"
+            >
+              {open ? "자료 닫기" : "📄 발표 자료 열기"}
+            </button>
+          )}
+          <a
+            href={`/sendev/${doc}.pdf`}
+            target="_blank"
+            rel="noreferrer"
+            className="pill pill-secondary"
+          >
+            새 창으로 열기
+          </a>
+        </div>
+      </div>
+
+      {/*
+        큰 화면에서만 화면 위에 얹는다. 닫기는 오른쪽 위 단추 — 자료 위를 아무 데나 눌러
+        닫히게 하면 PDF 를 넘기려다 닫힌다.
+      */}
+      {open && !compact && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-ink">
+          <div className="flex items-center justify-between gap-3 px-5 py-3">
+            <p className="t-body-sm text-canvas">
+              {who} · {title}
+            </p>
+            {onReveal && (
+              <button
+                type="button"
+                onClick={() => onReveal(`doc-${doc}`)}
+                className="pill pill-secondary text-sm"
+              >
+                닫기
+              </button>
+            )}
+          </div>
+          <iframe
+            src={`/sendev/${doc}.pdf`}
+            title={`${who} 발표 자료`}
+            className="flex-1 w-full border-0 bg-canvas"
+          />
+        </div>
+      )}
+    </>
   );
 }
 
@@ -214,24 +295,40 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
         </div>
       );
 
-    case "bingo":
+    case "handsup":
+      /*
+       * 빙고를 대신한다.
+       *
+       * 원래는 종이 빙고판을 들고 다니며 사인을 받는 활동이었는데, 자리가 좁아 서로
+       * 오갈 수가 없다. 빙고가 하려던 일은 **서로를 알게 하는 것**이었지 종이를 채우는
+       * 것이 아니었다. 그래서 자리에 앉은 채로 같은 일을 하게 만든다.
+       *
+       * 진행자가 한 줄씩 열고, 해당하는 사람이 손을 든다. 열두 명이라 방 전체가 한눈에
+       * 들어오고, 손이 올라가는 것만으로 "저 분도 그렇구나" 가 된다. 참가자 휴대폰에도
+       * 같은 줄이 뜨므로 뒷자리에서 화면이 안 보여도 따라올 수 있다.
+       */
       return (
-        <div className="flex flex-col gap-4">
-          <h1 className="t-headline">개발자 빙고</h1>
-          <ol className="flex flex-col gap-3">
-            <li className="rounded-xl bg-lime px-6 py-4">
-              <p className="t-headline">① 해당하는 사람을 찾아 사인 받기</p>
-              <p className="t-body-lg">본인 사인 불가 · 1인당 최대 2칸</p>
-            </li>
-            <li className="rounded-xl bg-mint px-6 py-4">
-              <p className="t-headline">② 다른 학교급 선생님 사인 칸 주의!</p>
-            </li>
-            <li className="rounded-xl bg-coral px-6 py-4">
-              <p className="t-headline">③ 한 줄 빙고 완성하면 외치기</p>
-              <p className="t-body-lg">의문의 고양이발 증정 — 정체는 비밀 🤫</p>
-            </li>
-          </ol>
-          <p className="t-body-lg text-center">지각하신 분 사인은 2칸 인정 ❤️</p>
+        <div className="flex flex-col gap-5">
+          <h1 className="t-display">손 들어 주세요</h1>
+          <p className="t-body-lg text-muted">
+            해당되시면 손을 들어 주세요. 자리에서 그대로, 서로 얼굴만 한 번씩 봅니다.
+          </p>
+          <Steps
+            id="hands"
+            lines={[
+              "오늘 처음 오신 분",
+              "초등학교에 계신 분 / 중·고등학교에 계신 분",
+              "바이브코딩으로 만든 것을 수업에 실제로 써 보신 분",
+              "코드를 한 줄도 안 쓰고 앱을 만들어 보신 분",
+              "밤새 안 되는 것 붙들고 있어 보신 분",
+              "학생이 만든 것을 보고 놀라 보신 분",
+              "오늘 발표자 세 분 중 한 분이라도 오늘 처음 뵙는 분",
+              "그래도 내일 또 만들 것 같은 분",
+            ]}
+            big
+            {...r}
+          />
+          <p className="t-body-lg">가장 많이 손 드신 분께 의문의 고양이발 증정 🐾</p>
         </div>
       );
 
@@ -262,6 +359,9 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
           who="이재연 선생님"
           title="바이브코딩으로 만든 가정 수업 도구"
           line="지렁이를 키우고, 두더지를 잡으며 가정 교과를 배웁니다 — 시연 준비 완료."
+          doc="talk1-jaeyeon"
+          compact={compact}
+          {...r}
         />
       );
 
@@ -349,6 +449,9 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
           who="김효진 선생님"
           title="업무를 자동화하는 코드 한 줄"
           line="보물창고부터 정책정보 아카이브까지, 랄라쌤의 자동화 5종 세트."
+          doc="talk2-hyojin"
+          compact={compact}
+          {...r}
         />
       );
 
@@ -379,6 +482,9 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
           who="박환석 선생님"
           title="수행평가 성적 열람 시스템을 개발하면서"
           line="나이스 엑셀에서 QR 열람까지, 그리고 개인정보를 지키는 2초의 긴장감."
+          doc="talk3-hwanseok"
+          compact={compact}
+          {...r}
         />
       );
 
