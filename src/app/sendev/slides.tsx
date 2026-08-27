@@ -391,7 +391,8 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
         <div className="flex flex-col gap-6">
           <h1 className="t-display">오늘의 흐름</h1>
           <ol className="grid gap-3 sm:grid-cols-2">
-            {["빙고", "발표 ①", "하노이 릴레이", "발표 ② ③", "시상식", "클로징"].map(
+            {/* 실제 슬라이드 차례와 같아야 한다 — 빙고를 손들기로 바꾸면서 여기도 함께 */}
+            {["손 들어 주세요", "발표 ①", "하노이 릴레이", "발표 ② ③", "시상식", "클로징"].map(
               (step, i) => (
                 <li key={step} className="block flex items-baseline gap-3 bg-surface t-headline">
                   <span className="t-eyebrow">{String(i + 1).padStart(2, "0")}</span>
