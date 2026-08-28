@@ -939,7 +939,7 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
             lines={[
               "cat 은 파일을 열어 보는 명령어로 알고 있지만,\n이름의 뜻은 concatenate — 이어 붙이다 입니다.",
               "오늘 세 분의 발표가 딱 그것이었어요.\n따로 있던 파일 셋이 한 편의 문서가 됐습니다.",
-              "우리는 각자 이미 좋은 파일입니다.\n이어 붙이면 서울시교육청이 읽는 한 편이 됩니다.",
+              "교사개발자 한 분 한 분이 이미 좋은 파일입니다.\n서로 이어 붙일 때, 서울 교육이 바뀝니다.",
             ]}
             big
             {...r}
