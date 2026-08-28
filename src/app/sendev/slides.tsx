@@ -32,7 +32,7 @@ export const SLIDES = [
   { key: "quiz3", corner: "3초 퀴즈 ③" },
   { key: "awards", corner: "시상 ①" },
   { key: "hall", corner: "시상 ②" },
-  { key: "pawback", corner: "의문의 고양이발" },
+  { key: "pawback", corner: "오늘의 기념품" },
   { key: "keycap", corner: "키캡의 정체" },
   { key: "bonus", corner: "번외" },
   { key: "closing", corner: "클로징" },
@@ -436,9 +436,6 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
             a="가정월드"
             {...r}
           />
-          <p className="t-body-lg">
-            맞히신 분께 의문의 고양이발 증정 — 이게 뭔지는 마지막에 알려드립니다 🐾
-          </p>
         </div>
       );
 
@@ -631,11 +628,21 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
       );
 
     case "pawback":
+      /*
+       * 원래는 "행사 중간에 이걸 받으신 분들, 궁금하셨죠?" 였다.
+       *
+       * 빙고·퀴즈 승자에게 미리 나눠 주고 마지막에 정체를 밝히는 구조였는데, 중간
+       * 시상을 다 걷어내고 전원 기념품으로 바꾸면서 **아무도 중간에 받은 사람이 없어졌다.**
+       * 받은 적 없는 물건을 두고 "궁금하셨죠" 라고 물으면 그 자리에서 김이 샌다.
+       *
+       * 그래서 묻는 대상을 바꾼다 — 받은 경험이 아니라 **왜 하필 이것이냐**로. 다음
+       * 슬라이드의 cat 반전은 그대로 살아난다.
+       */
       return (
         <div className="flex flex-col items-center gap-8 text-center">
           <p className="t-display">🐾</p>
-          <h1 className="t-display">의문의 고양이발</h1>
-          <p className="t-headline">행사 중간에 이걸 받으신 분들, 궁금하셨죠?</p>
+          <h1 className="t-display">오늘의 기념품</h1>
+          <p className="t-headline">그런데 왜 하필 고양이발일까요?</p>
         </div>
       );
 
