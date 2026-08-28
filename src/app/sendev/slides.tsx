@@ -726,7 +726,13 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
               상품 사진.
               휴대폰에는 안 띄운다 — 작은 화면에서는 이름이 먼저 보여야 한다.
             */}
-            {!compact && <PrizePhoto src="/sendev/prize-wrist.png" alt="마우스 손목 받침대" />}
+            {!compact && (
+              <PrizePhoto
+                src="/sendev/prize-wrist.png"
+                alt="마우스 손목 받침대"
+                className="max-w-[13rem]"
+              />
+            )}
           </div>
 
           <p className="t-headline">🖱️ 마우스 손목 받침대</p>
@@ -754,29 +760,36 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
             )}
           </div>
 
-          <div className="block flex flex-col gap-2 bg-coral">
-            <p className="t-eyebrow">브루트포스 끈기상 · 최다 이동수</p>
-            {onNames ? (
-              <input
-                value={names.grit}
-                onChange={(event) => onNames({ ...names, grit: event.target.value.slice(0, 20) })}
-                placeholder="수상자 이름"
-                className="w-full border-none bg-transparent text-4xl font-bold outline-none placeholder:text-muted placeholder:opacity-50"
-              />
-            ) : (
-              <p className="t-display">{names.grit || "…"}</p>
-            )}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="t-body-lg">집에서 연습하시라고 교구를 드립니다 🗼</p>
-              {/* 휴대폰에는 안 띄운다 — 작은 화면에서는 수상자 이름이 먼저 보여야 한다 */}
-              {!compact && (
-                <PrizePhoto
-                  src="/sendev/prize-hanoi.png"
-                  alt="하노이탑 나무 교구"
-                  className="max-w-[9rem]"
+          {/*
+            사진을 이름 아래가 아니라 옆에 둔다.
+
+            아래에 놓으면 블록이 사진 높이만큼 그대로 길어져서 두 블록이 화면을
+            넘긴다. 옆에 두면 이름 세 줄과 높이를 나눠 쓰므로 늘어나는 것이 없다.
+          */}
+          <div className="block flex items-center gap-4 bg-coral">
+            <div className="flex flex-1 flex-col gap-2">
+              <p className="t-eyebrow">브루트포스 끈기상 · 최다 이동수</p>
+              {onNames ? (
+                <input
+                  value={names.grit}
+                  onChange={(event) => onNames({ ...names, grit: event.target.value.slice(0, 20) })}
+                  placeholder="수상자 이름"
+                  className="w-full border-none bg-transparent text-4xl font-bold outline-none placeholder:text-muted placeholder:opacity-50"
                 />
+              ) : (
+                <p className="t-display">{names.grit || "…"}</p>
               )}
+              <p className="t-body-lg">집에서 연습하시라고 교구를 드립니다 🗼</p>
             </div>
+
+            {/* 휴대폰에는 안 띄운다 — 작은 화면에서는 수상자 이름이 먼저 보여야 한다 */}
+            {!compact && (
+              <PrizePhoto
+                src="/sendev/prize-hanoi.png"
+                alt="하노이탑 나무 교구"
+                className="max-w-[9rem]"
+              />
+            )}
           </div>
         </div>
       );
