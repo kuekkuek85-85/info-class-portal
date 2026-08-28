@@ -56,6 +56,14 @@ export const SLIDES = [
   { key: "hall", corner: "시상 ②" },
   { key: "pawback", corner: "오늘의 기념품" },
   { key: "keycap", corner: "키캡의 정체" },
+  /*
+   * 키캡 다음에 한 장 더 붙인다.
+   *
+   * 키캡은 "cat 이잖아요" 로 웃고 끝나는 자리다. 웃음이 남아 있을 때 그 단어를 한 번
+   * 더 쓰면 오늘 하루가 한 문장으로 묶인다 — cat 의 원래 뜻이 **이어 붙이다** 이므로.
+   * 개그 슬라이드에 이 말까지 얹으면 둘 다 흐려져서 따로 뗐다.
+   */
+  { key: "concat", corner: "cat 의 나머지 절반" },
   { key: "bonus", corner: "번외" },
   { key: "closing", corner: "클로징" },
 ] as const;
@@ -109,6 +117,10 @@ export const NOTES: Partial<Record<SlideKey, string>> = {
   hall: "우승자는 이름만 박제, 교구는 최다 이동수. 반전이니 미리 말하지 마세요.",
   keycap: "2단을 누르기 전에 한 박자 쉬세요. 반전은 침묵이 만듭니다.",
   hanoi: "각자 휴대폰으로 QR 을 찍고 들어갑니다.",
+  concat:
+    "키캡에서 웃은 그 단어를 한 번 더 씁니다. 천천히 세 번 누르세요.\n\n" +
+    "셋째 줄은 읽고 잠깐 두세요 — 오늘 마지막 문장입니다.\n" +
+    "덧붙이실 것이 있으면 여기서 하시고, 없으면 그대로 넘기는 편이 낫습니다.",
 };
 
 interface SlideProps {
@@ -832,6 +844,42 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
           </div>
 
           <p className="t-headline text-center">🐾 전원 증정</p>
+        </div>
+      );
+
+    case "concat":
+      /*
+       * 명령어를 둘째 줄에 맞춰 연다.
+       *
+       * 처음부터 띄워 두면 `>` 하나로 결론이 먼저 읽힌다. 첫 줄에서 "이어 붙이다" 라는
+       * 뜻만 던져 두고, 그 다음에 실제로 붙는 장면을 보여 주는 순서다.
+       *
+       * 파일 이름은 오늘 발표하신 세 분이다. 예시를 a.txt · b.txt 로 두면 남의 이야기가
+       * 되는데, 이름이 들어가면 방금 들은 세 발표가 그 자리에 놓인다.
+       */
+      return (
+        <div className="flex min-h-[45vh] flex-col justify-center gap-6">
+          {/*
+            휴대폰에는 안 띄운다. 서른여덟 자짜리 한 줄이라 작은 화면에서는 줄이
+            꺾이는데, 꺾인 명령어는 명령어로 안 읽힌다. 줄여서 넣는 길도 있지만
+            그러면 글자가 11px 이 된다 — 이 앱에서 한 번 고친 실수를 되풀이하는 것이다.
+          */}
+          {!compact && revealed.includes("concat-1") && (
+            <p className="rounded-xl border-2 border-ink bg-cream px-6 py-3 text-center font-mono text-3xl">
+              cat 이재연.md 김효진.md 박환석.md &gt; 서울.md
+            </p>
+          )}
+
+          <Steps
+            id="concat"
+            lines={[
+              "cat 은 파일을 열어 보는 명령어로 알고 있지만,\n이름의 뜻은 concatenate — 이어 붙이다 입니다.",
+              "오늘 세 분의 발표가 딱 그것이었어요.\n따로 있던 파일 셋이 한 편의 문서가 됐습니다.",
+              "우리는 각자 이미 좋은 파일입니다.\n이어 붙이면 서울시교육청이 읽는 한 편이 됩니다.",
+            ]}
+            big
+            {...r}
+          />
         </div>
       );
 
