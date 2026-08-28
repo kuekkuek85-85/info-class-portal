@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { HanoiQr, JoinQr } from "./hanoi-qr";
 import {
   AskCount,
@@ -403,6 +405,27 @@ function AskPanel({ id, compact }: { id: string; compact?: boolean }) {
   return <AskList id={id} poll={poll} />;
 }
 
+/**
+ * 상품 사진.
+ *
+ * 파일이 없으면 **아무것도 안 그린다.** 행사 중에 깨진 이미지 아이콘이 시상 화면에
+ * 떠 있는 것보다는 사진이 없는 편이 낫다. 넣을 파일은 public/sendev 에 둔다.
+ */
+function PrizePhoto({ src, alt }: { src: string; alt: string }) {
+  const [broken, setBroken] = useState(false);
+  if (broken) return null;
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- 행사용 정적 사진 한 장. 최적화 파이프라인을 붙일 이유가 없다
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setBroken(true)}
+      className="mx-auto h-auto w-full max-w-xs rounded-2xl"
+    />
+  );
+}
+
 function Quiz({
   id,
   q,
@@ -667,16 +690,27 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
             <br />
             교사개발자 1기 일동이 위로의 뜻을 전합니다.
           </p>
-          <Steps
-            id="awards"
-            lines={[
-              "이재연 선생님 — 서일중학교",
-              "김효진 선생님 — 서울군자초등학교",
-              "박환석 선생님 — 대신중학교",
-            ]}
-            big
-            {...r}
-          />
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+            <div className="flex flex-1 flex-col gap-6">
+              <Steps
+                id="awards"
+                lines={[
+                  "이재연 선생님 — 서일중학교",
+                  "김효진 선생님 — 서울군자초등학교",
+                  "박환석 선생님 — 대신중학교",
+                ]}
+                big
+                {...r}
+              />
+            </div>
+
+            {/*
+              상품 사진.
+              휴대폰에는 안 띄운다 — 작은 화면에서는 이름이 먼저 보여야 한다.
+            */}
+            {!compact && <PrizePhoto src="/sendev/prize-wrist.png" alt="마우스 손목 받침대" />}
+          </div>
+
           <p className="t-headline">🖱️ 마우스 손목 받침대</p>
         </div>
       );
