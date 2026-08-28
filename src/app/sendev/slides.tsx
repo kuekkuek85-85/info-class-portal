@@ -445,6 +445,45 @@ function PrizePhoto({
   );
 }
 
+/**
+ * 상품 사진을 마지막에 연다.
+ *
+ * 사진을 처음부터 띄워 두면 받는 사람이 무엇을 받는지 이미 알고 있고, 이름을 부르는
+ * 동안 눈은 사진에 가 있다. 단추 하나를 사이에 두면 그 몇 초가 뜸이 된다.
+ *
+ * 휴대폰에는 아무것도 그리지 않는다 — 단추도 사진도. 손 안에서 미리 열어 보면
+ * 앞 화면에서 여는 의미가 없다.
+ */
+function PhotoReveal({
+  id,
+  label,
+  revealed,
+  onReveal,
+  compact,
+  children,
+}: {
+  id: string;
+  label: string;
+  revealed: string[];
+  onReveal?: (key: string) => void;
+  compact?: boolean;
+  children: React.ReactNode;
+}) {
+  if (compact) return null;
+  if (revealed.includes(`photo-${id}`)) return <>{children}</>;
+  if (!onReveal) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onReveal(`photo-${id}`)}
+      className="pill pill-primary self-start"
+    >
+      {label}
+    </button>
+  );
+}
+
 function Quiz({
   id,
   q,
@@ -722,20 +761,30 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
               />
             </div>
 
-            {/*
-              상품 사진.
-              휴대폰에는 안 띄운다 — 작은 화면에서는 이름이 먼저 보여야 한다.
-            */}
-            {!compact && (
-              <PrizePhoto
-                src="/sendev/prize-wrist.png"
-                alt="마우스 손목 받침대"
-                className="max-w-[13rem]"
-              />
+            {/* 세 분을 다 부른 뒤에야 단추가 나온다 — 이름을 부르는 동안은 이름만 본다 */}
+            {revealed.includes("awards-2") && (
+              <PhotoReveal
+                id="awards"
+                label="상품 공개"
+                compact={compact}
+                {...r}
+              >
+                <PrizePhoto
+                  src="/sendev/prize-wrist.png"
+                  alt="마우스 손목 받침대"
+                  className="max-w-[13rem]"
+                />
+              </PhotoReveal>
             )}
           </div>
 
-          <p className="t-headline">🖱️ 마우스 손목 받침대</p>
+          {/*
+            상품 이름도 사진과 같이 연다.
+            사진만 감추고 이름을 띄워 두면 무엇이 나올지 이미 읽히므로 감춘 뜻이 없다.
+          */}
+          {revealed.includes("photo-awards") && (
+            <p className="t-headline">🖱️ 마우스 손목 받침대</p>
+          )}
         </div>
       );
 
@@ -782,14 +831,13 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
               <p className="t-body-lg">집에서 연습하시라고 교구를 드립니다 🗼</p>
             </div>
 
-            {/* 휴대폰에는 안 띄운다 — 작은 화면에서는 수상자 이름이 먼저 보여야 한다 */}
-            {!compact && (
+            <PhotoReveal id="hall" label="교구 공개" compact={compact} {...r}>
               <PrizePhoto
                 src="/sendev/prize-hanoi.png"
                 alt="하노이탑 나무 교구"
                 className="max-w-[9rem]"
               />
-            )}
+            </PhotoReveal>
           </div>
         </div>
       );
@@ -815,16 +863,20 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
 
     case "keycap":
       /*
-       * 사진이 문장을 앞지르면 안 된다.
+       * 사진은 두 줄을 다 읽은 뒤에 한꺼번에 연다.
        *
-       * 두 장을 처음부터 띄워 두면 cat 반전이 그림으로 먼저 새어 나간다. 그래서 줄이
-       * 열릴 때 같이 연다 — 첫 줄에 키캡 실물, 둘째 줄에 cat. 그리고 **한 장씩만**
-       * 둔다. 둘을 나란히 놓으면 눈이 두 번째로 먼저 가고, 그러면 첫 줄을 읽는 동안
-       * 답이 옆에 떠 있다.
+       * 줄에 맞춰 한 장씩 열어 봤는데, 그러면 cat 반전이 그림으로 먼저 새어 나간다.
+       * 말로 다 터뜨린 다음 실물과 cat 을 나란히 놓는 편이 낫다 — 그때는 사진이
+       * 답을 흘리는 것이 아니라 방금 한 말을 확인해 주는 것이 된다.
        */
       return (
-        <div className="flex min-h-[45vh] flex-col justify-center gap-8">
-          <div className="flex flex-col gap-8 sm:flex-row sm:items-center">
+        <div className="flex min-h-[45vh] flex-col justify-center gap-6">
+          {/*
+            사진은 글 아래가 아니라 옆에 붙인다.
+            아래에 두면 두 장 높이가 그대로 더해져서 화면을 넘긴다. 옆에 두면 여섯 줄
+            짜리 글과 높이를 나눠 쓰므로 열어도 늘어나는 것이 없다.
+          */}
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
             <div className="flex-1">
               <Steps
                 id="keycap"
@@ -837,21 +889,21 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
               />
             </div>
 
-            {!compact && revealed.includes("keycap-1") ? (
-              <PrizePhoto
-                src="/sendev/keycap-cat.png"
-                alt="컴퓨터 앞에 앉은 고양이"
-                className="max-w-[16rem]"
-              />
-            ) : (
-              !compact &&
-              revealed.includes("keycap-0") && (
-                <PrizePhoto
-                  src="/sendev/keycap-paw.png"
-                  alt="고양이발 모양 키캡 다섯 개"
-                  className="max-w-[16rem]"
-                />
-              )
+            {revealed.includes("keycap-1") && (
+              <PhotoReveal id="keycap" label="실물 공개" compact={compact} {...r}>
+                <div className="flex items-center gap-3">
+                  <PrizePhoto
+                    src="/sendev/keycap-paw.png"
+                    alt="고양이발 모양 키캡 다섯 개"
+                    className="max-w-[10rem]"
+                  />
+                  <PrizePhoto
+                    src="/sendev/keycap-cat.png"
+                    alt="컴퓨터 앞에 앉은 고양이"
+                    className="max-w-[10rem]"
+                  />
+                </div>
+              </PhotoReveal>
             )}
           </div>
 
