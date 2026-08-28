@@ -108,7 +108,7 @@ export const NOTES: Partial<Record<SlideKey, string>> = {
   awards: "세 분을 한 분씩 여세요. 세 번째쯤에는 화면이 뜨는 것만으로 웃음이 납니다.",
   hall: "우승자는 이름만 박제, 교구는 최다 이동수. 반전이니 미리 말하지 마세요.",
   keycap: "2단을 누르기 전에 한 박자 쉬세요. 반전은 침묵이 만듭니다.",
-  hanoi: "각자 휴대폰으로 QR 을 찍고 들어갑니다. 완료 화면을 저에게 보여 주세요.",
+  hanoi: "각자 휴대폰으로 QR 을 찍고 들어갑니다.",
 };
 
 interface SlideProps {
@@ -576,7 +576,6 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
             <ol className="flex flex-col gap-2 t-body-lg">
               <li>① 제한 시간 안에 완성하기</li>
               <li>② 최소 이동 · 최단 시간으로 겨루기</li>
-              <li>③ 완료 화면을 진행자에게 보여주기</li>
             </ol>
             <p className="t-body text-muted">
               지난주 저희 1학년 학생들이 한 바로 그 게임입니다.
@@ -791,17 +790,47 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
       );
 
     case "keycap":
+      /*
+       * 사진이 문장을 앞지르면 안 된다.
+       *
+       * 두 장을 처음부터 띄워 두면 cat 반전이 그림으로 먼저 새어 나간다. 그래서 줄이
+       * 열릴 때 같이 연다 — 첫 줄에 키캡 실물, 둘째 줄에 cat. 그리고 **한 장씩만**
+       * 둔다. 둘을 나란히 놓으면 눈이 두 번째로 먼저 가고, 그러면 첫 줄을 읽는 동안
+       * 답이 옆에 떠 있다.
+       */
       return (
         <div className="flex min-h-[45vh] flex-col justify-center gap-8">
-          <Steps
-            id="keycap"
-            lines={[
-              "우리 모두 교사개발자 1기라서, ‘개발자 키캡’ 을 기념품으로 찾아 헤맸습니다.\n그런데 교사개발자 키캡은 세상에 없더라고요.\n그래서… 고양이발을 샀습니다.",
-              "그런데 사 놓고 보니, 이거 개발자 키캡 맞습니다.\ncat — 리눅스 명령어잖아요.\n오늘부터 여러분 손끝엔 cat 명령어가 있습니다.",
-            ]}
-            big
-            {...r}
-          />
+          <div className="flex flex-col gap-8 sm:flex-row sm:items-center">
+            <div className="flex-1">
+              <Steps
+                id="keycap"
+                lines={[
+                  "우리 모두 교사개발자 1기라서, ‘개발자 키캡’ 을 기념품으로 찾아 헤맸습니다.\n그런데 개발 키캡은 세상에 없더라고요.\n그래서… 고양이발을 샀습니다.",
+                  "그런데 사 놓고 보니, 이거 개발자 키캡 맞습니다.\ncat — 리눅스 명령어잖아요.\n오늘부터 여러분 손끝엔 cat 명령어가 있습니다.",
+                ]}
+                big
+                {...r}
+              />
+            </div>
+
+            {!compact && revealed.includes("keycap-1") ? (
+              <PrizePhoto
+                src="/sendev/keycap-cat.png"
+                alt="컴퓨터 앞에 앉은 고양이"
+                className="max-w-[16rem]"
+              />
+            ) : (
+              !compact &&
+              revealed.includes("keycap-0") && (
+                <PrizePhoto
+                  src="/sendev/keycap-paw.png"
+                  alt="고양이발 모양 키캡 다섯 개"
+                  className="max-w-[16rem]"
+                />
+              )
+            )}
+          </div>
+
           <p className="t-headline text-center">🐾 전원 증정</p>
         </div>
       );
