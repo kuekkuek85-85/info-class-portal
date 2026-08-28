@@ -64,7 +64,6 @@ export const SLIDES = [
    * 개그 슬라이드에 이 말까지 얹으면 둘 다 흐려져서 따로 뗐다.
    */
   { key: "concat", corner: "cat 의 나머지 절반" },
-  { key: "bonus", corner: "번외" },
   { key: "closing", corner: "클로징" },
 ] as const;
 
@@ -883,36 +882,27 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
         </div>
       );
 
-    case "bonus":
-      return (
-        <div className="flex flex-col gap-6">
-          <h1 className="t-display">번외 — 이 슬라이드도 사례입니다</h1>
-          <p className="t-body-lg">
-            정보 수업 포털 · 중학교 정보 수업과 선택과목을 한 화면으로 굴리는 웹 앱입니다.
-          </p>
-          <ul className="flex flex-col gap-2 t-body-lg">
-            <li>· 오늘 이 슬라이드가 그 포털의 라우트 하나입니다</li>
-            <li>· 지금 여러분 휴대폰이 제 화면을 따라오는 것도 같은 구조예요</li>
-            <li>· 교사가 단계를 넘기면 학생 태블릿 스물여덟 대가 함께 넘어갑니다</li>
-            <li>· 학생 데이터와는 완전히 분리 — 오늘 이 화면은 저장하는 것이 없습니다</li>
-          </ul>
-          <p className="t-caption">info-class-portal.vercel.app</p>
-        </div>
-      );
-
     case "closing":
+      /*
+       * 다음 발표자를 임OO · 김OO 로 둔다.
+       *
+       * 아직 확정 전이라 이름과 학교를 띄우면 그 자리에서 약속이 된다. 발표 제목까지
+       * 붙어 있으면 더 그렇다. 나오실 분이 있다는 것만 알리고 이름은 그날 부른다.
+       */
       return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
           <h1 className="t-display">다음에 또</h1>
           <div className="block flex flex-col gap-3 bg-mint">
             <p className="t-eyebrow">다음 나눔 데이</p>
             <p className="t-headline">
-              임세범 (서울중광초) — 교사개발자의 AI 기반 현장연구 한해살이
+              임OO, 김OO 교사 개발자 분께서 발표해주실 겁니다.
             </p>
-            <p className="t-headline">김예슬 (서울월정초) 발표 예정</p>
           </div>
           <p className="t-body-lg">문화 분과 소식도 곧 전해드립니다.</p>
-          <p className="t-display">이제 옆방 해커톤 참관하러 이동합니다 🚶</p>
+          <p className="t-display">
+            이제 조금 쉬었다가 우리 후배 2기 교사 개발자 분들 방으로 놀러가 볼까요?
+          </p>
+          <p className="t-body-lg">🍿 팝콘 먹으며 불구경 준비!</p>
         </div>
       );
   }
