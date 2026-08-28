@@ -24,8 +24,16 @@ import { db } from "@/lib/firebase-admin";
 const COLLECTION = "sendevPoll";
 const DOC = "now";
 
-/** 슬라이드가 아는 질문만 받는다 — 문서에 아무 필드나 쌓이는 것을 막는다 */
-const QUESTIONS = new Set(["h1", "h2", "h3", "h4", "h5", "h6"]);
+/**
+ * 슬라이드가 아는 것만 받는다 — 문서에 아무 필드나 쌓이는 것을 막는다.
+ *
+ *  h1~h6  손들기 여섯 문항
+ *  qa1~3  발표 중에 받는 질문 (발표 ①②③)
+ */
+const QUESTIONS = new Set(["h1", "h2", "h3", "h4", "h5", "h6", "qa1", "qa2", "qa3"]);
+
+/** 발표 질문은 한 문장이 들어가야 한다. 손들기 답보다 넉넉히 준다 */
+const MAX_LENGTH: Record<string, number> = { qa1: 140, qa2: 140, qa3: 140 };
 
 const CACHE_MS = 1200;
 let cache: { at: number; value: PollState } | null = null;
@@ -53,7 +61,9 @@ export async function POST(request: Request) {
     const who = String(body.who).replace(/[^a-z0-9]/gi, "").slice(0, 24);
     if (!who) return fail("invalid_input");
 
-    const value = String(body.value ?? "").trim().slice(0, 60);
+    const value = String(body.value ?? "")
+      .trim()
+      .slice(0, MAX_LENGTH[body.q] ?? 60);
 
     await db()
       .collection(COLLECTION)

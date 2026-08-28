@@ -1,7 +1,16 @@
 "use client";
 
 import { HanoiQr, JoinQr } from "./hanoi-qr";
-import { HANDS, HandsInput, HandsResult, usePoll, useWho } from "./poll";
+import {
+  AskCount,
+  AskInput,
+  AskList,
+  HANDS,
+  HandsInput,
+  HandsResult,
+  usePoll,
+  useWho,
+} from "./poll";
 
 /**
  * 슬라이드 내용.
@@ -73,9 +82,16 @@ export const NOTES: Partial<Record<SlideKey, string>> = {
     "  · 4·6번은 말풍선으로 흩어집니다 — 재미있는 것을 짚어 읽어 주세요\n" +
     "  · 5번 월세는 최고 금액이 크게 뜹니다. 합계도 함께 나오니 그걸로 한마디\n\n" +
     "답이 안 올라오면 「다음 질문」을 누르지 말고 조금 기다리세요. 2초마다 갱신됩니다.",
-  talk1: "「발표 자료 열기」를 누르면 프로젝터에도 같이 뜹니다. 발표자 노트북으로 하실 거면 안 눌러도 됩니다.",
-  talk2: "자료를 화면에 띄우려면 「발표 자료 열기」. 닫기는 오른쪽 위입니다.",
-  talk3: "자료를 화면에 띄우려면 「발표 자료 열기」. 닫기는 오른쪽 위입니다.",
+  talk1:
+    "발표 시작 전에 한마디 — \"들으시면서 궁금한 것은 휴대폰에 적어 두세요. 끝나고 같이 봅니다.\"\n" +
+    "여기 「질문 N개」 만 뜨고 내용은 안 보입니다. 발표자가 읽으며 흔들리지 않게 한 것이니\n" +
+    "발표 중에 굳이 말하지 마세요. 질문은 다음 슬라이드(퀴즈) 맨 위에 뜹니다.\n\n" +
+    "「발표 자료 열기」를 누르면 프로젝터에도 같이 뜹니다. 발표자 노트북으로 하실 거면 안 눌러도 됩니다.",
+  talk2: "질문은 다음 슬라이드 맨 위에 뜹니다. 자료는 「발표 자료 열기」 · 닫기는 오른쪽 위.",
+  talk3: "질문은 다음 슬라이드 맨 위에 뜹니다. 자료는 「발표 자료 열기」 · 닫기는 오른쪽 위.",
+  quiz1: "받은 질문을 먼저 읽고 발표자에게 넘기세요. 그 다음 퀴즈로 갑니다.",
+  quiz2: "받은 질문을 먼저 읽고 발표자에게 넘기세요. 그 다음 퀴즈로 갑니다.",
+  quiz3: "받은 질문을 먼저 읽고 발표자에게 넘기세요. 그 다음 퀴즈로 갑니다.",
   why:
     "3분. 게임 앞에 두는 틀입니다 — 이 이야기를 듣고 원판을 옮기게 됩니다.\n\n" +
     "올해부터 코딩 문법을 가르치지 않습니다. 문제를 찾고 정의하는 것, 추상화하는 것,\n" +
@@ -185,33 +201,67 @@ function Steps({
  * 엉키기만 한다. 새 창으로 여는 단추만 준다 — 각자 보고 싶으면 각자 속도로 본다.
  */
 function TalkSlide({
-  who,
+  speaker,
   where,
   title,
   line,
   doc,
+  ask,
   revealed,
   onReveal,
   compact,
 }: {
-  who: string;
+  speaker: string;
   where: string;
   title: string;
   line: string;
   doc: string;
+  /** 발표 중에 받는 질문의 열쇠 (qa1·qa2·qa3) */
+  ask: string;
   revealed: string[];
   onReveal?: (key: string) => void;
   compact?: boolean;
 }) {
   const open = revealed.includes(`doc-${doc}`);
+  const poll = usePoll();
+  const me = useWho();
+
+  /*
+   * 휴대폰은 질문 칸만 크게 띄운다.
+   *
+   * 발표를 듣는 사람에게 필요한 것은 발표자 소개가 아니라 **적을 자리**다. 소개는 앞
+   * 화면에 크게 떠 있고, 작은 화면에서 그것까지 그리면 정작 칸이 접혀 내려간다.
+   */
+  if (compact) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div>
+          <p className="t-caption">{where}</p>
+          <p className="t-headline">{speaker}</p>
+        </div>
+        <AskInput id={ask} who={me} poll={poll} />
+        <a
+          href={`/sendev/${doc}.pdf`}
+          target="_blank"
+          rel="noreferrer"
+          className="pill pill-secondary pill-block text-center"
+        >
+          발표 자료 보기
+        </a>
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="flex flex-col gap-4">
         <p className="t-eyebrow">{where}</p>
         <h1 className="t-display">{title}</h1>
-        <p className="t-headline">{who}</p>
+        <p className="t-headline">{speaker}</p>
         <p className="t-body-lg text-muted">{line}</p>
+
+        {/* 질문 내용은 발표 중에 안 띄운다 — 발표자가 읽으며 흔들린다. 개수만 */}
+        <AskCount id={ask} poll={poll} />
 
         <div className="mt-2 flex flex-wrap gap-2">
           {onReveal && (
@@ -238,11 +288,11 @@ function TalkSlide({
         큰 화면에서만 화면 위에 얹는다. 닫기는 오른쪽 위 단추 — 자료 위를 아무 데나 눌러
         닫히게 하면 PDF 를 넘기려다 닫힌다.
       */}
-      {open && !compact && (
+      {open && (
         <div className="fixed inset-0 z-50 flex flex-col bg-ink">
           <div className="flex items-center justify-between gap-3 px-5 py-3">
             <p className="t-body-sm text-canvas">
-              {who} · {title}
+              {speaker} · {title}
             </p>
             {onReveal && (
               <button
@@ -256,7 +306,7 @@ function TalkSlide({
           </div>
           <iframe
             src={`/sendev/${doc}.pdf`}
-            title={`${who} 발표 자료`}
+            title={`${speaker} 발표 자료`}
             className="flex-1 w-full border-0 bg-canvas"
           />
         </div>
@@ -336,6 +386,18 @@ function HandsUp({
       )}
     </div>
   );
+}
+
+/**
+ * 발표 중에 받은 질문 — 퀴즈 앞에 붙는다.
+ *
+ * 휴대폰에서는 접어 둔다. 앞 화면에 크게 떠 있는 것을 작은 화면에 또 그리면 정작
+ * 퀴즈 문제가 스크롤 아래로 내려간다.
+ */
+function AskPanel({ id, compact }: { id: string; compact?: boolean }) {
+  const poll = usePoll();
+  if (compact) return null;
+  return <AskList id={id} poll={poll} />;
 }
 
 function Quiz({
@@ -425,7 +487,8 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
       return (
         <TalkSlide
           where="서일중학교"
-          who="이재연 선생님"
+          speaker="이재연 선생님"
+          ask="qa1"
           title="바이브코딩으로 만든 가정 수업 도구"
           line="지렁이를 키우고, 두더지를 잡으며 가정 교과를 배웁니다 — 시연 준비 완료."
           doc="talk1-jaeyeon"
@@ -437,6 +500,8 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
     case "quiz1":
       return (
         <div className="flex flex-col gap-5">
+          {/* 발표 중에 받은 질문을 먼저 읽고 퀴즈로 넘어간다 */}
+          <AskPanel id="qa1" compact={compact} />
           <h1 className="t-headline">3초 퀴즈 ①</h1>
           <Quiz
             id="q1a"
@@ -512,7 +577,8 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
       return (
         <TalkSlide
           where="서울군자초등학교"
-          who="김효진 선생님"
+          speaker="김효진 선생님"
+          ask="qa2"
           title="업무를 자동화하는 코드 한 줄"
           line="보물창고부터 정책정보 아카이브까지, 랄라쌤의 자동화 5종 세트."
           doc="talk2-hyojin"
@@ -524,6 +590,7 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
     case "quiz2":
       return (
         <div className="flex flex-col gap-5">
+          <AskPanel id="qa2" compact={compact} />
           <h1 className="t-headline">3초 퀴즈 ②</h1>
           <Quiz
             id="q2a"
@@ -545,7 +612,8 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
       return (
         <TalkSlide
           where="대신중학교"
-          who="박환석 선생님"
+          speaker="박환석 선생님"
+          ask="qa3"
           title="수행평가 성적 열람 시스템을 개발하면서"
           line="나이스 엑셀에서 QR 열람까지, 그리고 개인정보를 지키는 2초의 긴장감."
           doc="talk3-hwanseok"
@@ -557,6 +625,7 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
     case "quiz3":
       return (
         <div className="flex flex-col gap-5">
+          <AskPanel id="qa3" compact={compact} />
           <h1 className="t-headline">3초 퀴즈 ③</h1>
           <Quiz
             id="q3a"

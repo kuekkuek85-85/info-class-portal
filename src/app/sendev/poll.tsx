@@ -214,6 +214,85 @@ export function HandsResult({ question, poll }: { question: HandsQuestion; poll:
   );
 }
 
+/* ────────────────────────────────────────────────────────────
+   발표 중 질문받기
+   ──────────────────────────────────────────────────────────── */
+
+/**
+ * 발표를 들으며 휴대폰으로 적는 질문.
+ *
+ * 손을 들어 끊는 것보다 이쪽이 낫다. 3분짜리 발표를 질문이 끊으면 발표가 안 끝나고,
+ * 무엇보다 **묻고 싶은데 손은 안 드는 사람**의 질문이 사라진다. 적어 두면 남는다.
+ *
+ * 한 사람이 한 질문이다. 다시 보내면 앞의 것을 고쳐 쓴다 — 열두 명이 여러 개씩 던지면
+ * 다음 화면에서 다 읽어 줄 수가 없다.
+ */
+export function AskInput({ id, who, poll }: { id: string; who: string; poll: PollState }) {
+  const answer = useAnswer(who);
+  const mine = poll[id]?.[who] ?? "";
+  const [draft, setDraft] = useState("");
+  const [sent, setSent] = useState(false);
+
+  if (!who) return null;
+
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!draft.trim()) return;
+        answer(id, draft.trim());
+        setSent(true);
+      }}
+      className="flex flex-col gap-2"
+    >
+      <label htmlFor={`ask-${id}`} className="t-body-sm font-bold">
+        발표 들으며 궁금한 것을 적어 두세요
+      </label>
+      <textarea
+        id={`ask-${id}`}
+        value={draft}
+        onChange={(event) => {
+          setDraft(event.target.value.slice(0, 140));
+          setSent(false);
+        }}
+        rows={3}
+        placeholder="발표 끝나고 화면에 함께 띄웁니다"
+        className="field"
+      />
+      <button type="submit" className="pill pill-primary pill-block" disabled={!draft.trim()}>
+        {sent ? "보냈어요 — 고치려면 다시 보내기" : "질문 보내기"}
+      </button>
+      {mine && !sent && <p className="t-caption">보낸 질문 · {mine}</p>}
+    </form>
+  );
+}
+
+/** 받은 질문들. 퀴즈 앞에 붙는다 */
+export function AskList({ id, poll }: { id: string; poll: PollState }) {
+  const rows = values(poll, id);
+  if (rows.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="t-eyebrow">받은 질문 {rows.length}개</h2>
+      <ul className="flex flex-col gap-2">
+        {rows.map((text, i) => (
+          <li key={`${text}-${i}`} className="rounded-xl bg-surface px-5 py-3 t-body-lg">
+            {text}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** 발표 화면에 찍는 "지금 몇 개 들어왔나". 질문 내용은 발표 중에 안 띄운다 */
+export function AskCount({ id, poll }: { id: string; poll: PollState }) {
+  const n = values(poll, id).length;
+  if (n === 0) return null;
+  return <p className="t-body-lg text-muted">질문 {n}개 들어왔습니다</p>;
+}
+
 /** 휴대폰에서 답하는 칸 */
 export function HandsInput({
   question,
