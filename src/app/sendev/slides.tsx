@@ -411,7 +411,15 @@ function AskPanel({ id, compact }: { id: string; compact?: boolean }) {
  * 파일이 없으면 **아무것도 안 그린다.** 행사 중에 깨진 이미지 아이콘이 시상 화면에
  * 떠 있는 것보다는 사진이 없는 편이 낫다. 넣을 파일은 public/sendev 에 둔다.
  */
-function PrizePhoto({ src, alt }: { src: string; alt: string }) {
+function PrizePhoto({
+  src,
+  alt,
+  className = "max-w-xs",
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+}) {
   const [broken, setBroken] = useState(false);
   if (broken) return null;
 
@@ -421,7 +429,7 @@ function PrizePhoto({ src, alt }: { src: string; alt: string }) {
       src={src}
       alt={alt}
       onError={() => setBroken(true)}
-      className="mx-auto h-auto w-full max-w-xs rounded-2xl"
+      className={`mx-auto h-auto w-full rounded-2xl ${className}`}
     />
   );
 }
@@ -748,7 +756,17 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
             ) : (
               <p className="t-display">{names.grit || "…"}</p>
             )}
-            <p className="t-body-lg">집에서 연습하시라고 교구를 드립니다 🗼</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="t-body-lg">집에서 연습하시라고 교구를 드립니다 🗼</p>
+              {/* 휴대폰에는 안 띄운다 — 작은 화면에서는 수상자 이름이 먼저 보여야 한다 */}
+              {!compact && (
+                <PrizePhoto
+                  src="/sendev/prize-hanoi.png"
+                  alt="하노이탑 나무 교구"
+                  className="max-w-[9rem]"
+                />
+              )}
+            </div>
           </div>
         </div>
       );
