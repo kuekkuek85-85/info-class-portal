@@ -412,9 +412,6 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
               ),
             )}
           </ol>
-          <p className="t-body-lg text-muted">
-            오늘 이 슬라이드도 제 정보 수업 포털로 돌아갑니다.
-          </p>
         </div>
       );
 
