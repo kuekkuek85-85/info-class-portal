@@ -50,11 +50,16 @@ export const SLIDES = [
 
 export type SlideKey = (typeof SLIDES)[number]["key"];
 
-/** 발표 슬라이드에만 타이머가 붙는다 (분) */
+/**
+ * 타이머가 붙는 슬라이드 (분).
+ *
+ * 발표 세 곳에서 뺐다. 발표자 머리 위에서 초가 줄어드는 것이 보이면 말하는 사람이
+ * 쫓긴다 — 각 3분이라 더 그렇다. 시간은 진행자가 재고, 화면은 발표에만 쓴다.
+ *
+ * 하노이만 남긴다. 그건 발표가 아니라 **다 같이 겨루는 게임**이라 남은 시간이 보여야
+ * 하고, 보는 것 자체가 재미다.
+ */
 export const TIMER_MINUTES: Partial<Record<SlideKey, number>> = {
-  talk1: 15,
-  talk2: 15,
-  talk3: 15,
   hanoi: 3,
 };
 
