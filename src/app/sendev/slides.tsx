@@ -24,21 +24,22 @@ export const SLIDES = [
   { key: "opening", corner: "오프닝" },
   { key: "talk1", corner: "발표 ①" },
   { key: "quiz1", corner: "3초 퀴즈 ①" },
-  /*
-   * 「왜 하노이탑이었나」 가 게임보다 앞에 온다.
-   *
-   * 원래는 게임을 먼저 시키고 그 뒤에 "사실 이거 제 수업 자료였습니다" 로 뒤집는
-   * 구조였다. 진행자가 3분 발표를 먼저 하고 게임으로 넘어가는 쪽으로 바꾸면서,
-   * **지나간 일을 묻던 문장을 앞으로 당겨 놓으면 말이 안 된다** — 아직 아무도
-   * 원판을 옮기지 않았는데 "왜 옮기고 있었을까요" 라고 물을 수는 없다.
-   * 그래서 그 세 줄을 지금 자리에 맞게 고쳤다 (아래 why 슬라이드).
-   */
-  { key: "why", corner: "왜 하노이탑인가" },
-  { key: "hanoi", corner: "하노이 탑" },
   { key: "talk2", corner: "발표 ②" },
   { key: "quiz2", corner: "3초 퀴즈 ②" },
   { key: "talk3", corner: "발표 ③" },
   { key: "quiz3", corner: "3초 퀴즈 ③" },
+  /*
+   * 하노이는 발표 셋이 다 끝난 뒤다. 그리고 **둘은 반드시 붙어 다닌다.**
+   *
+   * 「왜 하노이탑인가」 는 게임 앞에 두는 3분짜리 틀이고, 마지막 줄이 "이제 하실 이
+   * 게임" 이다. 게임과 떨어뜨려 놓으면 그 말을 게임 사십 분 전에 하게 된다.
+   *
+   * 원래는 게임을 먼저 시키고 뒤에서 "사실 이거 제 수업 자료였습니다" 로 뒤집는
+   * 구조였는데, 틀을 먼저 주는 쪽으로 바뀌면서 지나간 일을 묻던 세 줄도 함께 고쳤다
+   * (아래 why 슬라이드).
+   */
+  { key: "why", corner: "왜 하노이탑인가" },
+  { key: "hanoi", corner: "하노이 탑" },
   { key: "awards", corner: "시상 ①" },
   { key: "hall", corner: "시상 ②" },
   { key: "pawback", corner: "오늘의 기념품" },
@@ -403,7 +404,7 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
           <h1 className="t-display">오늘의 흐름</h1>
           <ol className="grid gap-3 sm:grid-cols-2">
             {/* 실제 슬라이드 차례와 같아야 한다 — 빙고를 손들기로 바꾸면서 여기도 함께 */}
-            {["손 들어 주세요", "발표 ①", "하노이 릴레이", "발표 ② ③", "시상식", "클로징"].map(
+            {["손 들어 주세요", "발표 ①", "발표 ② ③", "하노이 릴레이", "시상식", "클로징"].map(
               (step, i) => (
                 <li key={step} className="block flex items-baseline gap-3 bg-surface t-headline">
                   <span className="t-eyebrow">{String(i + 1).padStart(2, "0")}</span>
