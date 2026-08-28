@@ -182,8 +182,15 @@ function Steps({
 
   return (
     <div className="flex flex-col gap-6">
+      {/*
+        key 를 줄 내용으로 잡는 것이 중요하다. 이미 열린 줄은 같은 노드로 남아 다시
+        뛰지 않고, 새로 열린 줄만 올라온다 — 누를 때마다 화면 전체가 들썩이지 않는다.
+      */}
       {lines.slice(0, shown).map((line) => (
-        <p key={line} className={`${big ? "t-headline" : "t-display"} whitespace-pre-line`}>
+        <p
+          key={line}
+          className={`sendev-rise ${big ? "t-headline" : "t-display"} whitespace-pre-line`}
+        >
           {line}
         </p>
       ))}
@@ -929,7 +936,7 @@ export function Slide({ slideKey, revealed, onReveal, names, onNames, compact }:
             그러면 글자가 11px 이 된다 — 이 앱에서 한 번 고친 실수를 되풀이하는 것이다.
           */}
           {!compact && revealed.includes("concat-1") && (
-            <p className="rounded-xl border-2 border-ink bg-cream px-6 py-3 text-center font-mono text-3xl">
+            <p className="sendev-code sendev-rise px-6 py-3 text-center font-mono text-3xl">
               cat 이재연.md 김효진.md 박환석.md &gt; 서울.md
             </p>
           )}

@@ -1,0 +1,151 @@
+/*
+ * 나눔 세션 화면의 색·모양 (PostHog 계열).
+ *
+ * DesignMD 카탈로그의 `posthog` DESIGN.md 를 이 라우트에만 입힌다. 학생 수업 화면은
+ * 손대지 않는다 — 갤럭시 탭 가독성을 맞춰 둔 값들이라 한 번 흔들면 다음 수업 전에
+ * 다시 재야 한다. 되돌릴 때는 layout.tsx 의 `sendev` 클래스만 떼면 된다.
+ *
+ * ## 왜 선택자 하나로 되는가
+ *
+ * globals.css 가 `@theme inline` 을 쓴다. 그래서 `bg-canvas` 는
+ * `background-color: var(--canvas)` 로 컴파일되고, 값은 **쓰는 자리에서** 정해진다.
+ * 여기서 `--canvas` 를 다시 선언하면 이 안쪽만 바뀐다.
+ *
+ * ## 원문에서 지킨 것
+ *
+ *  · 바탕은 크림(#eeefe9). 흰색으로 바꾸지 않는다 — 이 시스템의 정체다.
+ *  · 노랑(#f7a501)은 **가장 중요한 단추 하나**에만. 두 번째 원색을 들이지 않는다.
+ *  · 그림자를 쓰지 않는다. 카드는 크림 위에 얇은 올리브 선으로만 뜬다.
+ *  · 모서리는 4~8px. 알약 단추만 완전히 둥글다.
+ *  · 위계는 크기보다 **굵기**로 만든다 (400/600/700/800).
+ *
+ * ## 원문에서 뺀 것
+ *
+ *  · IBM Plex Sans. 한글 글리프가 없어서 화면의 대부분이 어차피 폴백으로 떨어지고,
+ *    라틴만 다른 글꼴로 갈리면 기준선이 어긋난다. 무엇보다 행사장 네트워크에서 웹폰트가
+ *    늦으면 글자 너비가 바뀌어 1280x720 에 맞춰 둔 열일곱 장이 다시 넘친다.
+ *    문서도 위계는 글꼴이 아니라 굵기 사다리가 만든다고 적어 두었으므로 그쪽만 가져온다.
+ *  · 고슴도치 마스코트. 우리 그림이 아니다.
+ */
+
+.sendev {
+  --ink: #23251d;
+  --canvas: #eeefe9;
+  --inverse-canvas: #23251d;
+  --inverse-ink: #ffffff;
+  --hairline: #bfc1b7;
+  --hairline-soft: #dcdfd2;
+  --muted-ink: #6c6e63;
+
+  /* 크림 위에 뜨는 흰 카드 — 이 시스템의 기본 표면 */
+  --surface-soft: #ffffff;
+
+  /*
+   * 색면은 원문의 콜아웃 파스텔로 갈아 끼운다.
+   *
+   * 원문은 이 네 색을 문서 본문 안내상자에만 쓰라고 못박는데, 슬라이드에서 색면이
+   * 붙는 자리(시상·명예의 전당·질문 말풍선)가 하는 일이 바로 그 안내상자다.
+   */
+  --block-lime: #d9eddf; /* accent-green-soft — 잘한 것 */
+  --block-mint: #dceaf6; /* accent-blue-soft — 알림 */
+  --block-coral: #f7d6d3; /* accent-red-soft — 눈길 */
+  --block-lilac: #e7d8ee; /* accent-purple-soft — 참고 */
+  --block-pink: #f7d6d3;
+  --block-cream: #f1e3cb; /* secondary — 진행자 노트처럼 따로 떼는 자리 */
+  --block-navy: #23251d;
+
+  --accent-magenta: #cd4239; /* accent-red — 1분 남은 타이머 */
+  --success: #2c8c66;
+
+  --posthog-primary: #f7a501;
+  --posthog-primary-pressed: #dd9001;
+  --posthog-surface-soft: #e5e7e0;
+
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+/*
+ * 노랑 단추.
+ *
+ * 원문이 가장 강하게 못박는 규칙이다 — 화면에서 유일하게 채도 높은 것이 이 단추여야
+ * 한다. 그래서 진행자가 누르는 단추(시작·다음 줄·정답 공개·상품 공개)가 전부 이 색이
+ * 되고, 나머지는 크림과 올리브로만 남는다. 청중의 눈이 "지금 눌릴 곳"으로 간다.
+ */
+.sendev .pill-primary {
+  background: var(--posthog-primary);
+  color: var(--ink);
+}
+.sendev .pill-primary:active:not(:disabled) {
+  background: var(--posthog-primary-pressed);
+}
+.sendev .pill-secondary {
+  background: var(--posthog-surface-soft);
+  color: var(--ink);
+  border-color: var(--hairline);
+}
+
+/*
+ * 모서리를 24px 에서 8px 로 줄인다.
+ *
+ * 원문의 모양 어휘는 4~6px 에 몰려 있고, 크게 둥근 것은 알약 단추뿐이다. 높이에는
+ * 영향이 없어서 1280x720 맞춤이 흔들리지 않는다.
+ */
+.sendev .block,
+.sendev .card {
+  border-radius: 8px;
+}
+.sendev .field {
+  border-radius: 4px;
+}
+.sendev .field:focus-visible {
+  border-color: var(--posthog-primary);
+  box-shadow: 0 0 0 3px rgba(247, 165, 1, 0.35);
+}
+
+/* 가장 큰 제목만 800 — 원문이 표제에만 남겨 둔 굵기다 */
+.sendev .t-display {
+  font-weight: 800;
+}
+
+/*
+ * 명령어 한 줄은 어두운 판에 얹는다.
+ *
+ * 원문에서 가장 극적인 표면이 흰 카드 안에 떠 있는 검은 코드 블록이다. 마침 이
+ * 슬라이드의 주인공이 `cat` 명령어라 그 자리를 그대로 쓴다.
+ */
+.sendev .sendev-code {
+  background: #23251d;
+  color: #ffffff;
+  border-radius: 6px;
+}
+
+/*
+ * 들어오는 움직임.
+ *
+ * PostHog 에는 모션 시스템이 없어서 직접 짠다. 규칙은 하나 — **알아채면 실패다.**
+ * 프로젝터에서 큰 글자가 크게 움직이면 읽기 전에 눈이 따라다닌다. 그래서 8px 만
+ * 올라오며 나타난다. 되짚는 곡선(0.16, 1, 0.3, 1)은 끝에서 부드럽게 멎는다.
+ *
+ * 줄 단위 애니메이션은 Steps 가 key={line} 으로 노드를 유지하므로, 이미 열린 줄은
+ * 다시 뛰지 않고 **새로 열린 줄만** 올라온다.
+ */
+@keyframes sendev-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.sendev-rise {
+  animation: sendev-rise 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 슬라이드가 통째로 바뀔 때는 조금 더 느리게 — 장면 전환이라 */
+.sendev-slide-enter {
+  animation: sendev-rise 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}

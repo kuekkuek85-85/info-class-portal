@@ -82,7 +82,8 @@ export function SendevDeck({ code, presenter }: { code: string; presenter?: bool
       </header>
 
       <div className="flex flex-1 items-center justify-center px-8 py-4">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+        {/* key 로 매 장을 새로 붙이므로, 넘길 때마다 장면이 한 번 올라온다 */}
+        <div key={slide.key} className="sendev-slide-enter mx-auto flex w-full max-w-5xl flex-col gap-6">
           <Slide
             key={slide.key}
             slideKey={slide.key}
@@ -97,9 +98,16 @@ export function SendevDeck({ code, presenter }: { code: string; presenter?: bool
       {/* 강사 화면에만 붙는 곁가지 — 프로젝터는 슬라이드만 깨끗하게 */}
       {presenter && (
         <div className="mx-8 mb-3 grid gap-3 sm:grid-cols-2">
+          {/*
+            노트는 제 높이만큼 자라지 않는다.
+
+            「왜 하노이탑인가」 처럼 열 줄 넘게 적어 둔 자리가 있어서, 그대로 두면 강사
+            화면이 300px 넘게 늘어나 슬라이드가 위로 밀린다. 진행 중에 정작 봐야 할
+            것은 슬라이드인데 그것이 잘린다. 노트 쪽만 스크롤시킨다.
+          */}
           <div className="rounded-xl border-2 border-ink bg-cream px-5 py-4">
             <p className="t-caption mb-1">진행자 노트</p>
-            <p className="t-body whitespace-pre-line">
+            <p className="t-body max-h-24 overflow-y-auto whitespace-pre-line">
               {NOTES[slide.key] ?? "이 슬라이드에는 따로 적어 둔 것이 없습니다."}
             </p>
           </div>
