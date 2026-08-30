@@ -194,13 +194,23 @@ function Lessons() {
         <h1 className="text-xl font-bold">{draft.id ? "차시 수정" : "차시 등록"}</h1>
 
         <div className="grid gap-3 sm:grid-cols-[120px_1fr]">
+          {/*
+            차시 번호는 고르게 할 수 없다 — 정보과는 1~7이지만 선택과목은 102·201 처럼
+            세 자리를 쓴다. 그래서 칸으로 두되, 다 지웠을 때 0 이 남지 않게 한다.
+
+            0 을 "비어 있음" 으로 쓴다. 차시 번호는 1부터라 0 이 뜻을 가질 일이 없다.
+            이걸 안 하면 지우는 순간 0 이 되고, 이어서 치면 "07" 이 된다.
+          */}
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-muted">차시 번호</span>
             <input
               type="number"
               min={1}
-              value={draft.lessonNo}
-              onChange={(event) => setDraft({ ...draft, lessonNo: Number(event.target.value) })}
+              value={draft.lessonNo === 0 ? "" : draft.lessonNo}
+              onChange={(event) => {
+                const raw = event.target.value;
+                setDraft({ ...draft, lessonNo: raw === "" ? 0 : Number(raw) });
+              }}
               className="rounded-lg border border-line bg-card px-3 py-2"
             />
           </label>
@@ -675,16 +685,28 @@ function QuickSession({ plans }: { plans: Plan[] }) {
             className="rounded-lg border border-line bg-background px-3 py-2"
           />
         </label>
+        {/*
+          교시는 고르게 한다.
+
+          숫자 칸으로 두면 다 지웠을 때 빈 문자열이 0 이 되어 "0" 이 남고, 이어서
+          치면 "02" 가 된다. 0 을 지울 방법이 없다 — 지우는 순간 다시 0 이 된다.
+
+          교시는 1~8 뿐이라 애초에 칠 일이 없다. 고르게 하면 이 문제도, 범위를 벗어난
+          값도 함께 사라지고 태블릿에서 더 빠르다.
+        */}
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-muted">교시</span>
-          <input
-            type="number"
-            min={1}
-            max={8}
+          <select
             value={period}
             onChange={(event) => setPeriod(Number(event.target.value))}
             className="rounded-lg border border-line bg-background px-3 py-2"
-          />
+          >
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+              <option key={n} value={n}>
+                {n}교시
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 

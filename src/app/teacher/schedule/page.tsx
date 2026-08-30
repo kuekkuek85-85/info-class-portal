@@ -144,16 +144,26 @@ function Schedule() {
               </select>
             </label>
 
+            {/*
+              교시는 고르게 한다.
+
+              숫자 칸으로 두면 다 지웠을 때 빈 문자열이 0 이 되어 "0" 이 남는다.
+              지우는 순간 다시 0 이 되므로 없앨 방법이 없고, 이어서 치면 "02" 가 된다.
+              1~8 뿐이라 칠 일이 없는 값이다 (수업 하나만 바로 열기와 같은 이유).
+            */}
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-muted">교시</span>
-              <input
-                type="number"
-                min={1}
-                max={8}
+              <select
                 value={slot.period}
                 onChange={(event) => updateSlot(index, { period: Number(event.target.value) })}
                 className="w-24 rounded-lg border border-line bg-background px-3 py-2"
-              />
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                  <option key={n} value={n}>
+                    {n}교시
+                  </option>
+                ))}
+              </select>
             </label>
 
             <span className="pb-2 text-xs text-muted">
