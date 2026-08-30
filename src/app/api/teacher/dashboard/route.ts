@@ -124,6 +124,15 @@ export async function GET(request: Request) {
     const needsDrawing = drawingCounts(session);
     const total = required.length + (needsDrawing ? 1 : 0);
 
+    /*
+     * 자기 점검의 "괜찮다" 보기 (7차시 수행평가).
+     *
+     * 첫 보기를 그대로 읽어 온다. 문구를 여기 적어 두면 차시가 말을 바꿀 때마다
+     * 대기 줄 순서가 조용히 틀어진다 — 화면에는 아무 표시가 안 나므로 알아채기도 어렵다.
+     */
+    const selfCheckOk =
+      (session.activity?.worksheet ?? []).find((q) => q.key === "news_check2")?.choices?.[0] ?? "";
+
     const rows = attendance.map((entry) => {
       const mood = moodByStudent.get(entry.studentId);
       const reflection = reflectionByStudent.get(entry.studentId);
@@ -167,11 +176,17 @@ export async function GET(request: Request) {
         stage: entry.submitStage ?? 0,
         /** 2차를 냈고 아직 피드백을 안 준 학생만 대기 줄에 선다 */
         waiting: (entry.submitStage ?? 0) === 2 && !(entry.reviewedAt ?? 0),
-        /**
-         * 자기 점검 답. 대기 줄 **순서**를 정한다 — 스스로 "약한 것 같다" 고 고른
-         * 학생을 앞에 세운다. 교사가 먼저 만나야 할 학생을 학생이 알려 준 셈이다.
-         */
+        /** 자기 점검 답. 교사 화면에 그대로 보여 준다 */
         selfCheck: entry.selfCheck ?? "",
+        /**
+         * 스스로 걸린다고 한 학생인가. 대기 줄 **순서**를 정한다.
+         *
+         * 첫 보기("다 들어 있다")가 아닌 것을 고르면 앞에 선다. 문구로 맞히지 않고
+         * **보기의 자리로** 가린다 — 차시가 문구를 고쳐도 여기가 안 깨진다.
+         *
+         * 아무것도 안 고른 학생은 뒤로 보낸다. 급하다는 신호가 없다.
+         */
+        selfCheckWeak: Boolean(entry.selfCheck) && entry.selfCheck !== selfCheckOk,
         /*
          * 이탈 누적치. 출석 문서에 얹혀 있어 **추가 읽기가 없다**.
          * 이 화면에서만 쓴다 — /api/teacher/board(교실 앞 공유 화면)에는 절대 내보내지

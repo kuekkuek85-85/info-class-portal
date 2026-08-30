@@ -132,8 +132,10 @@ interface StudentRow {
   stage?: 0 | 1 | 2 | 3;
   /** 2차를 냈고 아직 피드백을 안 준 학생 */
   waiting?: boolean;
-  /** 2차 전 자기 점검 답. 대기 줄 순서를 정한다 */
+  /** 2차 전 자기 점검 답. 검토 패널에 그대로 보여 준다 */
   selfCheck?: string;
+  /** 스스로 걸린다고 한 학생인가. 대기 줄 순서를 정한다 */
+  selfCheckWeak?: boolean;
 }
 
 interface DashboardData {
@@ -198,15 +200,14 @@ function ReviewQueue({
   const waiting = rows.filter((row) => row.waiting);
 
   /*
-   * 첫 보기("한 문장으로 보인다") 가 아닌 학생을 앞으로.
+   * 스스로 걸린다고 한 학생을 앞으로. 그다음은 먼저 낸 순서다.
    *
-   * 빈 값은 뒤로 보낸다 — 자기 점검을 아예 안 고른 학생은 급하다는 신호가 없다.
+   * 판정은 서버가 한다 (selfCheckWeak) — 보기의 자리로 가리므로 차시가 문구를 고쳐도
+   * 여기가 안 깨진다.
    */
-  const ordered = [...waiting].sort((a, b) => {
-    const weak = (row: StudentRow) =>
-      row.selfCheck && !row.selfCheck.startsWith("② 의 ‘왜’ 가 한 문장") ? 0 : 1;
-    return weak(a) - weak(b) || a.joinedAt - b.joinedAt;
-  });
+  const ordered = [...waiting].sort(
+    (a, b) => Number(b.selfCheckWeak ?? false) - Number(a.selfCheckWeak ?? false) || a.joinedAt - b.joinedAt,
+  );
 
   const prev = useRef(0);
   useEffect(() => {
@@ -241,15 +242,20 @@ function ReviewQueue({
   return (
     <section className="flex flex-col gap-2 rounded-xl border-2 border-ink bg-cream p-4">
       <h2 className="text-sm font-semibold">검토 대기 {ordered.length}명</h2>
-      <p className="t-caption">스스로 “약한 것 같다” 고 고른 학생이 앞에 섭니다.</p>
+      <p className="t-caption">스스로 걸린다고 한 학생이 앞에 섭니다.</p>
       <div className="flex flex-wrap gap-2">
+        {/*
+          걸린다고 한 학생에는 · 을 붙인다. 앞에 세우기만 하면 왜 이 순서인지가
+          화면에 안 남아서, 교사가 순서를 믿을 근거가 없다.
+        */}
         {ordered.map((row) => (
           <button
             key={row.studentId}
             type="button"
             onClick={() => onPick(row)}
-            className="pill pill-primary text-sm"
+            className={`pill text-sm ${row.selfCheckWeak ? "pill-primary" : "pill-secondary"}`}
           >
+            {row.selfCheckWeak ? "· " : ""}
             {masked ? `${row.number ?? "?"}번` : row.name || `${row.number ?? "?"}번`}
           </button>
         ))}
