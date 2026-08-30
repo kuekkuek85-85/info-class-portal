@@ -70,6 +70,22 @@ export interface Sources {
 const len = (value: string | undefined): number => (value ?? "").trim().length;
 
 /**
+ * 이름표 뒤에 붙는 주격 조사를 받침 보고 고른다.
+ *
+ * 안 고르면 "인터뷰이 비어 있어요", "왜이 비어 있어요" 가 뜬다. 중1이 읽는 문장이고,
+ * 틀린 조사는 그 자리에서 눈에 걸려 무슨 말인지보다 먼저 읽힌다.
+ *
+ * worksheet-view 의 named() 가 학생 이름에 하는 것과 같은 규칙이다.
+ */
+function subject(label: string): string {
+  const last = label.codePointAt(label.length - 1) ?? 0;
+  const hangul = last >= 0xac00 && last <= 0xd7a3;
+  // 한글이 아니면(숫자·영문·기호) 받침이 있는 것으로 친다 — 그쪽이 덜 어색하다
+  const hasFinal = hangul ? (last - 0xac00) % 28 !== 0 : true;
+  return `${label}${hasFinal ? "이" : "가"}`;
+}
+
+/**
  * 문장 수를 센다.
  *
  * ## 줄바꿈도 문장으로 센다
@@ -115,7 +131,7 @@ export function checkArticle(
         code: `empty:${rule.key}`,
         field: rule.key,
         kind: "empty",
-        label: `${rule.label}이 비어 있어요`,
+        label: `${subject(rule.label)} 비어 있어요`,
       });
       continue;
     }
@@ -128,7 +144,7 @@ export function checkArticle(
         kind: "short",
         // 무엇을 하면 되는지가 문장에 들어 있어야 한다. 안 그러면 되물으러 온다
         label:
-          `${rule.label}이 ${n}문장이에요 — ${rule.minSentences}문장은 써 주세요 ` +
+          `${subject(rule.label)} ${n}문장이에요 — ${rule.minSentences}문장은 써 주세요 ` +
           `(줄을 바꾸거나 마침표를 찍으면 나뉩니다)`,
       });
     }
