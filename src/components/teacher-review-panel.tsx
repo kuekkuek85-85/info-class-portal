@@ -150,10 +150,13 @@ export function TeacherReviewPanel({
         </button>
       </header>
 
-      {/* 학생이 스스로 고른 것. 왜 이 학생이 앞에 섰는지가 여기 있다 */}
+      {/*
+        2차를 내기 전에 학생이 스스로 고른 것. 왜 이 학생이 앞에 섰는지가 여기 있다.
+        "학생이 고른 것" 만으로는 무엇을 고른 건지 안 보여서 문장으로 푼다.
+      */}
       {selfCheck && (
         <p className="t-note">
-          <b>학생이 고른 것</b> — {selfCheck}
+          <b>학생이 스스로 본 것</b> — “{selfCheck}”
         </p>
       )}
 

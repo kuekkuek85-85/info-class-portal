@@ -134,7 +134,7 @@ interface StudentRow {
   waiting?: boolean;
   /** 2차 전 자기 점검 답. 검토 패널에 그대로 보여 준다 */
   selfCheck?: string;
-  /** 스스로 걸린다고 한 학생인가. 대기 줄 순서를 정한다 */
+  /** 스스로 부족한 곳이 있다고 답했는가. 대기 줄 순서를 정한다 */
   selfCheckWeak?: boolean;
 }
 
@@ -200,7 +200,7 @@ function ReviewQueue({
   const waiting = rows.filter((row) => row.waiting);
 
   /*
-   * 스스로 걸린다고 한 학생을 앞으로. 그다음은 먼저 낸 순서다.
+   * 스스로 부족한 곳이 있다고 답한 학생을 앞으로. 그다음은 먼저 낸 순서다.
    *
    * 판정은 서버가 한다 (selfCheckWeak) — 보기의 자리로 가리므로 차시가 문구를 고쳐도
    * 여기가 안 깨진다.
@@ -242,12 +242,17 @@ function ReviewQueue({
   return (
     <section className="flex flex-col gap-2 rounded-xl border-2 border-ink bg-cream p-4">
       <h2 className="text-sm font-semibold">검토 대기 {ordered.length}명</h2>
-      <p className="t-caption">스스로 걸린다고 한 학생이 앞에 섭니다.</p>
+      {/*
+        왜 이 순서인지를 글로 남긴다.
+        앞에 세우기만 하면 교사가 그 순서를 믿을 근거가 없고, 표시를 붙여 놔도
+        무슨 뜻인지 모르면 없는 것과 같다. 표시가 붙은 학생이 있을 때만 설명한다.
+      */}
+      <p className="t-caption">
+        {ordered.some((row) => row.selfCheckWeak)
+          ? "● 표시 — 학생이 스스로 “이 부분이 부족한 것 같다” 고 답했습니다. 먼저 보시라고 앞에 뒀어요."
+          : "먼저 낸 순서입니다."}
+      </p>
       <div className="flex flex-wrap gap-2">
-        {/*
-          걸린다고 한 학생에는 · 을 붙인다. 앞에 세우기만 하면 왜 이 순서인지가
-          화면에 안 남아서, 교사가 순서를 믿을 근거가 없다.
-        */}
         {ordered.map((row) => (
           <button
             key={row.studentId}
@@ -255,7 +260,7 @@ function ReviewQueue({
             onClick={() => onPick(row)}
             className={`pill text-sm ${row.selfCheckWeak ? "pill-primary" : "pill-secondary"}`}
           >
-            {row.selfCheckWeak ? "· " : ""}
+            {row.selfCheckWeak ? "● " : ""}
             {masked ? `${row.number ?? "?"}번` : row.name || `${row.number ?? "?"}번`}
           </button>
         ))}
