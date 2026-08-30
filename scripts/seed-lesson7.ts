@@ -292,7 +292,14 @@ const WORKSHEET: WorksheetQuestion[] = [
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   lessonNo: LESSON_NO,
-  title: "디지털 시민 리포트 ① — 쓰기",
+  /*
+   * 제목에 ①·②(리포트 번호)를 안 쓴다.
+   *
+   * 6차시가 「리포트 ① — 준비하기」, 7차시가 「리포트 ① — 쓰기」였다. 같은 리포트의
+   * 두 시간인데 제목만 보면 다른 리포트처럼 읽히고, 중1에게 ① 은 "첫 번째 시간" 으로
+   * 읽힌다. 화면 맨 위에 "7차시" 가 이미 붙으므로 여기서는 **몇 번째 시간인지**만 밝힌다.
+   */
+  title: "디지털 시민 리포트 2번째 시간입니다.",
   moodCheckEnabled: true,
 
   game: {
