@@ -1,61 +1,99 @@
 @import "tailwindcss";
 
 /*
- * Figma 마케팅 디자인 시스템 적용 (DESIGN-figma).
+ * PostHog 계열 디자인 시스템 (DesignMD).
  *
- * 흑백 기조 위에 파스텔 색 블록을 얹는 구조다. 그림자를 쓰지 않고 색면과 굵기로 위계를 만든다.
+ * sendev 행사 화면에만 씌웠던 테마를 포털 전체로 올린다. 흑백 기조 위에 파스텔 색 블록을
+ * 얹는 구조는 그대로고, 그림자 없이 색면과 굵기로 위계를 만드는 것도 그대로다. 바뀐 것은
+ * 세 가지다.
  *
- * 두 가지는 원문과 다르게 간다.
- *  · 폰트: figmaSans/Inter 는 한글이 없다. 웹폰트를 얹으면 28명 동시 접속에서 첫 화면이
+ *  1. 페이지 바탕이 크림(--page)이고 면은 흰색(--canvas)이다. 전에는 둘 다 흰색이라
+ *     카드가 어디서 시작하는지 테두리 한 줄로만 알 수 있었다. 이제 카드가 바탕에서 떠오른다.
+ *     `bg-canvas` 를 쓰는 마흔 곳 가까운 카드·모달·도구 단추를 하나도 안 고치고 얻는다.
+ *  2. 주 동작 단추 하나만 노랑(--primary)이다. 화면에서 채도 있는 색이 그것뿐이라
+ *     "무엇을 누르면 되는지" 를 찾을 필요가 없다.
+ *  3. 모서리를 24px 에서 8px 로 줄인다. 크게 둥글면 칸의 경계가 흐려진다.
+ *
+ * 원문과 다르게 가는 두 가지는 유지한다.
+ *  · 폰트: IBM Plex Sans / Inter 는 한글이 없다. 웹폰트를 얹으면 28명 동시 접속에서 첫 화면이
  *    그만큼 늦어진다 (PRD 1 설계 제약). 시스템 한글 폰트를 쓰되 크기·굵기·자간 체계만 따른다.
  *  · 다크 모드: 원문에 다크 테마가 없다. 교실 태블릿이 다크로 잡히면 파스텔 블록이 무너지므로
  *    라이트로 고정한다. dark: 유틸리티가 OS 설정만으로 켜지지 않도록 variant 를 클래스 기반으로 바꾼다.
+ *
+ * 색 값은 전부 대비를 재고 골랐다 (scripts 아래 임시 계산). 본문은 어느 색면 위에서도
+ * 11:1 이상, 보조 글자는 크림 위 5.1:1 로 예전(흰 위 5.3:1)을 지킨다.
  */
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   color-scheme: light;
 
-  --ink: #000000;
+  --ink: #23251d;
+  /*
+   * 페이지 바탕과 면을 가른다.
+   *
+   * --canvas 는 계속 "떠 있는 흰 면" 이다 — 카드, 모달, 입력칸, 색면 위의 도구 단추.
+   * --page 가 그 아래 깔리는 크림이다. body 만 이 값을 쓴다.
+   */
   --canvas: #ffffff;
-  --inverse-canvas: #000000;
+  --page: #eeefe9;
+  --inverse-canvas: #23251d;
   --inverse-ink: #ffffff;
   /*
-   * 테두리를 한 단계 진하게.
+   * 테두리.
    *
-   * #e6e6e6 은 교실 밝기에서 보이지 않는다. 창가 자리 태블릿에서는 입력칸이 어디부터
-   * 어디까지인지 안 보여서, 학생이 칸을 못 찾고 손을 든다.
+   * #e6e6e6 은 교실 밝기에서 보이지 않았다. 창가 자리 태블릿에서는 입력칸이 어디부터
+   * 어디까지인지 안 보여서, 학생이 칸을 못 찾고 손을 들었다. #d4d4d4 로 한 번 올렸고,
+   * 여기서 한 단 더 올린다 — 흰 면 위 2.08:1 로 예전(1.48:1)보다 확실히 보인다.
    */
-  --hairline: #d4d4d4;
-  --hairline-soft: #e8e8e8;
-  --surface-soft: #f7f7f5;
+  --hairline: #b3b5aa;
+  --hairline-soft: #d3d6cb;
+  /* 흰 카드 안에서 한 단 들어간 자리. 크림 페이지 위에 직접 놓여도 구분된다. */
+  --surface-soft: #e5e7e0;
 
   /*
    * 뒤로 물러나는 글자.
    *
    * 원래 이 값이 --ink 를 그대로 가리켰다. 그래서 "(아직 안 썼어요)" 같은 보조 문구가
-   * 본문과 똑같은 순검정으로 나왔다. **다 똑같이 진하면 아무것도 눈에 안 들어온다** —
+   * 본문과 똑같은 순검정으로 나왔다. 다 똑같이 진하면 아무것도 눈에 안 들어온다 —
    * 눈은 대비의 차이로 중요한 것을 찾는데, 차이가 없으면 화면 전체를 훑게 된다.
    *
-   * 흰 바탕 대비 5.7:1 — 본문으로 읽어도 되는 밝기이면서 검정보다는 물러난다.
+   * 크림 페이지 5.1:1 · 흰 면 5.9:1. 본문으로 읽어도 되는 밝기이면서 먹색보다는 물러난다.
    */
-  --muted-ink: #6b6b6b;
+  --muted-ink: #63655b;
 
-  --block-lime: #dceeb1;
-  --block-lilac: #c5b0f4;
-  --block-cream: #f4ecd6;
-  --block-pink: #efd4d4;
-  --block-mint: #c8e6cd;
-  --block-coral: #f3c9b6;
-  --block-navy: #1f1d3d;
+  /*
+   * 주 동작.
+   *
+   * 화면에서 채도 있는 색은 이것 하나다. 먹색 글자를 얹어 7.6:1 이라 노랑인데도 읽힌다.
+   * 두 번째 채도 색을 들이면 이 단추가 더 이상 "그 단추" 가 아니게 되므로 늘리지 않는다.
+   */
+  --primary: #f7a501;
+  --primary-pressed: #dd9001;
 
-  --accent-magenta: #ff3d8b;
-  --success: #1ea64a;
+  /*
+   * 색면. PostHog 파스텔로 갈아 끼운다.
+   *
+   * 예전 값(#c5b0f4 보라, #dceeb1 연두)은 채도가 높아 그 위에 얹은 글이 색과 다퉜다.
+   * 이름은 그대로 두되 — 마크업 마흔 곳이 쓴다 — mint 는 파랑, lime 은 초록 쪽으로 간다.
+   */
+  --block-lime: #d9eddf;
+  --block-lilac: #e7d8ee;
+  --block-cream: #f1e3cb;
+  --block-pink: #f6e2e0;
+  --block-mint: #dceaf6;
+  --block-coral: #f7d6d3;
+  --block-navy: #23251d;
+
+  --accent-magenta: #cd4239;
+  --success: #2c8c66;
 }
 
 @theme inline {
   --color-ink: var(--ink);
   --color-canvas: var(--canvas);
+  --color-page: var(--page);
+  --color-primary: var(--primary);
   --color-inverse-canvas: var(--inverse-canvas);
   --color-inverse-ink: var(--inverse-ink);
   --color-line: var(--hairline);
@@ -79,9 +117,16 @@
   --color-card: var(--canvas);
   --color-accent: var(--ink);
 
-  --radius-md: 8px;
-  --radius-lg: 24px;
-  --radius-xl: 32px;
+  /*
+   * 모서리를 줄인다.
+   *
+   * rounded-lg 가 24px 이라 교사 화면의 작은 단추까지 알약처럼 보였다. 크게 둥글면 칸의
+   * 경계가 흐려지고, 붙어 있는 칸끼리 사이가 떠 보인다. PostHog 는 8px 한 값으로 간다.
+   * 알약은 .pill 이 따로 맡으므로 여기서 둥글기를 지켜 줄 필요가 없다.
+   */
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
 
   /*
    * 한글이 있는 글꼴을 먼저 세운다.
@@ -110,7 +155,7 @@
  * 1.6 / 0 이 같은 크기에서 훨씬 잘 읽힌다. 음수 자간은 큰 제목에만 남긴다.
  */
 body {
-  background: var(--canvas);
+  background: var(--page);
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: 18px;
@@ -128,7 +173,7 @@ body {
  */
 .t-display {
   font-size: clamp(2rem, 7vw, 3.25rem);
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.02em;
 }
@@ -236,9 +281,19 @@ body {
   opacity: 0.35;
 }
 
+/*
+ * 주 동작은 노랑 하나다.
+ *
+ * 전에는 먹색 알약이었는데, 화면에 먹색이 워낙 많아 (제목·본문·선택된 칩·테두리) 눌러야
+ * 할 단추가 그중 하나로 묻혔다. 채도 있는 색을 이 자리에만 주면 찾을 필요가 없어진다.
+ * 글자는 흰색이 아니라 먹색이다 — 노랑 위 흰 글자는 2:1 도 안 나온다.
+ */
 .pill-primary {
-  background: var(--ink);
-  color: var(--canvas);
+  background: var(--primary);
+  color: var(--ink);
+}
+.pill-primary:active:not(:disabled) {
+  background: var(--primary-pressed);
 }
 .pill-secondary {
   background: var(--canvas);
@@ -260,7 +315,7 @@ body {
 
 /* 색면이 깊이를 대신한다. 그림자를 얹지 않는다. */
 .block {
-  border-radius: 24px;
+  border-radius: 8px;
   padding: 1.5rem;
 }
 @media (min-width: 640px) {
@@ -269,10 +324,11 @@ body {
   }
 }
 
+/* 크림 페이지 위의 흰 면. 테두리가 아니라 바탕색 차이로 떠오른다. */
 .card {
   background: var(--canvas);
   border: 1px solid var(--hairline);
-  border-radius: 24px;
+  border-radius: 8px;
   padding: 1.5rem;
 }
 
@@ -290,7 +346,7 @@ body {
 }
 .field:focus-visible {
   border-color: var(--ink);
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 0 0 3px rgba(35, 37, 29, 0.16);
 }
 
 input,

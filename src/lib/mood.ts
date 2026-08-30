@@ -47,6 +47,12 @@ export interface MoodOption {
  *
  * 무드미터 관례(빨·노·파·초)를 지키되 디자인 시스템의 파스텔 면으로 톤을 맞췄다.
  * 여기서 색은 장식이 아니라 축을 읽는 단서라서, 임의로 바꾸면 무드미터가 아니게 된다.
+ *
+ * 그래서 색면 이름이 아니라 **실제 색**을 보고 고른다. 새 파스텔에서는 lime 이 초록,
+ * mint 가 파랑, coral 이 빨강 계열이다 — 이름이 아니라 값이 맞는 쪽을 붙였다.
+ *
+ * 점 색은 같은 값을 다시 적지 않고 토큰을 그대로 가리킨다. 전에는 16진값을 복사해 뒀는데,
+ * 디자인 토큰을 갈아 끼운 날 이 파일만 옛 색으로 남아 사분면 배경과 점이 서로 달라졌다.
  */
 export const QUADRANTS: Record<
   Quadrant,
@@ -55,8 +61,8 @@ export const QUADRANTS: Record<
   red: {
     label: "빨강",
     description: "기운은 높은데 기분은 나쁨",
-    className: "bg-pink",
-    dotClassName: "bg-[#efd4d4]",
+    className: "bg-coral",
+    dotClassName: "bg-[var(--block-coral)]",
     hue: 2,
     sat: 72,
   },
@@ -64,23 +70,23 @@ export const QUADRANTS: Record<
     label: "노랑",
     description: "기운도 높고 기분도 좋음",
     className: "bg-cream",
-    dotClassName: "bg-[#f4ecd6]",
+    dotClassName: "bg-[var(--block-cream)]",
     hue: 44,
     sat: 92,
   },
   blue: {
     label: "파랑",
     description: "기운도 낮고 기분도 나쁨",
-    className: "bg-lilac",
-    dotClassName: "bg-[#c5b0f4]",
+    className: "bg-mint",
+    dotClassName: "bg-[var(--block-mint)]",
     hue: 212,
     sat: 62,
   },
   green: {
     label: "초록",
     description: "기운은 낮지만 기분은 좋음",
-    className: "bg-mint",
-    dotClassName: "bg-[#c8e6cd]",
+    className: "bg-lime",
+    dotClassName: "bg-[var(--block-lime)]",
     hue: 140,
     sat: 46,
   },
