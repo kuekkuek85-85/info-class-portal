@@ -89,13 +89,22 @@ export function SubmitPanel({
     return () => clearTimeout(id);
   }, [pull]);
 
-  // 교사를 기다리는 동안에만 돈다. 피드백이 오면 저절로 멈춘다
-  const waiting = state.stage === 2 && !state.teacherFeedback;
+  /*
+   * 1차·2차를 낸 학생만 묻는다. 피드백이 오면 저절로 멈춘다.
+   *
+   * 2차만 물으면 안 된다. 선생님은 대기 줄에 없는 학생에게도 다가가 한마디 남긴다 —
+   * 작품 목록에서 열어 쓰는 자리가 그것이다. 1차에서 멈춘 학생이 그 말을 못 받으면,
+   * 선생님은 썼는데 학생은 못 본 채로 수업이 끝난다.
+   *
+   * 아직 안 낸 학생(0차)과 다 낸 학생(3차)은 묻지 않는다 — 그만큼 읽기를 아낀다.
+   * 그 둘도 화면을 다시 열면 받는다.
+   */
+  const waitingWord = (state.stage === 1 || state.stage === 2) && !state.teacherFeedback;
   useEffect(() => {
-    if (!waiting) return;
+    if (!waitingWord) return;
     const id = setInterval(() => void pull(), POLL_MS);
     return () => clearInterval(id);
-  }, [waiting, pull]);
+  }, [waitingWord, pull]);
 
   const send = useCallback(
     async (stage: 1 | 2 | 3) => {
@@ -132,6 +141,8 @@ export function SubmitPanel({
   if (state.stage === 3) {
     return (
       <div className="flex flex-col gap-4">
+        {/* 최종 제출 뒤에 온 말도 보여준다. 안 그리면 선생님이 쓴 것이 어디에도 안 뜬다 */}
+        <TeacherNote feedback={state.teacherFeedback} />
         <div className="block flex flex-col gap-2 bg-mint">
           <p className="t-display">제출 완료 ✓</p>
           <p className="t-body-lg">
@@ -177,13 +188,7 @@ export function SubmitPanel({
           </>
         ) : (
           <>
-            <p className="t-eyebrow">선생님 피드백</p>
-            {feedback.chips.map((chip) => (
-              <p key={chip} className="t-headline">
-                · {chip}
-              </p>
-            ))}
-            {feedback.note && <p className="t-body-lg whitespace-pre-line">{feedback.note}</p>}
+            <TeacherNote feedback={feedback} />
             <button
               type="button"
               onClick={() => void send(3)}
@@ -202,6 +207,11 @@ export function SubmitPanel({
   if (state.stage === 1) {
     return (
       <div className="block flex flex-col gap-4 bg-cream">
+        {/*
+          2차를 내기 전에도 선생님이 다가와 한마디 남길 수 있다 (작품 목록에서).
+          그 말이 여기 안 뜨면 학생은 못 보고, 선생님은 썼다고 생각한다.
+        */}
+        <TeacherNote feedback={state.teacherFeedback} />
         {!skipped && state.items.length > 0 && (
           <>
             <p className="t-headline">확인해 주세요</p>
@@ -274,6 +284,8 @@ export function SubmitPanel({
 
   return (
     <div className="block flex flex-col gap-3 bg-cream">
+      {/* 아직 안 낸 학생에게도 선생님이 한마디 남길 수 있다 */}
+      <TeacherNote feedback={state.teacherFeedback} />
       <p className="t-body-lg">{question.hint || "다 썼으면 1차로 제출하세요. 내고 나서도 고칠 수 있어요."}</p>
       <button
         type="button"
@@ -284,6 +296,36 @@ export function SubmitPanel({
         {busy ? "내는 중…" : "1차 제출하기"}
       </button>
       {error && <p className="t-body-sm">{error}</p>}
+    </div>
+  );
+}
+
+/**
+ * 선생님이 남긴 말.
+ *
+ * 선생님이 쓰는 자리는 둘인데 **가는 곳은 하나다** — 검토 대기 줄의 패널과 작품
+ * 목록의 한 칸이 같은 값(artifact.teacherFeedback)에 쓴다. 그래서 여기 한 군데서만
+ * 그리고, 단계마다 다시 갖다 붙인다.
+ *
+ * 단계를 가리지 않는 것이 중요하다. 선생님은 대기 줄에 없는 학생에게도 다가가 말을
+ * 남기므로, 2차 화면에서만 그리면 그 말이 어디에도 안 뜬다.
+ */
+function TeacherNote({
+  feedback,
+}: {
+  feedback: { at: number; chips: string[]; note: string } | null;
+}) {
+  if (!feedback || (feedback.chips.length === 0 && !feedback.note.trim())) return null;
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border-2 border-ink bg-canvas p-4">
+      <p className="t-eyebrow">선생님이 남긴 말</p>
+      {feedback.chips.map((chip) => (
+        <p key={chip} className="t-headline">
+          · {chip}
+        </p>
+      ))}
+      {feedback.note && <p className="t-body-lg whitespace-pre-line">{feedback.note}</p>}
     </div>
   );
 }
