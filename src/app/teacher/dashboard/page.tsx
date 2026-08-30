@@ -701,9 +701,15 @@ function Dashboard() {
             대기·기분·안내·영상 단계에서는 여전히 안 띄운다 — 볼 것이 없는데 스물여덟 편을
             읽어 오는 것은 읽기 낭비다 (PRD 10장 D2).
           */}
+          {/*
+            onFeedbackSent — 피드백을 보내면 대기 줄을 바로 다시 읽는다.
+
+            대시보드는 20초마다 도는데, 여기서 보내고 위를 올려다보면 이름이 아직 남아
+            있다. 안 갔나 싶어 한 번 더 보내게 된다 — 그 20초를 없앤다.
+          */}
           {session.activity &&
             LESSON_PHASES.indexOf(session.phase) >= LESSON_PHASES.indexOf("problem") && (
-              <TeacherArtifactPanel sessionId={session.id} />
+              <TeacherArtifactPanel sessionId={session.id} onFeedbackSent={reload} />
             )}
 
           {/*
@@ -815,7 +821,11 @@ function Dashboard() {
               studentId={reviewing.studentId}
               who={reviewing.who}
               selfCheck={reviewing.selfCheck}
-              onDone={() => setReviewing(null)}
+              /* 보내고 나면 대기 줄을 바로 다시 읽는다 — 다음 학생으로 이어서 간다 */
+              onDone={() => {
+                setReviewing(null);
+                reload();
+              }}
               onClose={() => setReviewing(null)}
             />
           )}

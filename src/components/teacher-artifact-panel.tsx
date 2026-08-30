@@ -47,7 +47,14 @@ interface Detail {
   }[];
 }
 
-export function TeacherArtifactPanel({ sessionId }: { sessionId: string }) {
+export function TeacherArtifactPanel({
+  sessionId,
+  onFeedbackSent,
+}: {
+  sessionId: string;
+  /** 수행평가 피드백을 보낸 뒤 — 대시보드가 대기 줄을 바로 다시 읽게 한다 */
+  onFeedbackSent?: () => void;
+}) {
   const [openId, setOpenId] = useState("");
   const [detail, setDetail] = useState<Detail | null>(null);
 
@@ -177,7 +184,11 @@ export function TeacherArtifactPanel({ sessionId }: { sessionId: string }) {
                     sessionId={sessionId}
                     studentId={detail.studentId}
                     existing={detail.teacherNote}
-                    onSaved={() => void openDetail(detail.card.id)}
+                    onSaved={() => {
+                      // 이 패널의 내용과, 위쪽 대기 줄을 함께 다시 읽는다
+                      void openDetail(detail.card.id);
+                      onFeedbackSent?.();
+                    }}
                   />
                 ) : (
                   <TeacherFeedbackForm
