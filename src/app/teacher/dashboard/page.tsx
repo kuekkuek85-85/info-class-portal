@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { TeacherArtifactPanel } from "@/components/teacher-artifact-panel";
 import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
+import { TeacherReviewPanel } from "@/components/teacher-review-panel";
 import { TeacherShell } from "@/components/teacher-shell";
 import { useTeacherDate } from "@/lib/teacher-date";
 import { formatDateKorean, formatTimeKST } from "@/lib/datetime";
@@ -123,6 +124,16 @@ interface StudentRow {
    * 무엇을 썼는지는 오지 않는다 — 원문은 활동지에 있고, 판단은 그것을 읽은 교사가 한다.
    */
   careAlert?: { at: number; count: number } | null;
+
+  /*
+   * 수행평가 제출 단계 (7차시). 출석 문서에 얹혀 와서 추가 읽기가 없다.
+   * 기사 본문은 오지 않는다 — 검토 패널을 열 때 따로 1건 읽는다.
+   */
+  stage?: 0 | 1 | 2 | 3;
+  /** 2차를 냈고 아직 피드백을 안 준 학생 */
+  waiting?: boolean;
+  /** 2차 전 자기 점검 답. 대기 줄 순서를 정한다 */
+  selfCheck?: string;
 }
 
 interface DashboardData {
@@ -160,6 +171,93 @@ export default function DashboardPage() {
  * "몇 분째 손을 안 댐" 을 함께 찍는 이유: 진도가 낮아도 지금 열심히 쓰는 중인 학생과
  * 5분째 화면만 보고 있는 학생은 다르다. 뒤쪽이 진짜 가 봐야 할 학생이다.
  */
+/**
+ * 검토 대기 줄 (7차시 수행평가).
+ *
+ * ## 순서를 자기 점검이 정한다
+ *
+ * 낸 차례대로 도는 것보다, **스스로 "약한 것 같다" 고 고른 학생을 앞에 세우는** 편이
+ * 낫다. 교사가 도는 창은 11분이고 스물여덟 명을 다 만날 수는 없다. 그러면 누구를
+ * 먼저 만나느냐가 전부인데, 그 답을 학생이 이미 골라 두었다.
+ *
+ * ## 소리로 알린다
+ *
+ * 선생님은 교실을 돌아다닌다. 화면을 계속 보고 있을 수가 없으니, 새 이름이 뜰 때만
+ * 짧게 운다. **푸시 알림이 아니다** — 이 앱에 푸시가 없고, 폰 화면이 잠기면 폴링도
+ * 멈춘다. 폰을 손에 들고 있는 동안만 들린다.
+ */
+function ReviewQueue({
+  rows,
+  masked,
+  onPick,
+}: {
+  rows: StudentRow[];
+  masked: boolean;
+  onPick: (row: StudentRow) => void;
+}) {
+  const waiting = rows.filter((row) => row.waiting);
+
+  /*
+   * 첫 보기("한 문장으로 보인다") 가 아닌 학생을 앞으로.
+   *
+   * 빈 값은 뒤로 보낸다 — 자기 점검을 아예 안 고른 학생은 급하다는 신호가 없다.
+   */
+  const ordered = [...waiting].sort((a, b) => {
+    const weak = (row: StudentRow) =>
+      row.selfCheck && !row.selfCheck.startsWith("② 의 ‘왜’ 가 한 문장") ? 0 : 1;
+    return weak(a) - weak(b) || a.joinedAt - b.joinedAt;
+  });
+
+  const prev = useRef(0);
+  useEffect(() => {
+    if (ordered.length > prev.current) {
+      /*
+       * 오디오 파일을 두지 않는다. 소리 하나 때문에 정적 파일을 늘릴 이유가 없고,
+       * 파일을 받아 오는 동안 놓치는 것보다 즉시 나는 편이 낫다.
+       */
+      try {
+        const Ctx =
+          window.AudioContext ??
+          (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (Ctx) {
+          const ctx = new Ctx();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.value = 880;
+          gain.gain.value = 0.06;
+          osc.connect(gain).connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.12);
+        }
+      } catch {
+        // 소리를 막아 둔 브라우저 — 화면 숫자로 충분하다
+      }
+    }
+    prev.current = ordered.length;
+  }, [ordered.length]);
+
+  if (ordered.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-2 rounded-xl border-2 border-ink bg-cream p-4">
+      <h2 className="text-sm font-semibold">검토 대기 {ordered.length}명</h2>
+      <p className="t-caption">스스로 “약한 것 같다” 고 고른 학생이 앞에 섭니다.</p>
+      <div className="flex flex-wrap gap-2">
+        {ordered.map((row) => (
+          <button
+            key={row.studentId}
+            type="button"
+            onClick={() => onPick(row)}
+            className="pill pill-primary text-sm"
+          >
+            {masked ? `${row.number ?? "?"}번` : row.name || `${row.number ?? "?"}번`}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function ProgressBoard({
   rows,
   masked,
@@ -295,6 +393,12 @@ function Dashboard() {
    * 출석부로 바로 찾는다.
    */
   const [masked, setMasked] = useState(false);
+  /** 지금 검토 중인 학생. 누를 때만 그 학생 기사를 읽는다 */
+  const [reviewing, setReviewing] = useState<{
+    studentId: string;
+    selfCheck: string;
+    who: string;
+  } | null>(null);
 
   const params = new URLSearchParams({ date });
   if (sessionId) params.set("sessionId", sessionId);
@@ -674,6 +778,35 @@ function Dashboard() {
                 {data.missing.map((item) => `${item.name}(${item.studentId.slice(3)})`).join(", ")}
               </p>
             </section>
+          )}
+
+          {/*
+            수행평가 대기 줄은 신호등보다 위다. 지금 당장 움직여야 하는 것이 이쪽이고,
+            신호등은 훑어보는 것이다. 대기가 없으면 통째로 안 그려진다.
+          */}
+          {data?.session && (
+            <ReviewQueue
+              rows={rows}
+              masked={masked}
+              onPick={(row) =>
+                setReviewing({
+                  studentId: row.studentId,
+                  selfCheck: row.selfCheck ?? "",
+                  who: masked ? `${row.number ?? "?"}번` : row.name || `${row.number ?? "?"}번`,
+                })
+              }
+            />
+          )}
+
+          {reviewing && data?.session && (
+            <TeacherReviewPanel
+              sessionId={data.session.id}
+              studentId={reviewing.studentId}
+              who={reviewing.who}
+              selfCheck={reviewing.selfCheck}
+              onDone={() => setReviewing(null)}
+              onClose={() => setReviewing(null)}
+            />
           )}
 
           <ProgressBoard rows={rows} masked={masked} onMasked={setMasked} />

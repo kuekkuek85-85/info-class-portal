@@ -6,6 +6,7 @@ import { AiReviewPanel } from "@/components/ai-review-panel";
 import { EmotionLensPanel } from "@/components/emotion-lens-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
 import { MoodRecheck } from "@/components/mood-recheck";
+import { SubmitPanel, useJumpToField } from "@/components/submit-panel";
 import { ArtifactCanvas } from "@/components/artifact-canvas";
 import { TechExampleChips } from "@/components/tech-examples";
 import {
@@ -298,6 +299,9 @@ export function WorksheetView({
     });
   }
 
+  /** 7차시 제출 칸의 「그 칸으로」 가 쓴다 */
+  const jumpToField = useJumpToField();
+
   /** 방금 복사한 칸 — 눌렀는데 아무 일도 안 일어난 것처럼 보이면 또 누른다 */
   const [copied, setCopied] = useState("");
 
@@ -388,8 +392,13 @@ export function WorksheetView({
         </div>
       )}
 
+      {/*
+        id 를 문항 래퍼에 붙인다.
+        7차시 제출 칸의 「그 칸으로」 가 이것으로 찾아간다 (submit-panel 의 useJumpToField).
+        안쪽에서 쓰는 `ws-` 접두사와 겹치지 않게 `q-` 로 둔다.
+      */}
       {questions.map((question) => (
-        <div key={question.key} className="flex flex-col gap-2">
+        <div key={question.key} id={`q-${question.key}`} className="flex flex-col gap-2">
           {/*
             note 는 답할 것이 없다. label 로 두면 눌렀을 때 엉뚱한 칸에 커서가 가고,
             읽는 프로그램에는 "답이 없는 입력칸" 으로 들린다.
@@ -466,6 +475,13 @@ export function WorksheetView({
                 );
               })}
             </div>
+          ) : question.kind === "submit" ? (
+            <SubmitPanel
+              question={question}
+              selfCheck={value.answers.news_check2 ?? ""}
+              onJump={jumpToField}
+              disabled={disabled}
+            />
           ) : question.kind === "ai_review" ? (
             <AiReviewPanel
               questionKey={question.key}

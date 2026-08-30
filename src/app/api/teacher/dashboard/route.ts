@@ -159,6 +159,20 @@ export async function GET(request: Request) {
           idleMs: entry.workedAt ? Date.now() - entry.workedAt : null,
         },
         /*
+         * 수행평가 제출 단계와 교사 검토 대기 (7차시).
+         *
+         * 이탈 누적치와 같이 출석 문서에 얹혀 있어 **추가 읽기가 없다**. 기사 본문은
+         * 여기 싣지 않는다 — 교사가 그 학생을 누를 때만 artifact 를 1건 읽는다.
+         */
+        stage: entry.submitStage ?? 0,
+        /** 2차를 냈고 아직 피드백을 안 준 학생만 대기 줄에 선다 */
+        waiting: (entry.submitStage ?? 0) === 2 && !(entry.reviewedAt ?? 0),
+        /**
+         * 자기 점검 답. 대기 줄 **순서**를 정한다 — 스스로 "약한 것 같다" 고 고른
+         * 학생을 앞에 세운다. 교사가 먼저 만나야 할 학생을 학생이 알려 준 셈이다.
+         */
+        selfCheck: entry.selfCheck ?? "",
+        /*
          * 이탈 누적치. 출석 문서에 얹혀 있어 **추가 읽기가 없다**.
          * 이 화면에서만 쓴다 — /api/teacher/board(교실 앞 공유 화면)에는 절대 내보내지
          * 않는다. 개인별 이탈 표시는 공개 망신이 된다.
