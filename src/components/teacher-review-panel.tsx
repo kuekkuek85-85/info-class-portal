@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { NewsPaper, templateOf } from "@/components/news-paper";
 import {
   ARTICLE_RULES,
   resolveItems,
   type CheckItem,
   type Resolution,
 } from "@/lib/article-check";
+import type { Stroke, TextItem } from "@/lib/types";
 
 /**
  * 교사가 2차 제출을 보고 답하는 화면 (7차시 수행평가).
@@ -48,6 +50,8 @@ interface Loaded {
   answers: Record<string, string>;
   sources: { site: string; ai: string };
   items: CheckItem[];
+  strokes: Stroke[];
+  texts: TextItem[];
 }
 
 interface TeacherReviewPanelProps {
@@ -72,6 +76,7 @@ export function TeacherReviewPanel({
 }: TeacherReviewPanelProps) {
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [openBody, setOpenBody] = useState(false);
+  const [openPaper, setOpenPaper] = useState(false);
   const [chips, setChips] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -90,6 +95,8 @@ export function TeacherReviewPanel({
           answers: result.answers ?? {},
           sources: result.sources ?? { site: "", ai: "" },
           items: result.items ?? [],
+          strokes: result.strokes ?? [],
+          texts: result.texts ?? [],
         });
       } else {
         setError(result?.message ?? "작품을 불러오지 못했습니다.");
@@ -176,14 +183,24 @@ export function TeacherReviewPanel({
             자리에 못 갈 때만 여기서 편다.
           */}
           <section className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => setOpenBody((prev) => !prev)}
-              aria-expanded={openBody}
-              className="pill pill-secondary self-start text-sm"
-            >
-              {openBody ? "기사 접기" : "기사 펼쳐 보기"}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setOpenBody((prev) => !prev)}
+                aria-expanded={openBody}
+                className="pill pill-secondary self-start text-sm"
+              >
+                {openBody ? "기사 접기" : "기사 펼쳐 보기"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpenPaper((prev) => !prev)}
+                aria-expanded={openPaper}
+                className="pill pill-secondary self-start text-sm"
+              >
+                {openPaper ? "지면 접기" : "완성 지면 보기"}
+              </button>
+            </div>
             {openBody && (
               <div className="flex flex-col gap-2 rounded-lg border border-line p-3">
                 {ARTICLE_RULES.map((rule) => (
@@ -200,6 +217,27 @@ export function TeacherReviewPanel({
                     "(비어 있음)"}
                 </p>
               </div>
+            )}
+            {/*
+              학생이 보는 것과 같은 지면. 채점할 때 칸별로 읽는 것과 한 편으로 읽는
+              것이 다르므로 둘 다 열어 둔다.
+            */}
+            {openPaper && (
+              <NewsPaper
+                template={templateOf(loaded.answers.news_template)}
+                data={{
+                  title: loaded.answers.news_title ?? "",
+                  scene: loaded.answers.news_scene ?? "",
+                  change: loaded.answers.news_change ?? "",
+                  real: loaded.answers.news_real ?? "",
+                  interview: loaded.answers.news_interview ?? "",
+                  caption: loaded.answers.news_caption ?? "",
+                  strokes: loaded.strokes,
+                  texts: loaded.texts,
+                  // 교사 화면은 마스킹이 걸릴 수 있어 서명을 넣지 않는다
+                  reporter: "",
+                }}
+              />
             )}
           </section>
         </>

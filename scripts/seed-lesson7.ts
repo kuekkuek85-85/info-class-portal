@@ -239,6 +239,29 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 80,
   },
 
+  /*
+   * 지면 고르기.
+   *
+   * 최종 제출하면 이 판형으로 완성된 신문 면이 뜬다. 셋을 넘기면 고르다가 제출을
+   * 못 한다 — 종 치기 전에 마감해야 하는 시간이다. 셋은 **무엇을 앞세우는가**로
+   * 갈린다: 사진이냐, 말이냐, 기사냐.
+   *
+   * 안 고르면 「1면 톱」으로 나간다 (news-paper 의 templateOf).
+   */
+  {
+    key: "news_template",
+    phase: "worksheet",
+    label: "어떤 지면으로 낼까요?",
+    hint: "최종 제출하면 이 모양으로 완성된 신문 면이 뜹니다. 나중에 바꿔도 돼요.",
+    kind: "choice",
+    choices: [
+      "1면 톱 — 제목 크게, 사진 크게",
+      "인터뷰 중심 — 내 말을 맨 위에",
+      "사진 특집 — 그림을 크게, 글은 아래로",
+    ],
+    maxLength: 0,
+  },
+
   {
     key: "news_submit",
     phase: "worksheet",

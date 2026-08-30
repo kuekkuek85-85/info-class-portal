@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { NewsPaper, templateOf, type NewsPaperData } from "@/components/news-paper";
 import type { CheckItem } from "@/lib/article-check";
 import type { WorksheetQuestion } from "@/lib/types";
 
@@ -35,12 +36,23 @@ interface SubmitPanelProps {
   question: WorksheetQuestion;
   /** 이 활동지가 담고 있는 자기 점검 답 — 2차 제출 때 함께 보낸다 */
   selfCheck: string;
+  /** 최종 제출 뒤에 띄울 신문 지면의 재료 */
+  paper: NewsPaperData;
+  /** 고른 지면 (news_template 의 답) */
+  templateChoice: string;
   /** 「그 칸으로」 — 고칠 칸으로 옮겨 준다 */
   onJump: (field: string) => void;
   disabled?: boolean;
 }
 
-export function SubmitPanel({ question, selfCheck, onJump, disabled }: SubmitPanelProps) {
+export function SubmitPanel({
+  question,
+  selfCheck,
+  paper,
+  templateChoice,
+  onJump,
+  disabled,
+}: SubmitPanelProps) {
   const [state, setState] = useState<SubmitState>({ stage: 0, items: [], teacherFeedback: null });
   const [blocked, setBlocked] = useState<CheckItem[]>([]);
   const [busy, setBusy] = useState(false);
@@ -119,17 +131,26 @@ export function SubmitPanel({ question, selfCheck, onJump, disabled }: SubmitPan
 
   if (state.stage === 3) {
     return (
-      <div className="block flex flex-col gap-2 bg-mint">
-        <p className="t-display">제출 완료 ✓</p>
-        <p className="t-body-lg">수고했어요. 고치고 싶으면 위에서 고친 뒤 다시 제출하면 됩니다.</p>
-        <button
-          type="button"
-          onClick={() => void send(3)}
-          disabled={busy || disabled}
-          className="pill pill-secondary self-start"
-        >
-          다시 제출하기
-        </button>
+      <div className="flex flex-col gap-4">
+        <div className="block flex flex-col gap-2 bg-mint">
+          <p className="t-display">제출 완료 ✓</p>
+          <p className="t-body-lg">
+            수고했어요. 아래가 완성된 지면입니다 — 고치고 싶으면 위에서 고친 뒤 다시 제출하면 됩니다.
+          </p>
+          <button
+            type="button"
+            onClick={() => void send(3)}
+            disabled={busy || disabled}
+            className="pill pill-secondary self-start"
+          >
+            고쳤어요 · 다시 제출하기
+          </button>
+        </div>
+        {/*
+          완성본. 지면을 보는 것이 이 40분의 끝이다 — 칸을 채우는 일로만 끝나면
+          자기가 무엇을 만들었는지 볼 자리가 없다.
+        */}
+        <NewsPaper data={paper} template={templateOf(templateChoice)} />
       </div>
     );
   }

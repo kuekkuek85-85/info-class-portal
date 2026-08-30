@@ -41,6 +41,14 @@ export async function GET(request: Request) {
       sources: artifact.sources ?? { site: "", ai: "" },
       items: artifact.aiCheck?.items ?? [],
       stage: artifact.submitStage ?? 0,
+      /*
+       * 그림도 함께 보낸다.
+       *
+       * 교사가 완성된 지면을 보려면 획이 있어야 한다. 대기 줄에는 안 실리고 이
+       * 패널을 열 때만 오므로, 폴링 비용과는 무관하다.
+       */
+      strokes: artifact.strokes ?? [],
+      texts: artifact.texts ?? [],
     });
   });
 }

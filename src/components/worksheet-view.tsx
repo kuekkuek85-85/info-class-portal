@@ -479,6 +479,23 @@ export function WorksheetView({
             <SubmitPanel
               question={question}
               selfCheck={value.answers.news_check2 ?? ""}
+              templateChoice={value.answers.news_template ?? ""}
+              /*
+                지면 재료. 저장을 기다리지 않고 지금 화면의 값을 그대로 넘긴다 —
+                최종 제출 직후에 뜨는 것이라 방금 고친 문장이 반영돼야 한다.
+              */
+              paper={{
+                title: value.answers.news_title ?? "",
+                scene: value.answers.news_scene ?? "",
+                change: value.answers.news_change ?? "",
+                real: value.answers.news_real ?? "",
+                interview: named(value.answers.news_interview ?? "", studentName),
+                caption: value.answers.news_caption ?? "",
+                strokes,
+                texts,
+                // 임시 번호로 들어온 참가자는 이름이 없다. 그때는 서명 줄을 뺀다
+                reporter: studentName.trim(),
+              }}
               onJump={jumpToField}
               disabled={disabled}
             />
