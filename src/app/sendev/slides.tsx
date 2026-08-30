@@ -28,7 +28,7 @@ import {
  */
 
 /** 바꾸면 hanoi-qr.tsx 의 QR 도 다시 뽑아야 한다 — 그 파일 머리말에 방법이 있다 */
-const HANOI_URL = "https://hanoi-tower-game-rosy.vercel.app/training";
+export const HANOI_URL = "https://hanoi-tower-game-rosy.vercel.app/training";
 
 export const SLIDES = [
   { key: "welcome", corner: "웰컴" },

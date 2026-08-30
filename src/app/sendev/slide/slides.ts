@@ -1,3 +1,4 @@
+import { HANOI_URL } from "../slides";
 import {
   ASKS,
   HALL,
@@ -38,6 +39,7 @@ export type ArchiveSlide =
   | { kind: "awards"; names: readonly string[]; photo: string; prize: string }
   | { kind: "hall"; champion: string; grit: string; photo: string }
   | { kind: "photos"; title: string; lines: readonly string[]; photos: readonly string[] }
+  | { kind: "hanoi"; url: string; steps: readonly string[]; foot: string }
   | { kind: "concat"; command: string; lines: readonly string[] };
 
 /** 장 구분 — 90장이 넘어가므로 건너뛸 자리를 준다 */
@@ -127,14 +129,17 @@ function build(): { slides: ArchiveSlide[]; chapters: Chapter[] } {
     lines: ["학생들에게 도대체 무엇을 가르쳐야 할까요?", "(정보 교과 입장에서)"],
     foot: "문제 정의 · 추상화 · 알고리즘 → 바이브 코딩 → 검증 · 유지보수",
   });
+  /*
+   * 게임은 아직 살아 있다.
+   *
+   * 다른 장은 지나간 일을 적어 두는 것이지만 이 장만은 지금도 눌러 볼 수 있다.
+   * 그래서 QR 과 주소를 그날 화면 그대로 남긴다 — 기록을 읽다가 직접 해 보는 것이
+   * 이 슬라이드에서 할 수 있는 가장 좋은 일이다.
+   */
   slides.push({
-    kind: "text",
-    eyebrow: "하노이 탑",
-    title: "3분, 다 같이 한 판",
-    lines: [
-      "① 제한 시간 안에 완성하기",
-      "② 최소 이동 · 최단 시간으로 겨루기",
-    ],
+    kind: "hanoi",
+    url: HANOI_URL,
+    steps: ["① 제한 시간 안에 완성하기", "② 최소 이동 · 최단 시간으로 겨루기"],
     foot: "지난주 1학년 학생들이 한 바로 그 게임입니다",
   });
 

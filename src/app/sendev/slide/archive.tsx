@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { HanoiQr } from "../hanoi-qr";
 import { ARCHIVE, CHAPTERS, type ArchiveSlide } from "./slides";
 
 /**
@@ -329,6 +330,35 @@ function Panel({ slide }: { slide: ArchiveSlide }) {
             ))}
           </div>
           <p className="t-headline text-center">🐾 전원 증정</p>
+        </div>
+      );
+
+    case "hanoi":
+      return (
+        <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+          <div className="flex flex-col items-center gap-3">
+            <HanoiQr className="h-44 w-44 sm:h-52 sm:w-52" />
+            <p className="t-caption break-all text-center">{slide.url}</p>
+          </div>
+          <div className="flex flex-1 flex-col gap-4">
+            <p className="t-eyebrow">하노이 탑</p>
+            <h1 className="t-display">3분, 다 같이 한 판</h1>
+            <ol className="flex flex-col gap-2 t-body-lg">
+              {slide.steps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+            {/* 기록 중에 하나뿐인 바깥 링크다. 새 창으로 열어 읽던 자리를 잃지 않게 한다 */}
+            <a
+              href={slide.url}
+              target="_blank"
+              rel="noreferrer"
+              className="pill pill-primary self-start"
+            >
+              지금 해 보기 →
+            </a>
+            <p className="t-body-lg text-muted">{slide.foot}</p>
+          </div>
         </div>
       );
 
