@@ -174,6 +174,22 @@ export default function DashboardPage() {
  * 5분째 화면만 보고 있는 학생은 다르다. 뒤쪽이 진짜 가 봐야 할 학생이다.
  */
 /**
+ * 명단에 보여줄 한 줄 이름.
+ *
+ * 임시 좌석(90~99)으로 들어온 학생은 명렬표에 없어서 **이름도 번호도 없다.** 그대로
+ * 두면 "?번" 이 되어 교사가 누구에게 가야 할지 알 수 없다 — 대기 줄에서는 그것이
+ * 곧 그 학생을 못 만난다는 뜻이다.
+ *
+ * 학번 뒷자리를 쓴다. 그것이 그 태블릿의 좌석 번호이고, 아래 표와 신호등이 이미
+ * 같은 규칙을 쓰고 있다. 명렬표에 있는 학생(1~28번)과 겹치지 않게 「임시」를 붙인다.
+ */
+function whoLabel(row: StudentRow, masked: boolean): string {
+  const seat = `${row.number ?? row.studentId.slice(3)}번`;
+  if (masked) return seat;
+  return row.name || `임시 ${seat}`;
+}
+
+/**
  * 검토 대기 줄 (7차시 수행평가).
  *
  * ## 순서를 자기 점검이 정한다
@@ -261,7 +277,7 @@ function ReviewQueue({
             className={`pill text-sm ${row.selfCheckWeak ? "pill-primary" : "pill-secondary"}`}
           >
             {row.selfCheckWeak ? "● " : ""}
-            {masked ? `${row.number ?? "?"}번` : row.name || `${row.number ?? "?"}번`}
+            {whoLabel(row, masked)}
           </button>
         ))}
       </div>
@@ -344,11 +360,11 @@ function ProgressBoard({
                         key={row.studentId}
                         className="flex items-baseline gap-2 rounded-lg bg-canvas px-3 py-2"
                       >
-                        <span className="font-semibold">
-                          {masked
-                            ? `${row.number ?? row.studentId.slice(3)}번`
-                            : row.name || "임시"}
-                        </span>
+                        {/*
+                          임시 좌석이 여럿이면 전부 "임시" 로 떠서 누가 누군지 안 보였다.
+                          좌석 번호를 붙인다 (whoLabel).
+                        */}
+                        <span className="font-semibold">{whoLabel(row, masked)}</span>
                         <span className="tabular-nums text-sm text-muted">
                           {work.done}/{work.total}
                         </span>
@@ -809,7 +825,7 @@ function Dashboard() {
                 setReviewing({
                   studentId: row.studentId,
                   selfCheck: row.selfCheck ?? "",
-                  who: masked ? `${row.number ?? "?"}번` : row.name || `${row.number ?? "?"}번`,
+                  who: whoLabel(row, masked),
                 })
               }
             />
