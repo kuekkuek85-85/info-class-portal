@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { CheckItem } from "./article-check";
+
 /**
  * 학생이 스스로 한 검토를 보고, AI가 놓친 것을 짚어 준다.
  *
@@ -89,6 +91,101 @@ export async function reviewBuild(fields: ReviewInput[]): Promise<string[]> {
     return parsed.questions.filter((q): q is string => typeof q === "string" && q.trim().length > 0).slice(0, 2);
   } catch {
     // 시간 초과 · 네트워크 오류 · JSON 깨짐 — 무엇이든 "실패" 하나로 취급한다
+    return [];
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * 오탈자 후보를 찾는다. 최대 3개. (7차시 수행평가)
+ *
+ * ## 여기서만 AI 를 쓴다
+ *
+ * 같은 화면의 다른 점검(빈 칸·글자 수·출처)은 전부 코드가 센다 — 즉시 뜨고, 틀리지
+ * 않고, 스물여덟 명이 한꺼번에 내도 몰리지 않는다. 사람 말의 맞춤법만은 셀 수가 없어서
+ * 이 한 줄만 AI 에게 맡긴다.
+ *
+ * ## 고치라고 하지 않는다
+ *
+ * 돌려주는 문장은 "이 낱말 한 번만 볼까요" 다. 방언이나 일부러 쓴 말을 잘못 짚을 수
+ * 있고, 중1에게 "틀렸다" 고 단정하면 자기 글을 의심하며 손을 놓는다. 고친 말을 대신
+ * 제안하지도 않는다 — 그러면 AI 가 쓴 문장이 되고, 수행평가에서 그 경계가 흐려진다.
+ *
+ * ## 실패하면 그 줄만 빠진다
+ *
+ * 빈 배열을 돌려준다. 나머지 점검은 코드가 이미 만들어 두었으므로 화면은 그대로 뜬다 —
+ * 스물여덟 명이 한꺼번에 제출하는 구간이라, 여기서 학생을 세우면 안 된다.
+ *
+ * **학번·이름은 보내지 않는다.** 활동지에 쓴 글 텍스트만 넘어간다.
+ */
+export async function findTypos(texts: string[]): Promise<CheckItem[]> {
+  const body = texts
+    .map((t) => (t ?? "").trim())
+    .filter(Boolean)
+    .join("\n");
+  if (!body) return [];
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return [];
+
+  const prompt = [
+    "다음은 중학교 1학년이 쓴 신문 기사다.",
+    "맞춤법이나 오타로 보이는 낱말을 최대 3개만 골라라.",
+    "",
+    "규칙:",
+    "- 낱말만 **글에 나온 그대로** 적어라. 고친 말을 제안하지 마라.",
+    "- 확실하지 않으면 고르지 마라. 없으면 빈 배열을 내라.",
+    "- 사람 이름·가게 이름·새로 지어낸 기술 이름은 고르지 마라.",
+    "- 문장이 아니라 낱말이다.",
+    "",
+    'JSON만 출력하세요: {"words":["...","..."]}',
+    "",
+    body,
+  ].join("\n");
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          // 맞춤법은 상상할 자리가 아니다. 온도를 낮춰 같은 글에 같은 답이 나오게 한다
+          generationConfig: { temperature: 0.1, responseMimeType: "application/json" },
+        }),
+        signal: controller.signal,
+      },
+    );
+    if (!response.ok) return [];
+
+    const payload = (await response.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+    };
+    const text = payload.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const parsed = JSON.parse(text) as { words?: unknown };
+    if (!Array.isArray(parsed.words)) return [];
+
+    return parsed.words
+      .filter((w): w is string => typeof w === "string")
+      .map((w) => w.trim())
+      // 20자가 넘으면 낱말이 아니라 문장을 돌려준 것이다. 그런 것은 버린다
+      .filter((w) => w.length > 0 && w.length <= 20)
+      // 정말로 글에 있는 낱말만. 없는 것을 짚으면 학생이 찾다가 교사에게 온다
+      .filter((w) => body.includes(w))
+      .slice(0, 3)
+      .map((word) => ({
+        code: `typo:${word}`,
+        field: "",
+        kind: "typo" as const,
+        label: `이 낱말 한 번만 볼까요 — “${word}”`,
+        detail: word,
+      }));
+  } catch {
     return [];
   } finally {
     clearTimeout(timer);

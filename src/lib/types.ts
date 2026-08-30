@@ -5,6 +5,8 @@
  * 학번만 저장하고, 화면에 보여줄 때만 조인한다.
  */
 
+import type { CheckItem } from "./article-check";
+
 /**
  * 1학년 반 번호.
  *
@@ -293,6 +295,8 @@ export interface WorksheetQuestion {
    *             한 단계를 다 맞혀야 다음이 열린다. 틀린 문항만 다시 푼다.
    * mood_recheck — 무드미터 표를 다시 띄워 기분을 한 번 더 고르게 한다. 처음
    *             체크인에서 고른 낱말을 나란히 보여준다 — 그 차이가 배운 것이다.
+   * submit    — 수행평가 제출 칸. 1차 → AI 점검 → 2차 → 교사 피드백 → 최종의
+   *             세 단계를 이 한 칸에서 지난다 (submitFields).
    */
   kind:
     | "text"
@@ -305,7 +309,8 @@ export interface WorksheetQuestion {
     | "ai_review"
     | "emotion_lens"
     | "emotion_quiz"
-    | "mood_recheck";
+    | "mood_recheck"
+    | "submit";
   /**
    * echo 가 다시 보여줄 답들.
    *
@@ -356,6 +361,14 @@ export interface WorksheetQuestion {
    * 안 쓴 칸은 자동으로 빠진다 — 학생이 비워 둔 것까지 "왜 안 썼냐"고 묻지 않는다.
    */
   reviewFields?: { key: string; label: string }[];
+  /**
+   * submit 이 판정할 칸들. 없으면 article-check 의 ARTICLE_RULES 기본값을 쓴다.
+   *
+   * `min` 은 글자 수 최소치인데, "이만큼은 써야 기사다" 가 아니라 **"이보다 짧으면
+   * 아직 안 쓴 것"** 의 선이다. 빈 칸과 짧은 칸만 2차 제출 문턱이 되고, 출처와
+   * 오탈자는 문턱에서 빠진다 — 일부러 비우는 학생이 있고 오탐이 있기 때문이다.
+   */
+  submitFields?: { key: string; label: string; min: number }[];
   /**
    * emotion_lens 가 AI 에게 보낼 글이 들어 있는 칸.
    *
@@ -814,6 +827,28 @@ export interface Attendance {
   careAlertCount?: number;
 
   /*
+   * 수행평가 제출 단계와 교사 검토 대기 줄 (7차시).
+   *
+   * 이탈·위기 신호와 **같은 이유로 여기에 얹는다.** 대시보드가 이미 이 문서를 읽고
+   * 있어서 추가 읽기가 0건이다. 대기 줄을 보려고 artifact 를 함께 읽으면 폴링마다
+   * 28건이 붙어 한 교시에 무료 한도를 태운다.
+   *
+   * **기사 내용은 얹지 않는다.** 단계와 시각, 그리고 자기 점검 답 한 줄뿐이다.
+   * 본문은 교사가 그 학생을 누를 때만 읽는다.
+   */
+  /** 0=미제출 1=1차 2=2차(교사 대기) 3=최종 */
+  submitStage?: 0 | 1 | 2 | 3;
+  /** 교사가 피드백을 보낸 시각. 대기 줄에서 빠지는 기준 */
+  reviewedAt?: number;
+  /**
+   * 2차 전 자기 점검 답.
+   *
+   * 대기 줄 **순서**를 정한다 — 스스로 "약한 것 같다" 고 고른 학생을 앞에 세운다.
+   * 교사가 먼저 만나야 할 학생을 학생 자신이 알려 준 셈이다.
+   */
+  selfCheck?: string;
+
+  /*
    * 활동지 진도 (교사 대시보드의 신호등).
    *
    * 이탈·위기 신호와 **같은 이유로 여기에 얹는다.** 대시보드는 5초마다 도는데, 진도를
@@ -994,6 +1029,26 @@ export interface Artifact {
   /** 출처 — 수행평가1의 "출처 밝히기 태도" 평가 근거 (PRD 7) */
   sources: { site: string; ai: string };
   status: ArtifactStatus;
+
+  /*
+   * 수행평가 제출 단계 (7차시).
+   *
+   * status(draft/submitted)와 따로 둔다. status 는 "갤러리에 올라가는가" 를 가르는
+   * 값이라 다른 차시가 이미 쓰고 있고, 여기는 **한 학생이 루프를 어디까지 돌았는가**다.
+   * 최종 제출(3)에서만 둘이 함께 올라간다.
+   */
+  /** 0=미제출 1=1차 2=2차(교사 대기) 3=최종 */
+  submitStage?: 0 | 1 | 2 | 3;
+  /**
+   * 1차 제출 때 코드가 짚은 것 + 오탈자.
+   *
+   * **반영 여부는 저장하지 않는다.** 교사가 여는 순간 다시 세므로(resolveItems),
+   * 기다리는 동안 학생이 더 고친 것이 그대로 반영된다.
+   */
+  aiCheck?: { at: number; items: CheckItem[] };
+  /** 교사 피드백. 칩은 보조이고 note 가 본체다 */
+  teacherFeedback?: { at: number; chips: string[]; note: string };
+
   /** 교사가 숨김 처리했는지. 갤러리에서 빠진다 */
   hidden: boolean;
   /**

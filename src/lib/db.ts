@@ -990,6 +990,48 @@ export async function flagCareAlert(sessionId: string, studentId: string): Promi
 }
 
 /**
+ * 수행평가 제출 단계를 출석 문서에 적어 둔다 (7차시).
+ *
+ * recordWorkProgress 와 같은 이유로 여기에 얹는다 — 대시보드가 이미 이 문서를 읽고
+ * 있어서 **추가 읽기가 0건**이다. 대기 줄을 보려고 artifact 를 폴링하면 28건이 붙는다.
+ *
+ * 2차로 올라갈 때 `reviewedAt` 을 지운다. 교사 피드백을 받고 고쳐서 **다시 2차를 내면
+ * 대기 줄에 다시 서야 한다** — 안 지우면 이미 본 학생으로 남아 영영 차례가 안 온다.
+ */
+export async function recordSubmitStage(
+  sessionId: string,
+  studentId: string,
+  stage: 1 | 2 | 3,
+  selfCheck?: string,
+): Promise<void> {
+  const ref = db().collection(COLLECTIONS.attendance).doc(entryId(sessionId, studentId));
+  const snap = await ref.get();
+  // 출석 기록이 없으면 만들지 않는다 (recordWorkProgress 와 같은 이유)
+  if (!snap.exists) return;
+
+  const patch: Record<string, unknown> = { submitStage: stage };
+  if (stage === 2) {
+    patch.reviewedAt = 0;
+    if (selfCheck) patch.selfCheck = selfCheck;
+  }
+
+  await ref.set(patch, { merge: true });
+}
+
+/**
+ * 교사가 피드백을 보냈다고 출석 문서에 표시한다 (7차시).
+ *
+ * 대기 줄에서 빠지는 기준이다. 기사 본문이나 피드백 내용은 얹지 않는다 —
+ * 그것은 artifact 에 있고, 대시보드는 "누구를 아직 안 봤나" 만 알면 된다.
+ */
+export async function markReviewed(sessionId: string, studentId: string): Promise<void> {
+  const ref = db().collection(COLLECTIONS.attendance).doc(entryId(sessionId, studentId));
+  const snap = await ref.get();
+  if (!snap.exists) return;
+  await ref.set({ reviewedAt: Date.now() }, { merge: true });
+}
+
+/**
  * 활동지 진도를 출석 문서에 적어 둔다 (Attendance 의 answeredKeys 참조).
  *
  * 학생이 자동 저장할 때마다 함께 부른다. 쓰기가 한 건 늘지만, 이것이 없으면 교사가
