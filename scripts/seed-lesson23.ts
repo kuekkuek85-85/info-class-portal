@@ -267,10 +267,9 @@ const SEEDS: PlanSeed[] = [
      * 바로 손이 간다는 점에서 오히려 낫다.
      */
     game: {
-      heading: "기다리는 동안 — 똥 피하기",
-      body:
-        "위에서 떨어지는 똥을 좌우로 피하세요. 한 번이라도 맞으면 끝이에요.\n화살표 키나 화면 좌·우를 누르면 움직입니다.\n오래 버틸수록 점수가 올라가요.",
-      url: "https://dodge-poop-game.vercel.app/",
+      heading: "기다리는 동안 — 하노이 탑",
+      body: "원판을 옮겨 탑을 통째로 오른쪽으로 보내세요.\n한 번에 한 개씩, 큰 원판을 작은 원판 위에 올릴 수 없어요.\n1차시보다 원판을 하나 더 늘려서 해 보세요.",
+      url: "https://hanoi-tower-game-rosy.vercel.app/",
     },
     /*
      * 원리 설명 팝업은 넣지 않는다.
@@ -321,10 +320,9 @@ const SEEDS: PlanSeed[] = [
     moodCheckEnabled: true,
     // 2차시와 같은 이유로 대기 시간에 게임을 띄운다 (도착 시각이 5분씩 벌어진다)
     game: {
-      heading: "기다리는 동안 — 똥 피하기",
-      body:
-        "위에서 떨어지는 똥을 좌우로 피하세요. 한 번이라도 맞으면 끝이에요.\n화살표 키나 화면 좌·우를 누르면 움직입니다.\n지난 시간 점수를 넘어 보세요.",
-      url: "https://dodge-poop-game.vercel.app/",
+      heading: "기다리는 동안 — 하노이 탑",
+      body: "원판을 옮겨 탑을 통째로 오른쪽으로 보내세요.\n한 번에 한 개씩, 큰 원판을 작은 원판 위에 올릴 수 없어요.\n지난 시간보다 원판을 하나 더 늘려서 해 보세요.",
+      url: "https://hanoi-tower-game-rosy.vercel.app/",
     },
     // 원리 설명은 1차시에 이미 했다 (2차시 주석 참조)
     gameExplainer: empty(),

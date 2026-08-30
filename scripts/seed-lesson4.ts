@@ -74,10 +74,9 @@ const PLAN = {
 
   // 대기 게임을 2048로 바꾼다. 하노이 탑은 세 차시를 했으니 새것이 낫다.
   game: {
-    heading: "기다리는 동안 — 똥 피하기",
-    body:
-      "위에서 떨어지는 똥을 좌우로 피하세요. 한 번이라도 맞으면 끝이에요.\n화살표 키나 화면 좌·우를 누르면 움직입니다.\n오래 버틸수록 점수가 올라가요.",
-    url: "https://dodge-poop-game.vercel.app/",
+    heading: "기다리는 동안 — 2048",
+    body: "같은 숫자를 붙이면 두 배가 됩니다. 2048을 만들어 보세요.\n화살표나 손가락으로 밀면 됩니다.",
+    url: "https://2048-game-gilt-kappa.vercel.app/",
     cards: [],
     tabs: [],
   },
