@@ -7,7 +7,14 @@ import {
   listFeedbacksFor,
 } from "@/lib/db";
 import { checkCrisis } from "@/lib/emotion-lens";
-import { activityIdFor, assignPeers, isVisible, publicIdOf, toCard } from "@/lib/gallery";
+import {
+  activityIdFor,
+  assignPeers,
+  inViewingOrder,
+  isVisible,
+  publicIdOf,
+  toCard,
+} from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
 import {
   DEFAULT_FEEDBACK_PROMPTS,
@@ -233,20 +240,29 @@ export async function GET() {
     const assigned = assignPeers(visible, me.studentId);
     const assignedIds = new Set(assigned.map((row) => row.id));
 
-    const works = visible
-      .filter((row) => row.studentId !== me.studentId)
-      .map((row) => ({
-        // 정해진 답 칸만 싣는다 — 감정 낱말은 열고 경험 글은 닫는다
-        ...toCard(row, "", allowKeys),
-        // 꼭 봐야 할 두 편. 자유 선택만 두면 잘 그린 몇 명에게 몰린다 (assignPeers 참조)
-        assigned: assignedIds.has(row.id),
-        /** 이 활동지가 어느 필터에 걸리는가. 화면은 이것만 보고 거른다 */
-        facetValues: facetValuesOf(row, session),
-        counts: byArtifact.get(row.id)?.counts ?? {},
-        myReactions: byArtifact.get(row.id)?.myReactions ?? [],
-        myFoundTech: byArtifact.get(row.id)?.myFoundTech ?? "",
-        myQuestion: byArtifact.get(row.id)?.myQuestion ?? "",
-      }));
+    /*
+     * 학번 순서를 여기서 끊는다.
+     *
+     * visible 은 listArtifacts 가 준 학번 순이다. 그 차례 그대로 내보내면 이름을 가려도
+     * 자기 자리만 찾으면 앞뒤가 누구인지 다 따라온다 (inViewingOrder 참조).
+     * 배정(assigned)은 학번 순 위에서 계산해 둔 뒤라 차례를 바꿔도 그대로 붙어 간다.
+     */
+    const works = inViewingOrder(
+      visible
+        .filter((row) => row.studentId !== me.studentId)
+        .map((row) => ({
+          // 정해진 답 칸만 싣는다 — 감정 낱말은 열고 경험 글은 닫는다
+          ...toCard(row, "", allowKeys),
+          // 꼭 봐야 할 두 편. 자유 선택만 두면 잘 그린 몇 명에게 몰린다 (assignPeers 참조)
+          assigned: assignedIds.has(row.id),
+          /** 이 활동지가 어느 필터에 걸리는가. 화면은 이것만 보고 거른다 */
+          facetValues: facetValuesOf(row, session),
+          counts: byArtifact.get(row.id)?.counts ?? {},
+          myReactions: byArtifact.get(row.id)?.myReactions ?? [],
+          myFoundTech: byArtifact.get(row.id)?.myFoundTech ?? "",
+          myQuestion: byArtifact.get(row.id)?.myQuestion ?? "",
+        })),
+    );
 
     const received = mine ? feedbacks.filter((row) => row.artifactId === mine.id) : [];
 
