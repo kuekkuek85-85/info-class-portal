@@ -364,11 +364,14 @@ export interface WorksheetQuestion {
   /**
    * submit 이 판정할 칸들. 없으면 article-check 의 ARTICLE_RULES 기본값을 쓴다.
    *
-   * `min` 은 글자 수 최소치인데, "이만큼은 써야 기사다" 가 아니라 **"이보다 짧으면
-   * 아직 안 쓴 것"** 의 선이다. 빈 칸과 짧은 칸만 2차 제출 문턱이 되고, 출처와
-   * 오탈자는 문턱에서 빠진다 — 일부러 비우는 학생이 있고 오탐이 있기 때문이다.
+   * `minSentences` 는 **문장 수** 최소치다. 글자 수가 아닌 이유는, 교사가 교실에서
+   * 구두로 안내하는 것이 "세 줄 이상" 이기 때문이다 — 학생이 듣고 이해한 기준과
+   * 화면이 말하는 기준이 같아야 한다. 줄바꿈도 문장으로 센다 (countSentences).
+   *
+   * 빈 칸과 문장이 모자란 칸만 2차 제출 문턱이 되고, 출처와 오탈자는 문턱에서 빠진다 —
+   * 일부러 비우는 학생이 있고 오탐이 있기 때문이다.
    */
-  submitFields?: { key: string; label: string; min: number }[];
+  submitFields?: { key: string; label: string; minSentences: number }[];
   /**
    * emotion_lens 가 AI 에게 보낼 글이 들어 있는 칸.
    *

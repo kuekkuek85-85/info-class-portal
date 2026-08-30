@@ -37,22 +37,29 @@ export interface CheckItem {
 export interface FieldRule {
   key: string;
   label: string;
-  /** 글자 수 최소치 */
-  min: number;
+  /** 문장 수 최소치 */
+  minSentences: number;
 }
 
 /**
  * 7차시 기본값. 차시가 `submitFields` 로 덮을 수 있다.
  *
- * 최소치는 "이만큼은 써야 기사다" 가 아니라 **"이보다 짧으면 아직 안 쓴 것"** 의
- * 선이다. 넉넉히 잡으면 다 쓴 학생을 붙잡고, 빡빡하게 잡으면 한 줄만 쓰고 넘어간다.
+ * ## 글자 수가 아니라 문장 수다
+ *
+ * 교사가 교실에서 구두로 안내한 것이 "①②③ 은 각각 세 줄 이상" 이다. 그것을 글자
+ * 수로 옮기면 학생이 듣고 이해한 기준과 화면이 말하는 기준이 어긋난다 — 세 줄을 썼는데
+ * "짧아요" 가 뜨거나, 한 줄을 길게 늘여 썼는데 통과한다.
+ *
+ * 최소치는 "이만큼은 써야 기사다" 가 아니라 **"이보다 적으면 아직 안 쓴 것"** 의 선이다.
  */
 export const ARTICLE_RULES: readonly FieldRule[] = [
-  { key: "news_title", label: "제목", min: 5 },
-  { key: "news_scene", label: "① 현장", min: 60 },
-  { key: "news_change", label: "② 무엇이 바뀌었나 · 왜", min: 80 },
-  { key: "news_real", label: "③ 이미 시작되고 있다", min: 40 },
-  { key: "news_interview", label: "④ 인터뷰", min: 40 },
+  // 제목은 한 줄짜리다. 비어 있지만 않으면 된다
+  { key: "news_title", label: "제목", minSentences: 1 },
+  { key: "news_scene", label: "① 현장", minSentences: 3 },
+  { key: "news_change", label: "② 무엇이 바뀌었나 · 왜", minSentences: 3 },
+  { key: "news_real", label: "③ 이미 시작되고 있다", minSentences: 3 },
+  // 인터뷰는 묻고 답하는 두 마디가 기본이다
+  { key: "news_interview", label: "④ 인터뷰", minSentences: 2 },
 ] as const;
 
 export interface Sources {
@@ -61,6 +68,28 @@ export interface Sources {
 }
 
 const len = (value: string | undefined): number => (value ?? "").trim().length;
+
+/**
+ * 문장 수를 센다.
+ *
+ * ## 줄바꿈도 문장으로 센다
+ *
+ * 중1은 마침표를 잘 안 찍는다. 마침표만 세면 세 줄을 또박또박 쓴 학생이 1문장으로
+ * 잡혀서, 지킨 학생이 막힌다. 교사가 "세 줄 이상" 이라고 안내했으므로 **줄바꿈이
+ * 곧 학생이 이해한 문장의 경계**다.
+ *
+ * ## 조각은 세지 않는다
+ *
+ * 다섯 글자에 못 미치는 토막은 문장으로 세지 않는다. 안 그러면 줄바꿈만 세 번 넣거나
+ * "그리고" 한 마디로 문턱을 넘는 길이 생긴다. 막자는 것이 아니라, 세 줄을 쓰라는 말이
+ * 세 줄을 쓴 것으로만 통과하게 하려는 것이다.
+ */
+export function countSentences(value: string | undefined): number {
+  return (value ?? "")
+    .split(/[.!?。！？…\n]+/)
+    .map((piece) => piece.trim())
+    .filter((piece) => piece.length >= 5).length;
+}
 
 const hasSource = (sources: Sources | undefined): boolean =>
   len(sources?.site) > 0 || len(sources?.ai) > 0;
@@ -81,20 +110,26 @@ export function checkArticle(
   const items: CheckItem[] = [];
 
   for (const rule of rules) {
-    const n = len(answered[rule.key]);
-    if (n === 0) {
+    if (len(answered[rule.key]) === 0) {
       items.push({
         code: `empty:${rule.key}`,
         field: rule.key,
         kind: "empty",
         label: `${rule.label}이 비어 있어요`,
       });
-    } else if (n < rule.min) {
+      continue;
+    }
+
+    const n = countSentences(answered[rule.key]);
+    if (n < rule.minSentences) {
       items.push({
         code: `short:${rule.key}`,
         field: rule.key,
         kind: "short",
-        label: `${rule.label}이 ${n}자예요 (${rule.min}자는 넘겨 주세요)`,
+        // 무엇을 하면 되는지가 문장에 들어 있어야 한다. 안 그러면 되물으러 온다
+        label:
+          `${rule.label}이 ${n}문장이에요 — ${rule.minSentences}문장은 써 주세요 ` +
+          `(줄을 바꾸거나 마침표를 찍으면 나뉩니다)`,
       });
     }
   }
@@ -173,8 +208,8 @@ export function resolveItems(
     }
 
     const rule = rules.find((r) => r.key === item.field);
-    const n = len(answered[item.field]);
-    const passed = rule ? n >= rule.min : n > 0;
-    return { item, state: passed ? "fixed" : "open", now: `${n}자` };
+    const n = countSentences(answered[item.field]);
+    const passed = rule ? n >= rule.minSentences : n > 0;
+    return { item, state: passed ? "fixed" : "open", now: `${n}문장` };
   });
 }
