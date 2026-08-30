@@ -27,9 +27,14 @@ interface Row {
 
 interface Detail {
   card: CardNewsData & { id: string; author: string };
+  studentId: string;
   status: string;
   hidden: boolean;
   worksheet: WorksheetQuestion[];
+  /** 수행평가 차시인가 — 그렇다면 피드백을 한 칸으로 받아 제출 칸으로 보낸다 */
+  hasSubmit: boolean;
+  /** 제출 칸이 이미 보여주고 있는 교사 피드백 */
+  teacherNote: string;
   /** 이 차시가 쓰는 두 칸의 질문. 학생 화면과 같은 것을 쓴다 */
   feedbackPrompts: { found: { label: string }; question: { label: string } };
   feedbacks: {
@@ -159,18 +164,105 @@ export function TeacherArtifactPanel({ sessionId }: { sessionId: string }) {
                   </div>
                 )}
 
-                <TeacherFeedbackForm
-                  key={detail.card.id}
-                  prompts={detail.feedbackPrompts}
-                  existing={detail.feedbacks.find((item) => item.mine)}
-                  onSave={(foundTech, question) => patch(detail.card.id, { foundTech, question })}
-                />
+                {/*
+                  수행평가 차시는 한 칸이다.
+
+                  두 칸짜리 서식은 **친구 작품 보기용**이라 "이 그림에 어떤 기술이
+                  쓰였을까요? 맞혀 보세요" 를 묻는다. 채점하는 글에 할 말이 아니고,
+                  갤러리를 끈 차시에서는 써 넣어도 학생 화면에 나올 곳이 없다.
+                */}
+                {detail.hasSubmit ? (
+                  <AssessmentNoteForm
+                    key={detail.card.id}
+                    sessionId={sessionId}
+                    studentId={detail.studentId}
+                    existing={detail.teacherNote}
+                    onSaved={() => void openDetail(detail.card.id)}
+                  />
+                ) : (
+                  <TeacherFeedbackForm
+                    key={detail.card.id}
+                    prompts={detail.feedbackPrompts}
+                    existing={detail.feedbacks.find((item) => item.mine)}
+                    onSave={(foundTech, question) => patch(detail.card.id, { foundTech, question })}
+                  />
+                )}
               </div>
             )}
           </li>
         ))}
       </ul>
     </section>
+  );
+}
+
+/**
+ * 수행평가 피드백 — 한 칸.
+ *
+ * 검토 대기 줄의 패널과 **같은 곳에 쓴다** (artifact.teacherFeedback). 그래야 학생
+ * 제출 칸에 뜨고, 두 화면에서 쓴 말이 서로 다른 데 쌓이지 않는다.
+ *
+ * 이 자리가 따로 필요한 이유는 **2차까지 못 온 학생** 때문이다. 대기 줄에는 2차를
+ * 낸 학생만 서는데, 1차에서 멈춘 학생에게도 할 말이 있다.
+ */
+function AssessmentNoteForm({
+  sessionId,
+  studentId,
+  existing,
+  onSaved,
+}: {
+  sessionId: string;
+  studentId: string;
+  existing: string;
+  onSaved: () => void;
+}) {
+  const [note, setNote] = useState(existing);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function save() {
+    if (!note.trim()) return;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/teacher/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, studentId, chips: [], note }),
+      });
+      const result = await response.json();
+      if (!result?.ok) {
+        setError(result?.message ?? "보내지 못했습니다.");
+        return;
+      }
+      onSaved();
+    } catch {
+      setError("보내지 못했습니다.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-line p-3">
+      <h3 className="t-caption">선생님 피드백 — 학생 제출 칸에 그대로 뜹니다</h3>
+      <textarea
+        value={note}
+        onChange={(event) => setNote(event.target.value.slice(0, 500))}
+        rows={3}
+        placeholder="내용을 보고 한마디"
+        className="field"
+      />
+      {error && <p className="t-body-sm">{error}</p>}
+      <button
+        type="button"
+        onClick={() => void save()}
+        disabled={busy || !note.trim()}
+        className="pill pill-primary self-start"
+      >
+        {busy ? "보내는 중…" : existing ? "고쳐서 보내기" : "보내기"}
+      </button>
+    </div>
   );
 }
 

@@ -55,9 +55,20 @@ export async function GET(request: Request) {
 
       return ok({
         card: toCard(artifact, displayName(names.get(artifact.studentId))),
+        studentId: artifact.studentId,
         status: artifact.status,
         hidden: artifact.hidden,
         worksheet: session.activity?.worksheet ?? [],
+        /*
+         * 수행평가 차시인가 (제출 칸이 있는가).
+         *
+         * 그렇다면 아래 두 칸짜리 서식을 쓰면 안 된다. 그 서식은 **친구 작품 보기용**
+         * 이라, 갤러리를 끈 차시에서는 교사가 써 넣어도 학생 화면에 나올 곳이 없다.
+         * 대신 제출 칸이 읽는 통로(artifact.teacherFeedback)로 보낸다.
+         */
+        hasSubmit: (session.activity?.worksheet ?? []).some((q) => q.kind === "submit"),
+        /** 제출 칸이 보여줄 교사 피드백. 고쳐 쓸 때 원래 글을 띄운다 */
+        teacherNote: artifact.teacherFeedback?.note ?? "",
         // 교사도 학생과 같은 두 칸에 남긴다 — 질문이 다르면 학생 눈에 다른 종류의 말이 된다
         feedbackPrompts: session.activity?.feedbackPrompts ?? DEFAULT_FEEDBACK_PROMPTS,
         feedbacks: feedbacks.map((row) => ({
