@@ -347,9 +347,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   moodCheckEnabled: true,
 
   game: {
-    heading: "기다리는 동안 — 2048",
-    body: "같은 숫자끼리 밀어서 합치세요.\n오늘은 수행평가라 시작하면 바로 닫습니다.",
-    url: "https://2048-game-gilt-kappa.vercel.app/",
+    heading: "기다리는 동안 — 똥 피하기",
+    body:
+      "위에서 떨어지는 똥을 좌우로 피하세요. 한 번이라도 맞으면 끝이에요.\n화살표 키나 화면 좌·우를 누르면 움직입니다.\n오늘은 수행평가라 시작하면 바로 닫습니다.",
+    url: "https://dodge-poop-game.vercel.app/",
   },
   gameExplainer: empty(),
   progress: empty(),
