@@ -335,12 +335,16 @@ export function WorksheetView({
   /** 방금 복사한 칸 — 눌렀는데 아무 일도 안 일어난 것처럼 보이면 또 누른다 */
   const [copied, setCopied] = useState("");
 
-  async function copy(key: string) {
-    const text = value.answers[key] ?? "";
+  /**
+   * @param mark  「복사됐어요」를 어느 단추에 띄울지. 한 문항에 단추가 둘일 수 있다
+   * @param text  복사할 글
+   * @param fieldId  복사가 막혔을 때 대신 골라 줄 칸
+   */
+  async function copy(mark: string, text: string, fieldId: string) {
     if (!text.trim()) return;
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(key);
+      setCopied(mark);
       setTimeout(() => setCopied(""), 1500);
     } catch {
       /*
@@ -350,12 +354,12 @@ export function WorksheetView({
        * 그러면 계속 누른다. 대신 칸의 글자를 통째로 선택해 준다 —
        * 그 상태에서 Ctrl+C 한 번이면 되고, 무엇을 하라는지도 눈에 보인다.
        */
-      const field = document.getElementById(`ws-${key}`);
+      const field = document.getElementById(fieldId);
       if (field instanceof HTMLTextAreaElement || field instanceof HTMLInputElement) {
         field.focus();
         field.select();
       }
-      setCopied(`${key}__manual`);
+      setCopied(`${mark}__manual`);
       setTimeout(() => setCopied(""), 4000);
     }
   }
@@ -447,6 +451,46 @@ export function WorksheetView({
             <p className="t-note whitespace-pre-line">
               {named(question.hint, studentName, studentId)}
             </p>
+          )}
+
+          {/*
+            정해진 글을 복사하게 한다 (학교 계정 주소).
+
+            읽기 전용 칸으로 함께 그리는 이유가 둘이다. 하나는 복사가 막히는 기기에서
+            이 칸을 골라 주는 것으로 물러날 수 있다는 것 (아래 copy 의 폴백).
+            다른 하나는 무엇이 복사됐는지 눈에 보인다는 것 — 안 보이면 눌러 놓고도
+            제대로 됐는지 몰라서 또 누른다.
+
+            치환을 여기서도 건다. 그래야 학생마다 자기 계정 주소가 복사된다.
+          */}
+          {question.copyText && (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                id={`ws-copy-${question.key}`}
+                type="text"
+                readOnly
+                value={named(question.copyText, studentName, studentId)}
+                onFocus={(event) => event.currentTarget.select()}
+                className="field t-body-sm min-w-0 flex-1 font-semibold"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  void copy(
+                    `${question.key}__text`,
+                    named(question.copyText ?? "", studentName, studentId),
+                    `ws-copy-${question.key}`,
+                  )
+                }
+                className="pill pill-secondary t-body-sm shrink-0"
+              >
+                {copied === `${question.key}__text`
+                  ? "복사됐어요"
+                  : copied === `${question.key}__text__manual`
+                    ? "골라 뒀어요 — Ctrl+C"
+                    : "복사하기"}
+              </button>
+            </div>
           )}
 
           {/*
@@ -707,7 +751,9 @@ export function WorksheetView({
           {question.copyable && (
             <button
               type="button"
-              onClick={() => void copy(question.key)}
+              onClick={() =>
+                void copy(question.key, value.answers[question.key] ?? "", `ws-${question.key}`)
+              }
               disabled={disabled || !(value.answers[question.key] ?? "").trim()}
               className="pill pill-secondary t-body-sm self-start disabled:opacity-35"
             >

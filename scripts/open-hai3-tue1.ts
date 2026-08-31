@@ -45,15 +45,39 @@ const CLASS_NO = 1;
 const DATE = process.argv[2] ?? "2026-09-01";
 const PERIOD = Number(process.argv[3] ?? 1);
 
-const SESSION_ID = `${DATE}__${PERIOD}__${CLASS_NO}`;
+/**
+ * 세션 문서 ID — db.ts 의 sessionDocId 와 **같은 규칙이어야 한다.**
+ *
+ * `${날짜}__${교시}__${분반열쇠 || 반}` 이다. 분반 수업에서 반 번호를 쓰면
+ * 같은 날 같은 교시의 정보과 수업과 문서 ID 가 겹친다 — 분반은 데이터 통으로
+ * classNo 1~4 를 나눠 쓰기 때문이다.
+ */
+const SESSION_ID = `${DATE}__${PERIOD}__${GROUP_KEY}`;
 
-/** 안 쓰이는 두 자리 코드를 고른다. 끝나지 않은 수업이 쥔 것은 피한다 */
+/**
+ * 안 쓰이는 두 자리 코드를 고르고 **예약까지 한다.**
+ *
+ * 예약 문서를 안 남기면 교사 화면에서 다음 수업을 만들 때 reserveCode 가 이 코드를
+ * 비어 있는 것으로 보고 같은 값을 내준다. 그러면 학생이 남의 수업에 들어간다.
+ */
 async function pickCode(): Promise<string> {
   const live = await db.collection("classSessions").where("status", "in", ["scheduled", "active"]).get();
   const taken = new Set(live.docs.map((d) => String((d.data() as { code?: string }).code ?? "")));
+
   for (let n = 10; n <= 99; n += 1) {
     const code = String(n);
-    if (!taken.has(code)) return code;
+    if (taken.has(code)) continue;
+    try {
+      // create 라서 이미 예약돼 있으면 던진다 — 두 스크립트가 동시에 같은 코드를 못 잡는다
+      await db.collection("codeReservations").doc(`${DATE}__${code}`).create({
+        date: DATE,
+        code,
+        createdAt: Date.now(),
+      });
+      return code;
+    } catch {
+      // 이미 예약된 코드다. 다음 것으로 넘어간다
+    }
   }
   throw new Error("남은 코드가 없습니다. 끝난 수업을 정리해 주세요.");
 }
@@ -82,7 +106,8 @@ async function main(): Promise<void> {
   const worksheet = (activity?.worksheet ?? []).map((q) => {
     const byGroup = q.linkUrlByGroup as Record<string, string> | undefined;
     if (!byGroup) return q;
-    const { linkUrlByGroup: _drop, ...rest } = q;
+    const rest = { ...q };
+    delete rest.linkUrlByGroup;
     const picked = byGroup[GROUP_KEY] ?? (q.linkUrl as string | undefined);
     return picked ? { ...rest, linkUrl: picked } : rest;
   });

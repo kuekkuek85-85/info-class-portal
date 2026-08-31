@@ -99,9 +99,8 @@ const WORKSHEET: WorksheetQuestion[] = [
      */
     label: "① 캔바에 들어가기 — 여기가 제일 오래 걸립니다",
     hint:
-      "아래 단추를 누르고 [Microsoft로 계속하기] 를 고르세요.\n\n" +
-      "내 학교 계정은 이거예요. 그대로 치면 됩니다.\n" +
-      "  {학교계정}\n" +
+      "아래 [캔바 열기] 를 누르고 [Microsoft로 계속하기] 를 고르세요.\n" +
+      "내 학교 계정은 아래 칸에 있어요. [복사하기] 를 눌러 그대로 붙여 넣으면 됩니다.\n" +
       "비밀번호는 학교 계정 비밀번호예요.\n\n" +
       "이럴 때는 이렇게 하세요\n" +
       "· 다른 계정으로 이미 로그인돼 있다 → 로그아웃하고 위 주소로 다시\n" +
@@ -109,6 +108,8 @@ const WORKSHEET: WorksheetQuestion[] = [
       "· 팀에 들어갈지 물어본다 → [참여] 를 누르세요\n" +
       "· 화면이 안 넘어간다 → 30초는 기다려 보고, 그래도 그대로면 손을 드세요",
     kind: "note",
+    // 학생마다 자기 계정 주소가 복사된다 (worksheet-view 의 named 가 치환한다)
+    copyText: "{학교계정}",
     linkUrl: CANVA_INVITE_URL,
     linkUrlByGroup: Object.fromEntries(Object.entries(CANVA_BY_GROUP).filter(([, url]) => url)),
     linkLabel: "캔바 열기 (새 창)",
