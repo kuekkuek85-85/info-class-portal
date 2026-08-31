@@ -99,6 +99,12 @@ interface WorksheetViewProps {
    */
   studentName?: string;
   /**
+   * 이 학생 학번. 문항 글의 {학교계정} 자리에 학교 계정 주소로 만들어 들어간다 (named 참조).
+   *
+   * 답으로 저장되지도, 어디로 보내지도 않는다 — studentName 과 같다.
+   */
+  studentId?: string;
+  /**
    * 차시가 정한 활동지 첫 화면 문구. heading 과 기본값 둘 다를 이긴다 (ActivityContent
    * 의 worksheetIntro). 그림을 재료 삼아 다른 글을 쓰는 활동지에서 기본 문구가
    * "무엇을 그렸는지 적어 주세요" 라고 거짓말하는 것을 막는다.
@@ -150,17 +156,40 @@ const PARTICLE_PAIRS: Record<string, [string, string]> = {
  * 이름을 아직 모르면(불러오는 중) "내 이름" 으로 물러난다. 빈칸으로 두면
  * "2036년, 은 …" 같은 문장이 뜬다.
  */
-function named(text: string, studentName: string): string {
-  if (!text.includes("{이름}")) return text;
+function named(text: string, studentName: string, studentId = ""): string {
+  let out = text;
 
-  const name = studentName.trim() || "내 이름";
-  const last = name.codePointAt(name.length - 1) ?? 0;
-  const hasFinal = last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
+  if (out.includes("{이름}")) {
+    const name = studentName.trim() || "내 이름";
+    const last = name.codePointAt(name.length - 1) ?? 0;
+    const hasFinal = last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 !== 0;
 
-  return text.replaceAll(/\{이름\}([은는이가을를과와])?/g, (_match, particle?: string) => {
-    const pair = particle ? PARTICLE_PAIRS[particle] : undefined;
-    return pair ? name + (hasFinal ? pair[0] : pair[1]) : name;
-  });
+    out = out.replaceAll(/\{이름\}([은는이가을를과와])?/g, (_match, particle?: string) => {
+      const pair = particle ? PARTICLE_PAIRS[particle] : undefined;
+      return pair ? name + (hasFinal ? pair[0] : pair[1]) : name;
+    });
+  }
+
+  /*
+   * {학교계정} — 학교 마이크로소프트 계정 주소를 대신 만들어 준다.
+   *
+   * 「인간과 인공지능」 2차시에서 캔바 로그인에 시간이 제일 많이 갔다. 안내가
+   * "26 뒤에 내 학번 5자리를 붙이세요" 였는데, 중1에게 이건 두 가지 일이다 —
+   * 규칙을 이해하고, 서른 자짜리 주소를 오타 없이 치는 것. 스물두 명이면 그중 몇은
+   * 반드시 틀리고, 틀린 학생은 왜 안 되는지 스스로 못 찾아 손을 든다.
+   *
+   * 화면이 이미 학번을 알고 있으므로 만들어서 보여준다. 규칙은 계속 옆에 적어 두되
+   * 학생이 계산할 필요는 없게 한다.
+   *
+   * 학번을 아직 모르면(불러오는 중) 원래 안내 문구로 물러난다 — 빈칸이나
+   * "26@..." 처럼 반쯤 만들어진 주소를 띄우면 그것을 그대로 쳐 넣는다.
+   */
+  if (out.includes("{학교계정}")) {
+    const id = studentId.trim();
+    out = out.replaceAll("{학교계정}", id ? `26${id}@jangpyung.sen.ms.kr` : "26 + 내 학번 5자리 @jangpyung.sen.ms.kr");
+  }
+
+  return out;
 }
 
 export function WorksheetView({
@@ -173,6 +202,7 @@ export function WorksheetView({
   hideSubmit,
   firstMood,
   studentName = "",
+  studentId = "",
   intro,
   heading,
   strokes,
@@ -404,15 +434,19 @@ export function WorksheetView({
             읽는 프로그램에는 "답이 없는 입력칸" 으로 들린다.
           */}
           {question.kind === "note" ? (
-            <p className="block bg-cream t-subhead">{named(question.label, studentName)}</p>
+            <p className="block bg-cream t-subhead">
+              {named(question.label, studentName, studentId)}
+            </p>
           ) : /* 제목 없이 답만 다시 보여주는 경우가 있다 (앞 문항 바로 아래에 붙일 때) */
           question.kind === "echo" && !question.label ? null : (
             <label htmlFor={`ws-${question.key}`} className="block bg-cream t-subhead">
-              {named(question.label, studentName)}
+              {named(question.label, studentName, studentId)}
             </label>
           )}
           {question.hint && (
-            <p className="t-note whitespace-pre-line">{named(question.hint, studentName)}</p>
+            <p className="t-note whitespace-pre-line">
+              {named(question.hint, studentName, studentId)}
+            </p>
           )}
 
           {/*
