@@ -38,6 +38,13 @@ export function AiReviewPanel({
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  /*
+   * 남은 횟수는 서버가 알려 준 뒤에만 뜬다.
+   *
+   * 화면에서 눌린 횟수를 세면 안 된다 — 새로고침하면 0 으로 돌아가고, 학생은 다 쓴
+   * 뒤에도 남은 것처럼 보인다. 세는 곳은 Firestore 한 군데다 (ai-quota.ts).
+   */
+  const [left, setLeft] = useState<number | null>(null);
   const result = parse(raw);
 
   async function run() {
@@ -52,8 +59,14 @@ export function AiReviewPanel({
       const body = await response.json();
       if (body.ok) {
         onResult(JSON.stringify(body.result));
+        if (typeof body.left === "number") setLeft(body.left);
       } else {
-        setError(body.message || "AI가 잠시 응답하지 않아요. 조금 뒤에 다시 눌러 보세요.");
+        /*
+         * 여기까지 오는 것은 "아직 아무것도 안 썼다" 나 "로그인이 풀렸다" 뿐이다.
+         * AI 가 죽은 경우는 서버가 고정 질문으로 채워서 성공으로 돌려준다 —
+         * 스물두 명이 동시에 실패 문구를 보고 동시에 다시 누르는 일을 막으려는 것이다.
+         */
+        setError(body.message || "잠시 뒤에 다시 눌러 주세요.");
       }
     } catch {
       setError("인터넷 연결을 확인하고 다시 눌러 주세요.");
@@ -61,6 +74,8 @@ export function AiReviewPanel({
       setLoading(false);
     }
   }
+
+  const usedUp = left === 0;
 
   return (
     <div className="flex flex-col gap-3">
@@ -79,11 +94,21 @@ export function AiReviewPanel({
       <button
         type="button"
         onClick={() => void run()}
-        disabled={disabled || loading}
+        disabled={disabled || loading || usedUp}
         className="pill pill-primary pill-block disabled:opacity-60"
       >
-        {loading ? "AI가 생각하고 있어요…" : result ? "다시 검토받기" : "AI에게 검토받기"}
+        {loading
+          ? "AI가 생각하고 있어요…"
+          : usedUp
+            ? "이제 받은 질문에 답해 보자"
+            : result
+              ? "다시 검토받기"
+              : "AI에게 검토받기"}
       </button>
+
+      {left !== null && left > 0 && (
+        <p className="t-caption text-muted">{left}번 더 받을 수 있어요</p>
+      )}
 
       {error && <p className="t-body-sm rounded-md bg-pink px-4 py-3">{error}</p>}
     </div>

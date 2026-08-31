@@ -151,6 +151,8 @@ interface DashboardData {
     reflectionCount: number;
     unreviewed: number;
   };
+  /** AI 검토가 있는 차시에서만 온다. 없는 차시에서는 서버가 읽지도 않는다 */
+  aiQuota?: { ok: number; fallback: number; left: number } | null;
 }
 
 export default function DashboardPage() {
@@ -439,6 +441,7 @@ function Dashboard() {
   const session = data?.session ?? null;
   const rows = data?.rows ?? [];
   const stats = data?.stats;
+  const aiQuota = data?.aiQuota ?? null;
   const note = noteDraft ?? session?.teacherNote ?? "";
 
   // 학생 한 명이 기분 체크를 마치면 서버가 만들어 세션에 넣어 둔다 (review.ts 참조)
@@ -757,6 +760,33 @@ function Dashboard() {
                 />
               )}
             </section>
+          )}
+
+          {/*
+            오늘 AI 가 실제로 돌고 있는가.
+
+            학생 화면은 AI 질문과 고정 질문을 구분해 주지 않는다 — "저는 AI가 안 왔어요"
+            가 한 명 나오면 나머지 수업이 멈추기 때문이다. 그래서 교사가 그것을 알 수
+            있는 곳이 여기뿐이다. 폴백이 절반을 넘으면 AI 를 접고 다른 방법으로 넘어가는
+            판단을 빨리 내려야 해서, 그 순간에만 색을 바꿔 눈에 걸리게 한다.
+          */}
+          {aiQuota && aiQuota.ok + aiQuota.fallback > 0 && (
+            <div
+              className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg px-4 py-3 t-body-sm ${
+                aiQuota.fallback > aiQuota.ok ? "bg-coral" : "bg-surface"
+              }`}
+            >
+              <span>
+                AI 검토 — 실제 응답 <b>{aiQuota.ok}</b> · 고정 질문 <b>{aiQuota.fallback}</b> ·
+                남은 호출 {aiQuota.left}
+              </span>
+              {aiQuota.fallback > aiQuota.ok && (
+                <span>
+                  AI 가 안 오고 있습니다. 학생 화면에는 고정 질문 세 개가 대신 나가는
+                  중이라 수업은 굴러갑니다 — 여기서 더 기다릴지 접을지만 정하시면 됩니다.
+                </span>
+              )}
+            </div>
           )}
 
           {/* PRD 5.4 — 매 수업 종료 후 그날 감정 응답을 확인한다 */}

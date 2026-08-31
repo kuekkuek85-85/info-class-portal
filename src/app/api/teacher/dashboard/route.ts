@@ -1,3 +1,4 @@
+import { readQuotaSummary } from "@/lib/ai-quota";
 import { fail, guard, ok } from "@/lib/api";
 import { todayKST, isDateKey } from "@/lib/datetime";
 import {
@@ -226,12 +227,30 @@ export async function GET(request: Request) {
     // PRD 5.4 — 받아두고 보지 않는 상태가 가장 위험하다. 미확인 개수를 항상 노출한다.
     const unreviewed = moods.filter((m) => m.reason.trim() && !m.reviewedByTeacher).length;
 
+    /*
+     * AI 검토가 있는 차시에서만 한 문서를 더 읽는다.
+     *
+     * 이 화면은 20초마다 돈다. 로그 컬렉션을 훑는 질의를 붙이면 읽기 수가 그대로
+     * 곱해지므로 (PRD 10장 D2), 집계를 상한 카운터 문서에 얹어 두고 그 하나만 읽는다.
+     * AI 검토가 없는 차시에서는 이 읽기조차 하지 않는다 — 정보과 1~7차시가 그렇다.
+     */
+    const hasAiReview = (session.activity?.worksheet ?? []).some((q) => q.kind === "ai_review");
+    const aiQuota = hasAiReview ? await readQuotaSummary(session.id).catch(() => null) : null;
+
     return ok({
       date,
       sessions,
       session,
       rows,
       missing,
+      /**
+       * 오늘 AI 가 실제로 돌았는가.
+       *
+       * 학생 화면은 AI 질문과 고정 질문을 구분해 주지 않으므로 (그래야 수업이 안 멈춘다),
+       * 교사가 그것을 알 수 있는 곳이 여기뿐이다. 폴백이 절반을 넘으면 AI 를 접고
+       * 다른 방법으로 넘어가는 판단을 3분 안에 내려야 한다.
+       */
+      aiQuota,
       stats: {
         rosterCount: roster.filter((s) => !s.temporary).length,
         joinedCount: attendance.length,

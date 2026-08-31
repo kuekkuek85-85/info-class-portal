@@ -362,6 +362,14 @@ export interface WorksheetQuestion {
    */
   reviewFields?: { key: string; label: string }[];
   /**
+   * ai_review 가 받아 올 질문 개수. 기본 2.
+   *
+   * 3 이상이면 프롬프트가 각도까지 지정한다 — 누가 쓰는가 · 정말 필요한가 ·
+   * 써 보면 헷갈리지 않는가. 개수만 늘리면 같은 것을 세 번 다르게 묻는다
+   * (ai-review.ts 의 buildPrompt 참조).
+   */
+  reviewCount?: number;
+  /**
    * submit 이 판정할 칸들. 없으면 article-check 의 ARTICLE_RULES 기본값을 쓴다.
    *
    * `minSentences` 는 **문장 수** 최소치다. 글자 수가 아닌 이유는, 교사가 교실에서
