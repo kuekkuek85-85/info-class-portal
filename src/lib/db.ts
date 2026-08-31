@@ -588,6 +588,14 @@ export function snapshotOf(plan: LessonPlan, groupKey?: string) {
      */
     phaseLabels: plan.phaseLabels ?? {},
     focusExempt: plan.focusExempt ?? [],
+    /*
+     * 되돌아가기 초기값도 계획이 정한다.
+     *
+     * 교사가 수업 중에 껐다 켤 수 있는 값이지만, 캔바를 드나드는 차시는 처음부터
+     * 켜져 있어야 한다. 위 phaseLabels 와 같은 이유로 여기 빠뜨리면 화면에서 만든
+     * 수업에서만 조용히 꺼진 채로 열린다.
+     */
+    freeNavigation: plan.freeNavigation ?? false,
   };
 }
 
