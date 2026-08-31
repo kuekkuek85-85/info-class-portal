@@ -137,6 +137,14 @@ export async function GET() {
               worksheetIntro: session.activity.worksheetIntro ?? null,
               sourceHints: session.activity.sourceHints ?? null,
               /*
+                출처 두 칸을 아예 안 띄우는 차시가 있다.
+
+                바로 위 galleryEnabled 와 같은 함정이다 — 이 줄을 빠뜨리면 화면 쪽에서
+                undefined 가 되어 "안 적혔으니 띄운다" 로 읽힌다. 계획에 false 를
+                적어 두어도 학생 화면에는 그대로 뜬다.
+              */
+              sourcesEnabled: session.activity.sourcesEnabled ?? true,
+              /*
                 감정을 쓰는 차시는 서로 구경하기를 막는다. 이 줄을 빠뜨리면 화면 쪽에서
                 값이 undefined 가 되어 "안 적혔으니 연다" 로 읽히고, 마음 이야기가
                 반 전체에 걸린다 — 빠뜨렸을 때 조용히 열리는 쪽이라 특히 위험하다.

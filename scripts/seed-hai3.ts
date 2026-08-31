@@ -493,7 +493,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 세 눈을 견주게 해야 그것이 활동이 아니라 말로 남는다.
    */
   reflectionQuestions: [
-    "오늘 세 번 검토받았습니다(내 눈 · AI · 선생님). 그중 가장 도움이 된 것은 무엇이고, 왜 그랬나요?",
+    "바로 만들지 않고 여러 번 검토받았습니다. 오늘 느낀 점이 있나요?",
   ],
   reflectionPublic: false,
 
@@ -538,10 +538,14 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     year: 2026,
     worksheet: WORKSHEET,
 
-    sourceHints: {
-      site: "예) 캔바 — AI 앱 생성",
-      ai: "예) 챗지피티 — 버튼이 안 눌리는 이유를 물어봄",
-    },
+    /*
+     * 출처 두 칸을 안 띄운다.
+     *
+     * 그 칸은 수행평가1의 "출처 밝히기 태도" 때문에 고정으로 붙어 있는 것이다(PRD 7).
+     * 오늘 하는 일은 자료를 찾는 것이 아니라 만든 것을 고치는 것이라, 마지막 단계마다
+     * 안 쓰는 상자를 하나 더 지나게 된다.
+     */
+    sourcesEnabled: false,
 
     /*
      * 서로 구경하기를 끈다.

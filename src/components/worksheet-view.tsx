@@ -94,6 +94,14 @@ interface WorksheetViewProps {
    */
   hideSubmit?: boolean;
   /**
+   * 출처 두 칸을 아예 안 띄운다.
+   *
+   * 이 칸은 수행평가1이 "출처 밝히기 태도" 를 평가해서 고정으로 붙여 둔 것이다
+   * (PRD 7). 그 평가가 없는 차시에서는 매 화면 끝에 안 쓰는 상자가 하나 더 있는 셈이라
+   * 오히려 방해가 된다 — 「인간과 인공지능」 3차시가 그렇다.
+   */
+  hideSources?: boolean;
+  /**
    * 이 학생 이름. 문항 글의 {이름} 자리에 들어간다 (named 참조).
    *
    * 답으로 저장되지도, 어디로 보내지도 않는다 — 자기 화면에 자기 이름을 띄우는 것뿐이다.
@@ -201,6 +209,7 @@ export function WorksheetView({
   sourceHints = DEFAULT_SOURCE_HINTS,
   carried,
   hideSubmit,
+  hideSources,
   firstMood,
   studentName = "",
   studentId = "",
@@ -783,7 +792,7 @@ export function WorksheetView({
       */}
       <div
         className="flex flex-col gap-3 rounded-lg border border-line p-4"
-        hidden={hideSubmit}
+        hidden={hideSubmit || hideSources}
       >
         <h3 className="t-subhead">어디에서 찾아봤나요?</h3>
         <p className="t-note">안 찾아봤으면 비워 둬도 됩니다. 찾아봤으면 꼭 적어 주세요.</p>

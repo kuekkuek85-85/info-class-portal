@@ -39,6 +39,8 @@ export interface ActivityInfo {
   techExamples?: string[];
   /** 출처 두 칸의 예시. 비면 활동지가 기본값(그림 활동 기준)을 쓴다 */
   sourceHints?: { site: string; ai: string } | null;
+  /** 출처 두 칸을 아예 안 띄우는가. 안 오면 띄운다 (지금까지의 차시) */
+  sourcesEnabled?: boolean;
   /**
    * 서로 구경하기를 여는가. 안 오면 연다 (지금까지의 차시).
    * 감정을 쓰는 차시는 false — 마음 이야기는 친구에게 보이지 않는다.
@@ -935,6 +937,7 @@ export default function LessonPage() {
                 보이면 거기서 끝내는 학생이 나온다.
               */
               hideSubmit={viewPhase !== lastStepPhase}
+              hideSources={session.activity.sourcesEnabled === false}
               // 기분 다시 고르기 문항이 오늘 처음 고른 낱말을 나란히 띄운다
               firstMood={mood}
               heading={session.phaseLabels?.[viewPhase] ?? PHASE_LABELS[viewPhase]}
@@ -943,7 +946,14 @@ export default function LessonPage() {
             <Placeholder title="준비하고 있어요" description="잠시만 기다려 주세요." />
           ))}
 
-        {isWorkPhase && session.activity && (
+        {/*
+          탭이 하나뿐이면 탭 줄을 만들지 않는다.
+
+          그리기도 감상도 없는 차시에서는 「활동지 쓰기」 단추 하나가 남는데, 그건
+          누를 곳이 아니라 지금 보고 있는 화면의 이름이다. 누르면 아무 일도 안 나는
+          단추가 화면 맨 위에 있으면 학생은 그것부터 눌러 본다.
+        */}
+        {isWorkPhase && session.activity && Number(canDraw) + Number(canShare) > 0 && (
           <div className="mb-5 flex gap-2">
             {/*
               그리기가 없는 차시도 있다 (4차시 직업 조사처럼 글만 쓰는 활동).
@@ -1044,6 +1054,15 @@ export default function LessonPage() {
                 "지금까지 쓴 것 훑어보기" 라 지금까지처럼 띄운다.
               */
               hideSubmit={questionsFor("worksheet").length > 0 && Boolean(lastStepPhase)}
+              hideSources={session.activity.sourcesEnabled === false}
+              /*
+                제목은 차시가 붙인 단계 이름을 따른다.
+
+                이 칸을 다른 이름으로 빌려 쓰는 차시가 있다 — 「인간과 인공지능」 3차시는
+                여기에 "2차 살펴보기" 를 얹는다. 기본값 "활동지 쓰기" 를 그대로 두면
+                교사가 넘긴 단계 이름과 화면 제목이 서로 다른 말을 한다.
+              */
+              heading={session.phaseLabels?.worksheet ?? undefined}
             />
           ) : (
             <Placeholder title="활동지를 준비하고 있어요" description="잠시만 기다려 주세요." />
