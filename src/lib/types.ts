@@ -288,6 +288,8 @@ export interface WorksheetQuestion {
    * echo      — 앞 단계에서 쓴 답을 읽기 전용으로 다시 보여준다 (echoKeys)
    * ai_review — 단추를 누르면 앞서 쓴 답들을 모아 AI에게 보내고, 아직 안 짚은 것을
    *             질문 2개로 돌려받는다 (reviewFields). AI는 평가·칭찬 없이 질문만 한다.
+   * teacher_note — 선생님이 남긴 말을 띄운다. 도착할 때까지만 물어보고 멈춘다.
+   *             제출 절차 없이 교사 검토 라운드를 두는 차시가 쓴다 (teacher-note-panel).
    * emotion_lens — 앞 칸에 쓴 경험 글(lensSourceKey)을 AI에게 보내고, 감정 추측
    *             2개와 공감 한 줄을 돌려받는다. 맞히는 것이 목적이 아니라 **학생이
    *             그 추측과 자기 마음을 견줘 보게** 하는 것이 목적이다.
@@ -307,6 +309,7 @@ export interface WorksheetQuestion {
     | "note"
     | "echo"
     | "ai_review"
+    | "teacher_note"
     | "emotion_lens"
     | "emotion_quiz"
     | "mood_recheck"

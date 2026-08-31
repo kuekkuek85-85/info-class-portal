@@ -206,27 +206,63 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 300,
   },
 
-  // ── 살펴보기 · 자기검토와 AI 검토 (24~36분) ────────────
+  /*
+   * ── 살펴보기 세 번 ─────────────────────────────────────
+   *
+   * 관점이 안에서 바깥으로 넓어진다 — 내 눈 → 기계의 눈 → 어른의 눈.
+   * 라운드마다 **고친 것을 한 줄 적는다.** 적게 하지 않으면 "봤다" 로 끝나고,
+   * 무엇을 고쳤는지는 학생 자신도 다음 시간에 기억하지 못한다.
+   *
+   * 단계 셋을 담을 자리.
+   *
+   * 「뽑기(build)」 뒤에서 활동지를 띄울 수 있는 칸은 셋이고, 목록에 박힌 차례가
+   * **grill → worksheet → emotion** 이다 (types.ts 의 LESSON_PHASES).
+   * 그 차례대로 1·2·3차를 얹는다 — 되돌아가기 목록과 교사 단추가 이 순서를 따르므로,
+   * 뒤집어 넣으면 학생 화면에 3차가 2차보다 앞에 뜬다. 실제로 한 번 그렇게 넣었다가
+   * 리허설에서 잡았다.
+   *
+   * worksheet 과 emotion 은 원래 다른 차시가 쓰는 칸이다(정보과 활동지, 마음 톡톡의
+   * 감정 렌즈). 이름이 하는 일과 안 맞지만 그 칸은 문항을 담는 그릇일 뿐이고 화면
+   * 이름은 phaseLabels 가 정한다. 새 단계를 만드는 것이 더 큰 변경이라 이쪽을 골랐다.
+   *
+   * 3차를 emotion 에 두는 이유가 하나 더 있다. 제출 단추와 출처 칸은 **그 차시가 쓰는
+   * STEP_PHASES 중 마지막**에 붙는데(lesson/page.tsx 의 lastStepPhase), 그 목록에
+   * worksheet 은 없고 emotion 은 있다. 3차를 worksheet 에 두면 제출 단추가 2차 화면에
+   * 붙어 학생이 중간에 끝낸다.
+   */
+
+  // ── 1차 살펴보기 · 내 눈 (grill) ───────────────────────
   {
-    key: "_grill_note",
+    key: "_r1_note",
     phase: "grill",
-    label: "만든 화면을 띄워 놓고 답해 주세요",
+    label: "1차 — 내 눈으로 보기",
     hint:
-      "고치는 시간이 아닙니다. 무엇이 어긋났는지 찾는 시간이에요.\n" +
-      "답이 막히는 자리가 곧 내 기획의 구멍입니다.",
+      "만든 화면을 띄워 놓고, 내가 쓰려던 것과 견줘 보세요.\n" +
+      "아래에 지난 시간에 적은 ‘만들려던 것’ 과 ‘꼭 필요한 기능’ 이 있어요. 그것과 화면을 하나씩 맞춰 봅니다.\n" +
+      "찾기만 하는 게 아니라, 오늘 한 가지는 실제로 고칩니다.",
     kind: "note",
     maxLength: 0,
   },
   {
-    key: "_grill_recap",
+    key: "_r1_recap",
     phase: "grill",
-    // 방금 만든 화면 주소. 눌러서 새 창으로 연다 — 여기서 나가면 쓰던 답이 날아간다
+    /*
+     * 견줄 대상을 옆에 편다.
+     *
+     * "생각한 것과 어디가 다른가" 를 물으려면 생각한 것이 눈앞에 있어야 한다.
+     * 기억으로 답하게 하면 화면에 있는 것만 보고 "잘 된 것 같아요" 로 끝난다.
+     * 프롬프트까지 넣는 이유: 안 나온 기능이 애초에 프롬프트에 없었던 경우가 많다.
+     */
     label: "",
     hint: "",
     kind: "echo",
     echoKeys: [
       { key: "build_url", label: "내가 만든 화면" },
       { key: "mvp_one", label: "내가 만들려던 것" },
+      { key: "mvp_must1", label: "꼭 필요한 기능 ①" },
+      { key: "mvp_must2", label: "꼭 필요한 기능 ②" },
+      { key: "mvp_must3", label: "꼭 필요한 기능 ③" },
+      { key: "build_prompt", label: "캔바에 넣은 프롬프트" },
     ],
     maxLength: 0,
   },
@@ -241,14 +277,56 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "grill_a2",
     phase: "grill",
-    label: "만들어진 화면이 내가 생각한 것과 어디가 다른가요?",
-    hint: "예) 날짜를 누르는 칸이 아예 없어요",
+    label: "내가 만들려던 것과 어디가 다른가요?",
+    hint:
+      "위의 ‘꼭 필요한 기능’ 과 화면을 하나씩 맞춰 보세요.\n" +
+      "예) 날짜를 누르는 칸이 아예 없어요 / 알레르기 표시가 안 나와요",
     kind: "long",
-    maxLength: 150,
+    maxLength: 200,
+  },
+  {
+    key: "fix1",
+    phase: "grill",
+    /*
+     * 라운드마다 이 칸이 하나씩 있다.
+     *
+     * "고쳤다" 가 아니라 "무엇을 어떻게" 를 적게 한다. 한 줄이라도 적고 나면
+     * 다음 라운드에서 같은 것을 또 고치지 않고, 회고에서 쓸 재료가 남는다.
+     */
+    label: "고친 것 한 가지 — 무엇을 어떻게 고쳤나요?",
+    hint:
+      "캔바로 가서 실제로 고치고 오세요. 프롬프트를 고쳐 다시 만들어도 되고, 화면을 직접 손봐도 됩니다.\n" +
+      "예) 날짜 고르는 칸이 없어서 프롬프트에 ‘날짜를 고르는 달력’ 을 넣고 다시 만들었어요",
+    kind: "long",
+    maxLength: 200,
+  },
+
+  // ── 2차 살펴보기 · 기계의 눈 (worksheet 칸을 빌려 쓴다) ─
+  {
+    key: "_r2_note",
+    phase: "worksheet",
+    label: "2차 — AI의 눈으로 보기",
+    hint:
+      "이번엔 내가 못 본 것을 AI에게 물어봅니다.\n" +
+      "AI는 점수를 매기지 않아요. 질문만 세 개 합니다 — 답은 내가 찾는 겁니다.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "_r2_recap",
+    phase: "worksheet",
+    label: "",
+    hint: "",
+    kind: "echo",
+    echoKeys: [
+      { key: "build_url", label: "내가 만든 화면" },
+      { key: "fix1", label: "1차에서 고친 것" },
+    ],
+    maxLength: 0,
   },
   {
     key: "ai_review",
-    phase: "grill",
+    phase: "worksheet",
     /*
      * 스스로 답한 뒤에 부른다.
      *
@@ -275,11 +353,71 @@ const WORKSHEET: WorksheetQuestion[] = [
       { key: "mvp_must3", label: "꼭 필요한 기능 ③" },
       { key: "grill_a1", label: "누가 쓸지 스스로 답한 것" },
       { key: "grill_a2", label: "생각과 다른 점을 스스로 답한 것" },
+      { key: "fix1", label: "1차에서 이미 고친 것" },
     ],
   },
   {
+    key: "fix2",
+    phase: "worksheet",
+    label: "고친 것 한 가지 — AI 질문을 보고 무엇을 고쳤나요?",
+    hint:
+      "세 질문 중 제일 뜨끔한 것 하나만 고르면 됩니다. 세 개 다 안 해도 돼요.\n" +
+      "예) ‘처음 보는 사람이 쓸 수 있나’ 를 보고, 버튼 이름을 ‘확인’ 에서 ‘오늘 급식 보기’ 로 바꿨어요",
+    kind: "long",
+    maxLength: 200,
+  },
+
+  // ── 3차 살펴보기 · 어른의 눈 (emotion 칸을 빌려 쓴다) ───
+  {
+    key: "_r3_note",
+    phase: "emotion",
+    label: "3차 — 선생님의 눈으로 보기",
+    hint:
+      "선생님이 돌아다니며 화면을 보고 한마디 남깁니다.\n" +
+      "아직 안 왔으면 기다리는 동안 1·2차에서 못 고친 것을 더 고쳐도 좋아요.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "_r3_recap",
+    phase: "emotion",
+    label: "",
+    hint: "",
+    kind: "echo",
+    echoKeys: [
+      { key: "build_url", label: "내가 만든 화면" },
+      { key: "fix1", label: "1차에서 고친 것" },
+      { key: "fix2", label: "2차에서 고친 것" },
+    ],
+    maxLength: 0,
+  },
+  {
+    key: "_r3_teacher",
+    phase: "emotion",
+    /*
+     * 선생님 말이 학생 화면에 닿는 유일한 통로다.
+     *
+     * 작품 목록의 두 칸짜리 서식은 **친구 작품 보기용**이라, 서로 구경하기를 끈
+     * 이 차시에서는 써 넣어도 학생 화면에 나올 자리가 없다. 이 문항이 있으면
+     * 교사 화면이 한 칸짜리 서식으로 바뀌고, 그 값이 여기로 온다
+     * (teacher-note-panel · teacher/artifacts 의 hasSubmit 판정).
+     */
+    label: "선생님이 남긴 말",
+    hint: "",
+    kind: "teacher_note",
+    maxLength: 0,
+  },
+  {
+    key: "fix3",
+    phase: "emotion",
+    label: "고친 것 한 가지 — 선생님 말을 보고 무엇을 고쳤나요?",
+    hint: "예) ‘이 버튼 눌렀는데 아무 일도 안 일어나던데?’ 라고 하셔서, 버튼에 메뉴가 뜨게 고쳤어요",
+    kind: "long",
+    maxLength: 200,
+  },
+  {
     key: "will_fix",
-    phase: "grill",
+    phase: "emotion",
     /*
      * 이 한 줄이 4차시 첫 화면에 뜬다. 빈 종이에서 다음 시간을 시작하지 않게 하는 장치다.
      * 2차시에는 아무도 여기까지 못 왔다 (0/23) — 오늘은 반드시 채우고 끝낸다.
@@ -287,7 +425,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "다음 시간에 고치거나 더할 것 한 가지는?",
     hint:
       "이 줄은 다음 시간 화면 맨 위에 그대로 뜹니다. 나에게 남기는 쪽지예요.\n" +
-      "AI가 물어본 것 중 하나를 골라 답해도 좋아요.",
+      "오늘 못 고친 것을 적어도 좋아요.",
     kind: "text",
     maxLength: 80,
   },
@@ -297,8 +435,14 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   lessonNo: LESSON_NO,
   title: "인간과 인공지능 3차시 — 오늘은 반드시 뽑는다",
 
-  // 정보과에서 한 학기 내내 하고 있다. 같은 학생이 화요일에 또 만나면 성의껏 안 고른다
-  moodCheckEnabled: false,
+  /*
+   * 기분 체크를 켠다.
+   *
+   * 2차시에는 껐다 — 정보과에서 한 학기 내내 하는 활동이라 같은 학생이 화요일에 또
+   * 만나면 성의껏 안 고른다는 이유였다. 선생님이 앞에 넣기로 정하셔서 켠다.
+   * 매일 하는 루틴이라는 쪽이 더 무겁다.
+   */
+  moodCheckEnabled: true,
 
   // 분반은 2차시와 같은 값을 유지한다. 바꾸면 데이터 통이 갈려 지난 답이 안 열린다
   groups: [
@@ -331,10 +475,12 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
       "다음 화면이 뜨면 맨 위 [캔바 열기] 를 먼저 누르세요.\n" +
       "로그인할 계정 주소는 화면이 만들어서 보여줍니다 — 직접 계산하지 않아도 돼요.\n" +
       "캔바가 열리는 동안 그 아래를 읽으면 됩니다.\n\n" +
-      "① 캔바에서 내 화면 뽑고 링크 내기 — 오늘 반드시\n" +
-      "② 뽑힌 화면을 보고 어디가 어긋났는지 스스로 찾기\n" +
-      "③ AI에게 검토받기 — 점수가 아니라 질문 세 개를 받습니다\n" +
-      "④ 다음 시간에 고칠 것 한 줄 남기기\n\n" +
+      "① 뽑기 — 캔바에서 내 화면 뽑고 링크 내기. 오늘 반드시\n" +
+      "② 1차 살펴보기 — 내 눈으로. 만들려던 것과 견줘 보고 한 가지 고치기\n" +
+      "③ 2차 살펴보기 — AI의 눈으로. 질문 세 개를 받고 한 가지 고치기\n" +
+      "④ 3차 살펴보기 — 선생님의 눈으로. 남긴 말을 보고 한 가지 고치기\n\n" +
+      "살펴보기는 세 번 다 같은 모양이에요 — 보고, 한 가지 고치고, 무엇을 고쳤는지 적습니다.\n" +
+      "세 번 다 못 해도 괜찮습니다. 한 번이라도 제대로 고치는 게 낫습니다.\n\n" +
       "오늘 뽑는 화면도 허접할 거예요. 그게 정상입니다.\n" +
       "왜 허접한지 찾아내는 것이 오늘의 진짜 과제예요.",
     url: "",
@@ -342,8 +488,12 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   assessment: empty(),
   video: empty(),
 
+  /*
+   * 오늘의 메타 학습은 "검토는 여러 사람에게 받는 것" 이다.
+   * 세 눈을 견주게 해야 그것이 활동이 아니라 말로 남는다.
+   */
   reflectionQuestions: [
-    "오늘 AI가 물어본 세 가지 중에 가장 뜨끔했던 질문 하나와, 왜 그랬는지 적어 주세요.",
+    "오늘 세 번 검토받았습니다(내 눈 · AI · 선생님). 그중 가장 도움이 된 것은 무엇이고, 왜 그랬나요?",
   ],
   reflectionPublic: false,
 
@@ -353,7 +503,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 캔바로 나가서 뽑아 오는 것이 활동 자체다. 그걸 이탈로 세면 기록이 온통 빨갛게
    * 되고 아무 의미가 없다. 더 나쁜 것은 학생이 눈치를 보느라 안 나가는 것이다.
    */
-  focusExempt: ["build", "grill", "gallery"],
+  focusExempt: ["build", "grill", "emotion", "worksheet"],
 
   /*
    * 학생이 단계를 오갈 수 있게 한다.
@@ -364,11 +514,20 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    */
   freeNavigation: true,
 
+  /*
+   * 단계 이름.
+   *
+   * worksheet 과 emotion 은 원래 다른 차시가 쓰는 칸이다 (정보과의 활동지, 마음 톡톡의
+   * 감정 렌즈). 여기서는 살펴보기 2·3차를 담는 그릇으로만 쓰고, 학생과 교사가 보는
+   * 이름은 이 표가 정한다. 목록에 박힌 차례가 grill → worksheet → emotion 이라
+   * 화면 순서와 되돌아가기가 그대로 맞는다.
+   */
   phaseLabels: {
     progress: "오늘 할 일",
     build: "뽑기",
-    grill: "살펴보기",
-    gallery: "서로 구경하기",
+    grill: "1차 살펴보기 · 내 눈",
+    worksheet: "2차 살펴보기 · AI의 눈",
+    emotion: "3차 살펴보기 · 선생님의 눈",
     reflection: "회고",
   },
 
@@ -385,24 +544,20 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     },
 
     /*
-     * 서로 구경하기는 오늘 계획에 안 넣었다 — 링크가 다 모여야 성립한다.
-     * 다만 반이 빨리 끝나면 교사가 단계를 넘겨 쓸 수 있게 설정만 맞춰 둔다.
-     * 그림용 기본 문구를 그대로 두면 앱을 보고 "무슨 기술이 보이나요" 를 묻게 된다.
+     * 서로 구경하기를 끈다.
+     *
+     * 40분에 뽑기와 살펴보기 세 번이 들어간다. 넷째 관점을 얹을 자리가 없다.
+     * 링크가 다 모이면 다음 시간에 제대로 연다.
+     *
+     * **끄는 자리가 여기인 것이 중요하다.** 화면에서 탭만 감추면 주소를 직접 치는
+     * 것으로 열리고, 그러면 아직 못 뽑은 학생의 빈 화면이 반 전체에 보인다.
+     * 이 값이 false 면 서버가 갤러리 조회 자체를 거절한다 (student/gallery 라우트).
+     *
+     * 이 값을 끄면 교사가 작품 목록에서 쓰는 두 칸짜리 서식은 갈 곳이 없어진다.
+     * 그래서 3차 살펴보기에 teacher_note 문항을 두었다 — 그 문항이 있으면 교사 화면이
+     * 한 칸짜리 서식으로 바뀌고, 그 말이 학생 화면에 뜬다.
      */
-    galleryFacets: [
-      { key: "who", label: "누구의 불편인가", answerKeys: ["problem_who"] },
-      { key: "made", label: "무엇을 만들었나", answerKeys: ["mvp_one"] },
-    ],
-    feedbackPrompts: {
-      found: {
-        label: "이 친구가 만든 화면에서, 좋았던 것 하나만 알려 주세요",
-        placeholder: "예) 날짜 누르는 칸이 큼직해서 쓰기 편해 보여요",
-      },
-      question: {
-        label: "써 보다가 헷갈렸던 것 하나",
-        placeholder: "예) 저장 단추가 어디 있는지 못 찾았어요",
-      },
-    },
+    galleryEnabled: false,
   },
 };
 
@@ -465,8 +620,11 @@ async function main(): Promise<void> {
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (2차시와 같음 — 지난 시간 답이 그대로 열립니다)`);
   console.log(`차시 번호 ${LESSON_NO} (정보과와 안 겹치게)`);
-  console.log("단계: 대기 → 오늘 할 일 → 뽑기 → 살펴보기 → 회고");
+  console.log("단계: 대기 → 기분 → 오늘 할 일 → 뽑기 → 1차(내 눈) → 2차(AI) → 3차(선생님) → 회고");
+  console.log("  ※ 2차는 worksheet 칸, 3차는 emotion 칸을 빌려 씁니다 (이름은 phaseLabels 가 정함)");
   console.log("AI 검토는 질문 3개. 실패하면 고정 질문 3개로 내려갑니다 (학생 화면에는 표시 안 됨).");
+  console.log("서로 구경하기는 껐습니다 (galleryEnabled: false).");
+  console.log("교사 피드백은 작품 목록의 한 칸짜리 서식으로 쓰면 3차 화면에 뜹니다.");
   process.exit(0);
 }
 

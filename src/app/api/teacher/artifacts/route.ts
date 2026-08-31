@@ -66,7 +66,11 @@ export async function GET(request: Request) {
          * 이라, 갤러리를 끈 차시에서는 교사가 써 넣어도 학생 화면에 나올 곳이 없다.
          * 대신 제출 칸이 읽는 통로(artifact.teacherFeedback)로 보낸다.
          */
-        hasSubmit: (session.activity?.worksheet ?? []).some((q) => q.kind === "submit"),
+        hasSubmit: (session.activity?.worksheet ?? []).some(
+          // 제출 칸이든 선생님 말 칸이든, 학생 화면에 artifact.teacherFeedback 을
+          // 그리는 자리가 있으면 한 칸짜리 서식으로 받는다
+          (q) => q.kind === "submit" || q.kind === "teacher_note",
+        ),
         /** 제출 칸이 보여줄 교사 피드백. 고쳐 쓸 때 원래 글을 띄운다 */
         teacherNote: artifact.teacherFeedback?.note ?? "",
         // 교사도 학생과 같은 두 칸에 남긴다 — 질문이 다르면 학생 눈에 다른 종류의 말이 된다

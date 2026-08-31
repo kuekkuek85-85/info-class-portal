@@ -7,6 +7,7 @@ import { EmotionLensPanel } from "@/components/emotion-lens-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
 import { MoodRecheck } from "@/components/mood-recheck";
 import { SubmitPanel, useJumpToField } from "@/components/submit-panel";
+import { TeacherNotePanel } from "@/components/teacher-note-panel";
 import { ArtifactCanvas } from "@/components/artifact-canvas";
 import { TechExampleChips } from "@/components/tech-examples";
 import {
@@ -584,6 +585,12 @@ export function WorksheetView({
               onResult={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}
             />
+          ) : question.kind === "teacher_note" ? (
+            /*
+              선생님 말은 답이 아니라 받아 보는 것이라 answers 에 안 담는다.
+              화면이 직접 조회해서 그린다 (teacher-note-panel).
+            */
+            <TeacherNotePanel />
           ) : question.kind === "emotion_lens" ? (
             <EmotionLensPanel
               questionKey={question.key}
