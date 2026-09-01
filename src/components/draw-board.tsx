@@ -49,6 +49,8 @@ export interface DrawBoardProps {
   techExamples?: string[];
   /** 장소 고르기 화면 문구. 안 오면 기본값 (types.ts 의 drawPrompt) */
   drawPrompt?: { heading: string; body: string };
+  /** 그림 제목. 안 주면 "○○년의 △△" (artifact-title.ts) */
+  title?: string;
   onPlaceChange: (place: string) => void;
   /**
    * 화면을 떠날 때 지금 그림을 부모에게 넘긴다.
@@ -121,6 +123,7 @@ export function DrawBoard({
   year,
   techExamples = [],
   drawPrompt,
+  title,
   onPlaceChange,
   onExit,
   disabled,
@@ -948,7 +951,7 @@ export function DrawBoard({
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <h2 className="t-headline">
-            {year}년의 {place}
+            {title ?? `${year}년의 ${place}`}
           </h2>
           {/*
             장소를 다시 고르는 문. 제목 바로 옆에 둔다 — 바꾸고 싶은 순간 학생 눈이

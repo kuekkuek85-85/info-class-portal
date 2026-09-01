@@ -13,6 +13,7 @@ import { ReviewView } from "@/components/review-view";
 import { SiteFooter } from "@/components/site-footer";
 import { useFocusTracker } from "@/hooks/use-focus-tracker";
 import { WorksheetView, type WorksheetValue } from "@/components/worksheet-view";
+import { artifactTitle } from "@/lib/artifact-title";
 import {
   LESSON_PHASES,
   PHASE_LABELS,
@@ -46,6 +47,8 @@ export interface ActivityInfo {
    * 감정을 쓰는 차시는 false — 마음 이야기는 친구에게 보이지 않는다.
    */
   galleryEnabled?: boolean;
+  /** 그림 제목의 틀. 비면 "○○년의 △△" (artifact-title.ts) */
+  artifactTitle?: string;
   /** 그리기 첫 화면(장소 고르기) 문구. 비면 기본값 */
   drawPrompt?: { heading: string; body: string };
   worksheetIntro?: { heading: string; body: string } | null;
@@ -563,7 +566,13 @@ export default function LessonPage() {
    * 감정을 쓰는 차시(마음 톡톡)는 막는다. 활동지에 "최근 있었던 일" 과 그때의 감정이
    * 들어가는데, 그건 성찰 글과 같은 등급이라 친구에게 보이면 안 된다.
    */
-  const canShare = session.activity?.galleryEnabled !== false;
+  /*
+   * 회고 뒤 그리기(wrapheal)에서는 감상 탭을 안 만든다.
+   *
+   * 그 자리는 자기 공간을 그리는 활동이라 서로 볼 것이 아니고, 앞에서 이미 감상을
+   * 끝낸 뒤다. 탭이 남아 있으면 그리다 말고 그리로 새고, 돌아올 이유가 없다.
+   */
+  const canShare = session.activity?.galleryEnabled !== false && viewPhase !== "wrapheal";
 
   /*
    * 실제로 보여 줄 탭.
@@ -1033,6 +1042,11 @@ export default function LessonPage() {
               year={artifact.year}
               techExamples={session.activity.techExamples}
               drawPrompt={session.activity.drawPrompt}
+              title={artifactTitle(
+                session.activity.artifactTitle,
+                artifact.year,
+                artifact.place,
+              )}
               onPlaceChange={choosePlace}
               onExit={(strokes, texts, saveRev) =>
                 setArtifact((prev) => (prev ? { ...prev, strokes, texts, saveRev } : prev))

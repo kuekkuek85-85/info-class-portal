@@ -38,6 +38,19 @@ interface CardNewsProps {
    * 화면이 자리마다 정한다.
    */
   hideQuestionLabels?: boolean;
+  /** 그림 제목. 안 주면 "○○년의 △△" (artifact-title.ts) */
+  title?: string;
+}
+
+/** 줄 칸의 답을 읽는다. 못 읽으면 빈 목록 — 옛 형식이 남아 있어도 화면이 죽지 않는다 */
+function rowsOf(raw: string | undefined): Record<string, string>[] {
+  if (!raw?.trim()) return [];
+  try {
+    const value = JSON.parse(raw);
+    return Array.isArray(value) ? value.filter((r) => typeof r === "object" && r !== null) : [];
+  } catch {
+    return [];
+  }
 }
 
 export function CardNews({
@@ -46,6 +59,7 @@ export function CardNews({
   author,
   compact,
   hideQuestionLabels,
+  title,
 }: CardNewsProps) {
   const filled = worksheet.filter((question) =>
     question.kind === "traits" ? data.traits.length > 0 : (data.answers[question.key] ?? "").trim(),
@@ -63,7 +77,7 @@ export function CardNews({
         <>
           <header className="flex flex-wrap items-baseline justify-between gap-2">
             <h3 className={compact ? "t-subhead" : "t-headline"}>
-              {data.year}년의 {data.place || "어딘가"}
+              {title ?? `${data.year}년의 ${data.place || "어딘가"}`}
             </h3>
             {author && <span className="t-caption">{author}</span>}
           </header>
@@ -92,6 +106,22 @@ export function CardNews({
               <dd className="t-body mt-1 whitespace-pre-wrap">
                 {question.kind === "traits" ? (
                   data.traits.join(" · ")
+                ) : question.kind === "rows" ? (
+                  /*
+                    줄 칸은 JSON 으로 담긴다. 그대로 찍으면 대괄호와 따옴표가 나온다.
+                    선생님이 읽을 것은 학생이 적은 값이지 저장 형식이 아니다.
+                  */
+                  <span className="flex flex-col gap-0.5">
+                    {rowsOf(data.answers[question.key]).map((row, i) => (
+                      <span key={i}>
+                        ·{" "}
+                        {(question.rowColumns ?? [])
+                          .map((c) => (row[c.key] ?? "").trim())
+                          .filter(Boolean)
+                          .join(" — ")}
+                      </span>
+                    ))}
+                  </span>
                 ) : question.kind === "image" ? (
                   /*
                     사진은 사진으로 그린다.

@@ -132,6 +132,12 @@ export async function GET() {
               // 그리기 첫 화면 문구. 안 보내면 학생이 "어디를 그릴까요?" 만 보고
               // 3차시처럼 아무 미래 도시를 그린다 (types.ts 의 drawPrompt)
               drawPrompt: session.activity.drawPrompt ?? null,
+              /*
+                그림 제목의 틀. 안 실으면 화면이 기본 문구("○○년의 △△")로 물러난다 —
+                계획에 적어 두어도 학생 화면은 옛 제목 그대로다 (artifact-title.ts).
+                바로 아래 sourceHints·galleryEnabled 와 같은 함정이다.
+              */
+              artifactTitle: session.activity.artifactTitle ?? "",
               // 활동지 첫 화면 문구. 안 보내면 "무엇을 그렸는지 적어 주세요" 가 그대로
               // 뜨고, 그림 설명이 아닌 활동지(6차시 기사 쓰기)에서 거짓말이 된다
               worksheetIntro: session.activity.worksheetIntro ?? null,

@@ -288,6 +288,15 @@ export interface QuizContent {
 // --------------------------------------------- 그리기 활동 (2·3차시 공용)
 
 /** 활동지 질문 한 줄. kind 에 따라 입력 방식이 달라진다. */
+/** rows 문항이 한 줄에 받는 칸 하나 */
+export interface RowColumn {
+  key: string;
+  label: string;
+  placeholder?: string;
+  /** 있으면 글칸 대신 이 이모지들 중 하나를 고르게 한다 */
+  emojis?: string[];
+}
+
 export interface WorksheetQuestion {
   /** 답을 저장할 키. artifacts.answers 의 키가 된다 */
   key: string;
@@ -307,6 +316,9 @@ export interface WorksheetQuestion {
    *          traits 와 다르다 — 보기를 차시가 정하고, 답도 answers 로 들어간다.
    * note      — 입력칸 없이 안내만. 문항이 여럿 이어질 때 묶어 주는 머리글로 쓴다
    * echo      — 앞 단계에서 쓴 답을 읽기 전용으로 다시 보여준다 (echoKeys)
+   * rows      — 줄을 늘려 가며 적는 칸 (rowColumns · maxRows). 답은 JSON 배열로
+   *             한 칸에 담긴다. 긴 글칸 하나로 받으면 형식을 학생이 지켜야 하고,
+   *             흐트러지면 나중에 셀 수가 없다 (rows-field 참조).
    * image     — 사진 한 장. 파일로 고르거나 Ctrl+V 로 붙여넣으면 바로 보인다.
    *             화면에서 줄여 데이터 URL 로 답에 담으므로 **maxLength 가 곧 용량 상한**
    *             이다. Firestore 문서가 1MB 라 넉넉히 잡으면 안 된다 (image-field 참조).
@@ -333,6 +345,7 @@ export interface WorksheetQuestion {
     | "note"
     | "echo"
     | "image"
+    | "rows"
     | "ai_review"
     | "teacher_note"
     | "emotion_lens"
@@ -393,6 +406,12 @@ export interface WorksheetQuestion {
   imageUrl?: string;
   /** 그 그림의 대체 텍스트. 안 적으면 문항 이름표를 쓴다 */
   imageAlt?: string;
+  /**
+   * rows 가 한 줄에 받을 칸들. `emojis` 가 있으면 글칸 대신 이모지 고르기가 된다.
+   */
+  rowColumns?: RowColumn[];
+  /** rows 에서 늘릴 수 있는 줄 수 (기본 10) */
+  maxRows?: number;
   /** 칸 옆에 복사 단추를 붙인다 (다른 곳에 붙여 넣을 값일 때) */
   copyable?: boolean;
   /**
@@ -533,6 +552,16 @@ export interface ActivityContent {
    * 안내를 여기 두지 않으면 닿을 방법이 없다.
    */
   drawPrompt?: { heading: string; body: string };
+  /**
+   * 그림 제목의 틀. 안 적으면 "○○년의 △△".
+   *
+   * `{장소}` 자리에 학생이 고른 장소가, `{연도}` 자리에 연도가 들어간다.
+   *
+   * 기본 틀은 **미래를 상상해 그리는 활동**을 전제한다. 마음 톡톡의 힐링 스페이스는
+   * 미래가 아니라 지금 내가 쉬는 자리라, "2026년의 내 방" 이 어색하게 읽힌다.
+   * 그림판 제목과 작품 카드 제목에 함께 쓴다.
+   */
+  artifactTitle?: string;
   /**
    * 활동지 첫 화면의 문구. 안 적으면 "내 그림 설명하기 / ○○년의 △△ — 무엇을 그렸는지
    * 적어 주세요".

@@ -6,6 +6,7 @@ import { AiReviewPanel } from "@/components/ai-review-panel";
 import { EmotionLensPanel } from "@/components/emotion-lens-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
 import { ImageField } from "@/components/image-field";
+import { RowsField } from "@/components/rows-field";
 import { MoodRecheck } from "@/components/mood-recheck";
 import { SubmitPanel, useJumpToField } from "@/components/submit-panel";
 import { TeacherNotePanel } from "@/components/teacher-note-panel";
@@ -619,6 +620,14 @@ export function WorksheetView({
               questionKey={question.key}
               raw={value.answers[question.key] ?? ""}
               onResult={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
+          ) : question.kind === "rows" ? (
+            <RowsField
+              value={value.answers[question.key] ?? ""}
+              columns={question.rowColumns ?? []}
+              maxRows={question.maxRows ?? 10}
+              onChange={(next) => setAnswer(question.key, next)}
               disabled={disabled}
             />
           ) : question.kind === "image" ? (
