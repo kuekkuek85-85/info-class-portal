@@ -379,7 +379,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
 
   /*
-   * ── 말미 · 감정 조절하기 ────────────────────────────────
+   * ── 회고 뒤 · 감정 조절하기 ──────────────────────────────
    *
    * 여기까지가 자기 영역의 **감정 인식하기** 다. 낱말로 구별하고, 글로 적고, AI 추측과
    * 견줘 봤다. 남은 시간에 그 다음 걸음을 뗀다 — 알아차린 감정을 **어떻게 다룰 것인가.**
@@ -399,10 +399,10 @@ const WORKSHEET: WorksheetQuestion[] = [
    * 그래서 「나의 감정 쓰기」를 build 로 옮겼다 — worksheet 을 비워야 자리가 났다.
    */
 
-  // ── 말미① 감정 지도 만들기 ──────────────────────────────
+  // ── 감정 지도 만들기 (회고 뒤) ───────────────────────────
   {
     key: "_map_note",
-    phase: "grill",
+    phase: "wrapmap",
     /*
      * 배치도를 답하는 칸 바로 위에 둔다.
      *
@@ -421,7 +421,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "map_most",
-    phase: "grill",
+    phase: "wrapmap",
     label: "학교에서 가장 많이 찾는 장소는 어디인가요?",
     hint: "쉬는 시간이나 점심시간에 자연스럽게 발이 가는 곳이요.\n예) 급식실 앞 복도",
     kind: "text",
@@ -429,7 +429,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "map_marks",
-    phase: "grill",
+    phase: "wrapmap",
     /*
      * 원본의 "배치도에 이모티콘·색상·짧은 단어로 감정을 표시" 자리.
      *
@@ -448,7 +448,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "map_hard",
-    phase: "grill",
+    phase: "wrapmap",
     label: "그중에서 부정적인 감정이 자주 드는 곳은 어디인가요?",
     hint: "없으면 「없음」 이라고 적어도 됩니다. 그것도 답이에요.",
     kind: "text",
@@ -456,7 +456,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "map_strategy",
-    phase: "grill",
+    phase: "wrapmap",
     /*
      * 원본은 세 가지를 고르게 한다. 화면에서 개수를 막지는 않는다 —
      * 못 고르게 막으면 그 자리에서 손을 들고, 그 사이 나머지가 멈춘다.
@@ -469,12 +469,12 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "map_mine",
-    phase: "grill",
+    phase: "wrapmap",
     /*
      * 원본 5번 "나만의 감정 조절 전략 (상황, 행동이 구체적으로 드러나게)".
      * 이 칸이 활동지 3의 결론이다 — 고른 것이 아니라 만든 것이라야 실제로 쓴다.
      *
-     * 원본 4번(효과적일 것 같은 이유)은 뺐다. 말미 활동이라 시간이 짧고,
+     * 원본 4번(효과적일 것 같은 이유)은 뺐다. 회고 뒤 활동이라 시간이 짧고,
      * 이 칸이 그 답을 이미 품는다.
      */
     label: "나만의 감정 조절 전략을 한 문장으로 만들어 주세요",
@@ -485,10 +485,10 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 250,
   },
 
-  // ── 말미② 힐링 스페이스 만들기 (그리기 화면의 활동지 탭) ──
+  // ── 힐링 스페이스 만들기 (그리기 화면의 활동지 탭) ────────
   {
     key: "_heal_note",
-    phase: "worksheet",
+    phase: "wrapheal",
     label: "내가 회복되는 자리를 만들어 봅시다",
     hint:
       "최근에 마음이 편안했던 순간을 떠올려 보세요. 그때 주변에 무엇이 있었나요?\n" +
@@ -498,7 +498,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "heal_color",
-    phase: "worksheet",
+    phase: "wrapheal",
     label: "나를 차분하게 해주는 색은?",
     hint: "예) 연한 초록",
     kind: "text",
@@ -506,7 +506,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "heal_place",
-    phase: "worksheet",
+    phase: "wrapheal",
     label: "마음이 편안해지는 공간은?",
     hint: "예) 창가 옆 햇빛 드는 자리",
     kind: "text",
@@ -514,7 +514,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "heal_thing",
-    phase: "worksheet",
+    phase: "wrapheal",
     label: "감정을 회복시켜 주는 물건은?",
     hint: "예) 푹신한 쿠션, 작은 화분",
     kind: "text",
@@ -522,9 +522,9 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "plan_when",
-    phase: "worksheet",
+    phase: "wrapheal",
     /*
-     * 원본의 활용 계획 넷(이름·언제·어디서·어떻게)을 둘로 줄였다. 말미 활동이라
+     * 원본의 활용 계획 넷(이름·언제·어디서·어떻게)을 둘로 줄였다. 회고 뒤 활동이라
      * 시간이 짧고, 실제로 쓰이게 하는 데 필요한 것은 **언제**와 **어떻게** 다.
      */
     label: "언제 쓸까요? (시간·상황)",
@@ -534,7 +534,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "plan_how",
-    phase: "worksheet",
+    phase: "wrapheal",
     label: "어떻게 활용할까요? (구체적으로)",
     hint:
       "「~할 때 → ~하기」 로 적으면 쉬워요.\n" +
@@ -589,7 +589,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
       "③ 서로의 마음 읽기 — 같은 감정을 고른 친구 찾아보기\n" +
       "④ AI 감정 렌즈 — AI가 내 글을 읽고 감정을 추측합니다\n" +
       "⑤ 마음일기\n\n" +
-      "시간이 남으면 말미 활동 두 가지를 더 합니다 — 감정 지도, 힐링 스페이스.\n" +
+      "마음일기까지 하고 나서, 시간이 남으면 두 가지를 더 합니다 — 감정 지도, 힐링 스페이스.\n" +
       "여기까지가 감정을 알아차리는 연습이었다면, 그 둘은 알아차린 감정을 다루는 연습이에요.\n\n" +
       "지난 시간에 쓴 것은 그대로 남아 있어요. 비어 있는 칸만 채우면 됩니다.\n" +
       "친구에게 보이는 것은 고른 감정과 한 줄뿐이에요. 나머지는 나만 봅니다.",
@@ -629,29 +629,27 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   freeNavigation: true,
 
   /*
-   * 단계 이름. 화면에 "mvp" 나 "grill" 같은 말은 아무 데도 안 보인다.
+   * 단계 이름. 화면에 "mvp" 나 "wrapmap" 같은 말은 아무 데도 안 보인다.
    *
-   * 교사 단추는 목록 차례대로 늘어서므로 말미 두 활동이 AI 감정 렌즈보다 **앞에**
-   * 놓인다. 실제 수업 차례는 렌즈 다음이다 — 교사가 그 단추를 나중에 누르면 된다.
-   * 이름에 「말미」를 붙여 둔 것이 그래서다. 단계는 자유롭게 오갈 수 있다.
+   * 감정 조절 두 활동은 회고 뒤 칸(wrapmap·wrapheal)에 있다. 그래서 교사 단추 줄과
+   * 학생의 되돌아가기 목록이 실제 수업 차례와 같은 순서로 읽힌다.
    */
   phaseLabels: {
     mood: "마음 체크인",
     progress: "오늘 할 일",
     mvp: "영화·예능 속 내 마음",
     build: "나의 감정 쓰기",
-    grill: "말미① 감정 지도",
-    draw: "말미② 힐링 스페이스 그리기",
-    worksheet: "말미② 힐링 스페이스",
     gallery: "서로의 마음 읽기",
     emotion: "AI 감정 렌즈",
     reflection: "마음일기",
+    wrapmap: "감정 지도",
+    wrapheal: "힐링 스페이스",
   },
 
   activity: {
     activityId: ACTIVITY_ID,
     /*
-     * 그리기를 켠다 (말미의 힐링 스페이스). 이 값이 비어 있으면 그림판이 아예 안 뜬다.
+     * 그리기를 켠다 (회고 뒤 힐링 스페이스). 이 값이 비어 있으면 그림판이 아예 안 뜬다.
      *
      * 원래 "무엇을 그릴 장소인가" 를 고르는 칸인데, 여기서는 **내 힐링 스페이스가
      * 어디에 있는 곳인지** 를 고르는 데 쓴다.

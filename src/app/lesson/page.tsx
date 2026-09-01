@@ -108,6 +108,8 @@ const STEP_PHASES: LessonPhase[] = [
   "build",
   "grill",
   "emotion",
+  // 회고 뒤에 오는 활동지 단계 (types.ts 의 LESSON_PHASES 참조)
+  "wrapmap",
 ];
 
 /** 입력이 멈춘 뒤 이만큼 지나면 임시저장한다. 종이 울려도 쓰던 내용이 남아야 한다. */
@@ -546,7 +548,11 @@ export default function LessonPage() {
    * 빨리 끝낸 학생을 붙잡아 두면 떠들고, 아직 그리는 학생을 갤러리로 끌고 가면 못 끝낸다.
    */
   const isWorkPhase =
-    viewPhase === "draw" || viewPhase === "worksheet" || viewPhase === "gallery";
+    viewPhase === "draw" ||
+    viewPhase === "worksheet" ||
+    viewPhase === "gallery" ||
+    // 회고 뒤에서 그림판을 여는 차시 (마음 톡톡 3회기의 힐링 스페이스)
+    viewPhase === "wrapheal";
 
   /** 이 차시에 그리기가 있는가. 장소가 하나도 없으면 글만 쓰는 활동이다 */
   const canDraw = (session.activity?.places.length ?? 0) > 0;
@@ -624,10 +630,19 @@ export default function LessonPage() {
       ? session.videoPrompts
       : session.reflectionQuestions;
 
+  /*
+   * 그리기 옆 「활동지 쓰기」 탭에 무엇을 띄울지.
+   *
+   * 회고 뒤 그리기 단계(wrapheal)에서는 그 단계 문항을 띄운다. 그 자리는 앞의
+   * 활동지와 다른 활동이라, worksheet 문항을 그대로 띄우면 앞에서 끝낸 것이
+   * 다시 나온다 (마음 톡톡 3회기의 「나의 감정 쓰기」가 그랬다).
+   */
   const plainWorksheetQuestions =
-    questionsFor("worksheet").length > 0
-      ? questionsFor("worksheet")
-      : (session.activity?.worksheet ?? []);
+    viewPhase === "wrapheal" && questionsFor("wrapheal").length > 0
+      ? questionsFor("wrapheal")
+      : questionsFor("worksheet").length > 0
+        ? questionsFor("worksheet")
+        : (session.activity?.worksheet ?? []);
 
   /**
    * 되돌아갈 수 있는 단계 목록 — 교사가 있는 곳까지, 그리고 이 차시에 실제로 쓰는 것만.
@@ -655,8 +670,15 @@ export default function LessonPage() {
         questionsFor("worksheet").length > 0
       );
     }
-    // 활동이 있어도 그리기가 없는 차시가 있다 (4차시 직업 조사) — 장소로 판단한다
-    if (item === "draw") return (session.activity?.places.length ?? 0) > 0;
+    /*
+     * 활동이 있어도 그리기가 없는 차시가 있다 (4차시 직업 조사) — 장소로 판단한다.
+     *
+     * 회고 뒤에 그리기를 두는 차시는 그쪽이 입구다. 여기까지 열어 두면 그리기 단추가
+     * 목록 가운데와 끝에 두 번 뜬다.
+     */
+    const wrapDraw = questionsFor("wrapheal").length > 0;
+    if (item === "draw") return !wrapDraw && (session.activity?.places.length ?? 0) > 0;
+    if (item === "wrapheal") return wrapDraw;
     if (item === "reflection") return session.reflectionQuestions.length > 0;
 
     const content =

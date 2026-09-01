@@ -1010,7 +1010,17 @@ function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
    * 활동이 있어도 그리기가 없는 차시가 있다 (4차시 직업 조사는 글만 쓴다).
    * 장소가 하나도 없으면 눌러 봐야 고를 것이 없는 빈 화면이 나온다.
    */
-  if (phase === "draw") return (session.activity?.places?.length ?? 0) > 0;
+  if (phase === "draw") {
+    /*
+     * 회고 뒤에 그리기를 두는 차시는 그쪽이 입구다 (types.ts 의 wrapheal).
+     * 여기까지 열어 두면 그리기 단추가 목록 가운데와 끝에 두 번 뜬다.
+     */
+    const wrapDraw = (session.activity?.worksheet ?? []).some((q) => q.phase === "wrapheal");
+    return !wrapDraw && (session.activity?.places?.length ?? 0) > 0;
+  }
+  if (phase === "wrapheal") {
+    return (session.activity?.worksheet ?? []).some((q) => q.phase === "wrapheal");
+  }
 
   /*
    * 단계별로 나눠 쓰는 차시가 있다 (선택과목은 한 시간에 문제 정의 · 꼭 필요한 것만 ·
@@ -1028,6 +1038,8 @@ function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
     "build",
     "grill",
     "emotion",
+    // 회고 뒤에 오는 활동지 단계 (types.ts 의 LESSON_PHASES 참조)
+    "wrapmap",
   ];
   const questionsIn = (item: LessonPhase) =>
     (session.activity?.worksheet ?? []).filter((q) => (q.phase ?? "worksheet") === item).length;

@@ -72,6 +72,12 @@ export type LessonPhase =
   | "worksheet"
   | "gallery"
   | "reflection"
+  /*
+   * 회고 뒤에 오는 활동. 앞의 것은 활동지 단계, 뒤의 것은 그림판을 여는 단계다
+   * (LESSON_PHASES 참조).
+   */
+  | "wrapmap"
+  | "wrapheal"
   | "done";
 
 /**
@@ -137,6 +143,19 @@ export const LESSON_PHASES: readonly LessonPhase[] = [
   "gallery",
   "emotion",
   "reflection",
+  /*
+   * 마무리 뒤에 오는 활동.
+   *
+   * 회고를 하고 나서도 남는 시간이 있고, 거기에 얹는 활동이 있다 — 마음 톡톡 3회기의
+   * 감정 조절하기가 그렇다. 여기 두기 전에는 앞쪽 빈 칸을 빌려 쓰고 교사가 순서를
+   * 거슬러 눌렀는데, 그러면 단추 줄과 학생의 되돌아가기 목록이 실제 수업 차례와
+   * 다르게 읽힌다.
+   *
+   * 둘로 나눈 이유: 앞의 것은 글만 쓰는 활동지 단계고, 뒤의 것은 그림판을 여는
+   * 단계다. 그림판은 활동지·감상과 한 묶음이라 따로 열어야 한다.
+   */
+  "wrapmap",
+  "wrapheal",
   "done",
 ];
 
@@ -164,6 +183,8 @@ export const PHASE_LABELS: Record<LessonPhase, string> = {
   worksheet: "활동지",
   gallery: "작품 감상",
   reflection: "성찰",
+  wrapmap: "마무리 활동",
+  wrapheal: "마무리 그리기",
   done: "마침",
 };
 
