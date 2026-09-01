@@ -61,6 +61,8 @@ export function TeacherArtifactPanel({
 }) {
   const [openId, setOpenId] = useState("");
   const [detail, setDetail] = useState<Detail | null>(null);
+  /** 목록을 펼쳤는가. 접힌 채로 시작한다 — 수업 중에 늘 보는 것이 아니다 */
+  const [listOpen, setListOpen] = useState(false);
 
   // 간격 없음 — 열 때 한 번. 그 뒤로는 새로고침 버튼과 숨김 처리 뒤에만 다시 읽는다.
   const { data, reload: loadList } = usePolled<{
@@ -113,21 +115,42 @@ export function TeacherArtifactPanel({
     <>
       <PassedCard passed={passed} total={rows.length} onRefresh={loadList} />
 
+      {/*
+        목록은 접어 둔다.
+
+        스물여덟 줄이 늘 펼쳐져 있으면 그 아래에 있는 것들이 화면 밖으로 밀린다.
+        수업 중에 자주 보는 것은 위의 통과 명단과 대기 줄이고, 이 목록은 한 명을
+        찾아 열어 볼 때만 쓴다. 머리글의 숫자는 접힌 채로도 보이므로, 몇 편이
+        들어왔는지는 펼치지 않고도 안다.
+      */}
       <section className="card flex flex-col gap-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="t-body font-bold">
-          작품 {stats ? `제출 ${stats.submitted} / ${stats.total}` : ""}
-          {stats && stats.hidden > 0 ? ` · 숨김 ${stats.hidden}` : ""}
-        </h2>
-        <button type="button" onClick={loadList} className="pill pill-secondary t-body-sm">
-          새로고침
-        </button>
-      </div>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="t-body font-bold">
+            작품 {stats ? `제출 ${stats.submitted} / ${stats.total}` : ""}
+            {stats && stats.hidden > 0 ? ` · 숨김 ${stats.hidden}` : ""}
+          </h2>
+          <div className="flex shrink-0 gap-2">
+            <button
+              type="button"
+              onClick={() => setListOpen((prev) => !prev)}
+              aria-expanded={listOpen}
+              className="pill pill-secondary t-body-sm"
+            >
+              {listOpen ? "접기" : "펼치기"}
+            </button>
+            {listOpen && (
+              <button type="button" onClick={loadList} className="pill pill-secondary t-body-sm">
+                새로고침
+              </button>
+            )}
+          </div>
+        </div>
 
       {/*
         펼친 작품은 **누른 줄 바로 아래**에 놓는다. 목록 맨 끝에 붙이면 25명 중 3번을
         눌렀을 때 화면이 저 아래로 튀고, 교사는 자기가 뭘 눌렀는지 잃어버린다.
       */}
+      {listOpen && (
       <ul className="flex flex-col gap-1">
         {rows.map((row) => (
           <li key={row.id} className="flex flex-col gap-2">
@@ -221,6 +244,7 @@ export function TeacherArtifactPanel({
           </li>
         ))}
       </ul>
+      )}
       </section>
     </>
   );
