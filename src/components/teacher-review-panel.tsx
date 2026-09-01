@@ -111,9 +111,17 @@ export function TeacherReviewPanel({
     return () => clearTimeout(id);
   }, [pull]);
 
-  const send = useCallback(async () => {
-    if (chips.length === 0 && !note.trim()) {
-      setError("칩을 고르거나 한 줄 적어 주세요.");
+  /*
+   * 보내는 단추가 둘이다 — 판정이 곧 학생 화면을 가른다.
+   *
+   * 「통과」를 받은 학생은 이 수행평가가 끝나고 다음 화면으로 넘어간다.
+   * 「고치기」를 받은 학생은 고쳐서 다시 낸다. 그래서 무엇을 적었는지가 아니라
+   * 어느 단추를 눌렀는지로 가른다 — 칭찬과 지적이 한 글에 섞여 있어도 판단이 흐려지지 않는다.
+   */
+  const send = useCallback(async (verdict: "pass" | "revise") => {
+    // 통과는 그냥 누르면 된다. 고칠 것을 적게 하는 것은 고치라고 할 때뿐이다
+    if (verdict === "revise" && chips.length === 0 && !note.trim()) {
+      setError("무엇을 고칠지 칩을 고르거나 한 줄 적어 주세요.");
       return;
     }
     setBusy(true);
@@ -122,7 +130,7 @@ export function TeacherReviewPanel({
       const response = await fetch("/api/teacher/review", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sessionId, studentId, chips, note }),
+        body: JSON.stringify({ sessionId, studentId, chips, note, verdict }),
       });
       const result = await response.json();
       if (!result?.ok) {
@@ -280,14 +288,30 @@ export function TeacherReviewPanel({
 
       {error && <p className="t-body-sm">{error}</p>}
 
-      <button
-        type="button"
-        onClick={() => void send()}
-        disabled={busy}
-        className="pill pill-primary pill-block"
-      >
-        {busy ? "보내는 중…" : "보내기"}
-      </button>
+      {/*
+        판정을 단추로 가른다.
+
+        「통과」는 그 학생의 화면을 바꾼다 — 수행평가가 끝나고 다음 화면으로 넘어간다.
+        되돌리려면 같은 학생에게 「고치기」로 다시 보내면 된다.
+      */}
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => void send("pass")}
+          disabled={busy}
+          className="pill pill-primary pill-block"
+        >
+          {busy ? "보내는 중…" : "통과 — 다 됐어요"}
+        </button>
+        <button
+          type="button"
+          onClick={() => void send("revise")}
+          disabled={busy}
+          className="pill pill-secondary pill-block"
+        >
+          {busy ? "보내는 중…" : "고쳐서 다시 내기"}
+        </button>
+      </div>
     </div>
   );
 }

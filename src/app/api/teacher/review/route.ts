@@ -1,5 +1,11 @@
 import { fail, guard, ok, readJson } from "@/lib/api";
-import { getArtifact, getSession, markReviewed, updateArtifact } from "@/lib/db";
+import {
+  getArtifact,
+  getSession,
+  markReviewed,
+  recordSubmitStage,
+  updateArtifact,
+} from "@/lib/db";
 import { activityIdFor } from "@/lib/gallery";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
 
@@ -33,8 +39,16 @@ export async function POST(request: Request) {
       studentId?: string;
       chips?: unknown;
       note?: string;
+      verdict?: string;
     }>(request);
 
+    /*
+     * 판정이 학생 화면을 가른다.
+     *
+     * 「통과」면 그 학생은 끝났고 게임 화면으로 넘어간다. 「고치기」면 고쳐서 다시
+     * 내야 하므로 활동지에 그대로 머문다. 안 보내면 고치기로 읽는다 — 빠뜨렸을 때
+     * 통과가 되는 쪽이 훨씬 위험하다.
+     */
     const sessionId = (body?.sessionId ?? "").trim();
     const studentId = (body?.studentId ?? "").trim();
     if (!sessionId || !studentId) return fail("invalid_input");
@@ -47,8 +61,18 @@ export async function POST(request: Request) {
       : [];
     const note = (body?.note ?? "").trim().slice(0, MAX_NOTE);
 
-    // 아무것도 안 적고 보내면 학생 화면에 빈 말풍선이 뜬다
-    if (chips.length === 0 && !note) return fail("invalid_input", "칩을 고르거나 한 줄 적어 주세요.");
+    const verdict = body?.verdict === "pass" ? "pass" : "revise";
+
+    /*
+     * 고치라고 할 때만 무엇을 고칠지 적게 한다.
+     *
+     * 통과는 그 자체가 말이다 — 학생 화면이 「다 했어요」 로 바뀌므로 빈 말풍선이
+     * 될 일이 없다. 여기서도 한마디를 받아 내면 스물여덟 명을 통과시키는 데 탭이
+     * 두 배로 든다. 수업 중에 그 차이는 크다.
+     */
+    if (verdict === "revise" && chips.length === 0 && !note) {
+      return fail("invalid_input", "무엇을 고칠지 칩을 고르거나 한 줄 적어 주세요.");
+    }
 
     const session = await getSession(sessionId);
     if (!session) return fail("not_found");
@@ -60,10 +84,20 @@ export async function POST(request: Request) {
     if (!artifact) return fail("not_found", "이 학생의 작품이 아직 없습니다.");
 
     await updateArtifact(artifact.id, {
-      teacherFeedback: { at: Date.now(), chips, note },
+      teacherFeedback: { at: Date.now(), chips, note, verdict },
     });
     // 대기 줄에서 뺀다. 학생이 2차를 다시 내면 recordSubmitStage 가 이 값을 지운다
     await markReviewed(sessionId, studentId);
+
+    /*
+     * 통과는 그 자체가 최종 제출이다.
+     *
+     * 원래는 학생이 피드백을 읽고 「고쳤어요 · 최종 제출」 을 눌러 3차가 됐다. 그런데
+     * 통과를 받으면 화면이 끝난 화면으로 바뀌어 그 단추를 누를 자리가 없어진다.
+     * 여기서 안 올리면 대시보드의 최종제출 수만 계속 0 에 가깝게 남아, 선생님이
+     * 자기가 통과시킨 인원을 화면에서 못 센다.
+     */
+    if (verdict === "pass") await recordSubmitStage(sessionId, studentId, 3);
 
     return ok();
   });

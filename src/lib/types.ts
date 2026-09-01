@@ -1174,8 +1174,23 @@ export interface Artifact {
    * 기다리는 동안 학생이 더 고친 것이 그대로 반영된다.
    */
   aiCheck?: { at: number; items: CheckItem[] };
-  /** 교사 피드백. 칩은 보조이고 note 가 본체다 */
-  teacherFeedback?: { at: number; chips: string[]; note: string };
+  /**
+   * 교사 피드백. 칩은 보조이고 note 가 본체다.
+   *
+   * `verdict` 는 **말이 아니라 판정**이다. 「통과」면 그 학생은 이 수행평가가 끝난
+   * 것이고, 「고치기」면 고쳐서 다시 내야 한다. 학생 화면이 이 값으로 갈린다.
+   *
+   * 칩 문구로 가르지 않는 이유: 문구는 고쳐진다. 예전에 대기 줄 순서를 보기 문구로
+   * 맞혔다가, 문구를 한 번 다듬는 순간 조용히 깨진 적이 있다. 값으로 가른다.
+   *
+   * 안 적힌 옛 피드백은 「고치기」로 읽는다 — 없는 것을 통과로 보면 안 되기 때문이다.
+   */
+  teacherFeedback?: {
+    at: number;
+    chips: string[];
+    note: string;
+    verdict?: "pass" | "revise";
+  };
 
   /** 교사가 숨김 처리했는지. 갤러리에서 빠진다 */
   hidden: boolean;

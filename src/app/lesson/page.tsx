@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { ContentView, type Content } from "@/components/content-view";
+import { DonePortal } from "@/components/done-portal";
 import { DrawBoard } from "@/components/draw-board";
 import { GalleryView } from "@/components/gallery-view";
 import { MoodPicker } from "@/components/mood-picker";
@@ -190,6 +191,58 @@ export default function LessonPage() {
   /** 성찰 공개 여부가 바뀌었는지 보려고 직전 값을 들고 있는다 */
   const wasPublic = useRef<boolean | null>(null);
 
+  /**
+   * 선생님이 「통과」를 준 학생인가.
+   *
+   * 통과를 받으면 이 수행평가는 끝난 것이라 활동지 대신 끝난 화면이 뜬다
+   * (done-portal). 「고치기」를 받은 학생은 고쳐서 다시 내야 하므로 해당 없다.
+   *
+   * 값이 오는 곳은 둘이다 — 화면을 열 때 한 번 물어보고(이미 통과한 채로 들어온
+   * 학생), 그 뒤에는 제출 칸이 자기 폴링으로 받은 것을 올려 준다. 따로 폴링을
+   * 하나 더 두면 같은 문서를 두 번 읽게 된다 (PRD 10장 D2).
+   */
+  const [passInfo, setPassInfo] = useState<{ chips: string[]; note: string } | null>(null);
+
+  /*
+   * 「통과」면 켜고, 「고치기」면 끈다.
+   *
+   * 끄는 쪽도 있어야 한다 — 선생님이 통과를 잘못 줬을 때 같은 학생에게 고치기를 다시
+   * 보내면 학생 화면이 활동지로 돌아와야 한다. 그것이 되돌리는 방법이다.
+   */
+  const handleFeedback = useCallback(
+    (feedback: { verdict?: string; chips: string[]; note: string }) => {
+      setPassInfo(
+        feedback.verdict === "pass"
+          ? { chips: feedback.chips ?? [], note: feedback.note ?? "" }
+          : null,
+      );
+    },
+    [],
+  );
+
+  /*
+   * 끝난 화면에 있는 동안만 느리게 되묻는다.
+   *
+   * 통과가 뜨면 활동지가 사라지고, 활동지 안에 있던 제출 칸도 같이 사라진다 — 폴링을
+   * 하던 자리가 그것이었다. 그대로 두면 선생님이 「고치기」로 되돌려도 그 학생만
+   * 못 받고 계속 게임을 하게 된다.
+   *
+   * 30초는 제출 칸의 8초보다 훨씬 느슨하다. 이쪽은 기다리는 학생이 아니라 이미 끝난
+   * 학생이라, 되돌리는 일이 드물고 몇십 초 늦어도 문제가 없다.
+   */
+  useEffect(() => {
+    if (!passInfo) return;
+    const id = setInterval(() => {
+      void fetch("/api/student/submit", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((body) => {
+          if (body?.ok && body.teacherFeedback?.verdict !== "pass") setPassInfo(null);
+        })
+        .catch(() => undefined);
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [passInfo]);
+
   /** 교사가 "되돌아가기"를 켜 두었는가 */
   const [freeNav, setFreeNav] = useState(false);
   /**
@@ -272,6 +325,22 @@ export default function LessonPage() {
        * 활동지인 상태가 된다 — 학생은 자기가 어디 있는지부터 헷갈린다.
        */
       if (payload.session.activity?.worksheetFirst) setWorkTab("worksheet");
+
+      /*
+       * 이미 통과를 받은 채로 들어온 학생.
+       *
+       * 화면을 다시 열거나 다음 시간에 들어와도 끝난 화면이 나와야 한다. 제출 문항이
+       * 있는 차시에서만 물어본다 — 없는 차시에서는 판정이라는 것 자체가 없다.
+       */
+      if ((payload.session.activity?.worksheet ?? []).some((q) => q.kind === "submit")) {
+        void fetch("/api/student/submit", { cache: "no-store" })
+          .then((r) => r.json())
+          .then((body) => {
+            const fb = body?.ok ? body.teacherFeedback : null;
+            if (fb?.verdict === "pass") setPassInfo({ chips: fb.chips ?? [], note: fb.note ?? "" });
+          })
+          .catch(() => undefined);
+      }
       previousPhase.current = payload.session.phase;
       setClosed(payload.session.closed);
       setMood(payload.mood?.mood ?? "");
@@ -568,6 +637,20 @@ export default function LessonPage() {
 
   /** 이 차시에 그리기가 있는가. 장소가 하나도 없으면 글만 쓰는 활동이다 */
   const canDraw = (session.activity?.places.length ?? 0) > 0;
+
+  /*
+   * 끝난 화면으로 바꿔 끼울 자리.
+   *
+   * 기분 체크와 회고는 그대로 둔다 — 통과한 학생도 오늘 기분은 고르고 회고는 쓴다.
+   * 바뀌는 것은 그 사이, 수행평가를 하는 화면뿐이다.
+   */
+  const showDone =
+    Boolean(passInfo) &&
+    !["waiting", "mood", "reflection", "done"].includes(viewPhase);
+
+  /** 끝난 학생에게 줄 게임. 제출 문항에 적어 둔다 (types.ts 의 doneLinks) */
+  const doneGames =
+    (session.activity?.worksheet ?? []).find((q) => q.kind === "submit")?.doneLinks ?? [];
 
   /**
    * 서로 구경하기를 여는가.
@@ -898,7 +981,15 @@ export default function LessonPage() {
         )}
 
         {viewPhase === "progress" && <ContentView content={session.progress} fallback="진도 안내" />}
-        {viewPhase === "assessment" && (
+        {/*
+          선생님이 통과를 준 학생은 여기서 끝난다.
+
+          활동지가 그대로 열려 있으면 다 낸 글을 계속 만지게 되고, 만지다 보면
+          고쳐 놓은 것을 무너뜨린다 (done-portal 참조).
+        */}
+        {showDone && <DonePortal games={doneGames} feedback={passInfo} />}
+
+        {viewPhase === "assessment" && !showDone && (
           <ContentView content={session.assessment} fallback="평가 안내" />
         )}
 
@@ -953,7 +1044,7 @@ export default function LessonPage() {
           같은 활동지 화면을 쓰되 그 단계 문항만 보여준다. 교사가 단계를 넘겨야 다음 칸이
           열리므로 시간을 끌고 갈 수 있다 (한 화면에 다 넣으면 첫 칸에서 붙잡힌다).
         */}
-        {STEP_PHASES.includes(viewPhase) &&
+        {!showDone && STEP_PHASES.includes(viewPhase) &&
           (session.activity && artifact && stepQuestions.length > 0 ? (
             <WorksheetView
               questions={stepQuestions}
@@ -972,6 +1063,7 @@ export default function LessonPage() {
               value={worksheet}
               onChange={setWorksheet}
               onSubmit={submitArtifact}
+              onFeedback={handleFeedback}
               submitted={artifact.status === "submitted"}
               submitError={submitError}
               disabled={closed}
@@ -996,7 +1088,7 @@ export default function LessonPage() {
           누를 곳이 아니라 지금 보고 있는 화면의 이름이다. 누르면 아무 일도 안 나는
           단추가 화면 맨 위에 있으면 학생은 그것부터 눌러 본다.
         */}
-        {isWorkPhase && session.activity && Number(canDraw) + Number(canShare) > 0 && (
+        {isWorkPhase && !showDone && session.activity && Number(canDraw) + Number(canShare) > 0 && (
           <div className="mb-5 flex gap-2">
             {/*
               그리기가 없는 차시도 있다 (4차시 직업 조사처럼 글만 쓰는 활동).
@@ -1056,6 +1148,7 @@ export default function LessonPage() {
         )}
 
         {isWorkPhase &&
+          !showDone &&
           activeTab === "draw" &&
           (session.activity && artifact ? (
             <DrawBoard
@@ -1084,6 +1177,7 @@ export default function LessonPage() {
           ))}
 
         {isWorkPhase &&
+          !showDone &&
           activeTab === "worksheet" &&
           (session.activity && artifact ? (
             <WorksheetView
@@ -1101,6 +1195,7 @@ export default function LessonPage() {
               value={worksheet}
               onChange={setWorksheet}
               onSubmit={submitArtifact}
+              onFeedback={handleFeedback}
               submitted={artifact.status === "submitted"}
               submitError={submitError}
               disabled={closed}
@@ -1130,7 +1225,7 @@ export default function LessonPage() {
             <Placeholder title="활동지를 준비하고 있어요" description="잠시만 기다려 주세요." />
           ))}
 
-        {isWorkPhase && activeTab === "gallery" && (
+        {isWorkPhase && !showDone && activeTab === "gallery" && (
           <GalleryView disabled={closed} noun={workNoun} />
         )}
 

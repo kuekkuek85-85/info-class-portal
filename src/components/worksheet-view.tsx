@@ -133,6 +133,13 @@ interface WorksheetViewProps {
   value: WorksheetValue;
   onChange: (value: WorksheetValue) => void;
   onSubmit: () => Promise<void> | void;
+  /**
+   * 선생님 판정이 도착했을 때 위로 올린다 (제출 칸이 이미 폴링하고 있다).
+   *
+   * 「통과」면 수업 화면이 활동지 대신 끝난 화면을 띄운다. 여기서 그냥 지나 보내기만
+   * 하고 판단은 수업 화면이 한다 — 활동지가 자기를 감출 이유는 없다.
+   */
+  onFeedback?: (feedback: { verdict?: string; chips: string[]; note: string }) => void;
   submitted: boolean;
   submitError: string;
   disabled?: boolean;
@@ -222,6 +229,7 @@ export function WorksheetView({
   value,
   onChange,
   onSubmit,
+  onFeedback,
   submitted,
   submitError,
   disabled,
@@ -613,6 +621,7 @@ export function WorksheetView({
                 reporter: studentName.trim(),
               }}
               onJump={jumpToField}
+              onFeedback={onFeedback}
               disabled={disabled}
             />
           ) : question.kind === "ai_review" ? (

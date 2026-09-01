@@ -231,15 +231,20 @@ function AssessmentNoteForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function save() {
-    if (!note.trim()) return;
+  /*
+   * 판정이 학생 화면을 가른다 — 「통과」면 수행평가가 끝나고 다음 화면으로 넘어간다.
+   * 검토 대기 줄의 패널과 같은 규칙이다 (teacher-review-panel).
+   */
+  async function save(verdict: "pass" | "revise") {
+    // 통과는 빈칸이어도 보낸다. 학생 화면이 「다 했어요」 로 바뀌므로 빈 말풍선이 안 된다
+    if (verdict === "revise" && !note.trim()) return;
     setBusy(true);
     setError("");
     try {
       const response = await fetch("/api/teacher/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, studentId, chips: [], note }),
+        body: JSON.stringify({ sessionId, studentId, chips: [], note, verdict }),
       });
       const result = await response.json();
       if (!result?.ok) {
@@ -265,14 +270,24 @@ function AssessmentNoteForm({
         className="field"
       />
       {error && <p className="t-body-sm">{error}</p>}
-      <button
-        type="button"
-        onClick={() => void save()}
-        disabled={busy || !note.trim()}
-        className="pill pill-primary self-start"
-      >
-        {busy ? "보내는 중…" : existing ? "고쳐서 보내기" : "보내기"}
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => void save("pass")}
+          disabled={busy || !note.trim()}
+          className="pill pill-primary"
+        >
+          {busy ? "보내는 중…" : "통과 — 다 됐어요"}
+        </button>
+        <button
+          type="button"
+          onClick={() => void save("revise")}
+          disabled={busy || !note.trim()}
+          className="pill pill-secondary"
+        >
+          {busy ? "보내는 중…" : "고쳐서 다시 내기"}
+        </button>
+      </div>
     </div>
   );
 }
