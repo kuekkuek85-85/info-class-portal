@@ -465,6 +465,21 @@ export function WorksheetView({
           )}
 
           {/*
+            차시가 주는 그림 (교실배치도처럼 보고 답해야 하는 것).
+
+            답하는 칸 바로 위에 둔다. 새 창으로 띄우면 학생이 그 창에서 안 돌아오고,
+            돌아와도 그림을 다시 못 찾는다.
+          */}
+          {question.imageUrl && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={question.imageUrl}
+              alt={question.imageAlt || question.label || "참고 그림"}
+              className="h-auto w-full rounded-lg border border-line bg-white"
+            />
+          )}
+
+          {/*
             정해진 글을 복사하게 한다 (학교 계정 주소).
 
             읽기 전용 칸으로 함께 그리는 이유가 둘이다. 하나는 복사가 막히는 기기에서
