@@ -422,6 +422,14 @@ function Dashboard() {
    * 출석부로 바로 찾는다.
    */
   const [masked, setMasked] = useState(false);
+  /*
+   * 수업 뒤 정리용 표를 접어 둔다.
+   *
+   * 스물여덟 줄짜리 가로 스크롤 표라 화면을 길게 차지하는데, 수업 중에 볼 것은
+   * 그 위의 신호등과 대기 줄이다. 접어 두면 폰에서 아래 「수업 후 메모」까지
+   * 내려가는 거리가 크게 줄어든다. 수업이 끝나면 펴서 본다.
+   */
+  const [rosterOpen, setRosterOpen] = useState(false);
   /** 지금 검토 중인 학생. 누를 때만 그 학생 기사를 읽는다 */
   const [reviewing, setReviewing] = useState<{
     studentId: string;
@@ -879,8 +887,16 @@ function Dashboard() {
           <ProgressBoard rows={rows} masked={masked} onMasked={setMasked} />
 
           <section className="flex flex-col gap-2">
-            <h2 className="text-sm font-semibold">접속자 · 응답 — 수업 뒤 정리용</h2>
-            <div className="overflow-x-auto rounded-xl border border-line">
+            <button
+              type="button"
+              onClick={() => setRosterOpen((prev) => !prev)}
+              aria-expanded={rosterOpen}
+              className="flex items-center justify-between gap-2 rounded-lg border border-line px-3 py-2 text-left"
+            >
+              <h2 className="text-sm font-semibold">접속자 · 응답 — 수업 뒤 정리용</h2>
+              <span className="text-sm text-muted">{rosterOpen ? "접기 ▲" : `펴기 ▼ (${rows.length}명)`}</span>
+            </button>
+            <div className="overflow-x-auto rounded-xl border border-line" hidden={!rosterOpen}>
               <table className="w-full min-w-[720px] border-collapse text-sm">
                 <thead className="bg-card text-left text-xs text-muted">
                   <tr>

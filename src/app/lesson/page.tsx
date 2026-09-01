@@ -49,6 +49,8 @@ export interface ActivityInfo {
   galleryEnabled?: boolean;
   /** 그림 제목의 틀. 비면 "○○년의 △△" (artifact-title.ts) */
   artifactTitle?: string;
+  /** 활동지를 그리기 앞에 두는가. 안 오면 그리기가 앞 (지금까지의 차시) */
+  worksheetFirst?: boolean;
   /** 그리기 첫 화면(장소 고르기) 문구. 비면 기본값 */
   drawPrompt?: { heading: string; body: string };
   worksheetIntro?: { heading: string; body: string } | null;
@@ -263,6 +265,13 @@ export default function LessonPage() {
       setFreeNav(Boolean(payload.session.freeNavigation));
       if (payload.session.phase === "worksheet") setWorkTab("worksheet");
       if (payload.session.phase === "gallery") setWorkTab("gallery");
+      /*
+       * 먼저 정하고 그리는 차시는 활동지부터 연다.
+       *
+       * 탭 차례만 바꾸고 처음 열리는 탭을 그대로 두면, 화면은 그림판인데 왼쪽 단추가
+       * 활동지인 상태가 된다 — 학생은 자기가 어디 있는지부터 헷갈린다.
+       */
+      if (payload.session.activity?.worksheetFirst) setWorkTab("worksheet");
       previousPhase.current = payload.session.phase;
       setClosed(payload.session.closed);
       setMood(payload.mood?.mood ?? "");
@@ -573,6 +582,9 @@ export default function LessonPage() {
    * 끝낸 뒤다. 탭이 남아 있으면 그리다 말고 그리로 새고, 돌아올 이유가 없다.
    */
   const canShare = session.activity?.galleryEnabled !== false && viewPhase !== "wrapheal";
+
+  /** 활동지를 그리기 앞에 두는 차시인가 (ActivityContent 의 worksheetFirst) */
+  const worksheetFirst = Boolean(session.activity?.worksheetFirst);
 
   /*
    * 실제로 보여 줄 탭.
@@ -990,8 +1002,13 @@ export default function LessonPage() {
               그리기가 없는 차시도 있다 (4차시 직업 조사처럼 글만 쓰는 활동).
               장소 목록이 비어 있으면 그리기 탭 자체를 만들지 않는다 — 눌러 봐야
               고를 장소가 없는 빈 화면이 나온다.
+
+              차례는 차시가 정한다. 기본은 "그리고 나서 설명한다" 지만, 먼저 정하고
+              그것을 그리는 활동에서는 활동지가 왼쪽에 서야 한다 (worksheetFirst).
+              탭 차례가 곧 순서 안내라, 뒤집혀 있으면 말로 아무리 일러도 학생은
+              왼쪽부터 누른다.
             */}
-            {canDraw && (
+            {canDraw && !worksheetFirst && (
               <button
                 type="button"
                 onClick={() => setWorkTab("draw")}
@@ -1010,6 +1027,15 @@ export default function LessonPage() {
             >
               활동지 쓰기
             </button>
+            {canDraw && worksheetFirst && (
+              <button
+                type="button"
+                onClick={() => setWorkTab("draw")}
+                className={`pill flex-1 ${activeTab === "draw" ? "pill-primary" : "pill-secondary"}`}
+              >
+                그림 그리기
+              </button>
+            )}
             {/*
               먼저 끝낸 학생이 갈 곳. 그림은 그리는 순간 갤러리에 올라가므로
               (gallery.ts 의 isVisible) 아직 그리는 중인 반에서도 볼 것이 있다.

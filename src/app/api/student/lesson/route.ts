@@ -138,6 +138,8 @@ export async function GET() {
                 바로 아래 sourceHints·galleryEnabled 와 같은 함정이다.
               */
               artifactTitle: session.activity.artifactTitle ?? "",
+              // 활동지를 그리기 앞에 두는가. 위와 같은 이유로 여기 실어야 화면에 닿는다
+              worksheetFirst: session.activity.worksheetFirst ?? false,
               // 활동지 첫 화면 문구. 안 보내면 "무엇을 그렸는지 적어 주세요" 가 그대로
               // 뜨고, 그림 설명이 아닌 활동지(6차시 기사 쓰기)에서 거짓말이 된다
               worksheetIntro: session.activity.worksheetIntro ?? null,
