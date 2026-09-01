@@ -104,11 +104,24 @@ export async function GET(request: Request) {
         hidden: row.hidden,
         strokeCount: row.strokes?.length ?? 0,
         updatedAt: row.updatedAt,
+        /*
+         * 통과 명단을 여기 얹는다.
+         *
+         * 이 목록은 이미 그 반 작품을 다 읽고 있다. 통과 명단을 따로 부르면 같은
+         * 스물여덟 편을 한 번 더 읽는다 (PRD 10장 D2). 판정만 실어 보내면 읽기가
+         * 0건 늘어난다.
+         *
+         * 칩과 글은 안 싣는다 — 명단에 필요한 것은 이름뿐이고, 그 말이 궁금하면
+         * 그 학생을 눌러서 본다.
+         */
+        verdict: row.teacherFeedback?.verdict ?? null,
+        reviewedAt: row.teacherFeedback?.at ?? 0,
       })),
       stats: {
         total: rows.length,
         submitted: rows.filter((row) => row.status === "submitted").length,
         hidden: rows.filter((row) => row.hidden).length,
+        passed: rows.filter((row) => row.teacherFeedback?.verdict === "pass").length,
       },
     });
   });

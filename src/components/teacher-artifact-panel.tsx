@@ -23,6 +23,10 @@ interface Row {
   status: "draft" | "submitted";
   hidden: boolean;
   strokeCount: number;
+  /** 선생님이 내린 판정. 없으면 아직 안 본 학생이거나 옛 기록이다 */
+  verdict: "pass" | "revise" | null;
+  /** 판정을 남긴 때. 통과 명단을 누른 순서대로 세운다 */
+  reviewedAt: number;
 }
 
 interface Detail {
@@ -94,8 +98,22 @@ export function TeacherArtifactPanel({
   if (rows === null) return null;
   if (rows.length === 0) return null;
 
+  /*
+   * 통과한 학생만 모은 명단.
+   *
+   * 작품 목록은 스물여덟 줄이라 훑어야 보인다. 수업 중에 선생님이 알고 싶은 것은
+   * "누가 끝났나" 하나이고, 그건 세는 것이 아니라 **보이는 것**이어야 한다.
+   * 통과를 준 순서대로 세우면 방금 누른 이름이 맨 끝에 붙어 바로 확인이 된다.
+   */
+  const passed = rows
+    .filter((row) => row.verdict === "pass")
+    .sort((a, b) => a.reviewedAt - b.reviewedAt);
+
   return (
-    <section className="card flex flex-col gap-4">
+    <>
+      <PassedCard passed={passed} total={rows.length} onRefresh={loadList} />
+
+      <section className="card flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="t-body font-bold">
           작품 {stats ? `제출 ${stats.submitted} / ${stats.total}` : ""}
@@ -203,6 +221,61 @@ export function TeacherArtifactPanel({
           </li>
         ))}
       </ul>
+      </section>
+    </>
+  );
+}
+
+/**
+ * 통과한 학생만 모은 카드.
+ *
+ * ## 왜 작품 목록과 따로 있나
+ *
+ * 작품 목록은 스물여덟 줄이고, 그 안에서 통과한 넷을 찾으려면 줄마다 상태를 읽어야
+ * 한다. 수업 중에 선생님이 확인하는 것은 "누가 끝났나" 한 가지라, 세어야 알 수 있는
+ * 자리에 두면 안 본다. 그래서 명단만 떼어 위에 둔다.
+ *
+ * ## 아무도 없을 때도 카드를 띄운다
+ *
+ * 비면 감추고 싶지만, 그러면 "아직 아무도 없다" 와 "이 기능이 이 차시엔 없다" 가
+ * 화면에서 똑같아 보인다. 0명이라고 말하는 편이 낫다.
+ *
+ * 읽기를 따로 하지 않는다 — 작품 목록이 이미 받아 온 것을 걸러서 쓴다.
+ */
+function PassedCard({
+  passed,
+  total,
+  onRefresh,
+}: {
+  passed: { id: string; author: string }[];
+  total: number;
+  onRefresh: () => void;
+}) {
+  return (
+    <section className="card flex flex-col gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="t-body font-bold">
+          통과 {passed.length} / {total}
+        </h2>
+        <button type="button" onClick={onRefresh} className="pill pill-secondary t-body-sm">
+          새로고침
+        </button>
+      </div>
+
+      {passed.length === 0 ? (
+        <p className="t-caption">아직 없습니다. 검토에서 「통과」를 누르면 여기에 쌓입니다.</p>
+      ) : (
+        <>
+          <ul className="flex flex-wrap gap-2">
+            {passed.map((row) => (
+              <li key={row.id} className="rounded-lg bg-lime px-3 py-1.5 t-body-sm font-semibold">
+                {row.author}
+              </li>
+            ))}
+          </ul>
+          <p className="t-caption">이 학생들 화면에는 활동지 대신 게임이 떠 있습니다.</p>
+        </>
+      )}
     </section>
   );
 }

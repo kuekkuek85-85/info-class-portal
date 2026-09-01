@@ -59,7 +59,7 @@ interface SessionRow {
   activity?: {
     activityId: string;
     places?: string[];
-    worksheet?: { key: string; phase?: LessonPhase }[];
+    worksheet?: { key: string; phase?: LessonPhase; kind?: string }[];
     /** 감정을 쓰는 차시는 감상을 막는다 (types.ts 의 galleryEnabled) */
     galleryEnabled?: boolean;
   };
@@ -734,8 +734,16 @@ function Dashboard() {
             대시보드는 20초마다 도는데, 여기서 보내고 위를 올려다보면 이름이 아직 남아
             있다. 안 갔나 싶어 한 번 더 보내게 된다 — 그 20초를 없앤다.
           */}
+          {/*
+            수행평가 차시는 처음부터 띄운다.
+
+            통과 명단은 지난 차시에서 넘어온다 — 오늘 아무도 아직 안 그렸어도 이미
+            통과한 학생이 있고, 그 학생들은 들어오자마자 게임 화면을 본다. 선생님이
+            수업을 열면서 그 명단을 못 보면, 왜 저 애만 다른 화면인지 확인할 데가 없다.
+          */}
           {session.activity &&
-            LESSON_PHASES.indexOf(session.phase) >= LESSON_PHASES.indexOf("problem") && (
+            (LESSON_PHASES.indexOf(session.phase) >= LESSON_PHASES.indexOf("problem") ||
+              (session.activity.worksheet ?? []).some((q) => q.kind === "submit")) && (
               <TeacherArtifactPanel sessionId={session.id} onFeedbackSent={reload} />
             )}
 
