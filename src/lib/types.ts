@@ -286,6 +286,9 @@ export interface WorksheetQuestion {
    *          traits 와 다르다 — 보기를 차시가 정하고, 답도 answers 로 들어간다.
    * note      — 입력칸 없이 안내만. 문항이 여럿 이어질 때 묶어 주는 머리글로 쓴다
    * echo      — 앞 단계에서 쓴 답을 읽기 전용으로 다시 보여준다 (echoKeys)
+   * image     — 사진 한 장. 파일로 고르거나 Ctrl+V 로 붙여넣으면 바로 보인다.
+   *             화면에서 줄여 데이터 URL 로 답에 담으므로 **maxLength 가 곧 용량 상한**
+   *             이다. Firestore 문서가 1MB 라 넉넉히 잡으면 안 된다 (image-field 참조).
    * ai_review — 단추를 누르면 앞서 쓴 답들을 모아 AI에게 보내고, 아직 안 짚은 것을
    *             질문 2개로 돌려받는다 (reviewFields). AI는 평가·칭찬 없이 질문만 한다.
    * teacher_note — 선생님이 남긴 말을 띄운다. 도착할 때까지만 물어보고 멈춘다.
@@ -308,6 +311,7 @@ export interface WorksheetQuestion {
     | "multi"
     | "note"
     | "echo"
+    | "image"
     | "ai_review"
     | "teacher_note"
     | "emotion_lens"

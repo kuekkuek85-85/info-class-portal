@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { AiReviewPanel } from "@/components/ai-review-panel";
 import { EmotionLensPanel } from "@/components/emotion-lens-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
+import { ImageField } from "@/components/image-field";
 import { MoodRecheck } from "@/components/mood-recheck";
 import { SubmitPanel, useJumpToField } from "@/components/submit-panel";
 import { TeacherNotePanel } from "@/components/teacher-note-panel";
@@ -546,8 +547,19 @@ export function WorksheetView({
                       해 놓고 주소를 글자로만 보여주면 학생이 손으로 옮겨 적는다.
                       새 창으로 연다 — 여기서 나가면 쓰던 답이 날아간다.
                     */}
+                    {/*
+                      사진 칸을 되보여 줄 때는 사진으로 그린다. 데이터 URL 이라
+                      글자로 찍으면 base64 십팔만 자가 화면에 쏟아진다 (image-field 참조).
+                    */}
                     {written &&
-                      (/^https?:\/\//.test(written) ? (
+                      (written.startsWith("data:image/") ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={written}
+                          alt={row.label}
+                          className="mt-1 h-auto w-full rounded border border-line bg-white"
+                        />
+                      ) : /^https?:\/\//.test(written) ? (
                         <a
                           href={written}
                           target="_blank"
@@ -592,6 +604,12 @@ export function WorksheetView({
               questionKey={question.key}
               raw={value.answers[question.key] ?? ""}
               onResult={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
+          ) : question.kind === "image" ? (
+            <ImageField
+              value={value.answers[question.key] ?? ""}
+              onChange={(next) => setAnswer(question.key, next)}
               disabled={disabled}
             />
           ) : question.kind === "teacher_note" ? (

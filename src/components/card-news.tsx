@@ -92,6 +92,19 @@ export function CardNews({
               <dd className="t-body mt-1 whitespace-pre-wrap">
                 {question.kind === "traits" ? (
                   data.traits.join(" · ")
+                ) : question.kind === "image" ? (
+                  /*
+                    사진은 사진으로 그린다.
+
+                    답이 데이터 URL 이라, 다른 칸처럼 글자로 찍으면 base64 십팔만 자가
+                    화면에 쏟아진다. 교사가 폰으로 학생 하나를 열었을 때 그 일이 난다.
+                  */
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={(data.answers[question.key] ?? "").trim()}
+                    alt={question.label || "붙인 사진"}
+                    className="h-auto w-full rounded-lg border border-line bg-white"
+                  />
                 ) : /^https?:\/\//.test((data.answers[question.key] ?? "").trim()) ? (
                   /*
                     주소는 눌러서 열 수 있게 한다.
