@@ -157,6 +157,37 @@ export function SubmitPanel({
             고쳤어요 · 다시 제출하기
           </button>
         </div>
+
+        {/*
+          먼저 끝낸 학생에게 줄 것.
+
+          남은 시간에 할 일이 없으면 옆 사람을 건드리고, 그러면 아직 고치는 중인
+          학생이 끊긴다. 여기 두는 이유는 **최종 제출을 마쳐야 보이기** 때문이다 —
+          활동지 아래에 두면 아직 안 낸 학생도 보고 그리로 간다.
+
+          새 창으로 연다. 같은 창에서 나가면 돌아와 고칠 방법이 없다.
+        */}
+        {(question.doneLinks?.length ?? 0) > 0 && (
+          <div className="block flex flex-col gap-3 bg-lime">
+            <p className="t-headline">다 냈으니 잠깐 쉬어도 좋아요</p>
+            <p className="t-body">
+              선생님이 정보 시간에 쓰려고 만든 게임이에요. 종 치면 돌아옵니다.
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {question.doneLinks?.map((link) => (
+                <a
+                  key={link.url}
+                  href={link.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="pill pill-primary flex-1 text-center"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
         {/*
           완성본. 지면을 보는 것이 이 40분의 끝이다 — 칸을 채우는 일로만 끝나면
           자기가 무엇을 만들었는지 볼 자리가 없다.

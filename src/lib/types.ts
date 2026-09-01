@@ -412,6 +412,16 @@ export interface WorksheetQuestion {
   rowColumns?: RowColumn[];
   /** rows 에서 늘릴 수 있는 줄 수 (기본 10) */
   maxRows?: number;
+  /**
+   * submit 이 **최종 제출을 마친 학생에게만** 띄우는 링크.
+   *
+   * 먼저 끝낸 학생에게 줄 것이 필요하다. 남은 시간에 할 일이 없으면 옆 사람을
+   * 건드리고, 그러면 아직 고치는 중인 학생이 끊긴다.
+   *
+   * 활동지의 linkUrl 과 다르다 — 그쪽은 문항 아래에 늘 뜬다. 이 링크는 3단계에
+   * 닿은 학생 화면에만 나오므로, 아직 못 낸 학생에게는 보이지 않는다.
+   */
+  doneLinks?: { label: string; url: string }[];
   /** 칸 옆에 복사 단추를 붙인다 (다른 곳에 붙여 넣을 값일 때) */
   copyable?: boolean;
   /**
