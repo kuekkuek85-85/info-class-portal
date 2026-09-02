@@ -326,10 +326,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   moodCheckEnabled: true,
 
   game: {
-    heading: "기다리는 동안 — 하노이탑",
+    heading: "기다리는 동안 — 똥 피하기",
     body:
-      "원반을 한 번에 하나씩 옮겨서, 큰 것이 작은 것 위에 올라가지 않게 다 옮기면 됩니다.\n수업이 시작되면 닫습니다.",
-    url: "https://hanoi-tower-game-rosy.vercel.app/",
+      "위에서 떨어지는 똥을 좌우로 피하세요. 한 번이라도 맞으면 끝이에요.\n화살표 키나 화면 좌·우를 누르면 움직입니다.\n수업이 시작되면 닫습니다.",
+    url: "https://dodge-poop-game.vercel.app/",
   },
   gameExplainer: empty(),
   progress: empty(),
