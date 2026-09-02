@@ -1,11 +1,5 @@
 import { fail, guard, ok, readJson } from "@/lib/api";
-import {
-  getArtifact,
-  getSession,
-  markReviewed,
-  recordSubmitStage,
-  updateArtifact,
-} from "@/lib/db";
+import { getArtifact, getSession, markReviewed, updateArtifact } from "@/lib/db";
 import { activityIdFor } from "@/lib/gallery";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
 
@@ -86,18 +80,14 @@ export async function POST(request: Request) {
     await updateArtifact(artifact.id, {
       teacherFeedback: { at: Date.now(), chips, note, verdict },
     });
-    // 대기 줄에서 뺀다. 학생이 2차를 다시 내면 recordSubmitStage 가 이 값을 지운다
-    await markReviewed(sessionId, studentId);
-
     /*
-     * 통과는 그 자체가 최종 제출이다.
+     * 대기 줄에서 뺀다. 학생이 고쳐서 다시 내면 recordSubmitStage 가 이 값을 지운다.
      *
-     * 원래는 학생이 피드백을 읽고 「고쳤어요 · 최종 제출」 을 눌러 3차가 됐다. 그런데
-     * 통과를 받으면 화면이 끝난 화면으로 바뀌어 그 단추를 누를 자리가 없어진다.
-     * 여기서 안 올리면 대시보드의 최종제출 수만 계속 0 에 가깝게 남아, 선생님이
-     * 자기가 통과시킨 인원을 화면에서 못 센다.
+     * 통과일 때는 최종 단계까지 여기서 같이 올린다 — 통과가 곧 최종 제출이기 때문이고
+     * (학생 화면이 게임으로 바뀌어 「최종 제출」 을 누를 자리가 없어진다), 따로 올리면
+     * 그쪽이 검토 시각을 지워서 방금 통과시킨 학생이 줄에 다시 선다.
      */
-    if (verdict === "pass") await recordSubmitStage(sessionId, studentId, 3);
+    await markReviewed(sessionId, studentId, verdict === "pass");
 
     return ok();
   });

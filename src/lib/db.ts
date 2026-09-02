@@ -995,10 +995,21 @@ export async function carryOverSubmitStage(
   const stage = artifact?.submitStage ?? 0;
   if (!artifact || stage < 1) return;
 
+  /*
+   * 낸 것이 판정보다 나중이면 아직 기다리는 중이다.
+   *
+   * 단계만 보면 못 가른다 — 고치라는 말을 듣고 고쳐서 다시 낸 학생도, 통과를 받은
+   * 학생도 똑같이 3차다. 낸 때가 판정보다 나중이면 그 뒤로 아무도 안 본 글이므로
+   * 검토 시각을 비워 대기 줄에 세운다.
+   */
+  const reviewedAt = artifact.teacherFeedback?.at ?? 0;
+  const submittedAt = artifact.submitStageAt ?? 0;
+  const stillWaiting = submittedAt > reviewedAt;
+
   await ref.set(
     {
       submitStage: stage,
-      reviewedAt: artifact.teacherFeedback?.at ?? 0,
+      reviewedAt: stillWaiting ? 0 : reviewedAt,
       selfCheck: artifact.answers?.news_check2 ?? "",
     },
     { merge: true },
@@ -1064,8 +1075,17 @@ export async function flagCareAlert(sessionId: string, studentId: string): Promi
  * recordWorkProgress 와 같은 이유로 여기에 얹는다 — 대시보드가 이미 이 문서를 읽고
  * 있어서 **추가 읽기가 0건**이다. 대기 줄을 보려고 artifact 를 폴링하면 28건이 붙는다.
  *
- * 2차로 올라갈 때 `reviewedAt` 을 지운다. 교사 피드백을 받고 고쳐서 **다시 2차를 내면
- * 대기 줄에 다시 서야 한다** — 안 지우면 이미 본 학생으로 남아 영영 차례가 안 온다.
+ * ## 다시 내면 다시 줄을 선다
+ *
+ * 2차든 최종이든, **학생이 새로 낸 것은 아직 아무도 안 본 글이다.** 그래서 낼 때마다
+ * `reviewedAt` 을 지운다 — 안 지우면 이미 본 학생으로 남아 영영 차례가 안 온다.
+ *
+ * 최종(3차)까지 지우는 이유는, 피드백을 받은 학생이 누르는 단추가 「고쳤어요 · 최종
+ * 제출」 이기 때문이다. 그 단추가 3차로 간다. 2차만 지우면 **고쳐서 낸 학생이 줄에
+ * 안 선다** — 선생님은 고치라고 했고 학생은 고쳐 냈는데 아무 데도 안 뜬다.
+ *
+ * 교사가 「통과」를 주면서 올리는 3차는 여기를 지나지 않는다. 그쪽은 markReviewed 가
+ * 단계와 검토 시각을 한 번에 쓴다 — 통과시키자마자 줄에 다시 서면 안 되기 때문이다.
  */
 export async function recordSubmitStage(
   sessionId: string,
@@ -1079,7 +1099,7 @@ export async function recordSubmitStage(
   if (!snap.exists) return;
 
   const patch: Record<string, unknown> = { submitStage: stage };
-  if (stage === 2) {
+  if (stage === 2 || stage === 3) {
     patch.reviewedAt = 0;
     if (selfCheck) patch.selfCheck = selfCheck;
   }
@@ -1092,12 +1112,26 @@ export async function recordSubmitStage(
  *
  * 대기 줄에서 빠지는 기준이다. 기사 본문이나 피드백 내용은 얹지 않는다 —
  * 그것은 artifact 에 있고, 대시보드는 "누구를 아직 안 봤나" 만 알면 된다.
+ *
+ * ## 통과는 단계까지 여기서 올린다
+ *
+ * 통과는 그 자체가 최종 제출이다 — 학생 화면이 게임으로 바뀌어 「최종 제출」 을 누를
+ * 자리가 없어지기 때문이다. 그런데 그 3차를 recordSubmitStage 로 올리면 그쪽이
+ * `reviewedAt` 을 지워서 **방금 통과시킨 학생이 곧바로 대기 줄에 다시 선다.**
+ * 그래서 단계와 검토 시각을 여기서 한 문서 쓰기로 같이 적는다.
  */
-export async function markReviewed(sessionId: string, studentId: string): Promise<void> {
+export async function markReviewed(
+  sessionId: string,
+  studentId: string,
+  passed = false,
+): Promise<void> {
   const ref = db().collection(COLLECTIONS.attendance).doc(entryId(sessionId, studentId));
   const snap = await ref.get();
   if (!snap.exists) return;
-  await ref.set({ reviewedAt: Date.now() }, { merge: true });
+  await ref.set(
+    passed ? { reviewedAt: Date.now(), submitStage: 3 } : { reviewedAt: Date.now() },
+    { merge: true },
+  );
 }
 
 /**

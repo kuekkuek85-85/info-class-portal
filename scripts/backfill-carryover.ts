@@ -86,20 +86,28 @@ async function main(): Promise<void> {
     if (!art.exists) continue;
     const a = art.data() as {
       submitStage?: number;
+      submitStageAt?: number;
       answers?: Record<string, string>;
       teacherFeedback?: { at?: number; verdict?: string };
     };
     const stage = a.submitStage ?? 0;
     if (stage < 1) continue;
 
-    const reviewedAt = a.teacherFeedback?.at ?? 0;
+    /*
+     * 낸 것이 판정보다 나중이면 아직 기다리는 중이다 (db.ts 의 carryOverSubmitStage
+     * 와 같은 규칙). 고치라는 말을 듣고 고쳐서 다시 낸 학생이 여기 걸린다.
+     */
+    const judgedAt = a.teacherFeedback?.at ?? 0;
+    const reviewedAt = (a.submitStageAt ?? 0) > judgedAt ? 0 : judgedAt;
     const willQueue = stage >= 2 && !reviewedAt;
     if (willQueue) queued += 1;
     moved += 1;
 
     const who = `${nameOf.get(studentId) || "임시"}(${studentId.slice(3)}번)`;
     const mark = willQueue
-      ? "→ 대기 줄"
+      ? judgedAt
+        ? "→ 대기 줄 (고쳐서 다시 냄)"
+        : "→ 대기 줄"
       : reviewedAt
         ? `→ 이미 ${a.teacherFeedback?.verdict === "pass" ? "통과" : "검토함"}`
         : "→ 아직 1차";

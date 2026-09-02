@@ -92,14 +92,19 @@ export async function POST(request: Request) {
       const blocked = gateItems(checkArticle(answers, sources, rules, true));
       if (blocked.length > 0) return ok({ blocked });
 
-      await updateArtifact(artifact.id, { submitStage: 2 });
+      // 낸 때를 남긴다 — 차시가 넘어가도 "낸 뒤로 아무도 안 봤다" 를 알 수 있어야 한다
+      await updateArtifact(artifact.id, { submitStage: 2, submitStageAt: Date.now() });
       await recordSubmitStage(me.sessionId, me.studentId, 2, body?.selfCheck);
 
       return ok({ blocked: [] });
     }
 
     // 최종 — 여기서만 status 가 함께 올라간다
-    await updateArtifact(artifact.id, { submitStage: 3, status: "submitted" });
+    await updateArtifact(artifact.id, {
+      submitStage: 3,
+      submitStageAt: Date.now(),
+      status: "submitted",
+    });
     await recordSubmitStage(me.sessionId, me.studentId, 3);
 
     return ok();
