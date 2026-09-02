@@ -298,7 +298,26 @@ function TypeScene({
           </p>
           <div className="flex flex-col gap-1">
             <span className="t-caption">그런데 열린 곳</span>
-            <AddressBar url={`http://${scene.redirectUrl ?? ""}`} />
+            <div className="flex items-stretch gap-2">
+              <div className="min-w-0 flex-1">
+                <AddressBar url={`http://${scene.redirectUrl ?? ""}`} />
+              </div>
+              {/*
+                정말로 그리로 열리는지 눌러서 확인한다 — 이 링크는 진짜 학교 홈페이지로
+                간다. 시뮬레이션이 아니라 실제 이동이라, 새 창으로 열어 수업 화면을 두고
+                간다 (같은 창에서 나가면 활동으로 돌아올 길이 없다).
+              */}
+              {scene.redirectUrl && (
+                <a
+                  href={`https://${scene.redirectUrl}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="pill pill-primary flex shrink-0 items-center"
+                >
+                  들어가기
+                </a>
+              )}
+            </div>
           </div>
           <p className="t-body-lg">
             {expect} 를 쳤는데 엉뚱한 곳이 열렸습니다. 이것이 파밍이에요.
