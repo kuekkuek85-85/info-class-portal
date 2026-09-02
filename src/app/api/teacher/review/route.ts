@@ -77,8 +77,16 @@ export async function POST(request: Request) {
     const artifact = await getArtifact(activityId, studentId);
     if (!artifact) return fail("not_found", "이 학생의 작품이 아직 없습니다.");
 
+    /*
+     * 통과는 작품의 단계도 올린다.
+     *
+     * 통과가 곧 최종 제출인데 작품이 2차인 채로 남으면, 차시가 넘어갈 때 이어받기가
+     * 작품을 보고 단계를 되돌린다 (carryOverSubmitStage 는 작품을 원본으로 삼는다).
+     * 출석 문서에만 적어 두면 그 세션에서만 맞는 값이 된다.
+     */
     await updateArtifact(artifact.id, {
       teacherFeedback: { at: Date.now(), chips, note, verdict },
+      ...(verdict === "pass" ? { submitStage: 3 as const } : {}),
     });
     /*
      * 대기 줄에서 뺀다. 학생이 고쳐서 다시 내면 recordSubmitStage 가 이 값을 지운다.

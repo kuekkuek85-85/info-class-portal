@@ -105,6 +105,7 @@ async function main(): Promise<void> {
      */
     const judgedAt = a.teacherFeedback?.at ?? 0;
     const reviewedAt = (a.submitStageAt ?? 0) > judgedAt ? 0 : judgedAt;
+    const passed = reviewedAt > 0 && a.teacherFeedback?.verdict === "pass";
     const willQueue = stage >= 2 && !reviewedAt;
     if (willQueue) queued += 1;
     moved += 1;
@@ -122,10 +123,11 @@ async function main(): Promise<void> {
     if (WRITE) {
       await doc.ref.set(
         {
-          submitStage: stage,
+          // 통과는 최종 제출이다. 옛 기록이 2차인 채로 남아 있어도 3차로 본다
+          submitStage: passed ? 3 : stage,
           reviewedAt,
-          // 통과 명단 카드가 읽는 값 (Attendance 의 passed). 고쳐서 다시 냈으면 통과가 아니다
-          passed: reviewedAt > 0 && a.teacherFeedback?.verdict === "pass",
+          // 통과 명단 카드가 읽는 값 (Attendance 의 passed)
+          passed,
           selfCheck: a.answers?.news_check2 ?? "",
         },
         { merge: true },

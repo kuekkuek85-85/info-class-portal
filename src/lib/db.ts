@@ -1005,13 +1005,15 @@ export async function carryOverSubmitStage(
   const reviewedAt = artifact.teacherFeedback?.at ?? 0;
   const submittedAt = artifact.submitStageAt ?? 0;
   const stillWaiting = submittedAt > reviewedAt;
+  const passed = !stillWaiting && artifact.teacherFeedback?.verdict === "pass";
 
   await ref.set(
     {
-      submitStage: stage,
+      // 통과는 최종 제출이다. 옛 기록이 2차인 채로 남아 있어도 여기서 3차로 본다
+      submitStage: passed ? 3 : stage,
       reviewedAt: stillWaiting ? 0 : reviewedAt,
       // 지난 차시에 받은 통과도 오늘 명단에 뜬다. 고쳐서 다시 냈으면 통과가 아니다
-      passed: !stillWaiting && artifact.teacherFeedback?.verdict === "pass",
+      passed,
       selfCheck: artifact.answers?.news_check2 ?? "",
     },
     { merge: true },
