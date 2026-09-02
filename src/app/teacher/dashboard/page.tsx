@@ -130,8 +130,10 @@ interface StudentRow {
    * 기사 본문은 오지 않는다 — 검토 패널을 열 때 따로 1건 읽는다.
    */
   stage?: 0 | 1 | 2 | 3;
-  /** 2차를 냈고 아직 피드백을 안 준 학생 */
+  /** 2차 이상을 냈고 아직 피드백을 안 준 학생 */
   waiting?: boolean;
+  /** 교사가 「통과」를 준 학생. 통과 명단 카드가 이것으로 그려진다 */
+  passed?: boolean;
   /** 2차 전 자기 점검 답. 검토 패널에 그대로 보여 준다 */
   selfCheck?: string;
   /** 스스로 부족한 곳이 있다고 답했는가. 대기 줄 순서를 정한다 */
@@ -189,6 +191,71 @@ function whoLabel(row: StudentRow, masked: boolean): string {
   const seat = `${row.number ?? row.studentId.slice(3)}번`;
   if (masked) return seat;
   return row.name || `임시 ${seat}`;
+}
+
+/**
+ * 통과한 학생만 모은 카드.
+ *
+ * ## 왜 따로 있나
+ *
+ * 아래 신호등은 스물여덟 줄이고, 그 안에서 통과한 넷을 찾으려면 줄마다 상태를 읽어야
+ * 한다. 수업 중에 선생님이 확인하는 것은 "누가 끝났나" 한 가지라, 세어야 알 수 있는
+ * 자리에 두면 안 본다.
+ *
+ * ## 저절로 갱신된다
+ *
+ * 대시보드가 이미 읽고 있는 출석 문서에 통과 여부가 얹혀 온다 (Attendance 의 passed).
+ * 그래서 **읽기를 하나도 안 늘리고** 20초마다 새로 그려진다. 판정 원본인 작품을
+ * 폴링했다면 20초마다 스물여덟 편이 붙어 한 교시에 수천 건이 됐다 (PRD 10장 D2).
+ *
+ * 손으로 누르는 새로고침도 남겨 둔다. 통과를 주고 바로 확인하고 싶을 때 20초는 길다.
+ *
+ * ## 아무도 없을 때도 띄운다
+ *
+ * 비면 감추고 싶지만, 그러면 "아직 아무도 없다" 와 "이 차시엔 없는 기능이다" 가
+ * 화면에서 똑같아 보인다.
+ */
+function PassedCard({
+  rows,
+  masked,
+  onRefresh,
+}: {
+  rows: StudentRow[];
+  masked: boolean;
+  onRefresh: () => void;
+}) {
+  const passed = rows.filter((row) => row.passed);
+
+  return (
+    <section className="card flex flex-col gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="t-body font-bold">
+          통과 {passed.length} / {rows.length}
+        </h2>
+        <button type="button" onClick={onRefresh} className="pill pill-secondary t-body-sm">
+          새로고침
+        </button>
+      </div>
+
+      {passed.length === 0 ? (
+        <p className="t-caption">아직 없습니다. 검토에서 「통과」를 누르면 여기에 쌓입니다.</p>
+      ) : (
+        <>
+          <ul className="flex flex-wrap gap-2">
+            {passed.map((row) => (
+              <li
+                key={row.studentId}
+                className="rounded-lg bg-lime px-3 py-1.5 t-body-sm font-semibold"
+              >
+                {whoLabel(row, masked)}
+              </li>
+            ))}
+          </ul>
+          <p className="t-caption">이 학생들 화면에는 활동지 대신 게임이 떠 있습니다.</p>
+        </>
+      )}
+    </section>
+  );
 }
 
 /**
@@ -875,6 +942,17 @@ function Dashboard() {
                 })
               }
             />
+          )}
+
+          {/*
+            통과 명단은 대기 줄 바로 아래다. 지금 봐야 하는 것(누가 기다리나)과 방금
+            한 일의 결과(누가 끝났나)가 붙어 있어야 통과를 주고 바로 확인이 된다.
+
+            수행평가 차시에서만 띄운다 — 제출도 판정도 없는 차시에서는 늘 0 으로 떠서
+            자리만 차지한다.
+          */}
+          {data?.session && (session?.activity?.worksheet ?? []).some((q) => q.kind === "submit") && (
+            <PassedCard rows={rows} masked={masked} onRefresh={reload} />
           )}
 
           {reviewing && data?.session && (

@@ -79,8 +79,14 @@ async function main(): Promise<void> {
   for (const doc of attendance.docs) {
     const entry = doc.data() as { studentId?: string; submitStage?: number };
     const studentId = entry.studentId ?? "";
-    // 오늘 이미 뭔가 낸 학생은 손대지 않는다 — 오늘 것이 최신이다
-    if (!studentId || (entry.submitStage ?? 0) > 0) continue;
+    if (!studentId) continue;
+    /*
+     * 오늘 낸 학생도 그냥 다시 계산한다.
+     *
+     * 여기서 쓰는 값은 전부 작품에서 나온다. 오늘 학생이 내면 작품도 같이 올라가고,
+     * 오늘 선생님이 판정하면 판정 시각도 작품에 있다. 그래서 몇 번을 돌려도 결과가
+     * 같고, 필드를 새로 늘렸을 때 이미 한 번 돌린 반에도 다시 채울 수 있다.
+     */
 
     const art = await db.collection("artifacts").doc(`${activityId}__${studentId}`).get();
     if (!art.exists) continue;
@@ -118,6 +124,8 @@ async function main(): Promise<void> {
         {
           submitStage: stage,
           reviewedAt,
+          // 통과 명단 카드가 읽는 값 (Attendance 의 passed). 고쳐서 다시 냈으면 통과가 아니다
+          passed: reviewedAt > 0 && a.teacherFeedback?.verdict === "pass",
           selfCheck: a.answers?.news_check2 ?? "",
         },
         { merge: true },

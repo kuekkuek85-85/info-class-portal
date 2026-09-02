@@ -187,6 +187,13 @@ export async function GET(request: Request) {
          * 봐 달라고 한 적이 없다.
          */
         waiting: (entry.submitStage ?? 0) >= 2 && !(entry.reviewedAt ?? 0),
+        /**
+         * 통과한 학생인가. 통과 명단 카드가 이것으로 그려진다.
+         *
+         * 판정 원본은 작품에 있지만 그쪽을 폴링하면 20초마다 스물여덟 편이 붙는다.
+         * 이 값은 출석 문서에 얹혀 와서 **추가 읽기가 0건**이다 (Attendance 의 passed).
+         */
+        passed: entry.passed === true,
         /** 자기 점검 답. 교사 화면에 그대로 보여 준다 */
         selfCheck: entry.selfCheck ?? "",
         /**

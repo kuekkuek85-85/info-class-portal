@@ -1010,6 +1010,8 @@ export async function carryOverSubmitStage(
     {
       submitStage: stage,
       reviewedAt: stillWaiting ? 0 : reviewedAt,
+      // 지난 차시에 받은 통과도 오늘 명단에 뜬다. 고쳐서 다시 냈으면 통과가 아니다
+      passed: !stillWaiting && artifact.teacherFeedback?.verdict === "pass",
       selfCheck: artifact.answers?.news_check2 ?? "",
     },
     { merge: true },
@@ -1128,8 +1130,15 @@ export async function markReviewed(
   const ref = db().collection(COLLECTIONS.attendance).doc(entryId(sessionId, studentId));
   const snap = await ref.get();
   if (!snap.exists) return;
+  /*
+   * 통과 여부를 여기에도 적는다.
+   *
+   * 대시보드의 통과 명단이 이 값을 읽는다 — 이 문서는 이미 폴링에 실려 오므로 명단이
+   * 저절로 갱신되고 읽기는 안 는다. 「고치기」 일 때 false 로 덮는 것이 중요하다.
+   * 통과를 잘못 준 학생을 되돌리면 명단에서도 빠져야 한다.
+   */
   await ref.set(
-    passed ? { reviewedAt: Date.now(), submitStage: 3 } : { reviewedAt: Date.now() },
+    passed ? { reviewedAt: Date.now(), submitStage: 3, passed: true } : { reviewedAt: Date.now(), passed: false },
     { merge: true },
   );
 }
