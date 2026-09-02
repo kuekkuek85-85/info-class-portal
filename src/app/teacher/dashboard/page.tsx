@@ -193,14 +193,23 @@ function whoLabel(row: StudentRow, masked: boolean): string {
   return row.name || `임시 ${seat}`;
 }
 
+/** 번호 순으로 세울 때 쓰는 값. 임시 좌석은 학번 뒷자리가 곧 번호다 */
+function seatNo(row: StudentRow): number {
+  return row.number ?? Number(row.studentId.slice(3)) ?? 0;
+}
+
 /**
- * 통과한 학생만 모은 카드.
+ * 진행중 · 통과 두 장.
  *
- * ## 왜 따로 있나
+ * ## 한 명은 반드시 한쪽에만 있다
  *
- * 아래 신호등은 스물여덟 줄이고, 그 안에서 통과한 넷을 찾으려면 줄마다 상태를 읽어야
- * 한다. 수업 중에 선생님이 확인하는 것은 "누가 끝났나" 한 가지라, 세어야 알 수 있는
- * 자리에 두면 안 본다.
+ * 모두가 진행중에서 시작해, 통과를 받는 순간 그쪽에서 빠지고 이쪽에 붙는다. 두 장을
+ * 나란히 두는 이유가 그것이다 — 남은 수와 끝난 수를 따로 세지 않아도, **줄어드는 쪽과
+ * 늘어나는 쪽**이 한눈에 보인다. 수업 중에 선생님이 반복해서 묻는 질문이 "몇 명
+ * 남았나" 이고, 그 답이 숫자가 아니라 이름이어야 다음에 누구에게 갈지가 정해진다.
+ *
+ * 아래 신호등으로는 안 된다. 스물여덟 줄을 훑어 통과한 학생을 골라내는 동안 몇 분이
+ * 지나가고, 신호등이 세는 것은 활동지 진도라 통과와 다른 값이다.
  *
  * ## 저절로 갱신된다
  *
@@ -209,13 +218,19 @@ function whoLabel(row: StudentRow, masked: boolean): string {
  * 폴링했다면 20초마다 스물여덟 편이 붙어 한 교시에 수천 건이 됐다 (PRD 10장 D2).
  *
  * 손으로 누르는 새로고침도 남겨 둔다. 통과를 주고 바로 확인하고 싶을 때 20초는 길다.
+ * 두 장이 같은 값에서 나오므로 어느 쪽을 눌러도 둘 다 새로 그려진다.
+ *
+ * ## 번호 순으로 세운다
+ *
+ * 진행중은 스물몇 명이라 훑어야 하는데, 그때 찾는 방법은 "몇 번이 남았나" 다.
+ * 통과 쪽도 같은 순서로 둔다 — 두 장을 번갈아 보면서 순서가 바뀌면 못 읽는다.
  *
  * ## 아무도 없을 때도 띄운다
  *
  * 비면 감추고 싶지만, 그러면 "아직 아무도 없다" 와 "이 차시엔 없는 기능이다" 가
  * 화면에서 똑같아 보인다.
  */
-function PassedCard({
+function ProgressCards({
   rows,
   masked,
   onRefresh,
@@ -224,37 +239,65 @@ function PassedCard({
   masked: boolean;
   onRefresh: () => void;
 }) {
-  const passed = rows.filter((row) => row.passed);
+  const bySeat = [...rows].sort((a, b) => seatNo(a) - seatNo(b));
+  const passed = bySeat.filter((row) => row.passed);
+  const going = bySeat.filter((row) => !row.passed);
 
   return (
-    <section className="card flex flex-col gap-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="t-body font-bold">
-          통과 {passed.length} / {rows.length}
-        </h2>
-        <button type="button" onClick={onRefresh} className="pill pill-secondary t-body-sm">
-          새로고침
-        </button>
-      </div>
+    <>
+      <section className="card flex flex-col gap-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="t-body font-bold">진행중 {going.length}명</h2>
+          <button type="button" onClick={onRefresh} className="pill pill-secondary t-body-sm">
+            새로고침
+          </button>
+        </div>
 
-      {passed.length === 0 ? (
-        <p className="t-caption">아직 없습니다. 검토에서 「통과」를 누르면 여기에 쌓입니다.</p>
-      ) : (
-        <>
+        {going.length === 0 ? (
+          <p className="t-caption">모두 끝냈습니다.</p>
+        ) : (
           <ul className="flex flex-wrap gap-2">
-            {passed.map((row) => (
+            {going.map((row) => (
               <li
                 key={row.studentId}
-                className="rounded-lg bg-lime px-3 py-1.5 t-body-sm font-semibold"
+                className="rounded-lg bg-canvas px-3 py-1.5 t-body-sm font-semibold"
               >
                 {whoLabel(row, masked)}
               </li>
             ))}
           </ul>
-          <p className="t-caption">이 학생들 화면에는 활동지 대신 게임이 떠 있습니다.</p>
-        </>
-      )}
-    </section>
+        )}
+      </section>
+
+      <section className="card flex flex-col gap-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="t-body font-bold">
+            통과 {passed.length} / {rows.length}
+          </h2>
+          <button type="button" onClick={onRefresh} className="pill pill-secondary t-body-sm">
+            새로고침
+          </button>
+        </div>
+
+        {passed.length === 0 ? (
+          <p className="t-caption">아직 없습니다. 검토에서 「통과」를 누르면 여기에 쌓입니다.</p>
+        ) : (
+          <>
+            <ul className="flex flex-wrap gap-2">
+              {passed.map((row) => (
+                <li
+                  key={row.studentId}
+                  className="rounded-lg bg-lime px-3 py-1.5 t-body-sm font-semibold"
+                >
+                  {whoLabel(row, masked)}
+                </li>
+              ))}
+            </ul>
+            <p className="t-caption">이 학생들 화면에는 활동지 대신 게임이 떠 있습니다.</p>
+          </>
+        )}
+      </section>
+    </>
   );
 }
 
@@ -945,14 +988,14 @@ function Dashboard() {
           )}
 
           {/*
-            통과 명단은 대기 줄 바로 아래다. 지금 봐야 하는 것(누가 기다리나)과 방금
-            한 일의 결과(누가 끝났나)가 붙어 있어야 통과를 주고 바로 확인이 된다.
+            진행중·통과 두 장은 대기 줄 바로 아래다. 지금 봐야 하는 것(누가 기다리나)과
+            방금 한 일의 결과(누가 끝났나)가 붙어 있어야 통과를 주고 바로 확인이 된다.
 
             수행평가 차시에서만 띄운다 — 제출도 판정도 없는 차시에서는 늘 0 으로 떠서
             자리만 차지한다.
           */}
           {data?.session && (session?.activity?.worksheet ?? []).some((q) => q.kind === "submit") && (
-            <PassedCard rows={rows} masked={masked} onRefresh={reload} />
+            <ProgressCards rows={rows} masked={masked} onRefresh={reload} />
           )}
 
           {reviewing && data?.session && (
