@@ -960,6 +960,52 @@ export async function recordAttendance(input: Omit<Attendance, "id">): Promise<v
 }
 
 /**
+ * 지난 차시에서 이어지는 제출 단계를 오늘 출석 문서에 옮겨 적는다.
+ *
+ * ## 왜 필요한가
+ *
+ * 작품은 **활동**에 묶이고(career-plan), 출석은 **세션**에 묶인다. 그래서 7차시에 2차를
+ * 내고 검토를 못 받은 학생이 8차시에 들어오면, 자기 화면은 2차 대기로 뜨는데(작품에서
+ * 읽는다) 교사의 검토 대기 줄에는 안 뜬다(출석에서 읽는다). **학생은 기다리는데 선생님
+ * 화면에는 아무도 없는** 상태다 — 8차시를 여는 시점에 1반 8명, 3반 5명, 4반 4명이 그랬다.
+ *
+ * ## 판정 여부도 같이 옮긴다
+ *
+ * 단계만 옮기면 지난 시간에 「고치기」를 받은 학생까지 수업 시작부터 줄에 선다. 아직
+ * 아무것도 안 고쳤는데 말이다. 그래서 판정을 받은 때(`teacherFeedback.at`)를 검토
+ * 시각으로 함께 옮겨, 그 학생은 **고쳐서 2차를 다시 낼 때** 줄에 서게 한다
+ * (recordSubmitStage 가 그때 이 값을 지운다).
+ *
+ * 자기 점검 답은 작품의 답 칸에서 가져온다 — 대기 줄의 순서를 정하는 값이다.
+ *
+ * 읽기는 학생당 1건, 그 수업에 처음 들어올 때 한 번이다.
+ */
+export async function carryOverSubmitStage(
+  sessionId: string,
+  studentId: string,
+  activityId: string,
+): Promise<void> {
+  const ref = db().collection(COLLECTIONS.attendance).doc(entryId(sessionId, studentId));
+  const entry = await ref.get();
+  // 출석이 없거나 오늘 이미 뭔가 냈으면 손대지 않는다
+  if (!entry.exists) return;
+  if (((entry.data() as Attendance).submitStage ?? 0) > 0) return;
+
+  const artifact = await getArtifact(activityId, studentId);
+  const stage = artifact?.submitStage ?? 0;
+  if (!artifact || stage < 1) return;
+
+  await ref.set(
+    {
+      submitStage: stage,
+      reviewedAt: artifact.teacherFeedback?.at ?? 0,
+      selfCheck: artifact.answers?.news_check2 ?? "",
+    },
+    { merge: true },
+  );
+}
+
+/**
  * 이탈 에피소드 하나를 출석 문서에 누적한다.
  *
  * `increment()` 를 쓰는 이유: 읽고-더하고-쓰는 트랜잭션이 필요 없고, 여러 건이 동시에

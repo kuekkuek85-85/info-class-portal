@@ -1,5 +1,6 @@
 import { fail, guard, ok, readJson } from "@/lib/api";
 import {
+  carryOverSubmitStage,
   getSession,
   getStudent,
   isSessionClosed,
@@ -7,6 +8,7 @@ import {
   setSessionStatus,
   upsertStudents,
 } from "@/lib/db";
+import { activityIdFor } from "@/lib/gallery";
 import { createStudentSession, readCodeToken } from "@/lib/session";
 import { parseStudentId } from "@/lib/student-id";
 
@@ -64,6 +66,20 @@ export async function POST(request: Request) {
       date: session.date,
       joinedAt: Date.now(),
     });
+
+    /*
+     * 지난 차시에서 이어지는 학생은 제출 단계를 물려받는다.
+     *
+     * 8차시는 7차시의 작품을 그대로 이어 쓴다. 이 줄이 없으면 7차시에 2차를 내고
+     * 검토를 못 받은 학생이 오늘 교사의 대기 줄에 안 뜬다 — 학생 화면은 기다리는
+     * 중인데 선생님 화면에는 아무도 없다 (db.ts 의 carryOverSubmitStage).
+     *
+     * 제출 칸이 없는 차시는 건너뛴다. 그런 차시에서는 옮겨 적을 단계 자체가 없다.
+     */
+    const activityId = activityIdFor(session);
+    if (activityId && (session.activity?.worksheet ?? []).some((q) => q.kind === "submit")) {
+      await carryOverSubmitStage(session.id, parsed.studentId, activityId);
+    }
 
     await createStudentSession({
       studentId: parsed.studentId,

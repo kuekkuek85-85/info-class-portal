@@ -175,8 +175,18 @@ export async function GET(request: Request) {
          * 여기 싣지 않는다 — 교사가 그 학생을 누를 때만 artifact 를 1건 읽는다.
          */
         stage: entry.submitStage ?? 0,
-        /** 2차를 냈고 아직 피드백을 안 준 학생만 대기 줄에 선다 */
-        waiting: (entry.submitStage ?? 0) === 2 && !(entry.reviewedAt ?? 0),
+        /*
+         * 검토를 기다리는 학생.
+         *
+         * 2차만 세지 않는다. 게임이 「최종 제출」 이 아니라 「통과」 로 열리게 되면서,
+         * 최종까지 내고 아직 아무 말도 못 들은 학생도 끝난 것이 아니게 됐다. 그 학생을
+         * 줄에서 빼면 선생님이 볼 일이 영영 안 생기고, 학생은 활동지 앞에 앉은 채로
+         * 수업이 끝난다.
+         *
+         * 1차는 여전히 안 센다 — 그 학생은 AI 가 짚어 준 것을 고치는 중이고, 아직
+         * 봐 달라고 한 적이 없다.
+         */
+        waiting: (entry.submitStage ?? 0) >= 2 && !(entry.reviewedAt ?? 0),
         /** 자기 점검 답. 교사 화면에 그대로 보여 준다 */
         selfCheck: entry.selfCheck ?? "",
         /**
