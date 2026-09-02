@@ -327,6 +327,20 @@ const WORKSHEET: WorksheetQuestion[] = [
       // 인터뷰는 묻고 답하는 두 마디가 기본이다
       { key: "news_interview", label: "④ 인터뷰", minSentences: 2 },
     ],
+    /*
+     * 교사가 「통과」를 준 학생에게만 뜨는 링크 (done-portal.tsx).
+     *
+     * 8차시와 같은 것을 둔다. 두 차시는 같은 활동이고 — 활동 통도 문항도 같다 —
+     * 다른 것은 진도뿐이다. 한 반이 7차시를 하고 있다는 이유로 통과한 학생이
+     * 빈 화면을 보면, 같은 것을 해낸 학생이 반에 따라 다른 대접을 받는다.
+     *
+     * 최종 제출이 아니라 통과로 열린다. 낸 것은 "냈다" 이지 "됐다" 가 아니다.
+     */
+    doneLinks: [
+      { label: "하노이탑", url: "https://hanoi-tower-game-rosy.vercel.app/" },
+      { label: "2048", url: "https://2048-game-gilt-kappa.vercel.app/" },
+      { label: "똥 피하기", url: "https://dodge-poop-game.vercel.app/" },
+    ],
   },
 ];
 
