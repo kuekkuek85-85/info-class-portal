@@ -265,7 +265,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "pi_mask",
     phase: "worksheet",
-    label: "가려 봅시다 — 어디까지가 개인정보일까",
+    label: "활동 1 · 어디까지가 개인정보일까",
     hint:
       "아래 자기소개에서 개인정보라고 생각하는 낱말을 눌러 가려 보세요.\n" +
       "이름과 전화번호만 가리면 될까요? 한 번 더 생각해 보세요.",
@@ -277,7 +277,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "_pi_quiz",
     phase: "worksheet",
-    label: "활동 1 · 이건 개인정보일까?",
+    label: "활동 2 · 이건 개인정보일까?",
     hint: "두 개 중에서 개인정보인 쪽을 고르는 퀴즈입니다. 새 창으로 열려요.",
     kind: "note",
     linkUrl: "https://wordwall.net/ko/resource/73876091",
@@ -298,7 +298,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "_pi_password",
     phase: "worksheet",
-    label: "활동 2 · 이 비밀번호는 얼마나 버틸까",
+    label: "활동 3 · 이 비밀번호는 얼마나 버틸까",
     /*
      * 경고를 안내의 맨 앞에 둔다. 뒤에 붙이면 이미 자기 비밀번호를 치고 난 뒤에 읽는다.
      */
@@ -409,7 +409,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   phaseLabels: {
     assessment: "오늘 할 일",
     problem: "한 번 속아 보기",
-    worksheet: "함께 해 볼 것",
+    worksheet: "함께 해 보기",
   },
   freeNavigation: false,
 
@@ -488,7 +488,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (기사와 다른 통 — 어제 통과한 학생의 "끝났다" 가 안 풀립니다)`);
-  console.log("단계: 대기 → 기분 → 오늘 할 일 → 한 번 속아 보기 → 함께 해 볼 것 → 성찰 → 마침");
+  console.log("단계: 대기 → 기분 → 오늘 할 일 → 한 번 속아 보기 → 함께 해 보기 → 성찰 → 마침");
   console.log("활동 링크 2개 — wordwall 퀴즈 · security.org 비밀번호 (둘 다 로그인 불필요, 접속 확인함)");
   console.log("슬라이드 18의 마스킹 체험은 뺐습니다 — store.wrtn.ai 도메인이 사라졌습니다.");
   console.log("비밀번호 활동은 「진짜 말고 가짜를 넣으라」 로 안내합니다.");
