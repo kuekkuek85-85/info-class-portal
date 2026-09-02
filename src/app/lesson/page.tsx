@@ -706,13 +706,28 @@ export default function LessonPage() {
     );
   const stepQuestions = STEP_PHASES.includes(viewPhase) ? questionsFor(viewPhase) : [];
   /**
-   * 제출 단추를 띄울 단계 — 이 차시가 실제로 쓰는 단계 중 **마지막**.
+   * 제출 단추를 띄울 단계 — 이 차시에서 학생이 **마지막으로 무언가를 하는** 곳.
    *
-   * "grill 이면 띄운다" 로 박아 두었더니, grill 이 없는 차시(마음 톡톡은 emotion 으로
-   * 끝난다)에서는 제출 단추가 어느 화면에도 안 나왔다. 차시마다 마지막 단계가 다르므로
-   * 목록에서 찾는다.
+   * 처음에는 "grill 이면 띄운다" 로 박아 두었다가, grill 이 없는 차시(마음 톡톡)에서
+   * 단추가 어느 화면에도 안 나왔다. 그래서 쪼갠 단계 중 마지막을 찾게 고쳤는데, 이번에는
+   * **그 뒤에 그리기가 오는 차시**에서 단추가 가운데에 섰다 — 마음 톡톡 3회기가 그랬다.
+   * 감정 지도에 「다 했어요」 가 떴고, 그 단계에서는 장소를 아직 안 골랐으므로 누른 학생
+   * 전원이 "먼저 장소를 골라 주세요" 를 봤다. 아무도 낼 수 없었다.
+   *
+   * 그래서 쪼갠 단계와 활동지·그리기를 **한 줄로 놓고** 그중 마지막을 고른다. 이 규칙으로
+   * 바뀌는 차시는 3회기 하나뿐이고(감정 지도 → 힐링 스페이스), 그 자리에서는 장소도
+   * 그림도 이미 있으므로 검사에 걸리지 않는다.
    */
-  const lastStepPhase = [...STEP_PHASES].reverse().find((item) => questionsFor(item).length > 0);
+  const finalWorkPhase = [...LESSON_PHASES].reverse().find((item) => {
+    if (STEP_PHASES.includes(item)) return questionsFor(item).length > 0;
+    // 회고 뒤에 그리기를 두는 차시는 그쪽이 그리기 자리다 (backPhases 의 wrapDraw 와 같은 기준)
+    if (item === "wrapheal") return questionsFor("wrapheal").length > 0;
+    if (item === "draw") {
+      return questionsFor("wrapheal").length === 0 && (session.activity?.places.length ?? 0) > 0;
+    }
+    if (item === "worksheet") return questionsFor("worksheet").length > 0;
+    return false;
+  });
 
   /**
    * 활동지 탭(그리기·활동지·감상 묶음)에 띄울 문항.
@@ -1069,9 +1084,10 @@ export default function LessonPage() {
               disabled={closed}
               /*
                 제출 단추는 마지막 단계에서만 띄운다. 문제 정의를 쓰자마자 "다 했어요" 가
-                보이면 거기서 끝내는 학생이 나온다.
+                보이면 거기서 끝내는 학생이 나오고, 아직 그리기가 남은 차시에서는 장소를
+                안 고른 채로 누르게 된다 (finalWorkPhase 참조).
               */
-              hideSubmit={viewPhase !== lastStepPhase}
+              hideSubmit={viewPhase !== finalWorkPhase}
               hideSources={session.activity.sourcesEnabled === false}
               // 기분 다시 고르기 문항이 오늘 처음 고른 낱말을 나란히 띄운다
               firstMood={mood}
@@ -1207,10 +1223,10 @@ export default function LessonPage() {
                 그러면 오늘 활동의 절반을 건너뛴 채로 끝난다.
 
                 활동지 문항만 있는 차시(정보과)에서는 여기가 마지막이라 그대로 띄운다.
-                문항이 전부 단계에 배정된 차시(인간과 인공지능)에서도 이 화면은
-                "지금까지 쓴 것 훑어보기" 라 지금까지처럼 띄운다.
+                회고 뒤에 그리기가 오는 차시(마음 톡톡 3회기)에서는 그 그리기 화면이
+                마지막이므로 거기서 뜬다 — 같은 규칙 하나로 판단한다.
               */
-              hideSubmit={questionsFor("worksheet").length > 0 && Boolean(lastStepPhase)}
+              hideSubmit={viewPhase !== finalWorkPhase}
               hideSources={session.activity.sourcesEnabled === false}
               /*
                 제목은 차시가 붙인 단계 이름을 따른다.
