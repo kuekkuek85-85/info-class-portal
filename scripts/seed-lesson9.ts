@@ -397,7 +397,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 하나**를 정하라고 하면 오늘 배운 것을 자기 생활에 한 번은 대 봐야 답이 나온다.
    */
   reflectionQuestions: [
-    "개인정보를 지키려고 오늘부터 바꿀 것을 하나만 정해 보세요. 무엇을 어떻게 바꿀 건가요?",
+    "개인정보를 보호하기 위한 방안을 작성해 봅시다.(ex. 비밀번호 어렵게 바꾸기 등)",
   ],
   reflectionPublic: false,
 
