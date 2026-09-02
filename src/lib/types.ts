@@ -320,11 +320,21 @@ export interface RowColumn {
  * 제대로 보고도 당하는 것을 겪어야 파밍이 무엇인지 몸으로 남는다.
  */
 export interface ScamScene {
-  mode: "compare" | "type" | "message";
+  mode: "login" | "compare" | "type" | "message";
   /** 이 장면이 다루는 것 — "피싱" · "파밍" · "스미싱" */
   title: string;
   /** 학생에게 시키는 것 한 줄 */
   prompt: string;
+
+  /**
+   * login — iframe 으로 띄울 가짜 로그인 화면의 주소.
+   *
+   * 이 화면은 학생이 친 아이디·비밀번호를 **어디로도 보내지 않는다** (public 의 그 파일
+   * 참조). 로그인을 누르면 알림창으로 되돌려 주고, 부모 창에 "당했다" 신호만 보낸다.
+   */
+  embedUrl?: string;
+  /** login — 주소창에 크게 띄울 (가짜) 주소. 학생이 봤어야 할 단서다 */
+  shownUrl?: string;
 
   /** compare — 나란히 놓을 두 곳. 하나만 fake 다 */
   sites?: { url: string; caption: string; fake: boolean }[];

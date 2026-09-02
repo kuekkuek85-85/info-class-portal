@@ -111,11 +111,35 @@ function empty(): PhaseContent {
  * 띄운 주소를 그대로 쳐 보는 학생이 반드시 나온다.
  */
 const SCENES: ScamScene[] = [
+  /*
+   * 직접 당해 보기 — 가짜 로그인 화면에 실제로 쳐 본다.
+   *
+   * 설명을 먼저 들으면 "조심해야지" 로 끝난다. 자기 손으로 비밀번호를 치고 그것이
+   * 그대로 튀어나오는 것을 봐야 남는다. 그래서 이것을 맨 앞에 둔다 — 당한 다음에
+   * 듣는 "주소를 봤어야 했다" 만 기억에 붙는다.
+   *
+   * 이 화면은 학생이 친 것을 어디로도 안 보낸다 (public/phish-demo/naver-login.html).
+   */
+  {
+    mode: "login",
+    title: "① 직접 당해 봅시다",
+    prompt:
+      "네이버 로그인 화면입니다. 아무 아이디와 비밀번호나 넣고 로그인을 눌러 보세요. (진짜 비밀번호 말고요!)",
+    embedUrl: "/phish-demo/naver-login.html",
+    // 화면은 진짜 같아도 주소가 가짜다. 이 한 줄이 이 활동이 가르칠 것이다
+    shownUrl: "http://naver.login-authkr.com/nidlogin",
+    answer:
+      "방금 친 비밀번호가 그대로 보였죠? 진짜였다면 그 순간 남의 손에 넘어갔습니다. 화면은 진짜 같아도 주소가 가짜였어요.",
+    clues: [
+      "주소를 보세요 — naver.com 이 아니라 login-authkr.com 입니다. 화면이 아니라 주소가 진짜와 가짜를 가릅니다",
+      "http 로 시작하고 자물쇠가 없어요",
+      "로그인 화면이 문자나 메일 링크로 열렸다면, 치기 전에 주소부터 의심하세요",
+    ],
+  },
   {
     mode: "compare",
-    title: "① 피싱 — 낚여서 다른 곳으로",
-    prompt:
-      "문자에 있던 링크를 눌렀더니 로그인 화면이 떴습니다. 둘 중 어느 쪽이 가짜일까요? 주소만 보세요.",
+    title: "② 이번엔 눈으로 — 어느 쪽이 가짜?",
+    prompt: "두 로그인 화면의 주소입니다. 어느 쪽이 가짜일까요? 주소만 보세요.",
     sites: [
       { url: "https://nid.naver.com/nidlogin.login", caption: "가", fake: false },
       { url: "http://nid-naver.login-kr.com/nidlogin", caption: "나", fake: true },
@@ -129,7 +153,7 @@ const SCENES: ScamScene[] = [
   },
   {
     mode: "type",
-    title: "② 파밍 — 맞게 쳤는데도",
+    title: "③ 파밍 — 맞게 쳤는데도",
     prompt:
       "이번엔 링크를 안 누르고 직접 주소를 칩니다. 아래 주소를 정확히 쳐서 들어가 보세요.",
     expect: "naver.com",
@@ -147,7 +171,7 @@ const SCENES: ScamScene[] = [
   },
   {
     mode: "message",
-    title: "③ 스미싱 — 문자로 오는 낚싯바늘",
+    title: "④ 스미싱 — 문자로 오는 낚싯바늘",
     prompt: "이런 문자가 왔습니다. 누르시겠어요?",
     sender: "[Web발신] 010-3XXX-9187",
     body: "[택배] 주소 불일치로 배송이 보류되었습니다.\n아래에서 주소를 다시 확인해 주세요.",

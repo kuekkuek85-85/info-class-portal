@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { ScamScene } from "@/lib/types";
+
+/** 판단하는 장면인가. 직접 당해 보는 장면(login·type)은 점수에 안 넣는다 */
+function isJudged(scene: ScamScene): boolean {
+  return scene.mode === "compare" || scene.mode === "message";
+}
 
 /**
  * 개인정보 침해를 한 장면씩 겪어 보는 체험 (9차시).
@@ -42,6 +47,9 @@ export function ScamSim({
   const [opened, setOpened] = useState<Record<number, boolean>>({});
   const [correct, setCorrect] = useState<Record<number, boolean>>({});
 
+  /** 점수에 넣는 장면 수. 직접 당해 보는 장면은 세지 않는다 */
+  const judgedTotal = scenes.filter(isJudged).length;
+
   function reveal(index: number, ok: boolean) {
     if (disabled || opened[index]) return;
     const nextOpened = { ...opened, [index]: true };
@@ -50,7 +58,8 @@ export function ScamSim({
     setCorrect(nextCorrect);
 
     const got = Object.values(nextCorrect).filter(Boolean).length;
-    onChange(`${got}/${scenes.length}`);
+    // 판단하는 장면이 하나도 없으면 점수를 남기지 않는다 (0/0 을 피한다)
+    if (judgedTotal > 0) onChange(`${got}/${judgedTotal}`);
   }
 
   return (
@@ -59,12 +68,18 @@ export function ScamSim({
         <section key={scene.title} className="flex flex-col gap-3 rounded-lg border-2 border-ink p-4">
           <div className="flex flex-wrap items-baseline gap-2">
             <h3 className="t-headline">{scene.title}</h3>
-            {opened[index] && (
-              <span className="t-body-sm font-bold">{correct[index] ? "맞혔어요" : "속았어요"}</span>
-            )}
+            {opened[index] &&
+              (isJudged(scene) ? (
+                <span className="t-body-sm font-bold">{correct[index] ? "맞혔어요" : "속았어요"}</span>
+              ) : (
+                <span className="t-body-sm font-bold">당했어요</span>
+              ))}
           </div>
           <p className="t-body">{scene.prompt}</p>
 
+          {scene.mode === "login" && (
+            <LoginScene scene={scene} done={opened[index]} onPhished={() => reveal(index, false)} />
+          )}
           {scene.mode === "compare" && (
             <CompareScene scene={scene} done={opened[index]} onPick={(ok) => reveal(index, ok)} />
           )}
@@ -92,6 +107,55 @@ export function ScamSim({
       ))}
 
       {value && <p className="t-caption">지금까지 {value} 맞혔어요.</p>}
+    </div>
+  );
+}
+
+/**
+ * 직접 당해 보기 — 가짜 로그인 화면에 실제로 쳐 본다.
+ *
+ * ## 왜 iframe 인가
+ *
+ * 로그인 화면은 public 의 정적 파일이다 (phish-demo/naver-login.html). 학생이 친 것을
+ * **어디로도 안 보내고** 알림창으로만 되돌린다 — 그 파일에 서버로 보내는 코드가 한 줄도
+ * 없다. 여기서는 그 화면을 액자에 넣어 띄우기만 한다.
+ *
+ * 위에 주소창을 크게 얹는다. 이 활동이 가르치려는 것이 그 한 줄이기 때문이다 — 화면은
+ * 진짜 같아도 주소가 가짜다. 학생은 대개 그것을 안 보고 비밀번호부터 친다. 그게 요점이다.
+ *
+ * 알림창이 뜨면 그 안의 화면이 부모 창(이곳)에 "당했다" 신호를 보내고, 그때 아래 설명이
+ * 펼쳐진다. 값은 안 온다 — 신호 한 마디뿐이다.
+ */
+function LoginScene({
+  scene,
+  done,
+  onPhished,
+}: {
+  scene: ScamScene;
+  done?: boolean;
+  onPhished: () => void;
+}) {
+  useEffect(() => {
+    function onMessage(event: MessageEvent) {
+      if (event.data === "phish-demo:submitted") onPhished();
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [onPhished]);
+
+  return (
+    <div className="flex flex-col gap-3">
+      {scene.shownUrl && <AddressBar url={scene.shownUrl} />}
+      <div className="overflow-hidden rounded-lg border-2 border-ink">
+        <iframe
+          src={scene.embedUrl}
+          title="가짜 로그인 화면 (수업용)"
+          className="h-[420px] w-full"
+          // 로그인만 되고 다른 데로 못 튀게 막는다. 스크립트는 알림·부모 신호에 필요하다
+          sandbox="allow-scripts allow-forms allow-modals"
+        />
+      </div>
+      {!done && <p className="t-caption">아무 아이디·비밀번호나 넣고 로그인을 눌러 보세요.</p>}
     </div>
   );
 }

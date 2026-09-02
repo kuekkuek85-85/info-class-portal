@@ -1,0 +1,138 @@
+<!doctype html>
+<!--
+  수업용 가짜 로그인 화면 — 9차시 「디지털 윤리 ① 개인정보 보호」.
+
+  이 파일은 피싱을 몸으로 겪어 보기 위한 교육용 소품이다. 학생이 아이디와 비밀번호를
+  넣고 로그인을 누르면, 방금 친 것을 그대로 되돌려 보여주며 "가짜였다" 를 알린다.
+
+  ## 아무것도 가져가지 않는다
+
+  여기에는 서버로 보내는 코드가 한 줄도 없다 — fetch 도, form action 도, 저장도 없다.
+  학생이 친 글자는 이 브라우저 밖으로 절대 나가지 않고, 알림창을 띄운 뒤 그대로 사라진다.
+  "비밀번호가 넘어갔다" 를 실제로 넘기지 않고 보여주는 것이 이 소품의 요점이다.
+
+  진짜 네이버가 아니다. 로고와 버튼은 흉내만 낸 것이고, 어떤 링크도 진짜로 열리지 않는다.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>NAVER 로그인</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Malgun Gothic", "맑은 고딕", sans-serif;
+    background: #fff;
+    color: #333;
+  }
+  .wrap { max-width: 460px; margin: 0 auto; padding: 40px 24px; }
+  .logo {
+    text-align: center;
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: #03c75a;
+    margin: 24px 0 32px;
+  }
+  .field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #dadada;
+    border-radius: 6px;
+    padding: 14px 14px;
+    margin-bottom: 10px;
+  }
+  .field:focus-within { border-color: #03c75a; }
+  .field .ico { width: 20px; text-align: center; color: #adadad; }
+  .field input {
+    border: 0;
+    outline: 0;
+    flex: 1;
+    font-size: 16px;
+    background: transparent;
+  }
+  .stay { display: flex; align-items: center; gap: 6px; margin: 6px 2px 20px; color: #666; font-size: 14px; }
+  .btn {
+    width: 100%;
+    border: 0;
+    border-radius: 6px;
+    background: #03c75a;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 700;
+    padding: 15px 0;
+    cursor: pointer;
+  }
+  .btn:active { background: #02b350; }
+  .links {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 22px;
+    color: #888;
+    font-size: 13px;
+  }
+  .links span { cursor: default; }
+  .foot { text-align: center; margin-top: 40px; color: #b0b0b0; font-size: 12px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">NAVER</div>
+
+    <form id="loginForm" autocomplete="off">
+      <div class="field">
+        <span class="ico" aria-hidden="true">👤</span>
+        <input id="id" type="text" aria-label="아이디 또는 전화번호" placeholder="아이디 또는 전화번호" maxlength="41" />
+      </div>
+      <div class="field">
+        <span class="ico" aria-hidden="true">🔒</span>
+        <input id="pw" type="password" aria-label="비밀번호" placeholder="비밀번호" maxlength="16" />
+      </div>
+
+      <label class="stay">
+        <input type="checkbox" /> 로그인 상태 유지
+      </label>
+
+      <button class="btn" type="submit">로그인</button>
+    </form>
+
+    <div class="links">
+      <span>아이디 찾기</span>·<span>비밀번호 찾기</span>·<span>회원가입</span>
+    </div>
+    <div class="foot">© NAVER Corp.</div>
+  </div>
+
+<script>
+  // 로그인 누름 → 방금 친 것을 그대로 보여주고 끝. 어디로도 보내지 않는다.
+  document.getElementById("loginForm").addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    var id = document.getElementById("id").value.trim() || "(안 씀)";
+    var pwField = document.getElementById("pw");
+    var pw = pwField.value || "(안 씀)";
+
+    alert(
+      "당신의 아이디는 「" + id + "」\n" +
+        "비밀번호는 「" + pw + "」 입니다.\n\n" +
+        "해킹했습니다! 😈\n\n" +
+        "— 이건 수업용 가짜 화면이에요.\n" +
+        "진짜였다면 방금 그 비밀번호가 그대로 넘어갔습니다.\n" +
+        "주소창을 봤나요?"
+    );
+
+    // 친 것을 화면에서도 바로 지운다 — 옆 사람이 어깨너머로 못 보게
+    pwField.value = "";
+
+    // 수업 화면(부모 창)에 "당했다" 를 알려, 무엇을 봤어야 했는지 펼쳐 준다.
+    // 값은 안 보낸다 — 신호 한 마디뿐이다.
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage("phish-demo:submitted", "*");
+    }
+  });
+</script>
+</body>
+</html>
