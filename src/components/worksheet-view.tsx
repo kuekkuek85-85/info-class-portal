@@ -8,6 +8,8 @@ import { EmotionQuiz } from "@/components/emotion-quiz";
 import { ImageField } from "@/components/image-field";
 import { RowsField } from "@/components/rows-field";
 import { MoodRecheck } from "@/components/mood-recheck";
+import { MaskingField } from "@/components/masking-field";
+import { ScamSim } from "@/components/scam-sim";
 import { SubmitPanel, useJumpToField } from "@/components/submit-panel";
 import { TeacherNotePanel } from "@/components/teacher-note-panel";
 import { ArtifactCanvas } from "@/components/artifact-canvas";
@@ -633,6 +635,24 @@ export function WorksheetView({
             />
           ) : question.kind === "image" ? (
             <ImageField
+              value={value.answers[question.key] ?? ""}
+              onChange={(next) => setAnswer(question.key, next)}
+              disabled={disabled}
+            />
+          ) : question.kind === "scam_sim" ? (
+            /*
+              답으로 남는 것은 "2/3" 한 줄뿐이다. 무엇을 눌렀는지는 안 남긴다 —
+              틀린 것이 기록된다고 생각하면 찍지 않고 옆을 본다 (scam-sim 참조).
+            */
+            <ScamSim
+              scenes={question.scenes ?? []}
+              value={value.answers[question.key] ?? ""}
+              onChange={(next) => setAnswer(question.key, next)}
+              disabled={disabled}
+            />
+          ) : question.kind === "masking" ? (
+            <MaskingField
+              lines={question.maskLines ?? []}
               value={value.answers[question.key] ?? ""}
               onChange={(next) => setAnswer(question.key, next)}
               disabled={disabled}

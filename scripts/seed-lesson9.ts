@@ -10,15 +10,23 @@
  * 못 하는 것만 맡는다.
  *
  *   · 기분 체크와 출석
+ *   · **속아 보기** — 피싱·파밍·스미싱을 한 장면씩 겪는다 (scam-sim)
+ *   · **마스킹 해 보기** — 어디까지가 개인정보인지 눌러서 가린다 (masking-field)
  *   · 활동 주소를 **누를 수 있게** 주기 (칠판의 bit.ly 를 손으로 옮겨 적으면 5분이 간다)
- *   · 활동 1을 하고 나서 한 칸 쓰기 — 들은 것과 아는 것을 가르는 자리
+ *   · 퀴즈를 하고 나서 한 칸 쓰기 — 들은 것과 아는 것을 가르는 자리
  *   · 성찰
  *
- * ## 활동 하나는 죽었다
+ * ## 슬라이드를 겪는 것으로 바꾼 자리
  *
- * 슬라이드 18의 마스킹 체험(뤼튼 스토어)은 **도메인 자체가 없어졌다**(store.wrtn.ai).
- * 그래서 빼고 둘만 남긴다. 나머지 둘은 확인했다 — wordwall 퀴즈와 security.org 는
- * 살아 있고 로그인도 필요 없다.
+ * 슬라이드 8~15는 피싱·파밍·스미싱·보이스피싱을 **설명한다.** 설명을 먼저 들으면
+ * "조심해야겠다" 로 끝나고 그 다음 주에 똑같이 당한다. 그래서 설명 앞에 한 번 속아
+ * 보는 자리를 둔다 — 틀린 다음에 듣는 설명만 남는다.
+ *
+ * 슬라이드 18의 마스킹 체험(뤼튼 스토어)은 **도메인 자체가 없어져서**(store.wrtn.ai)
+ * 포털 안에 직접 만들었다. 개인정보 수업에서 개인정보가 든 문장을 남의 서비스에
+ * 넣게 하는 것이 앞뒤가 안 맞기도 했다.
+ *
+ * 나머지 둘은 접속을 확인하고 그대로 쓴다 — wordwall 퀴즈와 security.org.
  *
  * ## 진짜 비밀번호를 넣게 하지 않는다
  *
@@ -40,7 +48,13 @@
 import { cert, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 
-import type { LessonPlan, PhaseContent, WorksheetQuestion } from "../src/lib/types.ts";
+import type {
+  LessonPlan,
+  MaskLine,
+  PhaseContent,
+  ScamScene,
+  WorksheetQuestion,
+} from "../src/lib/types.ts";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -67,6 +81,15 @@ const LESSON_PLANS = "lessonPlans";
 const LESSON_NO = 9;
 
 /**
+ * 학생이 들어와 있는 수업에도 계획을 덮어쓴다.
+ *
+ * 기본은 안 덮는다 — 수업 중에 화면이 바뀌면 쓰던 것이 끊긴다. 다만 수업 전날
+ * **시험 삼아 한 명 들어와 본 것** 때문에 정작 그날 계획이 안 들어가는 일이 있어서
+ * 열어 둔다. 아무도 아직 안 썼는지 눈으로 확인하고 쓰는 스위치다.
+ */
+const FORCE = process.argv.includes("--force");
+
+/**
  * 새 활동 통. 기사(career-plan)와 **섞지 않는다.**
  *
  * 같은 통에 넣으면 어제 통과받은 스물넷의 "끝났다" 가 풀린다 — 게임 화면이 활동지로
@@ -79,17 +102,155 @@ function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
 
+/**
+ * 속아 보는 세 장면. 순서가 설계다.
+ *
+ * 피싱에서 "주소를 봐라" 를 배운 **직후에** 파밍이 온다. 주소를 제대로 보고도 당하는
+ * 것을 겪어야 파밍이 무엇인지 남는다. 순서를 바꾸면 파밍은 그냥 어려운 낱말이 된다.
+ *
+ * 주소는 다 가짜다. 네이버를 흉내 내되 실제로 존재할 수 있는 주소는 피한다 — 화면에
+ * 띄운 주소를 그대로 쳐 보는 학생이 반드시 나온다.
+ */
+const SCENES: ScamScene[] = [
+  {
+    mode: "compare",
+    title: "① 피싱 — 낚여서 다른 곳으로",
+    prompt:
+      "문자에 있던 링크를 눌렀더니 로그인 화면이 떴습니다. 둘 중 어느 쪽이 가짜일까요? 주소만 보세요.",
+    sites: [
+      { url: "https://nid.naver.com/nidlogin.login", caption: "가", fake: false },
+      { url: "http://nid-naver.login-kr.com/nidlogin", caption: "나", fake: true },
+    ],
+    answer: "「나」 가 가짜입니다. 눌렀다면 아이디와 비밀번호가 그대로 넘어갔을 거예요.",
+    clues: [
+      "진짜 주소는 naver.com 으로 끝납니다. 가짜는 login-kr.com 으로 끝나요 — 앞에 naver 를 붙여 눈을 속입니다",
+      "점(.) 앞뒤를 보세요. nid.naver.com 은 네이버의 방이고, nid-naver 는 이름만 흉내 낸 남의 집입니다",
+      "가짜는 http 로 시작합니다. 자물쇠가 없어요",
+    ],
+  },
+  {
+    mode: "type",
+    title: "② 파밍 — 맞게 쳤는데도",
+    prompt:
+      "이번엔 링크를 안 누르고 직접 주소를 칩니다. 아래 주소를 정확히 쳐서 들어가 보세요.",
+    expect: "naver.com",
+    certificate: {
+      issuedTo: "cheap-hosting-99.example (네이버가 아닙니다)",
+      note: "주소는 맞는데 인증서를 받은 곳이 다릅니다. 이럴 때 브라우저는 「안전하지 않음」 이라고 알려 줍니다.",
+    },
+    answer:
+      "제대로 쳤는데도 가짜가 열렸습니다. 이것이 파밍이에요 — 내 기기의 주소록이 바뀌어서, 맞는 주소가 다른 집으로 데려갑니다.",
+    clues: [
+      "파밍은 주소만 봐서는 못 잡습니다. 피싱과 다른 점이 바로 이것이에요",
+      "자물쇠를 눌러 인증서를 보면 다른 곳이 나옵니다",
+      "그래서 백신을 켜 두고, 공용 와이파이에서 로그인을 안 하는 것이 막는 방법입니다",
+    ],
+  },
+  {
+    mode: "message",
+    title: "③ 스미싱 — 문자로 오는 낚싯바늘",
+    prompt: "이런 문자가 왔습니다. 누르시겠어요?",
+    sender: "[Web발신] 010-3XXX-9187",
+    body: "[택배] 주소 불일치로 배송이 보류되었습니다.\n아래에서 주소를 다시 확인해 주세요.",
+    linkText: "hxxp://bit.ly/dlv-check-kr",
+    linkUrl: "http://cj-delivery.track-kr.top/login",
+    answer:
+      "안 누르는 것이 맞습니다. 눌렀다면 택배사를 흉내 낸 곳으로 갔고, 거기서 앱을 깔라고 했을 거예요.",
+    clues: [
+      "주문한 적 없는 택배입니다. 먼저 그것부터 생각하세요",
+      "짧은 주소(bit.ly 같은 것)는 진짜 주소를 가립니다 — 어디로 가는지 볼 수가 없어요",
+      "확인하려면 문자 속 링크가 아니라 택배사 앱이나 공식 번호로 확인합니다",
+    ],
+  },
+];
+
+/**
+ * 마스킹할 문장.
+ *
+ * 낱말 단위로 넉넉히 쪼갠다 — 누를 수 있는 조각이 곧 판단할 거리이고, 조사까지 눌리면
+ * 무엇을 고르라는 것인지 흐려진다.
+ *
+ * 이름·전화번호는 누구나 고른다. 진짜 배울 것은 **학교·학년·반·번호**다. 하나씩 보면
+ * 아무것도 아닌데 합치면 한 사람이 특정된다 — 슬라이드 4가 말하는 그것이다.
+ */
+const MASK_LINES: MaskLine[] = [
+  {
+    parts: [
+      { text: "안녕하세요," },
+      { text: "저는" },
+      { text: "장평중학교", hide: true },
+      { text: "1학년", hide: true },
+      { text: "4반", hide: true },
+      { text: "12번", hide: true },
+      { text: "김민수", hide: true },
+      { text: "입니다." },
+    ],
+  },
+  {
+    parts: [
+      { text: "궁금한" },
+      { text: "점이" },
+      { text: "있으면" },
+      { text: "010-1234-5678", hide: true },
+      { text: "로" },
+      { text: "연락" },
+      { text: "주세요." },
+      { text: "집은" },
+      { text: "역곡역", hide: true },
+      { text: "근처예요." },
+    ],
+  },
+];
+
 const WORKSHEET: WorksheetQuestion[] = [
+  /*
+   * 속아 보기 — 「함께 해 볼 것」 앞의 독립된 단계다.
+   *
+   * 같은 활동지에 이어 붙이지 않는다. 한 화면에 다 있으면 학생이 아래로 훑어 내려가면서
+   * 답을 먼저 보고, 그러면 속아 보는 일이 안 일어난다. 교사가 단계를 넘겨야 다음이
+   * 열리므로 셋을 같은 속도로 지날 수 있다.
+   */
+  {
+    key: "pi_sim",
+    phase: "problem",
+    label: "한 번 속아 봅시다",
+    hint:
+      "설명을 듣기 전에 먼저 해 보세요. 틀려도 괜찮습니다 — 틀리는 것이 오늘 활동입니다.\n" +
+      "고르고 나면 무엇을 보고 알 수 있었는지 알려 줍니다.",
+    kind: "scam_sim",
+    scenes: SCENES,
+    maxLength: 20,
+  },
+
   {
     key: "_pi_note",
     phase: "worksheet",
     label: "오늘은 화면으로 함께 봅니다",
     hint:
-      "설명은 앞 화면으로 같이 봐요. 이 화면에서는 두 가지만 합니다.\n\n" +
-      "· 아래 두 활동을 눌러서 해 보기\n" +
-      "· 활동 1을 하고 나서 한 칸 쓰기",
+      "설명은 앞 화면으로 같이 봐요. 이 화면에서는 세 가지를 합니다.\n\n" +
+      "· 마스킹 해 보기\n" +
+      "· 퀴즈 풀고 한 칸 쓰기\n" +
+      "· 비밀번호가 얼마나 버티는지 보기",
     kind: "note",
     maxLength: 0,
+  },
+
+  /*
+   * 마스킹 체험 — 슬라이드 18이 쓰던 뤼튼 앱을 대신한다 (도메인이 사라졌다).
+   *
+   * 바깥 사이트로 안 나간다. 그 편이 빠르기도 하지만, 개인정보 수업에서 개인정보가
+   * 들어간 문장을 남의 서비스에 넣게 하는 것이 앞뒤가 안 맞기도 한다.
+   */
+  {
+    key: "pi_mask",
+    phase: "worksheet",
+    label: "가려 봅시다 — 어디까지가 개인정보일까",
+    hint:
+      "아래 자기소개에서 개인정보라고 생각하는 낱말을 눌러 가려 보세요.\n" +
+      "이름과 전화번호만 가리면 될까요? 한 번 더 생각해 보세요.",
+    kind: "masking",
+    maskLines: MASK_LINES,
+    maxLength: 20,
   },
 
   {
@@ -212,9 +373,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 활동 두 개가 다 바깥 사이트다. 이탈로 세면 반 전체가 빨간 신호등이 되고,
    * 그 화면을 본 선생님은 아무 판단도 못 한다 (5·6차시와 같은 이유).
    */
-  focusExempt: ["worksheet"],
+  focusExempt: ["worksheet", "problem"],
   phaseLabels: {
     assessment: "오늘 할 일",
+    problem: "한 번 속아 보기",
     worksheet: "함께 해 볼 것",
   },
   freeNavigation: false,
@@ -241,13 +403,36 @@ async function main(): Promise<void> {
     await doc.ref.set({ ...PLAN, updatedAt: now }, { merge: true });
     console.log(`↻ 갱신 — ${PLAN.title} (${doc.id})`);
 
-    // 아직 시작 안 한 수업에는 바로 반영한다. 시작한 수업은 그날 화면을 흔들지 않는다
-    const scheduled = await db
+    /*
+     * 아직 **아무도 안 들어온** 수업에 반영한다.
+     *
+     * 원래는 status 가 scheduled 인 것만 봤는데, 교사가 화면에서 한 번 열어 보기만 해도
+     * active 로 바뀐다. 그러면 수업 전날 계획을 고쳐도 그 수업에는 안 들어가고, 다음
+     * 날 아침에 옛 화면이 열린다 — 9차시를 만들면서 실제로 그렇게 됐다.
+     *
+     * 기준을 출석으로 바꾼다. 한 명이라도 들어왔으면 그날 화면을 흔들지 않는다.
+     */
+    const live = await db
       .collection("classSessions")
       .where("lessonNo", "==", LESSON_NO)
-      .where("status", "==", "scheduled")
+      .where("status", "in", ["scheduled", "active"])
       .get();
-    for (const session of scheduled.docs) {
+
+    const scheduled: FirebaseFirestore.QueryDocumentSnapshot[] = [];
+    for (const session of live.docs) {
+      const joined = await db
+        .collection("attendance")
+        .where("sessionId", "==", session.id)
+        .limit(1)
+        .get();
+      if (joined.empty || FORCE) scheduled.push(session);
+      else
+        console.log(
+          `· ${session.id} — 이미 학생이 들어와 있어 건드리지 않습니다 (--force 로 덮어쓸 수 있습니다)`,
+        );
+    }
+
+    for (const session of scheduled) {
       await session.ref.set(
         {
           title: PLAN.title,
@@ -264,14 +449,14 @@ async function main(): Promise<void> {
         { merge: true },
       );
     }
-    console.log(`   아직 시작하지 않은 수업 ${scheduled.size}개에 반영`);
+    console.log(`   아직 아무도 안 들어온 수업 ${scheduled.length}개에 반영`);
   } else {
     const ref = await db.collection(LESSON_PLANS).add({ ...PLAN, createdAt: now, updatedAt: now });
     console.log(`＋ 등록 — ${PLAN.title} (${ref.id})`);
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (기사와 다른 통 — 어제 통과한 학생의 "끝났다" 가 안 풀립니다)`);
-  console.log("단계: 대기 → 기분 → 오늘 할 일 → 함께 해 볼 것 → 성찰 → 마침");
+  console.log("단계: 대기 → 기분 → 오늘 할 일 → 한 번 속아 보기 → 함께 해 볼 것 → 성찰 → 마침");
   console.log("활동 링크 2개 — wordwall 퀴즈 · security.org 비밀번호 (둘 다 로그인 불필요, 접속 확인함)");
   console.log("슬라이드 18의 마스킹 체험은 뺐습니다 — store.wrtn.ai 도메인이 사라졌습니다.");
   console.log("비밀번호 활동은 「진짜 말고 가짜를 넣으라」 로 안내합니다.");

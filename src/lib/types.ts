@@ -297,6 +297,69 @@ export interface RowColumn {
   emojis?: string[];
 }
 
+/**
+ * 개인정보 침해를 한 장면씩 겪어 보는 체험 (9차시의 scam_sim).
+ *
+ * ## 왜 가짜 로그인 화면을 만들지 않는가
+ *
+ * 진짜처럼 보이는 로그인 창을 만들어 비밀번호를 쳐 보게 하는 방식이 흔하다. 두 가지가
+ * 걸린다. 하나는 그렇게 만든 것이 **그대로 쓸 수 있는 피싱 도구**라는 것이고, 다른
+ * 하나는 그것이 가르치는 교훈이 "화면만 봐서는 못 알아본다" 라 막다른 길이라는 것이다.
+ *
+ * 슬라이드가 짚는 것도 화면이 아니라 **주소**다 (슬라이드 11: URL 확인 · https 확인).
+ * 그래서 여기서는 주소창을 크게 놓고 그것만 보게 한다. 비밀번호를 받는 칸은 어디에도
+ * 없다 — 어떤 글자도 서버로 가지 않는다.
+ *
+ * ## 세 가지가 서로 다른 것을 가르친다
+ *
+ *  · compare(피싱)  — 낚여서 **다른 주소**로 갔다. 주소를 보면 알 수 있다
+ *  · type(파밍)     — **맞는 주소를 쳤는데도** 가짜다. 주소로는 못 잡고 인증서를 봐야 한다
+ *  · message(스미싱) — 문자 속 링크. 누르기 **전에** 보내는 사람과 주소를 봐야 한다
+ *
+ * 파밍이 가운데 오는 이유가 여기 있다. 피싱에서 "주소를 봐라" 를 배운 직후에, 주소를
+ * 제대로 보고도 당하는 것을 겪어야 파밍이 무엇인지 몸으로 남는다.
+ */
+export interface ScamScene {
+  mode: "compare" | "type" | "message";
+  /** 이 장면이 다루는 것 — "피싱" · "파밍" · "스미싱" */
+  title: string;
+  /** 학생에게 시키는 것 한 줄 */
+  prompt: string;
+
+  /** compare — 나란히 놓을 두 곳. 하나만 fake 다 */
+  sites?: { url: string; caption: string; fake: boolean }[];
+
+  /** type — 학생이 정확히 쳐야 하는 주소 */
+  expect?: string;
+  /** type — 자물쇠를 눌렀을 때 나오는 인증서. 주소가 맞아도 여기가 다르다 */
+  certificate?: { issuedTo: string; note: string };
+
+  /** message — 문자 한 통 */
+  sender?: string;
+  body?: string;
+  linkText?: string;
+  /** message — 그 링크가 실제로 데려가는 곳. 눌러야 보인다 */
+  linkUrl?: string;
+
+  /** 답을 고른 뒤에 밝히는 것 */
+  answer: string;
+  /** 무엇을 보고 알아챌 수 있었나 — 한 줄씩 */
+  clues: string[];
+}
+
+/**
+ * 마스킹 체험의 문장 하나 (9차시의 masking).
+ *
+ * 조각으로 쪼개 두고 개인정보인 조각에 `hide` 를 찍는다. 학생이 조각을 눌러 가린다.
+ *
+ * 문장을 통째로 주고 "개인정보를 지우세요" 라고 하면 중1은 이름만 지우고 끝낸다.
+ * 조각을 눌러 가리는 방식이면 **모든 조각을 한 번씩 판단하게** 된다 — 학교 이름은?
+ * 반과 번호는? 그것이 이 활동에서 실제로 가르치려는 것이다(하나로는 몰라도 합치면 안다).
+ */
+export interface MaskLine {
+  parts: { text: string; hide?: boolean }[];
+}
+
 export interface WorksheetQuestion {
   /** 답을 저장할 키. artifacts.answers 의 키가 된다 */
   key: string;
@@ -351,6 +414,8 @@ export interface WorksheetQuestion {
     | "emotion_lens"
     | "emotion_quiz"
     | "mood_recheck"
+    | "scam_sim"
+    | "masking"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
@@ -422,6 +487,21 @@ export interface WorksheetQuestion {
    * 닿은 학생 화면에만 나오므로, 아직 못 낸 학생에게는 보이지 않는다.
    */
   doneLinks?: { label: string; url: string }[];
+  /**
+   * scam_sim 이 보여줄 장면들 (개인정보 침해 체험, 9차시).
+   *
+   * 한 문항이 여러 장면을 차례로 지난다. 답은 "맞힌 장면 수/전체" 한 줄로만 저장한다 —
+   * 무엇을 눌렀는지는 교사가 볼 일이 없고, 활동지에 채점표를 남기는 것이 이 활동의
+   * 목적도 아니다.
+   */
+  scenes?: ScamScene[];
+  /**
+   * masking 이 가릴 문장들.
+   *
+   * 조각으로 쪼개 두고, 개인정보인 조각에 `hide: true` 를 찍는다. 학생이 조각을 눌러
+   * 가리면 ●●● 이 된다.
+   */
+  maskLines?: MaskLine[];
   /** 칸 옆에 복사 단추를 붙인다 (다른 곳에 붙여 넣을 값일 때) */
   copyable?: boolean;
   /**
