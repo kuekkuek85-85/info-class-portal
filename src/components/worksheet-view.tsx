@@ -234,6 +234,14 @@ export function WorksheetView({
   submitError,
   disabled,
 }: WorksheetViewProps) {
+  /**
+   * 이 활동지의 제출 칸.
+   *
+   * 문항 차례대로 안 그리고 따로 빼 둔다 — 출처 아래에 붙어야 하기 때문이다
+   * (아래 렌더 부분의 주석 참조).
+   */
+  const submitQuestion = questions.find((question) => question.kind === "submit");
+
   const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaved = useRef(JSON.stringify(value));
@@ -451,7 +459,16 @@ export function WorksheetView({
         7차시 제출 칸의 「그 칸으로」 가 이것으로 찾아간다 (submit-panel 의 useJumpToField).
         안쪽에서 쓰는 `ws-` 접두사와 겹치지 않게 `q-` 로 둔다.
       */}
-      {questions.map((question) => (
+      {/*
+        제출 칸만 빼고 그린다. 그 칸은 출처 아래에 따로 붙인다.
+
+        문항 차례대로 두면 제출 단추가 출처 **위**에 서고, 그 아래에 활동지 공통
+        「다 했어요」 가 또 하나 뜬다. 한 화면에 내는 단추가 둘이면 학생은 어느 것이
+        진짜인지 모른다 — 실제로 2차를 낸 줄 알고 기다린 학생이 있었다.
+      */}
+      {questions
+        .filter((question) => question.kind !== "submit")
+        .map((question) => (
         <div key={question.key} id={`q-${question.key}`} className="flex flex-col gap-2">
           {/*
             note 는 답할 것이 없다. label 로 두면 눌렀을 때 엉뚱한 칸에 커서가 가고,
@@ -599,31 +616,6 @@ export function WorksheetView({
                 );
               })}
             </div>
-          ) : question.kind === "submit" ? (
-            <SubmitPanel
-              question={question}
-              selfCheck={value.answers.news_check2 ?? ""}
-              templateChoice={value.answers.news_template ?? ""}
-              /*
-                지면 재료. 저장을 기다리지 않고 지금 화면의 값을 그대로 넘긴다 —
-                최종 제출 직후에 뜨는 것이라 방금 고친 문장이 반영돼야 한다.
-              */
-              paper={{
-                title: value.answers.news_title ?? "",
-                scene: value.answers.news_scene ?? "",
-                change: value.answers.news_change ?? "",
-                real: value.answers.news_real ?? "",
-                interview: named(value.answers.news_interview ?? "", studentName),
-                caption: value.answers.news_caption ?? "",
-                strokes,
-                texts,
-                // 임시 번호로 들어온 참가자는 이름이 없다. 그때는 서명 줄을 뺀다
-                reporter: studentName.trim(),
-              }}
-              onJump={jumpToField}
-              onFeedback={onFeedback}
-              disabled={disabled}
-            />
           ) : question.kind === "ai_review" ? (
             <AiReviewPanel
               questionKey={question.key}
@@ -832,7 +824,7 @@ export function WorksheetView({
             </button>
           )}
         </div>
-      ))}
+        ))}
 
       {/*
         출처 두 칸은 고정이다. 수행평가1이 "출처 밝히기 태도"를 평가하므로,
@@ -877,6 +869,49 @@ export function WorksheetView({
         </label>
       </div>
 
+      {/*
+        내는 단추는 여기 하나뿐이다 — 출처까지 다 쓴 뒤에 온다.
+
+        출처는 수행평가1의 평가 항목이라(PRD 7) 내기 전에 지나야 하는 칸이다. 제출
+        단추가 그 위에 있으면 출처를 안 쓰고 내는 것이 자연스러운 순서가 된다.
+      */}
+      {submitQuestion && !hideSubmit && (
+        <div id={`q-${submitQuestion.key}`} className="flex flex-col gap-2">
+          {/*
+            label 이 아니라 p 다. 이 아래는 입력칸이 아니라 단추라, label 로 두면
+            눌렀을 때 엉뚱한 곳에 커서가 가고 읽어 주는 프로그램에는 "답이 없는
+            입력칸" 으로 들린다 (위 note 와 같은 이유).
+          */}
+          <p className="block bg-cream t-subhead">
+            {named(submitQuestion.label, studentName, studentId)}
+          </p>
+          <SubmitPanel
+            question={submitQuestion}
+            selfCheck={value.answers.news_check2 ?? ""}
+            templateChoice={value.answers.news_template ?? ""}
+            /*
+              지면 재료. 저장을 기다리지 않고 지금 화면의 값을 그대로 넘긴다 —
+              최종 제출 직후에 뜨는 것이라 방금 고친 문장이 반영돼야 한다.
+            */
+            paper={{
+              title: value.answers.news_title ?? "",
+              scene: value.answers.news_scene ?? "",
+              change: value.answers.news_change ?? "",
+              real: value.answers.news_real ?? "",
+              interview: named(value.answers.news_interview ?? "", studentName),
+              caption: value.answers.news_caption ?? "",
+              strokes,
+              texts,
+              // 임시 번호로 들어온 참가자는 이름이 없다. 그때는 서명 줄을 뺀다
+              reporter: studentName.trim(),
+            }}
+            onJump={jumpToField}
+            onFeedback={onFeedback}
+            disabled={disabled}
+          />
+        </div>
+      )}
+
       <span className="t-caption" aria-live="polite">
         {state === "saving" && "저장 중…"}
         {state === "saved" && "자동 저장됨"}
@@ -885,7 +920,14 @@ export function WorksheetView({
 
       {submitError && <p className="rounded-md bg-pink px-4 py-3 t-body-sm">{submitError}</p>}
 
-      {!hideSubmit && (
+      {/*
+        수행평가 차시에서는 이 단추를 안 띄운다.
+
+        제출 칸이 이미 1차·2차·최종을 나눠 받고 있다. 그 옆에 "다 했어요" 가 하나 더
+        있으면 어느 것이 진짜 제출인지 알 수 없고, 이쪽은 눌러도 검토 대기 줄에 서지
+        않는다 — 낸 줄 알고 기다리게 된다.
+      */}
+      {!hideSubmit && !submitQuestion && (
         <>
           <button
             type="button"
