@@ -341,8 +341,14 @@ export interface ScamScene {
 
   /** type — 학생이 정확히 쳐야 하는 주소 */
   expect?: string;
-  /** type — 자물쇠를 눌렀을 때 나오는 인증서. 주소가 맞아도 여기가 다르다 */
-  certificate?: { issuedTo: string; note: string };
+  /**
+   * type — 맞는 주소를 쳤는데도 실제로 열리는 곳 (파밍).
+   *
+   * 내 컴퓨터 속 '주소록'(hosts 파일)이 몰래 바뀌면, 맞는 주소를 쳐도 다른 집으로 간다.
+   * 그 다른 집을 여기 적는다 — 학생에게 익숙한 곳(학교 홈페이지)일수록 "어? 네이버를
+   * 쳤는데?" 가 확실하게 온다.
+   */
+  redirectUrl?: string;
 
   /** message — 문자 한 통 */
   sender?: string;

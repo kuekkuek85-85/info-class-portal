@@ -220,10 +220,18 @@ function CompareScene({
 }
 
 /**
- * 파밍 — 주소를 직접 친다. 맞게 쳤는데도 가짜가 뜬다.
+ * 파밍 — 맞는 주소를 직접 치는데도 다른 곳이 열린다.
  *
- * 여기서만 결과가 늘 "속았어요" 다. 맞는 주소를 치는 것이 곧 당하는 길이라는 것이
+ * 여기서만 결과가 늘 "당했어요" 다. 맞는 주소를 치는 것이 곧 당하는 길이라는 것이
  * 파밍의 정의이기 때문이다 — 그 배신감이 이 장면의 전부다.
+ *
+ * ## 리다이렉션을 눈으로 보여준다
+ *
+ * 링크를 누르는 것이 아니라 **주소를 직접 친다.** 정확히 쳐야 「들어가기」 가 열린다 —
+ * 대충 치고 넘어가면 "주소를 잘못 쳐서 그런 거 아냐?" 하고 빠져나갈 구멍이 생긴다.
+ *
+ * 들어가기를 누르면 "접속 중" 을 잠깐 보여준 뒤, 친 주소가 아니라 **다른 곳**이 열린다.
+ * hosts 파일이 바뀌면 실제로 이렇게 된다 — 브라우저는 시킨 대로 갔는데 도착지가 다르다.
  */
 function TypeScene({
   scene,
@@ -235,9 +243,15 @@ function TypeScene({
   onDone: () => void;
 }) {
   const [typed, setTyped] = useState("");
-  const [showCert, setShowCert] = useState(false);
+  const [loading, setLoading] = useState(false);
   const expect = scene.expect ?? "";
   const matches = typed.trim().toLowerCase() === expect.toLowerCase();
+
+  function go() {
+    // 진짜로 이동하는 것처럼 한 박자 기다렸다가 도착지를 뒤집는다
+    setLoading(true);
+    setTimeout(onDone, 900);
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -254,38 +268,41 @@ function TypeScene({
               className="field font-mono"
               autoComplete="off"
               spellCheck={false}
+              disabled={loading}
             />
           </label>
-          <button
-            type="button"
-            onClick={onDone}
-            disabled={!matches}
-            className="pill pill-primary self-start disabled:opacity-35"
-          >
-            들어가기
-          </button>
-          {typed.trim() && !matches && <p className="t-caption">정확히 똑같이 쳐 주세요.</p>}
+          {loading ? (
+            <p className="t-body">{expect} 접속 중…</p>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={go}
+                disabled={!matches}
+                className="pill pill-primary self-start disabled:opacity-35"
+              >
+                들어가기
+              </button>
+              {typed.trim() && !matches && <p className="t-caption">정확히 똑같이 쳐 주세요.</p>}
+            </>
+          )}
         </>
       ) : (
         <>
-          <AddressBar url={`http://${expect}`} />
-          <p className="t-body-lg">주소는 맞는데, 열린 곳은 가짜입니다.</p>
-          <button
-            type="button"
-            onClick={() => setShowCert((prev) => !prev)}
-            aria-expanded={showCert}
-            className="pill pill-secondary self-start t-body-sm"
-          >
-            {showCert ? "인증서 닫기" : "자물쇠를 눌러 인증서 보기"}
-          </button>
-          {showCert && scene.certificate && (
-            <div className="flex flex-col gap-1 rounded-lg border border-line p-3">
-              <p className="t-body-sm">
-                <b>이 인증서를 받은 곳</b> — {scene.certificate.issuedTo}
-              </p>
-              <p className="t-body-sm">{scene.certificate.note}</p>
-            </div>
-          )}
+          <div className="flex flex-col gap-1">
+            <span className="t-caption">내가 친 주소</span>
+            <AddressBar url={`https://${expect}`} />
+          </div>
+          <p className="text-center t-headline" aria-hidden="true">
+            ↓
+          </p>
+          <div className="flex flex-col gap-1">
+            <span className="t-caption">그런데 열린 곳</span>
+            <AddressBar url={`http://${scene.redirectUrl ?? ""}`} />
+          </div>
+          <p className="t-body-lg">
+            {expect} 를 쳤는데 엉뚱한 곳이 열렸습니다. 이것이 파밍이에요.
+          </p>
         </>
       )}
     </div>
