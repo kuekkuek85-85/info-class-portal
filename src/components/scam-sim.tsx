@@ -64,47 +64,96 @@ export function ScamSim({
 
   return (
     <div className="flex flex-col gap-6">
-      {scenes.map((scene, index) => (
-        <section key={scene.title} className="flex flex-col gap-3 rounded-lg border-2 border-ink p-4">
-          <div className="flex flex-wrap items-baseline gap-2">
-            <h3 className="t-headline">{scene.title}</h3>
-            {opened[index] &&
-              (isJudged(scene) ? (
-                <span className="t-body-sm font-bold">{correct[index] ? "맞혔어요" : "속았어요"}</span>
-              ) : (
-                <span className="t-body-sm font-bold">당했어요</span>
-              ))}
-          </div>
-          <p className="t-body">{scene.prompt}</p>
-
-          {scene.mode === "login" && (
-            <LoginScene scene={scene} done={opened[index]} onPhished={() => reveal(index, false)} />
-          )}
-          {scene.mode === "compare" && (
-            <CompareScene scene={scene} done={opened[index]} onPick={(ok) => reveal(index, ok)} />
-          )}
-          {scene.mode === "type" && (
-            <TypeScene scene={scene} done={opened[index]} onDone={() => reveal(index, false)} />
-          )}
-          {scene.mode === "message" && (
-            <MessageScene scene={scene} done={opened[index]} onPick={(ok) => reveal(index, ok)} />
-          )}
-
-          {opened[index] && (
-            <div className="flex flex-col gap-2 rounded-lg bg-cream p-3">
-              <p className="t-body-lg">{scene.answer}</p>
-              <p className="t-eyebrow">무엇을 보고 알 수 있었나</p>
-              <ul className="flex flex-col gap-1">
-                {scene.clues.map((clue) => (
-                  <li key={clue} className="t-body">
-                    · {clue}
-                  </li>
+      {scenes.map((scene, index) => {
+        // info 모드는 겪을 것이 없다 — 개념 카드라 늘 펼쳐져 있다
+        const shown = scene.mode === "info" || opened[index];
+        return (
+          <section
+            key={scene.title}
+            className="flex flex-col gap-3 rounded-lg border-2 border-ink p-4"
+          >
+            <div className="flex flex-wrap items-baseline gap-2">
+              <h3 className="t-headline">{scene.title}</h3>
+              {opened[index] &&
+                scene.mode !== "info" &&
+                (isJudged(scene) ? (
+                  <span className="t-body-sm font-bold">
+                    {correct[index] ? "맞혔어요" : "속았어요"}
+                  </span>
+                ) : (
+                  <span className="t-body-sm font-bold">당했어요</span>
                 ))}
-              </ul>
             </div>
-          )}
-        </section>
-      ))}
+            {scene.mode !== "info" && <p className="t-body">{scene.prompt}</p>}
+
+            {scene.mode === "login" && (
+              <LoginScene scene={scene} done={opened[index]} onPhished={() => reveal(index, false)} />
+            )}
+            {scene.mode === "compare" && (
+              <CompareScene scene={scene} done={opened[index]} onPick={(ok) => reveal(index, ok)} />
+            )}
+            {scene.mode === "type" && (
+              <TypeScene scene={scene} done={opened[index]} onDone={() => reveal(index, false)} />
+            )}
+            {scene.mode === "message" && (
+              <MessageScene scene={scene} done={opened[index]} onPick={(ok) => reveal(index, ok)} />
+            )}
+
+            {/* 겪은 뒤에 뜨는 "무엇을 봤어야 했나" — 이 장면에서만 통하는 구체적 단서 */}
+            {opened[index] && scene.mode !== "info" && (
+              <div className="flex flex-col gap-2 rounded-lg bg-cream p-3">
+                <p className="t-body-lg">{scene.answer}</p>
+                {(scene.clues?.length ?? 0) > 0 && (
+                  <>
+                    <p className="t-eyebrow">무엇을 보고 알 수 있었나</p>
+                    <ul className="flex flex-col gap-1">
+                      {scene.clues!.map((clue) => (
+                        <li key={clue} className="t-body">
+                          · {clue}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* 개념과 수칙 — 선생님이 짚어 가며 설명하는 자리 (겪은 뒤에 뜬다) */}
+            {shown && (scene.concept || (scene.rules?.length ?? 0) > 0) && (
+              <div className="flex flex-col gap-2 rounded-lg border-2 border-ink p-3">
+                {scene.concept && (
+                  <>
+                    <p className="t-eyebrow">개념</p>
+                    <p className="t-body whitespace-pre-line">{scene.concept}</p>
+                  </>
+                )}
+                {(scene.rules?.length ?? 0) > 0 && (
+                  <>
+                    <p className="t-eyebrow">이렇게 막아요</p>
+                    <ul className="flex flex-col gap-1">
+                      {scene.rules!.map((rule) => (
+                        <li key={rule} className="t-body">
+                          · {rule}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                {scene.videoUrl && (
+                  <a
+                    href={scene.videoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="pill pill-secondary self-start t-body-sm"
+                  >
+                    {scene.videoLabel ?? "영상 보기"}
+                  </a>
+                )}
+              </div>
+            )}
+          </section>
+        );
+      })}
 
       {value && <p className="t-caption">지금까지 {value} 맞혔어요.</p>}
     </div>

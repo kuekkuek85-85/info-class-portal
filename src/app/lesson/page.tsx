@@ -78,6 +78,8 @@ interface LessonData {
     /** 영상 볼 때 띄울 "생각할 것". 비면 성찰 질문으로 물러난다 */
     videoPrompts?: string[];
     reflectionQuestions: string[];
+    /** 성찰 화면에 함께 띄울 그림 (9차시 실천 수칙) */
+    reflectionImage?: string;
     reflectionPublic: boolean;
     /** 학생이 지나온 단계로 되돌아갈 수 있는가 */
     freeNavigation?: boolean;
@@ -1253,6 +1255,19 @@ export default function LessonPage() {
                 {total}개 질문에 모두 답해 주세요. ({answered}/{total} 작성)
               </p>
             </div>
+
+            {/*
+              차시가 정한 그림이 있으면 문항 위에 읽기 전용으로 붙인다 (9차시 실천 수칙).
+              방안을 백지에서 떠올리는 대신, 이 그림에서 골라 자기 말로 쓰게 한다.
+            */}
+            {session.reflectionImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={session.reflectionImage}
+                alt="개인정보 보호 실천 수칙"
+                className="w-full max-w-lg self-center rounded-lg border border-line"
+              />
+            )}
 
             {session.reflectionQuestions.map((question, index) => (
               <div key={index} className="flex flex-col gap-3">

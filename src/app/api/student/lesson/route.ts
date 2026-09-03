@@ -98,6 +98,8 @@ export async function GET() {
         // 영상 볼 때 띄울 "생각할 것". 비어 있으면 화면이 성찰 질문으로 물러난다
         videoPrompts: session.videoPrompts ?? [],
         reflectionQuestions: questions,
+        // 성찰 화면에 함께 띄울 그림 (9차시 실천 수칙). 없으면 안 온다
+        reflectionImage: session.reflectionImage,
         reflectionPublic: session.reflectionPublic,
         freeNavigation: session.freeNavigation ?? false,
         phaseLabels: session.phaseLabels ?? {},

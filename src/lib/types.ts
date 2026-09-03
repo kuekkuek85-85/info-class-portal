@@ -320,11 +320,25 @@ export interface RowColumn {
  * 제대로 보고도 당하는 것을 겪어야 파밍이 무엇인지 몸으로 남는다.
  */
 export interface ScamScene {
-  mode: "login" | "compare" | "type" | "message";
+  /** info = 겪을 것이 없는 개념 카드 (보이스피싱). 나머지는 겪어 보는 장면 */
+  mode: "login" | "compare" | "type" | "message" | "info";
   /** 이 장면이 다루는 것 — "피싱" · "파밍" · "스미싱" */
   title: string;
-  /** 학생에게 시키는 것 한 줄 */
+  /** 학생에게 시키는 것 한 줄. info 모드는 안 쓴다 */
   prompt: string;
+
+  /**
+   * 겪어 본 뒤에 교사가 설명할 개념. 정식 정의를 그대로 둔다.
+   *
+   * 학생이 먼저 당해 보고, 그 다음에 이 정의를 함께 읽는다 — "방금 그게 이거였다".
+   * clues 는 이 장면에서 무엇을 봤어야 했나(구체), concept 는 이게 무엇인가(정의)다.
+   */
+  concept?: string;
+  /** 막는 방법 — 수칙 목록. 교사가 짚어 가며 설명한다 */
+  rules?: string[];
+  /** info 모드에서 붙이는 영상 링크. 하이퍼링크만 건다 */
+  videoUrl?: string;
+  videoLabel?: string;
 
   /**
    * login — iframe 으로 띄울 가짜 로그인 화면의 주소.
@@ -357,10 +371,10 @@ export interface ScamScene {
   /** message — 그 링크가 실제로 데려가는 곳. 눌러야 보인다 */
   linkUrl?: string;
 
-  /** 답을 고른 뒤에 밝히는 것 */
-  answer: string;
-  /** 무엇을 보고 알아챌 수 있었나 — 한 줄씩 */
-  clues: string[];
+  /** 답을 고른 뒤에 밝히는 것. info 모드는 안 쓴다 */
+  answer?: string;
+  /** 무엇을 보고 알아챌 수 있었나 — 한 줄씩. info 모드는 안 쓴다 */
+  clues?: string[];
 }
 
 /**
@@ -835,6 +849,13 @@ export interface LessonPlan {
   videoPrompts?: string[];
   /** 성찰 질문. 학생은 각 질문에 따로 답한다. */
   reflectionQuestions: string[];
+  /**
+   * 성찰 화면에 함께 띄울 그림 (public 기준 경로).
+   *
+   * 9차시 성찰이 "개인정보 보호 방안" 을 묻는데, 학생이 방안을 떠올릴 재료로 실천 수칙
+   * 그림을 옆에 둔다. 문항 위에 읽기 전용으로 붙는다.
+   */
+  reflectionImage?: string;
   /** 다른 학생의 성찰 글을 볼 수 있는지. 기본값 false (PRD 3.4) */
   reflectionPublic: boolean;
   /** 이 차시에서만 쓰는 단계 이름 (4차시 진도 안내 → AI 직업 관상 체험) */
@@ -923,6 +944,8 @@ export interface ClassSession {
   /** 영상 볼 때 띄울 "생각할 것". 없으면 성찰 질문을 쓴다 (LessonPlan 쪽 설명 참조) */
   videoPrompts?: string[];
   reflectionQuestions: string[];
+  /** 성찰 화면에 함께 띄울 그림 (LessonPlan 쪽 설명 참조) */
+  reflectionImage?: string;
   reflectionPublic: boolean;
   quiz?: QuizContent;
   activity?: ActivityContent;
