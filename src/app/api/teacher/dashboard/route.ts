@@ -12,43 +12,58 @@ import {
 import { getMood } from "@/lib/mood";
 import { pickCurrentSession } from "@/lib/pick-session";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
-import { LESSON_PHASES, answersOf, hasAnswer } from "@/lib/types";
+import { answersOf, hasAnswer } from "@/lib/types";
 import type { ClassSession, LessonPhase } from "@/lib/types";
 
 /**
- * 지금 단계까지 학생이 채웠어야 하는 활동지 칸.
+ * 지금 **이 단계**에서 학생이 채웠어야 하는 활동지 칸.
  *
- * 교사가 단계를 넘길 때마다 늘어난다. 진행률의 분모다.
+ * ## 누적이 아니라 그 단계 것만 센다
+ *
+ * 전에는 지나온 단계 칸을 다 합쳐 셌다(누적). 그러면 교사가 단계를 넘겨도 신호등이
+ * 앞 단계 진도를 그대로 이고 가서, "지금 이 단계를 누가 하고 있나" 가 안 보인다 —
+ * 9차시에서 「한 번 속아 보기」 를 한 학생이 「함께 해 보기」 로 넘어가도 신호등이
+ * 여전히 속아 보기 진도를 섞어 보여줬다.
+ *
+ * 그래서 **그 단계의 칸만** 센다. 교사가 단계를 클릭하면 신호등이 그 단계 활동으로 바뀐다.
+ *
+ * ## 만들기 묶음은 한 덩어리로 본다
+ *
+ * 그리기·활동지·감상·힐링은 학생이 그 안에서 자유롭게 오간다 (lesson 의 isWorkPhase).
+ * 그래서 이 묶음 안에서는 단계를 쪼개지 않고 묶음 칸을 한꺼번에 센다 — 교사가 그리기에
+ * 있든 활동지에 있든 같은 진도를 본다. 반대로 문제·MVP 처럼 교사가 한 칸씩 넘겨 주는
+ * 쪼갠 단계에서는 그 단계 것만 센다.
  *
  * 밑줄로 시작하는 열쇠(안내문)와 답할 것이 없는 종류는 뺀다 — 세면 아무도 100% 가
  * 못 되고, 그러면 초록이 영영 안 나온다.
  */
 const NO_ANSWER = new Set(["note", "echo", "ai_review"]);
 
+/** 그리기·활동지·감상·힐링 — 학생이 자유롭게 오가는 한 묶음 (lesson 의 isWorkPhase 와 같은 집합) */
+const WORK_GROUP: LessonPhase[] = ["draw", "worksheet", "gallery", "wrapheal"];
+
 function requiredKeys(session: ClassSession): string[] {
-  const now = LESSON_PHASES.indexOf(session.phase);
+  const now = session.phase;
+  const inGroup = WORK_GROUP.includes(now);
   return (session.activity?.worksheet ?? [])
     .filter((q) => {
       if (q.key.startsWith("_") || NO_ANSWER.has(q.kind)) return false;
       const phase = (q.phase ?? "worksheet") as LessonPhase;
-      const at = LESSON_PHASES.indexOf(phase);
-      // 아직 안 지나온 단계의 칸은 요구하지 않는다
-      return at >= 0 && at <= now;
+      // 묶음 단계면 묶음 칸 전부, 쪼갠 단계면 그 단계 칸만
+      return inGroup ? WORK_GROUP.includes(phase) : phase === now;
     })
     .map((q) => q.key);
 }
 
 /**
- * 지금 단계까지 그림을 그렸어야 하는가.
+ * 지금 이 단계가 그림을 그리는 단계인가.
  *
  * 그리기 단계는 칸이 아니라 획으로 잰다. 획이 하나라도 있으면 한 칸을 채운 것으로 친다 —
  * 몇 개를 그려야 한다는 기준은 둘 수 없다. 잘 그리는 것을 재는 것이 아니라 손을 댔는지를
- * 보는 것이다.
+ * 보는 것이다. 그리기는 만들기 묶음 안에서 하므로, 그 묶음 단계일 때만 센다.
  */
 function drawingCounts(session: ClassSession): boolean {
-  const now = LESSON_PHASES.indexOf(session.phase);
-  const draw = LESSON_PHASES.indexOf("draw");
-  return (session.activity?.places?.length ?? 0) > 0 && draw >= 0 && draw <= now;
+  return (session.activity?.places?.length ?? 0) > 0 && WORK_GROUP.includes(session.phase);
 }
 
 /**
