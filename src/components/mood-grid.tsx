@@ -55,8 +55,13 @@ export function MoodGrid({
                 // 열 칸 × 열 줄이 화면 안에 들어가야 한다. 폭·높이 둘 다 화면을 따라간다
                 fontSize: "clamp(8px, 0.95vw, 12px)",
                 minHeight: "clamp(34px, 4.6dvh, 56px)",
+                // 아이폰에서 작은 글자 칸을 누르면 눌림이 아니라 글자 선택으로 새는 일이 있다.
+                // 탭 하이라이트도 끈다 — 낱말이 파랗게 선택된 채 멈추면 안 눌린 것처럼 보인다.
+                WebkitTapHighlightColor: "transparent",
               }}
-              className={`flex items-center justify-center rounded-[3px] px-px py-0.5 text-center leading-[1.15] font-semibold break-keep transition active:scale-95 disabled:opacity-50 ${
+              // select-none: 글자 선택 대신 눌림으로 받게 한다 (아이폰 사파리·카톡/네이버 인앱)
+              // touch-manipulation: 더블탭 확대를 끄면 첫 탭이 바로 눌림으로 간다
+              className={`flex touch-manipulation items-center justify-center rounded-[3px] px-px py-0.5 text-center leading-[1.15] font-semibold break-keep transition select-none active:scale-95 disabled:opacity-50 ${
                 selected ? "bg-ink text-canvas outline outline-2 outline-offset-1 outline-ink" : ""
               }`}
             >
