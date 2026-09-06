@@ -1332,6 +1332,15 @@ export interface Artifact {
     note: string;
     verdict?: "pass" | "revise";
   };
+  /**
+   * AI가 미리 써 둔 피드백 **초안**. 학생에게는 절대 안 보인다.
+   *
+   * 교사가 실제 앱을 눌러 보기 전에, AI가 앱을 열어 보고 초안을 만들어 여기 넣는다.
+   * 교사는 「미리 피드백」 화면에서 이 초안을 바탕으로 고쳐서 진짜 피드백(teacherFeedback)을
+   * 저장한다. 학생 화면은 teacherFeedback 만 읽으므로, 다듬어지지 않은 초안이 새어 나갈
+   * 일이 없다 (인간과 인공지능 4차시).
+   */
+  aiFeedbackDraft?: string;
 
   /** 교사가 숨김 처리했는지. 갤러리에서 빠진다 */
   hidden: boolean;
