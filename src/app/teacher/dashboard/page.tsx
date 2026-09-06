@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 import { TeacherArtifactPanel } from "@/components/teacher-artifact-panel";
 import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
@@ -709,6 +710,15 @@ function Dashboard() {
             </div>
 
             <div className="flex flex-wrap gap-2">
+              {/*
+                「미리 피드백」은 인간과 인공지능 전용이라 헤더 전역 탭에서 빼고, 이 수업을
+                보고 있을 때만 여기에 띄운다. 활동 통 이름이 hai- 로 시작하는 수업이 그것이다.
+              */}
+              {session.activity?.activityId?.startsWith("hai-") && (
+                <Link href="/teacher/pre-review" className="pill pill-primary t-body-sm">
+                  미리 피드백
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={() => patchSession({ status: "active" })}

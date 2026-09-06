@@ -24,7 +24,6 @@ const NAV = [
   { href: "/teacher/dashboard", label: "대시보드" },
   { href: "/teacher/screen", label: "영상 재생" },
   { href: "/teacher/board", label: "공유 화면" },
-  { href: "/teacher/pre-review", label: "미리 피드백" },
   { href: "/teacher/lessons", label: "차시" },
   { href: "/teacher/schedule", label: "시간표" },
   { href: "/teacher/students", label: "명렬표" },
