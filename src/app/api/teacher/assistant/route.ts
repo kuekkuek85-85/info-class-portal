@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       classNo: s.classNo,
     }));
     const pseud = new Pseudonymizer(roster);
-    const ctx: ToolContext = { pseud, sessionCache: new Map<string, ClassSession | null>() };
+    const ctx: ToolContext = { pseud, sessionCache: new Map<string, ClassSession | null>(), sources: [] };
 
     const result = await runAssistant({ history, question, images, ctx });
 

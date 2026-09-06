@@ -40,13 +40,28 @@ export interface SourceLink {
 
 export interface ToolResult {
   result: unknown;
-  sources: SourceLink[];
 }
 
 export interface ToolContext {
   pseud: Pseudonymizer;
   /** 같은 세션을 여러 감정 기록이 참조하므로 한 요청 안에서 캐시한다 */
   sessionCache: Map<string, ClassSession | null>;
+  /**
+   * 근거 표시(S1…) 등록소.
+   *
+   * 도구가 자료 한 줄을 낼 때마다 여기 하나씩 쌓고, 그 줄에 `근거: "S1"` 을 붙여 모델에게
+   * 보낸다. 모델은 답에서 실제로 근거로 쓴 것을 [S1] 처럼 인용하고, 그렇게 인용된 것만
+   * 나중에 화면의 「출처」 칩이 된다 (gemini-agent). 그래서 도구가 자료를 많이 가져와도
+   * 답과 무관한 것은 칩으로 안 나온다.
+   */
+  sources: { id: string; link: SourceLink }[];
+}
+
+/** 출처를 등록하고 근거 표시(S1…)를 돌려준다. 자료 줄에 그대로 붙인다 */
+function addSource(ctx: ToolContext, link: SourceLink): string {
+  const id = `S${ctx.sources.length + 1}`;
+  ctx.sources.push({ id, link });
+  return id;
 }
 
 const isHttpUrl = (v: string): boolean => /^https?:\/\//i.test(v.trim());
@@ -95,20 +110,18 @@ async function resolveStudents(args: Record<string, unknown>, ctx: ToolContext):
       students.length > 0
         ? { students }
         : { students: [], 안내: "그런 학생을 명렬표에서 못 찾았어요. 이름·번호를 확인하세요." },
-    sources: [],
   };
 }
 
 async function studentWork(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult> {
   const realId = ctx.pseud.realFor(str(args.student));
   if (!realId) {
-    return { result: { 오류: "먼저 resolveStudents 로 학생을 찾으세요 (student 는 학생A 형태)." }, sources: [] };
+    return { result: { 오류: "먼저 resolveStudents 로 학생을 찾으세요 (student 는 학생A 형태)." } };
   }
   const wantCourse = str(args.course) ? courseKeyFromText(str(args.course)) : null;
 
   const artifacts = await listArtifactsByStudent(realId);
   const items: unknown[] = [];
-  const sources: SourceLink[] = [];
 
   for (const artifact of artifacts) {
     const course = courseOf({ activityId: artifact.activityId });
@@ -122,7 +135,13 @@ async function studentWork(args: Record<string, unknown>, ctx: ToolContext): Pro
       if (text) answers[key] = ctx.pseud.mask(text);
     }
 
+    const 근거 = addSource(ctx, {
+      label: `${course.label} › 활동:${artifact.activityId}`,
+      course: course.key,
+      href: isHttpUrl(url) ? url : undefined,
+    });
     items.push({
+      근거,
       과목: course.label,
       활동: artifact.activityId,
       제출단계: artifact.submitStage ?? 0,
@@ -130,23 +149,17 @@ async function studentWork(args: Record<string, unknown>, ctx: ToolContext): Pro
       그림: (artifact.strokes?.length ?? 0) > 0 ? "있음" : "없음",
       답: answers,
     });
-    sources.push({
-      label: `${course.label} › 활동:${artifact.activityId}`,
-      course: course.key,
-      href: isHttpUrl(url) ? url : undefined,
-    });
   }
 
   return {
     result: items.length > 0 ? { student: str(args.student), 산출물: items } : { student: str(args.student), 산출물: [], 안내: "이 학생의 산출물이 없어요." },
-    sources,
   };
 }
 
 async function studentEmotions(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult> {
   const realId = ctx.pseud.realFor(str(args.student));
   if (!realId) {
-    return { result: { 오류: "먼저 resolveStudents 로 학생을 찾으세요 (student 는 학생A 형태)." }, sources: [] };
+    return { result: { 오류: "먼저 resolveStudents 로 학생을 찾으세요 (student 는 학생A 형태)." } };
   }
 
   const [moods, reflections] = await Promise.all([
@@ -154,14 +167,15 @@ async function studentEmotions(args: Record<string, unknown>, ctx: ToolContext):
     listReflectionsByStudent(realId),
   ]);
 
-  const sources: SourceLink[] = [];
   const emotions: unknown[] = [];
   const reflectionOut: unknown[] = [];
 
   for (const mood of moods) {
     const session = await resolveSession(ctx, mood.sessionId);
     const crumb = session ? sessionBreadcrumb(session) : { label: `${mood.date}`, course: "informatics" as CourseKey };
+    const 근거 = addSource(ctx, { label: crumb.label, course: crumb.course, date: mood.date, sessionId: mood.sessionId });
     emotions.push({
+      근거,
       일자: mood.date,
       과목: COURSES[crumb.course].label,
       차시: session?.lessonNo,
@@ -171,7 +185,6 @@ async function studentEmotions(args: Record<string, unknown>, ctx: ToolContext):
       사유: ctx.pseud.mask(str(mood.reason)),
       교사확인: mood.reviewedByTeacher,
     });
-    sources.push({ label: crumb.label, course: crumb.course, date: mood.date, sessionId: mood.sessionId });
   }
 
   for (const reflection of reflections) {
@@ -179,14 +192,15 @@ async function studentEmotions(args: Record<string, unknown>, ctx: ToolContext):
     const crumb = session ? sessionBreadcrumb(session) : { label: `${reflection.date}`, course: "informatics" as CourseKey };
     const answers = (reflection.answers ?? []).map((a) => ctx.pseud.mask(str(a))).filter(Boolean);
     if (answers.length === 0) continue;
+    const 근거 = addSource(ctx, { label: crumb.label, course: crumb.course, date: reflection.date, sessionId: reflection.sessionId });
     reflectionOut.push({
+      근거,
       일자: reflection.date,
       과목: COURSES[crumb.course].label,
       차시: session?.lessonNo,
       작성중: reflection.draft,
       성찰: answers,
     });
-    sources.push({ label: crumb.label, course: crumb.course, date: reflection.date, sessionId: reflection.sessionId });
   }
 
   return {
@@ -196,7 +210,6 @@ async function studentEmotions(args: Record<string, unknown>, ctx: ToolContext):
       성찰: reflectionOut,
       안내: emotions.length === 0 && reflectionOut.length === 0 ? "이 학생의 감정·성찰 기록이 없어요." : undefined,
     },
-    sources,
   };
 }
 
@@ -222,11 +235,11 @@ async function findSessions(args: Record<string, unknown>, ctx: ToolContext): Pr
     })
     .slice(0, 40);
 
-  const sources: SourceLink[] = [];
   const rows = filtered.map((s) => {
     const crumb = sessionBreadcrumb(s);
-    sources.push({ label: crumb.label, course: crumb.course, date: s.date, sessionId: s.id });
+    const 근거 = addSource(ctx, { label: crumb.label, course: crumb.course, date: s.date, sessionId: s.id });
     return {
+      근거,
       일자: s.date,
       교시: s.period,
       반: s.groupLabel || `${s.classNo}반`,
@@ -240,7 +253,6 @@ async function findSessions(args: Record<string, unknown>, ctx: ToolContext): Pr
 
   return {
     result: rows.length > 0 ? { 수업: rows } : { 수업: [], 안내: "조건에 맞는 수업이 없어요." },
-    sources,
   };
 }
 
@@ -273,7 +285,6 @@ async function lessonContent(args: Record<string, unknown>): Promise<ToolResult>
 
   return {
     result: rows.length > 0 ? { 차시: rows } : { 차시: [], 안내: "조건에 맞는 차시 계획이 없어요." },
-    sources: [],
   };
 }
 
