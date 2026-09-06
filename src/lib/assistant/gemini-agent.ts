@@ -21,6 +21,14 @@ const CALL_TIMEOUT_MS = 20_000;
 const MAX_STEPS = 6;
 
 /**
+ * 답 밑에 붙는 「출처」 칩의 최대 개수.
+ *
+ * 도구가 그날 수업 전부·한 학생 기록 전부를 각각 출처로 붙이면 칩이 십수 개 뜬다.
+ * 교사가 훑기엔 서넛이면 충분하다 — 앞쪽(대개 더 관련 있는 것)부터 이만큼만 남긴다.
+ */
+const MAX_SOURCES = 3;
+
+/**
  * 함수 응답을 담는 content 의 role.
  *
  * Gemini v1beta 는 role 로 user/model 만 받고, 함수 실행 결과(functionResponse)는
@@ -112,7 +120,7 @@ function dedupeSources(sources: SourceLink[]): SourceLink[] {
     seen.add(key);
     out.push(s);
   }
-  return out;
+  return out.slice(0, MAX_SOURCES);
 }
 
 export async function runAssistant(input: {
