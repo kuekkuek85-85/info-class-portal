@@ -74,6 +74,24 @@ async function collectAll<T>(query: Query): Promise<T[]> {
   return snap.docs.map((doc) => withId<T>(doc));
 }
 
+/**
+ * 챗봇 범용 조회(queryData)용 원자료 fetch — 컬렉션 하나를 (선택)동등 필터로 좁혀 최대 cap 건.
+ *
+ * 색인 걱정 없이 안전하게 간다: Firestore 에는 동등 필터 하나만 밀고(자동 색인), 나머지
+ * 거르기·정렬은 부르는 쪽이 메모리에서 한다. 한 학기·백여 명 규모라 이 편이 복합 색인
+ * 운영보다 낫다. **컬렉션 이름은 부르는 쪽에서 반드시 화이트리스트로 검증한다.**
+ */
+export async function fetchCollectionRaw(
+  collection: string,
+  primary: { field: string; value: unknown } | null,
+  cap: number,
+): Promise<Record<string, unknown>[]> {
+  let query: Query = db().collection(collection);
+  if (primary) query = query.where(primary.field, "==", primary.value);
+  const snap = await query.limit(cap).get();
+  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+}
+
 // ------------------------------------------------------------------- 학생
 
 export async function getStudent(studentId: string): Promise<Student | null> {

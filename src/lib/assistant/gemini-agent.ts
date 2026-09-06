@@ -1,5 +1,6 @@
 import "server-only";
 
+import { SCHEMA_TEXT } from "./schema";
 import { TOOL_DECLARATIONS, toolExecutors, type SourceLink, type ToolContext } from "./tools";
 
 /**
@@ -56,6 +57,12 @@ const SYSTEM = [
   "- **답에 실제로 근거로 쓴 자료에만** 붙인다. 훑어보기만 하고 답에 안 쓴 자료에는 붙이지 마라.",
   "  (예: '9월 4일'을 물어 자료를 여럿 봤어도, 답에 담은 그날 수업에만 표시를 붙인다.)",
   "- 근거로 쓴 자료가 없으면 아무 표시도 붙이지 마라.",
+  "",
+  "데이터 조회:",
+  "- 전용 도구(위)로 안 되는 임의의 질문은 queryData 로 데이터를 직접 조회해 답한다. 컬렉션·필터를 정해 부르고, 돌아온 자료를 읽어 판단·조합한다.",
+  "- 조회가 넓으면 여러 번 나눠 부르고, 조건(반·날짜 등)을 좁혀라. 아래가 볼 수 있는 데이터다.",
+  "",
+  SCHEMA_TEXT,
 ].join("\n");
 
 export interface AgentImage {

@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  fetchCollectionRaw,
   getSession,
   listAllSessions,
   listArtifactsByStudent,
@@ -17,6 +18,7 @@ import type { ClassNo, ClassSession, MoodEntry, Student } from "@/lib/types";
 
 import { COURSES, courseKeyFromText, courseOf, type CourseKey } from "./courses";
 import type { Pseudonymizer } from "./pseudonymize";
+import { COLLECTION_META } from "./schema";
 
 /**
  * 챗봇이 부르는 조회 도구들.
@@ -360,6 +362,158 @@ async function lessonContent(args: Record<string, unknown>): Promise<ToolResult>
   };
 }
 
+// --------------------------------------------------- 범용 조회 (queryData)
+
+/** 필터 값 정규화 — 모델이 문자열로 넘겨도 숫자·불리언으로 맞춘다 (Firestore 값과 타입이 맞아야 걸린다) */
+function normalizeValue(v: unknown): unknown {
+  if (typeof v !== "string") return v;
+  const t = v.trim();
+  if (t === "true") return true;
+  if (t === "false") return false;
+  if (/^-?\d+$/.test(t)) return Number(t);
+  return v;
+}
+
+function applyOp(fieldVal: unknown, op: string, value: unknown): boolean {
+  switch (op) {
+    case "eq":
+    case "==":
+      return fieldVal === value;
+    case "ne":
+    case "!=":
+      return fieldVal !== value;
+    case "lt":
+      return typeof fieldVal === "number" && typeof value === "number" && fieldVal < value;
+    case "lte":
+      return typeof fieldVal === "number" && typeof value === "number" && fieldVal <= value;
+    case "gt":
+      return typeof fieldVal === "number" && typeof value === "number" && fieldVal > value;
+    case "gte":
+      return typeof fieldVal === "number" && typeof value === "number" && fieldVal >= value;
+    case "in":
+      return Array.isArray(value) && value.includes(fieldVal);
+    case "contains":
+      return typeof fieldVal === "string" && typeof value === "string" && fieldVal.includes(value);
+    default:
+      return true;
+  }
+}
+
+/** 자유서술 안의 학생 이름까지 재귀로 가린다 (answers 는 배열·객체일 수 있다) */
+function maskDeep(value: unknown, ctx: ToolContext): unknown {
+  if (typeof value === "string") return ctx.pseud.mask(value);
+  if (Array.isArray(value)) return value.map((v) => maskDeep(v, ctx));
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) out[k] = maskDeep(v, ctx);
+    return out;
+  }
+  return value;
+}
+
+/** 한 줄을 Gemini 로 보낼 수 있게: 정체는 가명으로, 자유서술은 마스킹, 큰 필드·문서ID 는 뺀다 */
+function maskRow(
+  collection: string,
+  meta: (typeof COLLECTION_META)[string],
+  row: Record<string, unknown>,
+  ctx: ToolContext,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(row)) {
+    if (key === "id" || key === "studentId" || key === "name") continue; // 정체·문서ID(학번 포함) 제외
+    if (meta.heavyFields.includes(key)) continue;
+    out[key] = meta.textFields.includes(key) ? maskDeep(value, ctx) : value;
+  }
+  if (typeof row.studentId === "string") out["학생"] = ctx.pseud.pseudoFor(row.studentId);
+
+  // 출처: 날짜·세션이 있으면 그 수업으로 점프. 세션 자체(classSessions)는 문서ID 가 세션ID.
+  const date = typeof row.date === "string" ? row.date : undefined;
+  const sessionId =
+    typeof row.sessionId === "string"
+      ? row.sessionId
+      : collection === "classSessions" && typeof row.id === "string"
+        ? row.id
+        : undefined;
+  const buildUrl =
+    row.answers && typeof (row.answers as Record<string, unknown>).build_url === "string"
+      ? ((row.answers as Record<string, unknown>).build_url as string)
+      : undefined;
+  const href = buildUrl && isHttpUrl(buildUrl) ? buildUrl : undefined;
+  if (date || sessionId || href) {
+    out["근거"] = addSource(ctx, {
+      label: `${meta.label}${date ? " · " + date : ""}`,
+      course: "informatics",
+      date,
+      sessionId,
+      href,
+    });
+  }
+  return out;
+}
+
+const QUERY_CAP = 500;
+
+async function queryData(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult> {
+  const collection = str(args.collection);
+  const meta = COLLECTION_META[collection];
+  if (!meta) {
+    return { result: { 오류: `조회할 수 없는 컬렉션이에요. 가능: ${Object.keys(COLLECTION_META).join(", ")}` } };
+  }
+
+  const whereRaw = Array.isArray(args.where) ? (args.where as unknown[]) : [];
+  const filters = whereRaw
+    .map((w) => (Array.isArray(w) ? { field: str(w[0]), op: str(w[1]) || "eq", value: w[2] } : null))
+    .filter((f): f is { field: string; op: string; value: unknown } => f !== null && f.field !== "");
+
+  // 학생 참조(가명 '학생A')를 학번으로 번역. 그 외 값은 타입 정규화.
+  for (const f of filters) {
+    if (f.field === "학생" || f.field === "student") f.field = "studentId";
+    if (f.field === "studentId") {
+      if (typeof f.value === "string") f.value = ctx.pseud.realFor(f.value) ?? f.value;
+      else if (Array.isArray(f.value)) f.value = f.value.map((v) => (typeof v === "string" ? ctx.pseud.realFor(v) ?? v : v));
+    } else {
+      f.value = Array.isArray(f.value) ? f.value.map(normalizeValue) : normalizeValue(f.value);
+    }
+  }
+
+  // Firestore 로 밀 primary: indexable 필드의 첫 동등 필터
+  const primary =
+    filters.find((f) => (f.op === "eq" || f.op === "==") && meta.indexable.includes(f.field) && f.value !== undefined) ?? null;
+  const rows = await fetchCollectionRaw(collection, primary ? { field: primary.field, value: primary.value } : null, QUERY_CAP);
+
+  const rest = filters.filter((f) => f !== primary);
+  let filtered = rows.filter((row) => rest.every((f) => applyOp(row[f.field], f.op, f.value)));
+
+  const orderBy = (args.orderBy ?? null) as { field?: string; dir?: string } | null;
+  if (orderBy?.field) {
+    const field = orderBy.field;
+    const dir = orderBy.dir === "asc" ? 1 : -1;
+    filtered = [...filtered].sort((a, b) => {
+      const av = a[field] as never;
+      const bv = b[field] as never;
+      if (av < bv) return -dir;
+      if (av > bv) return dir;
+      return 0;
+    });
+  }
+
+  const limit = Math.min(Math.max(num(args.limit) ?? 50, 1), 200);
+  const 자료 = filtered.slice(0, limit).map((row) => maskRow(collection, meta, row, ctx));
+
+  return {
+    result: {
+      컬렉션: collection,
+      개수: 자료.length,
+      전체후보: filtered.length,
+      자료,
+      안내:
+        !primary && rows.length >= QUERY_CAP
+          ? `필터가 넓어 ${QUERY_CAP}건까지만 훑었어요 — 반·날짜 같은 조건을 더하면 정확해집니다.`
+          : undefined,
+    },
+  };
+}
+
 export const toolExecutors: Record<string, (args: Record<string, unknown>, ctx: ToolContext) => Promise<ToolResult>> = {
   resolveStudents,
   studentWork,
@@ -367,6 +521,7 @@ export const toolExecutors: Record<string, (args: Record<string, unknown>, ctx: 
   classEmotions,
   findSessions,
   lessonContent: (args) => lessonContent(args),
+  queryData,
 };
 
 // ------------------------------------------------- Gemini 함수 선언 (v1beta)
@@ -442,6 +597,33 @@ export const TOOL_DECLARATIONS = [
         course: { type: "STRING", description: "과목: 정보 / 디지털 마음 톡톡 / 인간과 인공지능 / 하트아이로봇" },
         lesson: { type: "INTEGER", description: "차시 번호" },
       },
+    },
+  },
+  {
+    name: "queryData",
+    description:
+      "교사 대시보드가 보는 학생 데이터를 직접 조회한다. 전용 도구로 안 되는 임의의 질문은 이걸로 컬렉션·필터를 정해 조회하고, 결과를 읽어 해석해 답한다. 컬렉션·필드·값은 지침의 '데이터' 설명을 따른다. 학생 참조는 가명('학생A')을 값에 그대로 쓴다.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        collection: {
+          type: "STRING",
+          description:
+            "students / moodEntries / reflections / artifacts / classSessions / attendance / quizAnswers / enrollments / lessonPlans",
+        },
+        where: {
+          type: "ARRAY",
+          description: '필터 목록. 각 항목은 [필드, 연산자, 값] 세 칸. 예: [["classNo","eq","1"],["valence","lt","0"]]',
+          items: { type: "ARRAY", items: { type: "STRING" } },
+        },
+        orderBy: {
+          type: "OBJECT",
+          description: "정렬(선택). field 와 dir(asc|desc).",
+          properties: { field: { type: "STRING" }, dir: { type: "STRING" } },
+        },
+        limit: { type: "INTEGER", description: "최대 개수(기본 50, 최대 200)" },
+      },
+      required: ["collection"],
     },
   },
 ] as const;
