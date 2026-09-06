@@ -218,6 +218,19 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
   {
+    /*
+     * 계획을 세울 때도 선생님 말이 눈앞에 있어야 한다.
+     * 위(build)에서 이미 봤지만, 무엇을 고칠지 정하는 이 자리에서 다시 참고하도록 한 번 더 띄운다.
+     * teacher_note 는 답을 담지 않고 artifact.teacherFeedback 을 그대로 그린다(같은 통로).
+     */
+    key: "_r4_teacher_grill",
+    phase: "grill",
+    label: "선생님이 남긴 말 (참고)",
+    hint: "",
+    kind: "teacher_note",
+    maxLength: 0,
+  },
+  {
     key: "fix_plan",
     phase: "grill",
     /*
@@ -252,6 +265,17 @@ const WORKSHEET: WorksheetQuestion[] = [
       "다 고쳤으면 오른쪽 위 [게시] 를 다시 눌러 새 주소를 받으세요.\n" +
       "주소가 그대로여도 괜찮아요 — 게시를 다시 하면 고친 내용이 반영됩니다.",
     kind: "note",
+    maxLength: 0,
+  },
+  {
+    /*
+     * 실제로 고치는 자리에도 선생님 말을 띄운다 — 고치면서 계속 대조할 수 있게.
+     */
+    key: "_r4_teacher_emotion",
+    phase: "emotion",
+    label: "선생님이 남긴 말 (참고)",
+    hint: "",
+    kind: "teacher_note",
     maxLength: 0,
   },
   {
