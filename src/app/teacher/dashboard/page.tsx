@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 import { TeacherArtifactPanel } from "@/components/teacher-artifact-panel";
 import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
 import { TeacherReviewPanel } from "@/components/teacher-review-panel";
 import { TeacherShell } from "@/components/teacher-shell";
 import { useTeacherDate } from "@/lib/teacher-date";
+import { takeTeacherJump } from "@/lib/teacher-jump";
 import { formatDateKorean, formatTimeKST } from "@/lib/datetime";
 import { QUADRANTS, type Quadrant } from "@/lib/mood";
 import { describePeriod, isPeriodOver, periodTime } from "@/lib/timetable";
@@ -519,6 +521,21 @@ function Dashboard() {
   const sessionId = pickedSession?.date === date ? pickedSession.id : null;
   const setSessionId = (id: string | null) =>
     setPickedSession(id ? { date, id } : null);
+
+  /*
+   * 챗봇 출처 칩으로 넘어온 경우, 그 세션을 골라 놓는다.
+   *
+   * 챗봇이 이미 날짜(teacher-date)를 맞춰 두고 세션ID 를 쪽지에 남긴다. 여기서 한 번
+   * 읽어(읽으면 지워진다) 고른 수업으로 세운다. sessionStorage 는 마운트 뒤 효과에서만
+   * 읽는다 — teacher-date 와 같은 이유(하이드레이션).
+   */
+  useEffect(() => {
+    const apply = () => {
+      const jump = takeTeacherJump();
+      if (jump?.sessionId) setPickedSession({ date: jump.date, id: jump.sessionId });
+    };
+    apply();
+  }, []);
   /** null이면 서버 값을 그대로 보여준다. 교사가 타이핑을 시작하면 그때부터 로컬 값이 이긴다. */
   const [noteDraft, setNoteDraft] = useState<string | null>(null);
   /*
@@ -693,6 +710,15 @@ function Dashboard() {
             </div>
 
             <div className="flex flex-wrap gap-2">
+              {/*
+                「미리 피드백」은 인간과 인공지능 전용이라 헤더 전역 탭에서 빼고, 이 수업을
+                보고 있을 때만 여기에 띄운다. 활동 통 이름이 hai- 로 시작하는 수업이 그것이다.
+              */}
+              {session.activity?.activityId?.startsWith("hai-") && (
+                <Link href="/teacher/pre-review" className="pill pill-primary t-body-sm">
+                  미리 피드백
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={() => patchSession({ status: "active" })}

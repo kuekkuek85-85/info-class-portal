@@ -74,6 +74,24 @@ async function collectAll<T>(query: Query): Promise<T[]> {
   return snap.docs.map((doc) => withId<T>(doc));
 }
 
+/**
+ * 챗봇 범용 조회(queryData)용 원자료 fetch — 컬렉션 하나를 (선택)동등 필터로 좁혀 최대 cap 건.
+ *
+ * 색인 걱정 없이 안전하게 간다: Firestore 에는 동등 필터 하나만 밀고(자동 색인), 나머지
+ * 거르기·정렬은 부르는 쪽이 메모리에서 한다. 한 학기·백여 명 규모라 이 편이 복합 색인
+ * 운영보다 낫다. **컬렉션 이름은 부르는 쪽에서 반드시 화이트리스트로 검증한다.**
+ */
+export async function fetchCollectionRaw(
+  collection: string,
+  primary: { field: string; value: unknown } | null,
+  cap: number,
+): Promise<Record<string, unknown>[]> {
+  let query: Query = db().collection(collection);
+  if (primary) query = query.where(primary.field, "==", primary.value);
+  const snap = await query.limit(cap).get();
+  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+}
+
 // ------------------------------------------------------------------- 학생
 
 export async function getStudent(studentId: string): Promise<Student | null> {
@@ -688,6 +706,19 @@ export async function listArtifacts(activityId: string, classNo?: ClassNo): Prom
 }
 
 /**
+ * 한 학생이 과목·차시를 통틀어 만든 작품 전부.
+ *
+ * 교사 챗봇이 "이 학생 산출물 찾아줘" 에 답할 때 쓴다. 작품은 activityId 로 묶이지만
+ * 여기서는 학생 하나를 가로질러 본다 — 문서에 studentId 필드가 있어 그대로 질의된다.
+ */
+export async function listArtifactsByStudent(studentId: string): Promise<Artifact[]> {
+  const rows = await collectAll<Artifact>(
+    db().collection(COLLECTIONS.artifacts).where("studentId", "==", studentId),
+  );
+  return rows.sort((a, b) => a.activityId.localeCompare(b.activityId));
+}
+
+/**
  * 없으면 만들고 있으면 그대로 돌려준다. 그림판 첫 진입에서 쓴다.
  *
  * 만들 때는 반드시 create() 를 쓴다. merge 저장으로 만들면, 거의 동시에 들어온 두 요청 중
@@ -1263,6 +1294,26 @@ export async function listMoodEntriesByStudent(studentId: string): Promise<MoodE
     db().collection(COLLECTIONS.moodEntries).where("studentId", "==", studentId),
   );
   return rows.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/**
+ * 여러 학생의 감정 기록을 한 번에. 반 전체 감정을 살필 때 쓴다 (교사 챗봇의 classEmotions).
+ *
+ * 학생을 하나씩 도는 대신 `in` 질의로 묶어 읽는다 — Firestore `in` 은 한 번에 30개까지라
+ * 나눠 부른다. **반 번호가 아니라 학번으로 묶는다**: 선택과목은 데이터 통 classNo 를
+ * 정규수업과 나눠 쓰므로, classNo 로 읽으면 다른 분반 기록이 섞인다.
+ */
+export async function listMoodEntriesByStudents(studentIds: string[]): Promise<MoodEntry[]> {
+  const unique = [...new Set(studentIds)].filter(Boolean);
+  const out: MoodEntry[] = [];
+  for (let i = 0; i < unique.length; i += 30) {
+    const chunk = unique.slice(i, i + 30);
+    const rows = await collectAll<MoodEntry>(
+      db().collection(COLLECTIONS.moodEntries).where("studentId", "in", chunk),
+    );
+    out.push(...rows);
+  }
+  return out.sort((a, b) => b.createdAt - a.createdAt);
 }
 
 export async function markMoodReviewed(sessionId: string, studentIds: string[]): Promise<void> {

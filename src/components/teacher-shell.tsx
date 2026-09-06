@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { SiteFooter } from "@/components/site-footer";
+import { TeacherAssistant } from "@/components/teacher-assistant";
 import { formatDateKorean, todayKST } from "@/lib/datetime";
 import { signOutGoogle } from "@/lib/firebase-client";
 import { useTeacherDate } from "@/lib/teacher-date";
@@ -23,7 +24,6 @@ const NAV = [
   { href: "/teacher/dashboard", label: "대시보드" },
   { href: "/teacher/screen", label: "영상 재생" },
   { href: "/teacher/board", label: "공유 화면" },
-  { href: "/teacher/pre-review", label: "미리 피드백" },
   { href: "/teacher/lessons", label: "차시" },
   { href: "/teacher/schedule", label: "시간표" },
   { href: "/teacher/students", label: "명렬표" },
@@ -131,6 +131,9 @@ export function TeacherShell({ children }: { children: ReactNode }) {
       </header>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
+
+      {/* 교사 전용 AI 조교 — 우하단 플로팅. 학생 화면(TeacherShell 밖)에는 없다 */}
+      <TeacherAssistant />
 
       <SiteFooter />
     </div>
