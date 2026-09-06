@@ -42,6 +42,8 @@ export const COLLECTIONS = {
   enrollments: "enrollments",
   /** AI 호출 기록. 무엇을 물었는지는 안 남기고 누가·언제·무엇 때문에 불렀는지만 남긴다 */
   aiCallLogs: "aiCallLogs",
+  /** 교사 AI 조교 대화방. 문서 ID = 교사 uid. 한 교사의 방 목록을 통째로 담는다 */
+  assistantChats: "assistantChats",
   /**
    * AI 호출 상한 카운터. 문서 ID = `수업ID__학번` 과 `수업ID__total`.
    *
@@ -215,6 +217,54 @@ export async function updateLessonPlan(
 
 export async function deleteLessonPlan(id: string): Promise<void> {
   await db().collection(COLLECTIONS.lessonPlans).doc(id).delete();
+}
+
+// --------------------------------------------------------------- AI 조교 대화방
+
+/**
+ * 교사 AI 조교 대화방을 서버에 둔다 — 데스크톱·태블릿·휴대폰 어디서 열어도 같은 대화가 뜨게.
+ *
+ * 교사 한 명의 방 목록 전체를 한 문서(ID = uid)에 통째로 담는다. 방 하나를 고칠 때도 목록을
+ * 통째로 다시 쓴다(교사 혼자 쓰는 도구라 쓰기 경합이 없고, 클라이언트가 이미 목록 전체를
+ * 들고 있어 단순하다). 대화 글은 텍스트·출처뿐이라 문서 1MB 상한에 한참 못 미친다.
+ */
+export interface AssistantChatSource {
+  label: string;
+  course?: string;
+  date?: string;
+  sessionId?: string;
+  href?: string;
+}
+export interface AssistantChatMsg {
+  role: "user" | "assistant";
+  text: string;
+  sources?: AssistantChatSource[];
+}
+export interface AssistantChatRoom {
+  id: string;
+  name: string;
+  messages: AssistantChatMsg[];
+  updatedAt: number;
+}
+
+export async function getAssistantChat(
+  uid: string,
+): Promise<{ rooms: AssistantChatRoom[]; activeId: string } | null> {
+  const doc = await db().collection(COLLECTIONS.assistantChats).doc(uid).get();
+  if (!doc.exists) return null;
+  const data = doc.data() as { rooms?: AssistantChatRoom[]; activeId?: string } | undefined;
+  return { rooms: data?.rooms ?? [], activeId: data?.activeId ?? "" };
+}
+
+export async function saveAssistantChat(
+  uid: string,
+  rooms: AssistantChatRoom[],
+  activeId: string,
+): Promise<void> {
+  await db()
+    .collection(COLLECTIONS.assistantChats)
+    .doc(uid)
+    .set({ rooms, activeId, updatedAt: Date.now() });
 }
 
 // ------------------------------------------------------------------- 세션

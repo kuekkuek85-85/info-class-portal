@@ -9,9 +9,11 @@ import { setTeacherJump } from "@/lib/teacher-jump";
 /**
  * 교사 대시보드 AI 조교 — 우하단 플로팅 버튼 → 채팅 팝업.
  *
- * `TeacherShell` 안에만 붙어서 교사 화면에서만 뜬다(학생 화면엔 없다). 대화는 이 브라우저의
- * localStorage 에만 쌓이고 서버로 저장되지 않는다. 답에 붙는 「출처」 칩을 누르면 그 날짜·
- * 세션으로 대시보드가 열린다(teacher-jump). 앱 링크 출처는 새 창으로 연다.
+ * `TeacherShell` 안에만 붙어서 교사 화면에서만 뜬다(학생 화면엔 없다). 대화방은 교사 계정별로
+ * 서버에 저장돼(`/api/teacher/assistant/rooms`) 데스크톱·태블릿·휴대폰 어디서 열어도 같은 방이
+ * 뜬다. localStorage 는 오프라인·새로고침 대비 캐시로만 두고, 예전에 이 기기에만 쌓여 있던
+ * 대화는 처음 한 번 서버로 이전한다. 답에 붙는 「출처」 칩을 누르면 그 날짜·세션으로 대시보드가
+ * 열린다(teacher-jump). 앱 링크 출처는 새 창으로 연다.
  *
  * ## 대화방
  *
@@ -168,6 +170,8 @@ export function TeacherAssistant() {
   const [sending, setSending] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const loaded = useRef(false);
+  /** 서버에 마지막으로 보낸 목록. 같은 내용을 다시 안 보내고, 서버에서 막 받은 것을 되쏘지 않게 */
+  const lastSaved = useRef<string>("");
 
   const activeRoom = rooms.find((r) => r.id === activeId) ?? null;
   const messages = useMemo(
@@ -175,19 +179,22 @@ export function TeacherAssistant() {
     [rooms, activeId],
   );
 
-  // 방 목록 불러오기 — 마운트 뒤에 읽는다(teacher-date 와 같은 하이드레이션 이유)
+  // 방 목록 불러오기 — 서버가 원본. 데스크톱·태블릿·휴대폰 어디서 열어도 같은 방이 뜨게.
+  //   1) 서버에 방이 있으면 그걸 쓴다.
+  //   2) 서버가 비었으면 이 브라우저 localStorage(예전 단일 대화 포함)를 처음 한 번 서버로 이전.
+  //   3) 서버 연결이 실패하면 localStorage 로만 동작하고, 이후 변경이 생기면 저장 effect 가 재시도.
   useEffect(() => {
-    const restore = () => {
+    let cancelled = false;
+
+    // 서버 전/실패 시 폴백: 예전처럼 localStorage 에서 복원한다
+    const fromLocal = (): { rooms: Room[]; activeId: string } => {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw) as { rooms?: Room[]; activeId?: string };
           if (parsed.rooms && parsed.rooms.length > 0) {
-            setRooms(parsed.rooms);
             const valid = parsed.activeId && parsed.rooms.some((r) => r.id === parsed.activeId);
-            setActiveId(valid ? parsed.activeId! : parsed.rooms[0].id);
-            loaded.current = true;
-            return;
+            return { rooms: parsed.rooms, activeId: valid ? parsed.activeId! : parsed.rooms[0].id };
           }
         }
         // 예전 단일 대화를 첫 방으로 옮긴다
@@ -204,26 +211,69 @@ export function TeacherAssistant() {
           messages: old,
           updatedAt: Date.now(),
         };
-        setRooms([first]);
-        setActiveId(first.id);
+        return { rooms: [first], activeId: first.id };
       } catch {
         const first = emptyRoom();
-        setRooms([first]);
-        setActiveId(first.id);
+        return { rooms: [first], activeId: first.id };
       }
+    };
+
+    const apply = (nextRooms: Room[], nextActiveId: string, fromServer: boolean) => {
+      if (cancelled) return;
+      setRooms(nextRooms);
+      setActiveId(nextActiveId);
+      // 서버에서 온 것이면 이미 서버와 같으니 되쏘지 않게 표시. 로컬 이전이면 비워 둬 저장이 밀리게.
+      lastSaved.current = fromServer ? JSON.stringify({ rooms: nextRooms, activeId: nextActiveId }) : "";
       loaded.current = true;
     };
-    restore();
+
+    void (async () => {
+      try {
+        const res = await fetch("/api/teacher/assistant/rooms");
+        const data = await res.json();
+        const serverRooms: Room[] = data?.ok && Array.isArray(data.rooms) ? data.rooms : [];
+        if (serverRooms.length > 0) {
+          const valid = data.activeId && serverRooms.some((r) => r.id === data.activeId);
+          apply(serverRooms, valid ? data.activeId : serverRooms[0].id, true);
+          return;
+        }
+        // 서버가 비었음 → 이 기기의 대화를 서버로 이전
+        const local = fromLocal();
+        apply(local.rooms, local.activeId, false);
+      } catch {
+        // 네트워크 실패 → 로컬로만 동작
+        const local = fromLocal();
+        apply(local.rooms, local.activeId, false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // 방 목록 저장 (불러오기 전에는 덮어쓰지 않는다)
+  // 방 목록 저장 — localStorage 는 즉시(오프라인·새로고침 대비), 서버는 디바운스로.
   useEffect(() => {
     if (!loaded.current) return;
+    const payload = JSON.stringify({ rooms, activeId });
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ rooms, activeId }));
+      localStorage.setItem(STORAGE_KEY, payload);
     } catch {
       // 저장 실패는 넘어간다 — 이번 세션 대화는 화면에 남아 있다
     }
+    if (payload === lastSaved.current) return; // 서버와 이미 같음
+    const timer = setTimeout(() => {
+      lastSaved.current = payload;
+      fetch("/api/teacher/assistant/rooms", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: payload,
+      }).catch(() => {
+        // 실패하면 다음 변경 때 다시 보내지도록 표시를 지운다
+        lastSaved.current = "";
+      });
+    }, 700);
+    return () => clearTimeout(timer);
   }, [rooms, activeId]);
 
   // 새 메시지가 오면 목록을 아래로
