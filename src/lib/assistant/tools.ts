@@ -6,11 +6,14 @@ import {
   listArtifactsByStudent,
   listLessonPlans,
   listMoodEntriesByStudent,
+  listMoodEntriesByStudents,
   listReflectionsByStudent,
+  listRoster,
   listSessionsByDate,
+  listStudents,
 } from "@/lib/db";
 import { getMood } from "@/lib/mood";
-import type { ClassSession } from "@/lib/types";
+import type { ClassNo, ClassSession, MoodEntry, Student } from "@/lib/types";
 
 import { COURSES, courseKeyFromText, courseOf, type CourseKey } from "./courses";
 import type { Pseudonymizer } from "./pseudonymize";
@@ -213,6 +216,75 @@ async function studentEmotions(args: Record<string, unknown>, ctx: ToolContext):
   };
 }
 
+async function classEmotions(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult> {
+  const classNo = num(args.class);
+  const group = str(args.group);
+
+  let roster: Student[];
+  let courseKey: CourseKey;
+  if (group) {
+    roster = await listRoster({ classNo: 1 as ClassNo, groupKey: group });
+    courseKey = courseOf({ groupKey: group }).key;
+  } else if (classNo !== undefined && classNo >= 1 && classNo <= 4) {
+    roster = await listStudents(classNo as ClassNo);
+    courseKey = "informatics";
+  } else {
+    return { result: { 오류: "반(class 1~4) 또는 분반(group)을 알려주세요." } };
+  }
+  roster = roster.filter((s) => !s.temporary);
+  if (roster.length === 0) return { result: { 학생: [], 안내: "그 반에 학생이 없어요." } };
+
+  const moods = await listMoodEntriesByStudents(roster.map((s) => s.studentId));
+  const byStudent = new Map<string, MoodEntry[]>();
+  for (const m of moods) {
+    const arr = byStudent.get(m.studentId) ?? [];
+    arr.push(m);
+    byStudent.set(m.studentId, arr);
+  }
+
+  const students = roster
+    .map((s) => {
+      const list = byStudent.get(s.studentId) ?? []; // createdAt 내림차순
+      if (list.length === 0) return null;
+      const latest = list[0];
+      const 근거 = addSource(ctx, {
+        label: `${s.classNo}반 ${s.number}번 · 감정 (${latest.date})`,
+        course: courseKey,
+        date: latest.date,
+        sessionId: latest.sessionId,
+      });
+      return {
+        근거,
+        학생: ctx.pseud.pseudoFor(s.studentId),
+        번호: s.number,
+        기록수: list.length,
+        부정기분수: list.filter((m) => m.valence < 0).length,
+        미확인수: list.filter((m) => !m.reviewedByTeacher).length,
+        최근기분: list.slice(0, 3).map((m) => ({
+          일자: m.date,
+          기분: getMood(m.mood)?.label ?? m.mood,
+          쾌불쾌: m.valence,
+          각성: m.arousal,
+          사유: ctx.pseud.mask(str(m.reason)),
+        })),
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .sort((a, b) => b.부정기분수 - a.부정기분수 || b.미확인수 - a.미확인수);
+
+  return {
+    result: {
+      반: group || `${classNo}반`,
+      학생수: students.length,
+      학생: students,
+      안내:
+        students.length === 0
+          ? "이 반의 감정 기록이 없어요."
+          : "부정 기분(쾌불쾌 음수)·미확인·반복되는 어두운 기분을 근거로, 감정적으로 눈여겨볼 학생을 골라 사유와 함께 짧게 설명하세요.",
+    },
+  };
+}
+
 async function findSessions(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult> {
   const date = str(args.date);
   const wantCourse = str(args.course) ? courseKeyFromText(str(args.course)) : null;
@@ -292,6 +364,7 @@ export const toolExecutors: Record<string, (args: Record<string, unknown>, ctx: 
   resolveStudents,
   studentWork,
   studentEmotions,
+  classEmotions,
   findSessions,
   lessonContent: (args) => lessonContent(args),
 };
@@ -334,6 +407,18 @@ export const TOOL_DECLARATIONS = [
         student: { type: "STRING", description: "resolveStudents 가 준 익명 식별자(학생A)" },
       },
       required: ["student"],
+    },
+  },
+  {
+    name: "classEmotions",
+    description:
+      "한 반(또는 분반) 전체의 감정 기록을 한 번에 가져온다. '어느 반에서 감정적으로 눈여겨볼 학생' 처럼 반 단위로 감정을 살필 때 반드시 이 도구를 쓴다 — 학생을 하나씩 studentEmotions 로 돌지 마라. 학생마다 최근 기분·부정 기분 수·미확인 수가 온다.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        class: { type: "INTEGER", description: "반 번호(1~4). 정보 정규수업." },
+        group: { type: "STRING", description: "분반 열쇠(hai-tue-1 등). 선택과목일 때." },
+      },
     },
   },
   {

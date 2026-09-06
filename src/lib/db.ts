@@ -1278,6 +1278,26 @@ export async function listMoodEntriesByStudent(studentId: string): Promise<MoodE
   return rows.sort((a, b) => b.createdAt - a.createdAt);
 }
 
+/**
+ * 여러 학생의 감정 기록을 한 번에. 반 전체 감정을 살필 때 쓴다 (교사 챗봇의 classEmotions).
+ *
+ * 학생을 하나씩 도는 대신 `in` 질의로 묶어 읽는다 — Firestore `in` 은 한 번에 30개까지라
+ * 나눠 부른다. **반 번호가 아니라 학번으로 묶는다**: 선택과목은 데이터 통 classNo 를
+ * 정규수업과 나눠 쓰므로, classNo 로 읽으면 다른 분반 기록이 섞인다.
+ */
+export async function listMoodEntriesByStudents(studentIds: string[]): Promise<MoodEntry[]> {
+  const unique = [...new Set(studentIds)].filter(Boolean);
+  const out: MoodEntry[] = [];
+  for (let i = 0; i < unique.length; i += 30) {
+    const chunk = unique.slice(i, i + 30);
+    const rows = await collectAll<MoodEntry>(
+      db().collection(COLLECTIONS.moodEntries).where("studentId", "in", chunk),
+    );
+    out.push(...rows);
+  }
+  return out.sort((a, b) => b.createdAt - a.createdAt);
+}
+
 export async function markMoodReviewed(sessionId: string, studentIds: string[]): Promise<void> {
   if (studentIds.length === 0) return;
   const batch = db().batch();
