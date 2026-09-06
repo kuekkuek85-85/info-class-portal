@@ -688,6 +688,19 @@ export async function listArtifacts(activityId: string, classNo?: ClassNo): Prom
 }
 
 /**
+ * 한 학생이 과목·차시를 통틀어 만든 작품 전부.
+ *
+ * 교사 챗봇이 "이 학생 산출물 찾아줘" 에 답할 때 쓴다. 작품은 activityId 로 묶이지만
+ * 여기서는 학생 하나를 가로질러 본다 — 문서에 studentId 필드가 있어 그대로 질의된다.
+ */
+export async function listArtifactsByStudent(studentId: string): Promise<Artifact[]> {
+  const rows = await collectAll<Artifact>(
+    db().collection(COLLECTIONS.artifacts).where("studentId", "==", studentId),
+  );
+  return rows.sort((a, b) => a.activityId.localeCompare(b.activityId));
+}
+
+/**
  * 없으면 만들고 있으면 그대로 돌려준다. 그림판 첫 진입에서 쓴다.
  *
  * 만들 때는 반드시 create() 를 쓴다. merge 저장으로 만들면, 거의 동시에 들어온 두 요청 중
