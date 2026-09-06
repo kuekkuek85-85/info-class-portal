@@ -1,5 +1,5 @@
 ---
-name: infomatics
+name: informatics
 description: 정보 과목(1~4반 정규 수업) 담당. 디지털 시민 리포트 수행평가와 디지털 윤리 차시를 짓고, 그날 수업을 열고, 통과·검토·게임 포털을 손본다. 정보 과목 차시·세션·수행평가 이야기가 나오면 이 담당에게 맡긴다.
 model: inherit
 ---
