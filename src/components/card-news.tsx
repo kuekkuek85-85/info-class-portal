@@ -2,6 +2,7 @@
 
 import { ArtifactCanvas } from "@/components/artifact-canvas";
 import type { Stroke, TextItem, WorksheetQuestion } from "@/lib/types";
+import { normalizeUrl } from "@/lib/url";
 
 /**
  * 카드뉴스 — 그림 + 활동지 답을 한 장으로 묶어 보여준다.
@@ -100,7 +101,12 @@ export function CardNews({
 
       {filled.length > 0 && (
         <dl className="flex flex-col gap-3">
-          {filled.map((question) => (
+          {filled.map((question) => {
+            // 앱 링크(build_url)는 저장된 값에 스킴이 없어도 눌리게 https:// 를 채운다.
+            // 다른 칸은 자유 서술이라 손대지 않는다 — 붙였다간 문장이 링크로 둔갑한다.
+            const raw = (data.answers[question.key] ?? "").trim();
+            const href = question.key === "build_url" ? normalizeUrl(raw) : raw;
+            return (
             <div key={question.key}>
               {!hideQuestionLabels && <dt className="t-caption">{question.label}</dt>}
               <dd className="t-body mt-1 whitespace-pre-wrap">
@@ -135,7 +141,7 @@ export function CardNews({
                     alt={question.label || "붙인 사진"}
                     className="h-auto w-full rounded-lg border border-line bg-white"
                   />
-                ) : /^https?:\/\//.test((data.answers[question.key] ?? "").trim()) ? (
+                ) : /^https?:\/\//.test(href) ? (
                   /*
                     주소는 눌러서 열 수 있게 한다.
 
@@ -146,7 +152,7 @@ export function CardNews({
                     새 창으로 연다 — 같은 창에서 나가면 쓰던 감상이 날아간다.
                   */
                   <a
-                    href={(data.answers[question.key] ?? "").trim()}
+                    href={href}
                     target="_blank"
                     rel="noreferrer"
                     className="pill pill-primary pill-block text-center"
@@ -158,7 +164,8 @@ export function CardNews({
                 )}
               </dd>
             </div>
-          ))}
+            );
+          })}
         </dl>
       )}
 

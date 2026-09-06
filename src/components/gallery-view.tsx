@@ -6,6 +6,7 @@ import { ArtifactCanvas } from "@/components/artifact-canvas";
 import { CardNews, type CardNewsData } from "@/components/card-news";
 import { usePolled } from "@/lib/use-polled";
 import { REACTIONS, type WorksheetQuestion } from "@/lib/types";
+import { normalizeUrl } from "@/lib/url";
 
 /**
  * 작품 감상.
@@ -101,8 +102,8 @@ function summaryOf(
    */
   if (sharedKeys.length > 0) {
     return sharedKeys
-      .map((key) => (work.answers[key] ?? "").trim())
-      .filter(Boolean)
+      .map((key) => ({ key, value: (work.answers[key] ?? "").trim() }))
+      .filter((row) => row.value)
       /*
        * 주소는 주소로 보여주지 않는다.
        *
@@ -110,8 +111,14 @@ function summaryOf(
        * 없는 글자로 꽉 차서, 정작 읽어야 할 프롬프트가 안 보인다. 카드는 `<button>` 이라
        * 안에 링크를 넣을 수도 없다 — 여기서는 표시만 하고, 실제로 여는 것은 카드를 눌러
        * 들어간 상세 화면이 맡는다 (card-news.tsx).
+       *
+       * 앱 링크(build_url)는 스킴이 빠져 저장됐어도 주소로 알아보고 감춘다 — 다른 칸은
+       * 자유 서술이라 손대지 않는다 (card-news 와 같은 원칙).
        */
-      .map((value) => ({ label: "", values: [/^https?:\/\//.test(value) ? "🎨 눌러서 작품 보기" : value] }));
+      .map(({ key, value }) => {
+        const shown = key === "build_url" ? normalizeUrl(value) : value;
+        return { label: "", values: [/^https?:\/\//.test(shown) ? "🎨 눌러서 작품 보기" : value] };
+      });
   }
 
   const rows = facets
