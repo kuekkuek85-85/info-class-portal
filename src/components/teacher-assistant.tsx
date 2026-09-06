@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 import { useTeacherDate } from "@/lib/teacher-date";
@@ -77,6 +77,81 @@ function titleFromMessages(messages: Msg[]): string {
 
 function emptyRoom(): Room {
   return { id: newId(), name: DEFAULT_NAME, messages: [], updatedAt: Date.now() };
+}
+
+/**
+ * 조교 답의 가벼운 마크다운 표시 — 굵게·글머리·번호 목록만.
+ *
+ * 모델이 `**굵게**` 나 `* 목록` 을 쓰는데 순수 텍스트로 그리면 별표가 그대로 보인다.
+ * 큰 라이브러리를 붙이는 대신 이만큼만 처리한다. HTML 을 만들지 않고 React 요소로 조립해
+ * (dangerouslySetInnerHTML 없이) 안전하다.
+ */
+function renderInline(text: string, keyPrefix: string): ReactNode[] {
+  const parts: ReactNode[] = [];
+  const re = /\*\*([^*]+)\*\*/g;
+  let last = 0;
+  let bold = 0;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
+    parts.push(<strong key={`${keyPrefix}-b${bold++}`}>{match[1]}</strong>);
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
+
+function Markdown({ text }: { text: string }) {
+  const lines = text.split("\n");
+  const blocks: ReactNode[] = [];
+  let list: { type: "ul" | "ol"; items: string[] } | null = null;
+
+  const flush = () => {
+    if (!list) return;
+    const items = list.items.map((item, i) => <li key={i}>{renderInline(item, `li-${blocks.length}-${i}`)}</li>);
+    blocks.push(
+      list.type === "ol" ? (
+        <ol key={`l${blocks.length}`} className="flex list-decimal flex-col gap-0.5 pl-5">
+          {items}
+        </ol>
+      ) : (
+        <ul key={`l${blocks.length}`} className="flex list-disc flex-col gap-0.5 pl-5">
+          {items}
+        </ul>
+      ),
+    );
+    list = null;
+  };
+
+  lines.forEach((line, idx) => {
+    const t = line.trim();
+    const ulMatch = t.match(/^[*\-•]\s+(.*)$/);
+    const olMatch = t.match(/^\d+\.\s+(.*)$/);
+    if (ulMatch) {
+      if (!list || list.type !== "ul") {
+        flush();
+        list = { type: "ul", items: [] };
+      }
+      list.items.push(ulMatch[1]);
+      return;
+    }
+    if (olMatch) {
+      if (!list || list.type !== "ol") {
+        flush();
+        list = { type: "ol", items: [] };
+      }
+      list.items.push(olMatch[1]);
+      return;
+    }
+    flush();
+    if (t === "") return; // 빈 줄은 아래 gap 으로 대신한다
+    // 머리표(#)만 있는 강조 줄은 굵게로 눕힌다
+    const heading = t.match(/^#{1,6}\s+(.*)$/);
+    blocks.push(<p key={`p${idx}`}>{renderInline(heading ? `**${heading[1]}**` : t, `p${idx}`)}</p>);
+  });
+  flush();
+
+  return <div className="flex flex-col gap-1.5">{blocks}</div>;
 }
 
 export function TeacherAssistant() {
@@ -403,10 +478,10 @@ export function TeacherAssistant() {
                 className={
                   message.role === "user"
                     ? "rounded-2xl bg-ink px-3 py-2 text-canvas t-body-sm whitespace-pre-wrap"
-                    : "rounded-2xl bg-surface px-3 py-2 t-body-sm whitespace-pre-wrap"
+                    : "rounded-2xl bg-surface px-3 py-2 t-body-sm"
                 }
               >
-                {message.text}
+                {message.role === "user" ? message.text : <Markdown text={message.text} />}
               </div>
               {message.sources && message.sources.length > 0 && (
                 <div className="mt-1.5 flex flex-col gap-1">
