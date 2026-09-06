@@ -279,18 +279,6 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
   {
-    key: "_l4_fix_recap",
-    phase: "emotion",
-    label: "",
-    hint: "",
-    kind: "echo",
-    echoKeys: [
-      { key: "fix_plan", label: "오늘 고치기로 정한 것" },
-      { key: "build_url", label: "지금 화면 주소" },
-    ],
-    maxLength: 0,
-  },
-  {
     key: "build_url",
     phase: "emotion",
     /*
@@ -305,11 +293,17 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "fix4",
     phase: "emotion",
-    label: "오늘 무엇을 어떻게 고쳤나요?",
+    /*
+     * '무엇을 고칠까'에서 쓴 계획(fix_plan)을 그대로 불러와, 실제로 바뀐 대로 다듬게 한다.
+     * 계획과 결과를 따로 두 번 쓰던 중복을 없앤다. 학생이 손대면 덮지 않고 '다시 만들기'만 뜬다
+     * (worksheet-view 의 prefillTemplate). 계획이 비어 있으면 이 칸도 비어서 처음부터 쓰면 된다.
+     */
+    label: "실제로 고친 내용 — 계획을 불러왔어요. 바뀐 대로 고쳐 주세요",
     hint:
-      "한 줄이면 됩니다. 다 못 고쳤으면 어디까지 했는지 적어도 돼요.\n" +
-      "예) 신청한 내용이 캔바 시트에 저장돼서, 다시 열어도 목록이 남아 있게 했어요",
+      "‘무엇을 고칠까’에서 정한 계획이 아래에 들어와 있어요.\n" +
+      "실제로 해 보니 달라졌으면 그대로 고쳐 적으면 됩니다. 다 못 고쳤으면 어디까지 했는지 적어도 돼요.",
     kind: "long",
+    prefillTemplate: "{fix_plan}",
     maxLength: 200,
   },
 ];
