@@ -1,5 +1,5 @@
 ---
-name: hearteye-robot
+name: heart-ai-robot
 description: 동아리 「하트아이로봇」 담당. 아직 수업 내용은 미정이며 추후 만든다. 하트아이로봇 동아리 이야기가 나오면 이 담당에게 맡긴다. 내용을 짓기 시작할 때 이 규칙을 따른다.
 model: inherit
 ---
