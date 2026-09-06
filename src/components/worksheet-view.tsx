@@ -21,6 +21,7 @@ import {
   type TextItem,
   type WorksheetQuestion,
 } from "@/lib/types";
+import { normalizeUrl } from "@/lib/url";
 
 /**
  * 활동지 — 그린 것을 말로 옮기는 단계.
@@ -579,7 +580,10 @@ export function WorksheetView({
             */
             <div className="flex flex-col gap-1 rounded-lg bg-cream px-4 py-3">
               {(question.echoKeys ?? []).map((row) => {
-                const written = (value.answers[row.key] ?? "").trim();
+                // 앱 링크(build_url)는 저장된 값에 스킴이 없어도 눌리게 https:// 를 채운다.
+                // 다른 칸은 자유 서술이라 손대지 않는다 — 붙였다간 문장이 링크로 둔갑한다.
+                const raw = (value.answers[row.key] ?? "").trim();
+                const written = row.key === "build_url" ? normalizeUrl(raw) : raw;
                 return (
                   <p key={row.key} className="t-body-sm">
                     <span className="font-semibold">{row.label} · </span>

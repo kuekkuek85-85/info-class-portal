@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { TeacherShell } from "@/components/teacher-shell";
 import { usePolled } from "@/lib/use-polled";
+import { normalizeUrl } from "@/lib/url";
 
 /**
  * 「미리 피드백」 — 분반 전체를 한 페이지에서 검토하고, 수업 전에 피드백을 써 둔다.
@@ -117,8 +118,9 @@ function StudentCard({ row, onSaved }: { row: Row; onSaved: () => void }) {
   const [note, setNote] = useState(row.teacherNote || row.aiDraft || "");
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  const buildUrl = row.answers.find((a) => a.key === "build_url")?.value ?? "";
-  const isLink = /^https?:\/\//i.test(buildUrl.trim());
+  // 스킴이 빠진 채 저장된 옛 링크도 눌리게 https:// 를 채워 준다 (normalizeUrl 이 trim 도 한다)
+  const buildUrl = normalizeUrl(row.answers.find((a) => a.key === "build_url")?.value ?? "");
+  const isLink = /^https?:\/\//i.test(buildUrl);
   const shown = row.answers.filter((a) => a.key !== "build_url");
   const fromDraft = !row.teacherNote && Boolean(row.aiDraft) && note === row.aiDraft;
 
