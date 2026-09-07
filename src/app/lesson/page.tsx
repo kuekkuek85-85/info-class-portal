@@ -57,6 +57,8 @@ export interface ActivityInfo {
   worksheetIntro?: { heading: string; body: string } | null;
   /** 감상 화면에서 부르는 말 ("이야기"). 비면 그림 여부로 정한다 */
   galleryNoun?: string;
+  /** 왼쪽 활동지 탭 이름. 비면 "활동지 쓰기" */
+  worksheetTabLabel?: string;
 }
 
 interface LessonData {
@@ -1135,7 +1137,7 @@ export default function LessonPage() {
                 activeTab === "worksheet" ? "pill-primary" : "pill-secondary"
               }`}
             >
-              활동지 쓰기
+              {session.activity.worksheetTabLabel || "활동지 쓰기"}
             </button>
             {canDraw && worksheetFirst && (
               <button

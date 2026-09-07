@@ -161,6 +161,8 @@ export async function GET() {
               */
               galleryEnabled: session.activity.galleryEnabled ?? true,
               galleryNoun: session.activity.galleryNoun ?? "",
+              // 왼쪽 활동지 탭 이름. 안 실으면 화면이 기본값 "활동지 쓰기" 로 물러난다
+              worksheetTabLabel: session.activity.worksheetTabLabel ?? "",
             }
           : null,
         date: session.date,
