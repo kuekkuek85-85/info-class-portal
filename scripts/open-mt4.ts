@@ -39,7 +39,7 @@ const app = initializeApp({
 const db = getFirestore(app);
 db.settings({ ignoreUndefinedProperties: true });
 
-const LESSON_NO = 205;
+const LESSON_NO = 204;
 
 /** 분반 열쇠 → 표시명·데이터 통 번호. seed-mt4 의 groups 와 같아야 한다 */
 const GROUPS: Record<string, { label: string; classNo: number }> = {
