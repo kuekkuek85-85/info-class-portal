@@ -1,11 +1,12 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { TeacherShell } from "@/components/teacher-shell";
 import { todayKST } from "@/lib/datetime";
 import { usePolled } from "@/lib/use-polled";
 import { groupName } from "@/lib/group-label";
+import { COURSES, courseOf, type CourseKey } from "@/lib/assistant/courses";
 import {
   emptyPhaseContent,
   type ActivityContent,
@@ -114,6 +115,31 @@ function GroupPicker({
   );
 }
 
+/**
+ * 등록 차시 목록을 가르는 탭. 하트아이로봇(heart-robot)은 아직 차시가 없어 뺀다.
+ *
+ * 챗봇이 쓰는 `courseOf` 와 같은 분류를 그대로 쓴다 — 화면과 조교가 "이건 무슨 과목"
+ * 을 다르게 말하면 안 된다.
+ */
+const LESSON_TABS: readonly CourseKey[] = ["informatics", "human-ai", "mind-talk"];
+
+/** 선택 탭 기억. 저장소가 막힌 브라우저면 그냥 기본 탭으로 시작한다 (try/catch). */
+const TAB_STORAGE_KEY = "teacher-lessons-tab";
+
+/**
+ * 차시 하나를 과목으로 접는다. `courseOf` 판정을 그대로 따르되,
+ * 탭에 없는 과목(heart-robot, 또는 미래에 생길 무엇)으로 잡히면 정보 탭에 담는다 —
+ * courses.ts 의 기본값도 정보라, 어느 탭에도 안 잡혀 계획이 사라지는 일이 없게 한다.
+ */
+function planCourse(plan: Plan): CourseKey {
+  const key = courseOf({
+    activityId: plan.activity?.activityId,
+    groupKey: plan.groups?.[0]?.key,
+    lessonNo: plan.lessonNo,
+  }).key;
+  return (LESSON_TABS as readonly string[]).includes(key) ? key : "informatics";
+}
+
 const EMPTY: Draft = {
   lessonNo: 1,
   title: "",
@@ -142,6 +168,33 @@ function Lessons() {
 
   const { data, reload } = usePolled<{ plans: Plan[] }>("/api/teacher/lessons");
   const plans = data?.plans ?? [];
+
+  // 선택 탭. 첫 렌더는 기본값으로 두고(하이드레이션 어긋남 방지), 붙은 뒤 저장소에서 복원한다.
+  const [tab, setTab] = useState<CourseKey>("informatics");
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(TAB_STORAGE_KEY);
+      if (saved && (LESSON_TABS as readonly string[]).includes(saved)) {
+        setTab(saved as CourseKey);
+      }
+    } catch {
+      // 저장소를 막아 둔 브라우저 — 기본 탭으로 둔다
+    }
+  }, []);
+
+  function chooseTab(key: CourseKey) {
+    setTab(key);
+    try {
+      localStorage.setItem(TAB_STORAGE_KEY, key);
+    } catch {
+      // 못 저장해도 이번 화면에서는 그대로 동작한다
+    }
+  }
+
+  // 탭별 개수는 전체 목록에서 센다. 지금 보이는 것은 고른 탭 하나뿐이다.
+  const counts = { informatics: 0, "human-ai": 0, "mind-talk": 0 } as Record<CourseKey, number>;
+  for (const plan of plans) counts[planCourse(plan)] += 1;
+  const visiblePlans = plans.filter((plan) => planCourse(plan) === tab);
 
   async function save() {
     setBusy(true);
@@ -358,8 +411,44 @@ function Lessons() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">등록된 차시 {plans.length}개</h2>
+
+        {/*
+          과목별 탭. 스타일은 학생 화면 필터 pill(반 고르기)과 같은 토큰을 쓰고,
+          갤럭시 탭·모바일에서 줄바꿈되게 flex-wrap 으로 둔다. 표시 필터일 뿐이라
+          아래 리허설·바로 열기 목록은 전체 plans 를 그대로 받는다.
+        */}
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label="과목">
+          {LESSON_TABS.map((key) => {
+            const active = tab === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => chooseTab(key)}
+                className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium ${
+                  active ? "bg-accent text-white" : "border border-line text-muted"
+                }`}
+              >
+                {COURSES[key].label}
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${
+                    active ? "bg-white/20" : "bg-surface text-muted"
+                  }`}
+                >
+                  {counts[key]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {visiblePlans.length === 0 && (
+          <p className="text-sm text-muted">이 과목에 등록된 차시가 없습니다.</p>
+        )}
         <ul className="flex flex-col gap-2">
-          {plans.map((plan) => (
+          {visiblePlans.map((plan) => (
             <li
               key={plan.id}
               className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-line bg-card px-4 py-3"
