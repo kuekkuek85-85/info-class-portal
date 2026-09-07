@@ -82,7 +82,7 @@ db.settings({ ignoreUndefinedProperties: true });
 
 /** 4회기 하나의 활동통. 7·8차시를 연속 블록으로 한 세션에서 진행한다 */
 const ACTIVITY_ID = "mt-2026-3";
-const LESSON_NO = 205;
+const LESSON_NO = 204;
 
 /** Suno. 분반 무관 단일 공개 주소라 분반별 토큰이 없다 — 남의 분반으로 샐 것이 없다 */
 const SUNO_URL = "https://suno.com/";
