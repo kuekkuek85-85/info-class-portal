@@ -170,6 +170,18 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
   {
+    // 로그인 중 코드를 물어볼 때 여기서 학교 메일을 연다. hint 는 링크를 못 걸어
+    // 문항의 linkUrl 로 「학교 메일 열기」 버튼을 따로 둔다 (① 은 linkUrl 을 Suno 가 씀).
+    key: "_outlook",
+    phase: "build",
+    label: "학교 메일(Outlook) — 로그인 코드는 여기서 받아요",
+    hint: "Suno 로그인 중 ‘코드’ 를 물어보면, 여기를 눌러 학교 메일을 열고 받은 코드를 넣으세요.",
+    kind: "note",
+    linkUrl: "https://outlook.office.com/",
+    linkLabel: "학교 메일(Outlook) 열기 (새 창)",
+    maxLength: 0,
+  },
+  {
     key: "_pick_note",
     phase: "build",
     label: "② 가장 화려하게 ‘망한’ 실패 하나를 고르세요",
