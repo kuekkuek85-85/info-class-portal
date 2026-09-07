@@ -149,6 +149,17 @@ export async function GET(request: Request) {
     const selfCheckOk =
       (session.activity?.worksheet ?? []).find((q) => q.key === "news_check2")?.choices?.[0] ?? "";
 
+    /*
+     * 앱(화면) 링크를 내야 하는 차시인가 — 진로탐색 2·3·4차시가 같은 build_url 칸을 쓴다.
+     *
+     * 이 칸이 있는 차시에서만 학생별로 "링크를 냈는지"를 얹어 보낸다. 신호등은 전체
+     * 진도(answeredKeys 개수)만 보여서, 링크 하나만 안 낸 학생이 초록 가까이에 묻힌다.
+     * 실시간 피드백을 주려면 "아직 링크 안 낸 학생"이 따로 보여야 한다. 링크 칸이 없는
+     * 차시에서는 null 로 보내 화면에서 이 표시가 아예 뜨지 않게 한다.
+     */
+    const LINK_KEY = "build_url";
+    const hasLinkQuestion = (session.activity?.worksheet ?? []).some((q) => q.key === LINK_KEY);
+
     const rows = attendance.map((entry) => {
       const mood = moodByStudent.get(entry.studentId);
       const reflection = reflectionByStudent.get(entry.studentId);
@@ -189,6 +200,12 @@ export async function GET(request: Request) {
          * 이탈 누적치와 같이 출석 문서에 얹혀 있어 **추가 읽기가 없다**. 기사 본문은
          * 여기 싣지 않는다 — 교사가 그 학생을 누를 때만 artifact 를 1건 읽는다.
          */
+        /*
+         * 앱 링크를 냈는가 (진로탐색 2·3·4차시). 링크 칸이 없는 차시에서는 null —
+         * 화면에서 이 값이 null 이면 링크 관련 표시를 통째로 접는다. 추가 읽기는 없다
+         * (answeredKeys 는 이미 출석 문서에 얹혀 온다).
+         */
+        linkSubmitted: hasLinkQuestion ? answered.has(LINK_KEY) : null,
         stage: entry.submitStage ?? 0,
         /*
          * 검토를 기다리는 학생.

@@ -132,6 +132,11 @@ interface StudentRow {
    * 기사 본문은 오지 않는다 — 검토 패널을 열 때 따로 1건 읽는다.
    */
   stage?: 0 | 1 | 2 | 3;
+  /**
+   * 앱(화면) 링크를 냈는가. 링크 칸이 있는 차시(진로탐색 2·3·4차시)에서만 true/false 로 오고,
+   * 링크 칸이 없는 차시에서는 null/undefined 다 — 그때는 링크 표시를 아예 그리지 않는다.
+   */
+  linkSubmitted?: boolean | null;
   /** 2차 이상을 냈고 아직 피드백을 안 준 학생 */
   waiting?: boolean;
   /** 교사가 「통과」를 준 학생. 통과 명단 카드가 이것으로 그려진다 */
@@ -399,6 +404,48 @@ function ReviewQueue({
   );
 }
 
+/**
+ * 앱 링크 미제출 명단 (진로탐색 2·3·4차시).
+ *
+ * 신호등은 활동지 전체 진도만 보여준다 — 링크 하나만 안 낸 학생은 다른 칸을 다 채워
+ * 초록 가까이에 묻힌다. 실시간으로 링크를 받아 피드백을 주려면 "아직 안 낸 학생"이
+ * 따로, 한눈에 보여야 한다.
+ *
+ * 링크 칸이 없는 차시에서는 위(호출부)에서 아예 그리지 않는다. 접속한 학생만 센다 —
+ * 아직 안 들어온 학생은 위쪽 「안 들어온 학생」 카드가 따로 챙긴다.
+ */
+function LinkPending({ rows, masked }: { rows: StudentRow[]; masked: boolean }) {
+  const pending = [...rows]
+    .filter((row) => row.linkSubmitted === false)
+    .sort((a, b) => seatNo(a) - seatNo(b));
+  const done = rows.filter((row) => row.linkSubmitted === true).length;
+
+  return (
+    <section className="rounded-xl border-2 border-ink bg-cream px-4 py-3">
+      <h2 className="text-sm font-semibold">
+        앱 링크 — 낸 학생 {done} / {done + pending.length}
+      </h2>
+      {pending.length === 0 ? (
+        <p className="mt-2 t-caption">접속한 학생이 모두 링크를 냈습니다.</p>
+      ) : (
+        <>
+          <p className="mt-1 t-caption">아직 링크를 안 낸 학생입니다. 이 학생들 것부터 받아 주세요.</p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {pending.map((row) => (
+              <li
+                key={row.studentId}
+                className="rounded-lg bg-canvas px-3 py-1.5 t-body-sm font-semibold"
+              >
+                🔗 {whoLabel(row, masked)}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
+
 function ProgressBoard({
   rows,
   masked,
@@ -482,6 +529,14 @@ function ProgressBoard({
                         <span className="tabular-nums text-sm text-muted">
                           {work.done}/{work.total}
                         </span>
+                        {/*
+                          링크를 내야 하는 차시에서, 이 학생만 아직 링크를 안 냈다.
+                          진도가 초록 가까이라도 링크가 비면 실시간 피드백을 못 준다 —
+                          그 한 칸을 여기서 짚어 준다. 링크 칸이 없는 차시에서는 undefined 라 안 뜬다.
+                        */}
+                        {row.linkSubmitted === false && (
+                          <span className="text-sm font-semibold">🔗 미제출</span>
+                        )}
                         {/*
                           손을 놓은 지 오래된 학생만 표시한다. 3분 미만은 쓰는 중이라고 보고
                           찍지 않는다 — 모두에게 붙으면 아무것도 가리키지 못한다.
@@ -1037,6 +1092,16 @@ function Dashboard() {
               }}
               onClose={() => setReviewing(null)}
             />
+          )}
+
+          {/*
+            앱 링크 미제출 명단 — 링크 칸이 있는 차시(진로탐색 2·3·4차시)에서만 뜬다.
+            링크 칸이 없는 차시에서는 서버가 linkSubmitted 를 null 로 보내 여기가 통째로 접힌다.
+            신호등 바로 위에 둔다 — 실시간으로 링크를 받아 피드백을 주는 것이 지금 할 일이라
+            훑어보는 신호등보다 먼저다.
+          */}
+          {rows.some((row) => row.linkSubmitted === true || row.linkSubmitted === false) && (
+            <LinkPending rows={rows} masked={masked} />
           )}
 
           <ProgressBoard rows={rows} masked={masked} onMasked={setMasked} />
