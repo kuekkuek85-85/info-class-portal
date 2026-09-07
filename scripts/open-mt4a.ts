@@ -1,8 +1,8 @@
 /**
- * 「디지털 마음 톡톡」 5회기 1차시(실패 노래 준비·생성) 수업을 연다.
+ * 「디지털 마음 톡톡」 4회기 1차시(7차시, 실패 노래 준비·생성) 수업을 연다.
  *
- *   node --env-file=.env.local scripts/open-mt5a.ts [날짜] [교시] [분반]
- *   예) node --env-file=.env.local scripts/open-mt5a.ts 2026-09-15 7 mt-tue-1
+ *   node --env-file=.env.local scripts/open-mt4a.ts [날짜] [교시] [분반]
+ *   예) node --env-file=.env.local scripts/open-mt4a.ts 2026-09-15 7 mt-tue-1
  *
  * open-mt3-tue1.ts 와 같은 모양이되, 분반을 세 번째 인자로 받는다(2차시까지 요일별로
  * 여러 번 열어야 해서 파일을 늘리는 대신 인자로 고른다). 아무 것도 안 주면 화요일 1기.
@@ -41,7 +41,7 @@ db.settings({ ignoreUndefinedProperties: true });
 
 const LESSON_NO = 205;
 
-/** 분반 열쇠 → 표시명·데이터 통 번호. seed-mt5a 의 groups 와 같아야 한다 */
+/** 분반 열쇠 → 표시명·데이터 통 번호. seed-mt4a 의 groups 와 같아야 한다 */
 const GROUPS: Record<string, { label: string; classNo: number }> = {
   "mt-tue-1": { label: "화요일 1기", classNo: 1 },
   "mt-thu-1": { label: "목요일 1기", classNo: 2 },
@@ -87,7 +87,7 @@ async function pickCode(): Promise<string> {
 async function main(): Promise<void> {
   const plans = await db.collection("lessonPlans").where("lessonNo", "==", LESSON_NO).get();
   if (plans.empty) {
-    console.error(`✗ ${LESSON_NO}차시 계획이 없습니다. 먼저 scripts/seed-mt5a.ts 를 돌리세요.`);
+    console.error(`✗ ${LESSON_NO}차시 계획이 없습니다. 먼저 scripts/seed-mt4a.ts 를 돌리세요.`);
     process.exit(1);
   }
   const plan = plans.docs[0];

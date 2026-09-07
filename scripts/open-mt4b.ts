@@ -1,13 +1,13 @@
 /**
- * 「디지털 마음 톡톡」 5회기 2차시(실패 노래 감상·시상) 수업을 연다.
+ * 「디지털 마음 톡톡」 4회기 2차시(8차시, 실패 노래 감상·시상) 수업을 연다.
  *
- *   node --env-file=.env.local scripts/open-mt5b.ts [날짜] [교시] [분반]
- *   예) node --env-file=.env.local scripts/open-mt5b.ts 2026-09-22 7 mt-tue-1
+ *   node --env-file=.env.local scripts/open-mt4b.ts [날짜] [교시] [분반]
+ *   예) node --env-file=.env.local scripts/open-mt4b.ts 2026-09-22 7 mt-tue-1
  *
- * open-mt5a.ts 와 같은 모양이고 차시 번호만 206 이다. 1차시와 같은 분반으로 열어야
+ * open-mt4a.ts 와 같은 모양이고 차시 번호만 206 이다. 1차시와 같은 분반으로 열어야
  * 같은 데이터 통(classNo)을 이어 써서 지난 시간 노래가 갤러리에 뜬다.
  *
- * ## 반드시 지키는 두 가지 (open-mt5a.ts 와 같음)
+ * ## 반드시 지키는 두 가지 (open-mt4a.ts 와 같음)
  *
  *  1. 세션 문서 ID 는 **분반 열쇠**를 쓴다 — 같은 교시 정보과와 안 겹치게.
  *  2. **코드를 예약**한다 — 안 남기면 다음 수업이 같은 코드를 받는다.
@@ -40,7 +40,7 @@ db.settings({ ignoreUndefinedProperties: true });
 
 const LESSON_NO = 206;
 
-/** 분반 열쇠 → 표시명·데이터 통 번호. seed-mt5b 의 groups 와 같아야 한다 */
+/** 분반 열쇠 → 표시명·데이터 통 번호. seed-mt4b 의 groups 와 같아야 한다 */
 const GROUPS: Record<string, { label: string; classNo: number }> = {
   "mt-tue-1": { label: "화요일 1기", classNo: 1 },
   "mt-thu-1": { label: "목요일 1기", classNo: 2 },
@@ -85,7 +85,7 @@ async function pickCode(): Promise<string> {
 async function main(): Promise<void> {
   const plans = await db.collection("lessonPlans").where("lessonNo", "==", LESSON_NO).get();
   if (plans.empty) {
-    console.error(`✗ ${LESSON_NO}차시 계획이 없습니다. 먼저 scripts/seed-mt5b.ts 를 돌리세요.`);
+    console.error(`✗ ${LESSON_NO}차시 계획이 없습니다. 먼저 scripts/seed-mt4b.ts 를 돌리세요.`);
     process.exit(1);
   }
   const plan = plans.docs[0];

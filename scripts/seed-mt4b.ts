@@ -1,12 +1,12 @@
 /**
- * 「디지털 마음 톡톡」(자유학기 주제선택) 5회기 · 2차시 —
+ * 「디지털 마음 톡톡」(자유학기 주제선택) 4회기 · 2차시(8차시) —
  * 실패를 노래로 자랑하기 · 감상과 시상.
  *
- *   node --env-file=.env.local scripts/seed-mt5b.ts
+ *   node --env-file=.env.local scripts/seed-mt4b.ts
  *
  * ## 1차시가 만든 노래를 서로 듣는 시간이다
  *
- * 1차시(205·seed-mt5a)에서 각자 실패 노래를 만들고 링크를 냈다. 2차시는 그 노래들을
+ * 1차시(205·seed-mt4a)에서 각자 실패 노래를 만들고 링크를 냈다. 2차시는 그 노래들을
  * 익명 갤러리에서 서로 듣고, 부문별로 반응을 남기고, 시상으로 자기 영역을 닫는다.
  *
  * ## 같은 작품 문서를 이어 쓴다
@@ -67,7 +67,7 @@ const app = initializeApp({
 const db = getFirestore(app);
 db.settings({ ignoreUndefinedProperties: true });
 
-/** ★ 1차시(seed-mt5a)와 같은 값. 지난 시간에 만든 노래·타이틀이 오늘 열린다 */
+/** ★ 1차시(seed-mt4a)와 같은 값. 지난 시간에 만든 노래·타이틀이 오늘 열린다 */
 const ACTIVITY_ID = "mt-2026-3";
 const LESSON_NO = 206;
 
@@ -199,7 +199,7 @@ const WORKSHEET: WorksheetQuestion[] = [
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   lessonNo: LESSON_NO,
-  title: "디지털 마음 톡톡 5회기 2차시 — 실패를 노래로 자랑하기 (감상·시상)",
+  title: "디지털 마음 톡톡 4회기 2차시(8차시) — 실패를 노래로 자랑하기 (감상·시상)",
 
   moodCheckEnabled: true,
 
@@ -211,11 +211,12 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   ],
 
   game: {
-    heading: "기다리는 동안 — 똥 피하기",
+    heading: "기다리는 동안 — 한붓그리기",
     body:
       "친구들이 들어오길 기다리는 동안 잠깐 쉬어요.\n" +
-      "위에서 떨어지는 똥을 좌우로 피하세요. 한 번이라도 맞으면 끝이에요.",
-    url: "https://dodge-poop-game.vercel.app/",
+      "선을 한 번도 떼지 않고, 같은 길을 두 번 지나지 않게 모든 선을 그려 보세요.\n" +
+      "점과 점을 이으면 됩니다. 막히면 다시 시작할 수 있어요.",
+    url: "https://euler-path-game.vercel.app/",
   },
   gameExplainer: empty(),
 
@@ -342,7 +343,7 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log(`\n활동 ID: ${ACTIVITY_ID} (1차시 seed-mt5a 와 같음 — 지난 시간에 만든 노래·타이틀이 열립니다)`);
+  console.log(`\n활동 ID: ${ACTIVITY_ID} (1차시 seed-mt4a 와 같음 — 지난 시간에 만든 노래·타이틀이 열립니다)`);
   console.log(`차시 번호 ${LESSON_NO}`);
   console.log("단계: 대기 → 마음 체크인 → 오늘 할 일 → 지난 시간 내 노래 → 실패 노래 자랑대회(감상·반응) → 시상 → 영상②(회복탄력성, 시상 뒤 재생) → 마무리 한 문장 → 마음일기");
   console.log("[교사] 영상② [2:36] 반전(성공 보증 아님)·[3:33] 자기 자비 구간을 반드시 함께 다뤄 주세요. 다음 회기 후보 '오늘만큼은 자기자비'(5:44)는 자리표시만.");

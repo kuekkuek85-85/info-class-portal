@@ -1,12 +1,12 @@
 /**
- * 「디지털 마음 톡톡」(자유학기 주제선택) 5회기 · 1차시 —
+ * 「디지털 마음 톡톡」(자유학기 주제선택) 4회기 · 1차시(7차시) —
  * 실패를 노래로 자랑하기 · 준비와 생성.
  *
- *   node --env-file=.env.local scripts/seed-mt5a.ts
+ *   node --env-file=.env.local scripts/seed-mt4a.ts
  *
  * ## 자기 영역을 닫는 회기다
  *
- * 2·3회기가 감정 인식, 4회기가 감정 조절이었다. 5회기는 자기 영역(자기 이해)의
+ * 2회기가 감정 인식, 3회기가 감정 조절(감정 지도·힐링)이었다. 4회기는 자기 영역(자기 이해)의
  * 마지막이다 — 나를 이해하고(강점) → 넘어져도 일어서고(실패) → 그것을 노래로
  * 표현한다. KAIST 실패연구소의 「망한 과제 자랑대회」를 중1 교실로 옮겨,
  * 실패를 부끄러워하지 말고 **노래로 자랑**하게 한다.
@@ -17,7 +17,7 @@
  * ## 두 차시가 한 작품 문서를 이어 쓴다
  *
  * 이 1차시(205)에서 강점 문장·자랑 타이틀·가사 한 줄·노래 링크를 쓰고,
- * 2차시(206·seed-mt5b)에서 그 값을 그대로 열어 서로 감상하고 반응한다.
+ * 2차시(206·seed-mt4b)에서 그 값을 그대로 열어 서로 감상하고 반응한다.
  * 그래서 **활동 ID(mt-2026-3)를 두 차시가 같게** 둔다 — hai 연속 차시와 같은 방식
  * (gallery.ts 의 activityIdFor · hai4 의 build_url 이어받기).
  *
@@ -73,7 +73,7 @@ const app = initializeApp({
 const db = getFirestore(app);
 db.settings({ ignoreUndefinedProperties: true });
 
-/** ★ 2차시(seed-mt5b)와 같은 값. 이 값이 같아야 오늘 쓴 노래·타이틀이 다음 시간에 열린다 */
+/** ★ 2차시(seed-mt4b)와 같은 값. 이 값이 같아야 오늘 쓴 노래·타이틀이 다음 시간에 열린다 */
 const ACTIVITY_ID = "mt-2026-3";
 const LESSON_NO = 205;
 
@@ -323,7 +323,7 @@ const WORKSHEET: WorksheetQuestion[] = [
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   lessonNo: LESSON_NO,
-  title: "디지털 마음 톡톡 5회기 1차시 — 실패를 노래로 자랑하기 (준비·생성)",
+  title: "디지털 마음 톡톡 4회기 1차시(7차시) — 실패를 노래로 자랑하기 (준비·생성)",
 
   // 매 회기 첫 화면 루틴
   moodCheckEnabled: true,
@@ -337,11 +337,12 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   ],
 
   game: {
-    heading: "기다리는 동안 — 똥 피하기",
+    heading: "기다리는 동안 — 한붓그리기",
     body:
       "노래가 만들어지길 기다리는 동안 잠깐 쉬어요.\n" +
-      "위에서 떨어지는 똥을 좌우로 피하세요. 한 번이라도 맞으면 끝이에요.",
-    url: "https://dodge-poop-game.vercel.app/",
+      "선을 한 번도 떼지 않고, 같은 길을 두 번 지나지 않게 모든 선을 그려 보세요.\n" +
+      "점과 점을 이으면 됩니다. 막히면 다시 시작할 수 있어요.",
+    url: "https://euler-path-game.vercel.app/",
   },
   gameExplainer: empty(),
 
@@ -469,7 +470,7 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log(`\n활동 ID: ${ACTIVITY_ID} (2차시 seed-mt5b 와 같음 — 오늘 쓴 노래·타이틀이 다음 시간에 열립니다)`);
+  console.log(`\n활동 ID: ${ACTIVITY_ID} (2차시 seed-mt4b 와 같음 — 오늘 쓴 노래·타이틀이 다음 시간에 열립니다)`);
   console.log(`차시 번호 ${LESSON_NO}`);
   console.log("단계: 대기 → 마음 체크인 → 오늘 할 일 → 영상①(실패가 두려운 당신에게) → 나의 강점(+도입 토론) → 실패 노래 만들기 → 노래 생성·제출 → 마음일기");
   console.log("서로 구경하기: 1차시는 닫음(galleryEnabled: false) — 감상·투표·시상은 2차시.");
