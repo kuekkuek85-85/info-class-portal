@@ -285,6 +285,13 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
                             </div>
                           )}
                           <div className="flex flex-col gap-1">
+                            {/*
+                              실명 갤러리(galleryShowNames)인 세션에서만 서버가 author 를 채운다.
+                              익명 세션은 author 가 빈 문자열이라 이 줄은 뜨지 않는다 — 기존과 동일.
+                            */}
+                            {work.author && (
+                              <p className="t-caption font-semibold">{work.author}</p>
+                            )}
                             {(work.strokes.length > 0 || work.place) && (
                               <>
                                 <p className="t-body-sm font-bold">

@@ -31,10 +31,10 @@
  * 가사 한 줄·별점** 네 칸뿐이다(거르는 자리는 서버다 — gallery 라우트의 galleryAnswerKeys).
  * 실명은 "이름"만 더해지는 것이지 이 목록을 넓히지 않는다.
  *
- * ⚠ 실명 갤러리: 앱 갤러리는 지금 구조적으로 익명이다(gallery 라우트가 친구 카드에
- * author 를 "" 로 고정, gallery-view 도 이름 미표시). 세션만 실명으로 여는 스위치가
- * 아직 없어, 이 세션도 지금은 익명으로 열린다. 실명은 코드 변경(신규 플래그+route+view)이
- * 필요해 보고서에 구현안을 남겼다 — 승인 후 별도로 켠다.
+ * 실명 갤러리: 이 세션은 galleryShowNames: true 로 작성자 이름을 카드에 띄운다.
+ * 서버가 displayName("○반 ○번 이름")으로 author 를 채우고 gallery-view 가 그린다.
+ * 이 플래그가 없는 다른 갤러리(감정 글을 쓰는 마음 톡톡 차시·정보·인간과AI)는 그대로
+ * 익명이다 — 기본이 익명이라 플래그를 켠 이 세션만 실명이다.
  *
  * AI 감정 렌즈는 켜지 않는다. emotion_lens 종류 문항이 하나도 없으면 Gemini 호출이
  * 아예 없다(emotion/route.ts). 위기 신호는 갤러리에서 서버가 로컬로 걸러
@@ -538,12 +538,13 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
      * 카드의 [작품 보러 가기(새 창)] 가 곧 노래 듣기(card-news.tsx 의 build_url 앵커).
      * 친구 노래엔 반응 이모지(4부문)와 두 칸짜리 응원(feedbackPrompts)을 남긴다.
      *
-     * ⚠️ 실명 표시: 앱 갤러리는 구조적으로 익명이다 — gallery 라우트가 친구 카드에
-     * author 를 "" 로 고정하고 gallery-view 도 이름을 안 그린다. 실명을 붙이는 세션/계획
-     * 스위치는 아직 없다. 실명은 코드 변경(신규 플래그+route+view)이 필요해 여기서 켜지
-     * 않았다 — 교사 검토용으로 보고서에 구현안을 남겼다. 지금은 익명으로 열린다.
+     * 실명 표시: 이 세션은 galleryShowNames 로 작성자 이름을 카드에 띄운다(교사 승인).
+     * 서버가 displayName("○반 ○번 이름")으로 author 를 채우고 gallery-view 가 그린다.
+     * 이 플래그는 4회기에만 있다 — 감정 글을 쓰는 다른 마음 톡톡 차시는 플래그가 없어
+     * 그대로 익명이다. 실명은 "이름"만 더할 뿐 아래 galleryAnswerKeys 를 넓히지 않는다.
      */
     galleryEnabled: true,
+    galleryShowNames: true,
 
     /*
      * 친구에게 나가는 것은 이 네 칸뿐 — 노래 링크·자랑 타이틀·가사 한 줄·별점.
@@ -609,7 +610,7 @@ async function main(): Promise<void> {
   console.log("서로 구경하기: 켬(galleryEnabled: true) — 제출 뒤 친구 노래를 듣고 반응·응원. 생성 대기로 아직 안 나온 곡은 마지막에 다시 듣기.");
   console.log("친구에게 나가는 칸: build_url · brag_title · lyric_line · stars 네 칸뿐. 실패 상세·강점 문장·배움 한 줄·프롬프트·마무리 문장·마음일기는 뺐습니다.");
   console.log("듣기: 카드의 [작품 보러 가기(새 창)] 가 노래 링크(build_url)를 새 창으로 연다 = 노래 듣기. / 피드백: 반응 이모지 4부문 + 두 칸 응원(feedbackPrompts, 서버 200자·rate limit).");
-  console.log("⚠ 실명 표시: 앱 갤러리는 익명 고정(라우트가 author=''). 실명은 스위치가 없어 미적용 — 코드 변경 필요(보고서 참조). 지금은 익명으로 열립니다.");
+  console.log("실명 표시: galleryShowNames: true — 카드에 작성자 이름(○반 ○번 이름)이 뜹니다. 이 플래그는 4회기에만 — 다른 마음 톡톡 갤러리는 그대로 익명. (피드백 준 사람은 여전히 익명)");
   console.log("영상②(회복탄력성): 시상 뒤 emotion 안내의 [회복탄력성 영상 보기] 링크로 재생. [교사] [2:36] 반전·[3:33] 자기 자비를 반드시 함께 다뤄 주세요.");
   console.log("AI 감정 렌즈: 꺼짐(emotion_lens 문항 없음 → Gemini 호출 없음).");
   console.log("\n[교사] Suno 로그인 약 10분·Outlook 코드·테넌트 차단 가능 — 짝당 1계정 + 도입 병렬, 수업 전 교사 사전 테스트, 막히면 공용 계정 대표 생성/가사·카드 경로.");
