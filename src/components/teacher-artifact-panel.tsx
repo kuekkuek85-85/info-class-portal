@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 
 import { CardNews, type CardNewsData } from "@/components/card-news";
+import { NewsPaper, templateOf } from "@/components/news-paper";
 import { usePolled } from "@/lib/use-polled";
 import type { WorksheetQuestion } from "@/lib/types";
 
@@ -59,6 +60,15 @@ export function TeacherArtifactPanel({
   const [detail, setDetail] = useState<Detail | null>(null);
   /** 목록을 펼쳤는가. 접힌 채로 시작한다 — 수업 중에 늘 보는 것이 아니다 */
   const [listOpen, setListOpen] = useState(false);
+  /**
+   * 펼친 한 편을 **완성본(완성 지면)** 으로 볼 것인가.
+   *
+   * 기본은 칸별 보기(CardNews)다 — 채점은 칸을 짚어 가며 하는 일이라 그쪽이 먼저다.
+   * 완성본은 한 편으로 읽거나 인쇄·발표에 쓸 때 켠다. 다른 학생을 열면 다시 칸별로
+   * 돌아온다 (openDetail 에서 false 로 되돌린다) — 앞 학생을 완성본으로 보고 넘어가도
+   * 새 학생은 채점 화면으로 시작해야 한다.
+   */
+  const [showPaper, setShowPaper] = useState(false);
 
   // 간격 없음 — 열 때 한 번. 그 뒤로는 새로고침 버튼과 숨김 처리 뒤에만 다시 읽는다.
   const { data, reload: loadList } = usePolled<{
@@ -74,6 +84,8 @@ export function TeacherArtifactPanel({
     async (id: string) => {
       setOpenId(id);
       setDetail(null);
+      // 새로 여는 편은 칸별 보기로 시작한다 — 앞 편에서 완성본을 켠 채 넘어와도 채점부터
+      setShowPaper(false);
       if (!id) return;
 
       const response = await fetch(`/api/teacher/artifacts?sessionId=${sessionId}&id=${id}`);
@@ -172,12 +184,49 @@ export function TeacherArtifactPanel({
 
             {openId === row.id && detail && (
               <div className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-3">
-                <CardNews
-                  data={detail.card}
-                  worksheet={detail.worksheet}
-                  author={detail.card.author}
-                  compact
-                />
+                {/*
+                  진로 기사(수행평가1)는 학생 답이 곧 신문 지면 한 장이 된다. 칸별로
+                  쪼개 읽는 것과 완성된 한 편으로 읽는 것이 서로 다른 일이라(제목·사진·
+                  본문이 이어져야 비로소 "기사"로 읽힌다), 완성본을 켤 수 있게 한다.
+                  학생이 최종 제출 때 보는 지면·검토 대기 줄의 「완성 지면 보기」와 같은
+                  화면이다 (news-paper). 신문 문항이 없는 활동(그리기만·직업 조사 등)에는
+                  단추를 아예 만들지 않는다 — 그쪽엔 조립할 지면이 없다.
+                */}
+                {detail.worksheet.some((question) => question.key === "news_title") && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPaper((prev) => !prev)}
+                    aria-pressed={showPaper}
+                    className="pill pill-secondary self-start t-body-sm"
+                  >
+                    {showPaper ? "칸별로 보기" : "완성본 보기"}
+                  </button>
+                )}
+
+                {showPaper ? (
+                  <NewsPaper
+                    template={templateOf(detail.card.answers.news_template)}
+                    data={{
+                      title: detail.card.answers.news_title ?? "",
+                      scene: detail.card.answers.news_scene ?? "",
+                      change: detail.card.answers.news_change ?? "",
+                      real: detail.card.answers.news_real ?? "",
+                      interview: detail.card.answers.news_interview ?? "",
+                      caption: detail.card.answers.news_caption ?? "",
+                      strokes: detail.card.strokes,
+                      texts: detail.card.texts,
+                      // 교사 전용 뷰라 서명에 표시명을 넣는다 — 인쇄·발표에 그대로 쓰게
+                      reporter: detail.card.author,
+                    }}
+                  />
+                ) : (
+                  <CardNews
+                    data={detail.card}
+                    worksheet={detail.worksheet}
+                    author={detail.card.author}
+                    compact
+                  />
+                )}
 
                 {detail.feedbacks.length > 0 && (
                   <div className="flex flex-col gap-2">
