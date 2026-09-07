@@ -1,4 +1,4 @@
-import { fail, guard, ok, readJson } from "@/lib/api";
+import { deviceKey, fail, guard, networkKey, ok, rateLimit, readJson } from "@/lib/api";
 import {
   carryOverSubmitStage,
   getSession,
@@ -20,6 +20,15 @@ import { parseStudentId } from "@/lib/student-id";
  */
 export async function POST(request: Request) {
   return guard(async () => {
+    // identify 와 같은 한도. confirm 도 학번→이름을 돌려주므로, 여기가 열려 있으면
+    // identify 제한을 우회해 반 명단을 이름째 훑을 수 있다(명단 열거 차단).
+    if (!rateLimit(await deviceKey("confirm"), 15, 60_000)) {
+      return fail("too_many_attempts");
+    }
+    if (!rateLimit(networkKey(request, "confirm"), 600, 60_000)) {
+      return fail("too_many_attempts");
+    }
+
     const codeToken = await readCodeToken();
     if (!codeToken) return fail("no_code_token");
 

@@ -35,6 +35,11 @@ const TARGETS: Record<PurgeTarget, { label: string; confirm: string; note: strin
     confirm: "작품삭제",
     note: "학기 종료 시 실행합니다. 그림은 CSV로 내보낼 수 없으니 필요하면 먼저 화면으로 남기세요.",
   },
+  aiLogs: {
+    label: "AI 호출 기록 (위기 신호 로그·호출 상한)",
+    confirm: "AI로그삭제",
+    note: "질문 내용은 안 남지만 학번에 묶인 위기 신호 플래그가 쌓입니다. 월 단위로 실행하기를 권합니다.",
+  },
   students: {
     label: "명렬표(이름) 전체",
     confirm: "명렬표삭제",

@@ -100,10 +100,11 @@ async function callGemini(apiKey: string, contents: Content[]): Promise<Content 
   const timer = setTimeout(() => controller.abort(), CALL_TIMEOUT_MS);
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        // 키는 쿼리스트링(URL)이 아니라 헤더로 — URL 은 프록시·액세스 로그에 남기 쉽다.
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: SYSTEM }] },
           contents,

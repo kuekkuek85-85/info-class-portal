@@ -101,10 +101,24 @@ export async function verifyGoogleIdToken(idToken: string): Promise<VerifiedGoog
   if (!response.ok) return null;
 
   const data = (await response.json()) as {
-    users?: { localId?: string; email?: string; displayName?: string }[];
+    users?: {
+      localId?: string;
+      email?: string;
+      displayName?: string;
+      emailVerified?: boolean;
+      providerUserInfo?: { providerId?: string }[];
+    }[];
   };
   const user = data.users?.[0];
   if (!user?.localId || !user.email) return null;
+
+  // 허용 이메일 대조(session 쪽)만으로는, 그 이메일로 만든 미인증 계정(예: 이메일/비밀번호
+  // 가입)이 교사 이메일을 사칭할 여지가 있다. 그래서 (1) 이메일이 검증되었고 (2) 실제로
+  // Google 로그인(google.com)으로 든 계정만 통과시킨다. 우리 로그인은 Google 전용이라
+  // 정상 교사는 두 조건을 모두 만족한다.
+  if (user.emailVerified !== true) return null;
+  const viaGoogle = (user.providerUserInfo ?? []).some((p) => p.providerId === "google.com");
+  if (!viaGoogle) return null;
 
   return { uid: user.localId, email: user.email, name: user.displayName ?? user.email };
 }

@@ -1436,6 +1436,7 @@ export type PurgeTarget =
   | "reflections"
   | "attendance"
   | "artifacts"
+  | "aiLogs"
   | "students";
 
 /** 컬렉션을 페이지 단위로 지운다. 학기말 일괄 삭제·월 단위 이유 삭제에 쓴다. */
@@ -1508,7 +1509,20 @@ export async function purge(target: PurgeTarget): Promise<number> {
         (await deleteQueryBatch(db().collection(COLLECTIONS.quizAnswers)));
       return removed;
     }
+    case "aiLogs":
+      // AI 호출 기록·상한 카운터. 내용(질문)은 안 남지만 학번과 함께 "위기 신호가 걸린 학생"
+      // 같은 민감 플래그가 남는다. 파기 대상에 넣어 월 단위/학기말에 지운다.
+      return (
+        (await deleteQueryBatch(db().collection(COLLECTIONS.aiCallLogs))) +
+        (await deleteQueryBatch(db().collection(COLLECTIONS.aiQuota)))
+      );
     case "students":
-      return deleteQueryBatch(db().collection(COLLECTIONS.students));
+      // 명렬표를 지우면 학번에 묶인 파생 식별자(AI 호출 로그·상한)도 함께 지운다.
+      // 안 그러면 이름은 지워도 "몇 반 몇 번의 위기 이력"이 로그에 남는다.
+      return (
+        (await deleteQueryBatch(db().collection(COLLECTIONS.students))) +
+        (await deleteQueryBatch(db().collection(COLLECTIONS.aiCallLogs))) +
+        (await deleteQueryBatch(db().collection(COLLECTIONS.aiQuota)))
+      );
   }
 }

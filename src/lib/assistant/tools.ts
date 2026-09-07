@@ -106,8 +106,9 @@ async function resolveStudents(args: Record<string, unknown>, ctx: ToolContext):
 
   const students = matches.map((entry) => ({
     student: ctx.pseud.pseudoFor(entry.studentId),
-    반: entry.classNo,
-    번호: entry.number,
+    // 반·번호는 준식별자(명렬표로 곧 실명 복원)라 모델(Gemini)로 보내지 않는다.
+    // 교사 화면 출처(칩)에만 남겨, 누가 누구인지는 화면에서만 드러나게 한다.
+    근거: addSource(ctx, { label: `${entry.classNo}반 ${entry.number}번`, course: "informatics" }),
   }));
 
   return {
@@ -258,7 +259,7 @@ async function classEmotions(args: Record<string, unknown>, ctx: ToolContext): P
       return {
         근거,
         학생: ctx.pseud.pseudoFor(s.studentId),
-        번호: s.number,
+        // 번호(출석번호)는 준식별자라 모델로 보내지 않는다. 반·번호는 위 출처(근거) 라벨로 교사 화면에만.
         기록수: list.length,
         부정기분수: list.filter((m) => m.valence < 0).length,
         미확인수: list.filter((m) => !m.reviewedByTeacher).length,
@@ -421,6 +422,7 @@ function maskRow(
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(row)) {
     if (key === "id" || key === "studentId" || key === "name") continue; // 정체·문서ID(학번 포함) 제외
+    if (key === "number" || key === "classNo") continue; // 반·번호(준식별자)는 모델로 보내지 않는다 — 재식별 차단
     if (meta.heavyFields.includes(key)) continue;
     out[key] = meta.textFields.includes(key) ? maskDeep(value, ctx) : value;
   }

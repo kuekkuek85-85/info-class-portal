@@ -52,6 +52,14 @@ export function TeacherShell({ children }: { children: ReactNode }) {
   }, [router]);
 
   async function logout() {
+    // 공용 교사 기기 대비: AI 조교 대화(실명·감정 인용 포함)의 로컬 캐시를 지운다.
+    // 서버(계정별)에는 남아 다른 기기에서 다시 뜨지만, 이 기기 브라우저에는 안 남긴다.
+    try {
+      localStorage.removeItem("teacher-assistant-rooms");
+      localStorage.removeItem("teacher-assistant-chat");
+    } catch {
+      // 저장소 접근이 막혀 있어도 로그아웃은 계속 진행한다
+    }
     await fetch("/api/teacher/session", { method: "DELETE" });
     await signOutGoogle();
     router.replace("/teacher");

@@ -66,6 +66,7 @@ export const COLLECTION_META: Record<string, CollectionMeta> = {
 
 export const SCHEMA_TEXT = [
   "데이터(교사 대시보드가 보는 것과 같다). queryData 로 컬렉션을 골라 조회한다. 학생 참조는 가명('학생A'), 날짜는 YYYY-MM-DD.",
+  "프라이버시: 반(classNo)·번호(number)로 필터는 걸 수 있지만, 조회 결과 줄에는 반·번호가 담기지 않는다(준식별자라 뺀다). 누가 누구인지·몇 반 몇 번인지는 교사 화면의 출처(근거)에만 나오니, 반·번호가 필요하면 '근거를 보라'고 안내하고 답에 지어내지 마라.",
   "- students(명렬표): studentId, name, classNo(1~4), number(출석번호), temporary. 필터: classNo, number.",
   "- moodEntries(기분 체크): studentId, classNo, date, sessionId, mood(감정어), valence(-2 불쾌~+2 쾌), arousal(-2 비활성~+2 활성), reason(사유), reviewedByTeacher(교사 확인). 필터: studentId, classNo, date, reviewedByTeacher.",
   "- reflections(성찰): studentId, classNo, date, sessionId, answers(질문별 답 배열), draft(작성중). 필터: studentId, classNo, date, draft.",
