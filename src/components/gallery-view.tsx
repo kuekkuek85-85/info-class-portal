@@ -36,6 +36,11 @@ interface Work extends CardNewsData {
   myReactions: string[];
   myFoundTech: string;
   myQuestion: string;
+  /**
+   * 작성자 표시 이름. 실명 갤러리(galleryShowNames) 세션에서만 서버가 채우고,
+   * 익명 세션에서는 빈 문자열이라 카드에 이름이 안 뜬다 (server: gallery 라우트).
+   */
+  author?: string;
 }
 
 interface GalleryData {
