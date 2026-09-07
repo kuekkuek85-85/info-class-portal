@@ -5,11 +5,13 @@ import {
   getSession,
   listArtifacts,
   listFeedbacksFor,
+  listStudents,
 } from "@/lib/db";
 import { checkCrisis } from "@/lib/emotion-lens";
 import {
   activityIdFor,
   assignPeers,
+  displayName,
   inViewingOrder,
   isVisible,
   publicIdOf,
@@ -241,6 +243,16 @@ export async function GET() {
     const assignedIds = new Set(assigned.map((row) => row.id));
 
     /*
+     * 실명 갤러리(galleryShowNames: true)인 세션에서만 작성자 이름을 붙인다.
+     * 기본은 익명 — 플래그가 없으면 아래 author 는 "" 그대로라 지금까지와 완전히 같다.
+     * 이름이 필요할 때만 한 반 명단을 한 번 읽어 학번→학생으로 잇는다 (읽기 최소화).
+     */
+    const showNames = session.activity?.galleryShowNames === true;
+    const studentById = showNames
+      ? new Map((await listStudents(session.classNo)).map((s) => [s.studentId, s]))
+      : null;
+
+    /*
      * 학번 순서를 여기서 끊는다.
      *
      * visible 은 listArtifacts 가 준 학번 순이다. 그 차례 그대로 내보내면 이름을 가려도
@@ -251,8 +263,9 @@ export async function GET() {
       visible
         .filter((row) => row.studentId !== me.studentId)
         .map((row) => ({
-          // 정해진 답 칸만 싣는다 — 감정 낱말은 열고 경험 글은 닫는다
-          ...toCard(row, "", allowKeys),
+          // 정해진 답 칸만 싣는다 — 감정 낱말은 열고 경험 글은 닫는다.
+          // 실명 세션이면 author 에 이름을 채우고(익명 세션은 "" 그대로), 답 칸 범위는 그대로다.
+          ...toCard(row, studentById ? displayName(studentById.get(row.studentId)) : "", allowKeys),
           // 꼭 봐야 할 두 편. 자유 선택만 두면 잘 그린 몇 명에게 몰린다 (assignPeers 참조)
           assigned: assignedIds.has(row.id),
           /** 이 활동지가 어느 필터에 걸리는가. 화면은 이것만 보고 거른다 */
