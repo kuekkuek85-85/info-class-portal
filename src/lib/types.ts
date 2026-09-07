@@ -455,7 +455,7 @@ export interface WorksheetQuestion {
    * 학생은 기억으로 다시 쓰거나 그냥 새로 지어낸다. 되돌아가기가 꺼진 수업에서는
    * 볼 방법 자체가 없다.
    */
-  echoKeys?: { key: string; label: string }[];
+  echoKeys?: { key: string; label: string; copy?: boolean }[];
   /**
    * 문항 아래에 붙는 큰 링크 단추.
    *

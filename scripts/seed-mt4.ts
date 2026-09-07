@@ -307,6 +307,24 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
   {
+    key: "_prompt_echo",
+    phase: "grill",
+    /*
+     * ⑤에서 학생이 직접 쓴 프롬프트(suno_prompt)를 여기 되보여 주고 복사 단추를 붙인다.
+     * echo 는 같은 활동 문서(mt-2026-3)의 답을 읽으므로 방금 쓴 프롬프트가 그대로 나온다.
+     * copy: true 라 평문 답 옆에 「복사하기」가 떠서, Suno 에 그대로 붙여넣을 수 있다.
+     * suno_prompt 는 galleryAnswerKeys 에 없어 여전히 비공개다 — 본인 화면에서 자기 답을
+     * 복사하는 것뿐이다.
+     */
+    label: "",
+    hint: "",
+    kind: "echo",
+    echoKeys: [
+      { key: "suno_prompt", label: "내가 쓴 프롬프트 — 복사해서 Suno 에 붙여넣기", copy: true },
+    ],
+    maxLength: 0,
+  },
+  {
     key: "build_url",
     phase: "grill",
     /*

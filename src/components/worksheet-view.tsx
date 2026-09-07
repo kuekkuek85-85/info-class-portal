@@ -616,7 +616,44 @@ export function WorksheetView({
                           {written}
                         </a>
                       ) : (
-                        written
+                        /*
+                          평문 답. row.copy 인 칸(예: 학생이 쓴 Suno 프롬프트)만 복사 단추를
+                          붙인다 — 자기 답을 복사해 다른 곳(Suno)에 붙여넣게. copyText 와 같은
+                          꼴(읽기 전용 칸 + 단추, 막히면 골라 주기 폴백)로 copy() 를 재사용한다.
+                          row.copy 가 없으면 이 조각은 그려지지 않아 기존 echo 와 완전히 같다.
+                        */
+                        <>
+                          {written}
+                          {row.copy && (
+                            <span className="mt-1 flex flex-wrap items-center gap-2">
+                              <input
+                                id={`ws-echo-${question.key}-${row.key}`}
+                                type="text"
+                                readOnly
+                                value={written}
+                                onFocus={(event) => event.currentTarget.select()}
+                                className="field t-body-sm min-w-0 flex-1 font-semibold"
+                              />
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void copy(
+                                    `${question.key}__echo__${row.key}`,
+                                    written,
+                                    `ws-echo-${question.key}-${row.key}`,
+                                  )
+                                }
+                                className="pill pill-secondary t-body-sm shrink-0"
+                              >
+                                {copied === `${question.key}__echo__${row.key}`
+                                  ? "복사됐어요"
+                                  : copied === `${question.key}__echo__${row.key}__manual`
+                                    ? "골라 뒀어요 — Ctrl+C"
+                                    : "복사하기"}
+                              </button>
+                            </span>
+                          )}
+                        </>
                       ))}
                   </p>
                 );
