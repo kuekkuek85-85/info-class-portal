@@ -13,8 +13,9 @@
  *
  * 7·8차시를 연속 블록으로 진행하므로 **한 세션**에 담는다(옛 seed-mt4a·mt4b 통합).
  * 흐름: 도입 영상① → (Suno 로그인·실패 선정·Canva 실패담 그림·가사·프롬프트) 노래 생성·제출
- * → 노래 갤러리(서로 듣기·응원, 실명) → 마음일기.
- * (도입 토론·강점 문항, 그리고 시상·영상②·마무리 한 문장은 교사 요청으로 제거했다.)
+ * → 노래 갤러리(서로 듣기·응원, 실명) → 회복탄력성 영상②(마음일기 앞) → 마음일기.
+ * (도입 토론·강점 문항, 그리고 시상·마무리 한 문장은 교사 요청으로 제거했다. 영상②는
+ *  마음일기 단계로 옮겨 되살렸다 — reflection 이 note 를 못 받아 바로 앞 emotion 에 둔다.)
  *
  * 서울시교육청 사회정서교육자료 활동지 10-1·10-2(실패 이력서)를 재료로 삼되,
  * 산출물은 이력서가 아니라 Canva 실패담 그림 + Suno AI 노래다.
@@ -106,6 +107,14 @@ const CANVA_FALLBACK = "https://www.canva.com/";
  * 교사가 한국어로 흐름을 재구성했다. video 필드에 넣어 수업 맨 앞 영상 단계에서 재생한다.
  */
 const VIDEO_URL = "https://www.youtube.com/watch?v=tLpfhASO0oE";
+
+/**
+ * 프레이밍 영상 ② — EBS 지식채널e 「5분 안에 알 수 있는 성공의 비밀, 회복탄력성」
+ * (4분 41초, 한글자막 없음). 마음일기 바로 앞(emotion 단계)에서 본다 — reflection 단계는
+ * reflectionQuestions 만 그려 worksheet note 를 못 받으므로, 감상(gallery)과 마음일기(reflection)
+ * 사이의 emotion 에 note 로 붙여 교사가 그 자리에서 열어 재생한다.
+ */
+const VIDEO2_URL = "https://www.youtube.com/watch?v=0T8IziNtb18";
 
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
@@ -369,6 +378,36 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "note",
     maxLength: 0,
   },
+
+  // ── ④ 마음일기 바로 앞 — 회복탄력성 영상 ② (emotion) ────────────
+  {
+    key: "_resilience_video",
+    phase: "emotion",
+    /*
+     * 감상(gallery) 다음, 마음일기(reflection) 바로 앞에서 본다. reflection 단계는
+     * reflectionQuestions 만 그려 note 를 못 받으므로 여기(emotion)에 둔다.
+     *
+     * ★ [2:36] 반전을 hint 에 반드시 넣는다 — 잡스·조던·롤링 사례 셋만 보여주고 끝내면
+     * 메시지가 "실패는 (반드시) 성공의 어머니" 로 뒤집힌다. 회복탄력성은 성공 보증이
+     * 아니라 결과와 무관하게 다시 일어서는 근육이라는 선을 긋는다.
+     * [교사] ★ [3:33] 자기 자비 구간을 반드시 함께 다뤄 주세요. "노력하면 강해진다" 가
+     * 지금 마음이 힘든 학생에겐 "아직 네 노력이 부족하다" 는 압박으로 들릴 수 있습니다.
+     * 영상의 마지막 메시지 ‘나를 용서하기’ 를 짚어, 회복탄력성이 채찍이 아니라 자기
+     * 자비임을 분명히 해 주세요. (이 과목의 배려 원칙과 직결)
+     */
+    label: "회복탄력성 — 마음 근육을 키우고 싶어 (영상 ②, 마음일기 전에 함께 봐요)",
+    hint:
+      "여러분이 방금 실패를 노래로 꺼내 자랑한 것, 그게 바로 ‘회복탄력성’ 근육을 쓴 순간이에요.\n" +
+      "타고나는 재능이 아니라 쓸수록 강해지는 마음의 근육이에요.\n\n" +
+      "한 가지만 기억해요 — 회복탄력성은 ‘꼭 크게 성공한다’ 는 약속이 아니라,\n" +
+      "결과가 어떻든 다시 일어서는 힘 그 자체예요. 그리고 그 시작은 나를 용서하는 것.\n" +
+      "아래 [회복탄력성 영상 보기] 로 짧은 영상을 함께 본 뒤 마음일기를 써요.\n" +
+      "(한글자막 없음 — 선생님이 [2:36] 반전과 ‘나를 용서하기’ 를 짚어 줍니다.)",
+    kind: "note",
+    linkUrl: VIDEO2_URL,
+    linkLabel: "회복탄력성 영상 보기 (새 창)",
+    maxLength: 0,
+  },
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
@@ -444,19 +483,18 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   /*
    * 마음일기 — 매 회기 루틴. reflectionPublic 은 반드시 false(비공개).
-   * 세 번째 문항은 회복탄력성의 ‘감사일기’ 개념을 잇되, ‘좋았던 일’ 이 아니라 안 풀린
-   * 하루에서 그래도 건질 것 찾기로 조건을 바꾼다. (시상·영상②는 활동지에서 제거됐지만
-   * 이 문항은 교사가 손대지 말라 하여 그대로 둔다.)
+   * 세 번째 문항은 바로 앞(emotion 단계)에서 본 회복탄력성 영상②의 ‘감사일기’ 를 잇되,
+   * ‘좋았던 일’ 이 아니라 안 풀린 하루에서 그래도 건질 것 찾기로 조건을 바꾼다.
    */
   reflectionQuestions: [
     "오늘 친구들의 실패 노래를 들으며 마음에 남는 순간은 언제였나요? 무엇 때문에 그랬는지도 함께 적어 주세요.",
     "지금 내 기분은 어떤가요? 그리고 왜 그런 것 같나요?",
-    "회복탄력성 근육을 키우는 ‘감사일기’ 를 조금 다르게 써 봐요 — 좋았던 일 말고, 오늘 잘 안 풀렸던 일에서 그래도 건질 것(배운 것·버틴 나) 하나를 찾아 적어 주세요.",
+    "방금 본 영상의 ‘감사일기’ 를 조금 다르게 써 봐요 — 좋았던 일 말고, 오늘 잘 안 풀렸던 일에서 그래도 건질 것(배운 것·버틴 나) 하나를 찾아 적어 주세요.",
   ],
   reflectionPublic: false,
 
-  // Suno·Canva·친구 노래 링크로 나가는 것은 활동 자체라 이탈로 안 센다
-  focusExempt: ["build", "grill", "gallery"],
+  // Suno·Canva·친구 노래 링크·영상② 링크로 나가는 것은 활동 자체라 이탈로 안 센다
+  focusExempt: ["build", "grill", "gallery", "emotion"],
 
   // 로그인·생성을 오가며 앞뒤 칸을 봐야 한다
   freeNavigation: true,
@@ -468,9 +506,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     video: "실패의 날 영상",
     // 활동지는 build(실패 노래 만들기)부터 시작 — 도입 토론·강점 문항은 뺐다(problem 비움)
     build: "실패 노래 만들기",
-    // 제출(grill) → 감상(gallery) — LESSON_PHASES 차례 그대로
+    // 제출(grill) → 감상(gallery) → 회복탄력성 영상②(emotion) → 마음일기 — LESSON_PHASES 차례 그대로
     grill: "노래 생성·제출",
     gallery: "노래 갤러리 (듣고 응원하기)",
+    emotion: "회복탄력성 영상",
     reflection: "마음일기",
   },
 
@@ -559,7 +598,8 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} · 차시 번호 ${LESSON_NO} (4회기 단일 세션 — 7·8차시 통합)`);
-  console.log("단계: 대기 → 마음 체크인 → 오늘 할 일 → 영상①(실패가 두려운 당신에게) → 실패 노래 만들기(실패 고르기·Canva 그림·자랑 타이틀·가사·프롬프트, build) → 노래 생성·제출(grill) → 노래 갤러리(듣고 응원) → 마음일기");
+  console.log("단계: 대기 → 마음 체크인 → 오늘 할 일 → 영상①(실패가 두려운 당신에게) → 실패 노래 만들기(실패 고르기·Canva 그림·자랑 타이틀·가사·프롬프트, build) → 노래 생성·제출(grill) → 노래 갤러리(듣고 응원) → 회복탄력성 영상②(emotion) → 마음일기");
+  console.log("영상②(회복탄력성): 마음일기 바로 앞(emotion)의 [회복탄력성 영상 보기] 링크로 재생. [교사] [2:36] 반전·[3:33] 자기 자비를 반드시 함께 다뤄 주세요.");
   console.log("탭: 왼쪽 '노래 생성하기'(worksheetTabLabel) · 오른쪽 '노래 감상'(galleryNoun). 도입 토론·강점 문항은 제거 — 활동지는 ① Suno 열기부터.");
   console.log("서로 구경하기: 켬(galleryEnabled: true) — 제출 뒤 친구 노래를 듣고 반응·응원. 생성 대기로 아직 안 나온 곡은 마지막에 다시 듣기.");
   console.log("친구에게 나가는 칸: build_url · brag_title · lyric_line · stars 네 칸뿐. 실패 상세·배움 한 줄·Canva 실패담 그림(fail_comic)·프롬프트·마음일기는 뺐습니다(비공개).");
