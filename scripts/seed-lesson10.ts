@@ -119,7 +119,7 @@ const WORKSHEET: WorksheetQuestion[] = [
       "겪어 본 다음, 앞 화면의 「사이버 폭력 유형」을 다시 보면 무엇이 무엇인지 남습니다.\n" +
       "새 창으로 열려요 — 다 보고 이 화면으로 돌아오세요.",
     kind: "note",
-    linkUrl: "https://doran.edunet.net/cyverse",
+    linkUrl: "https://doran.edunet.net/cyverse/gl/web/",
     linkLabel: "체험 사이트 열기",
     maxLength: 0,
   },
@@ -300,12 +300,15 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         rows: [
           { label: "저작자표시 (BY)", value: "저작자와 출처를 표시해야 합니다." },
           { label: "비영리 (NC)", value: "비영리 목적으로만 사용할 수 있습니다." },
-          { label: "변경금지 (ND)", value: "변경하거나 다른 창작물에 이용하지 말아 주세요." },
+          { label: "변경금지 (ND)", value: "원저작물 그대로 쓰고 수정하지 말아 주세요." },
           { label: "동일조건변경허락 (SA)", value: "이용해 새로 만든 창작물에 같은 라이선스를 붙여야 합니다." },
         ],
         highlights: [
           "CC 라이선스 6종: CC BY · BY-NC · BY-ND · BY-SA · BY-NC-SA · BY-NC-ND",
         ],
+        // CC 라이선스 6종 배지 이미지를 텍스트와 함께 띄운다 (흰 배경 고정 — 테마 안전)
+        imageUrl: "/ccl-licenses.svg",
+        imageAlt: "CC 라이선스 6종 배지 — CC BY, BY-NC, BY-ND, BY-SA, BY-NC-SA, BY-NC-ND",
       },
       /*
        * 사이버 폭력 유형 6종 — 슬라이드 그대로. 간접 체험·논술 때 되돌아와 본다.

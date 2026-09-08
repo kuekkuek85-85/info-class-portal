@@ -207,6 +207,15 @@ export interface ContentTab {
   rows: { label: string; value: string }[];
   /** 꼭 기억해야 할 것 — 눈에 띄게 따로 뺀다 */
   highlights: string[];
+  /**
+   * 탭 안에 함께 띄우는 읽기용 그림 (public 기준 절대경로).
+   *
+   * 10차시 저작권 복습 탭이 CC 라이선스 6종 배지(/ccl-licenses.svg)를 텍스트와 함께
+   * 보여준다. 배경이 고정된(흰) 이미지라 라이트·다크 어디서나 보인다. rows·highlights
+   * 아래에 그려서 "무엇을 허락·금지하는지" 설명 옆에 마크가 붙는다.
+   */
+  imageUrl?: string;
+  imageAlt?: string;
 }
 
 /**

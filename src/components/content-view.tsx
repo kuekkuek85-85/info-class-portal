@@ -167,6 +167,19 @@ function Tabs({ tabs }: { tabs: ContentTab[] }) {
             ))}
           </ul>
         )}
+
+        {/*
+          탭 안에 함께 띄우는 읽기용 그림 (10차시 CC 라이선스 배지).
+          이미지 자체가 흰 배경으로 고정돼 있어 테마와 무관하게 보인다.
+        */}
+        {tab.imageUrl && (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={tab.imageUrl}
+            alt={tab.imageAlt || tab.subtitle || "참고 그림"}
+            className="h-auto w-full rounded-md border border-line bg-white"
+          />
+        )}
       </div>
     </div>
   );
