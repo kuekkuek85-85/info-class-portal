@@ -22,7 +22,7 @@ import {
 import { activityIdFor } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
 import { isTrait, type Stroke, type TextItem } from "@/lib/types";
-import { normalizeUrl } from "@/lib/url";
+import { normalizeUrl, URL_ANSWER_KEYS } from "@/lib/url";
 
 /**
  * 그림·활동지 저장과 조회.
@@ -190,8 +190,9 @@ export async function POST(request: Request) {
         const question = allowed.get(key);
         // 활동지에 없는 키는 버린다 — 문서에 임의의 필드가 쌓이는 것을 막는다
         if (!question || question.kind === "traits") continue;
-        // 앱 링크(build_url)는 스킴이 빠지면 눌러도 안 열린다 — 저장할 때 https:// 를 채운다
-        const cleaned = key === "build_url" ? normalizeUrl(String(value ?? "")) : String(value ?? "");
+        // 주소 칸(build_url·song_url 등, URL_ANSWER_KEYS)은 스킴이 빠지면 눌러도 안 열린다 —
+        // 저장할 때 https:// 를 채운다
+        const cleaned = URL_ANSWER_KEYS.has(key) ? normalizeUrl(String(value ?? "")) : String(value ?? "");
         answers[key] = cleaned.slice(0, question.maxLength || 500);
       }
       patch.answers = answers;

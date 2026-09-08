@@ -20,3 +20,20 @@ export function normalizeUrl(raw: string): string {
   if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) return trimmed;
   return `https://${trimmed}`;
 }
+
+/**
+ * 「주소로 취급하는」 활동지 답 키 모음.
+ *
+ * 이 키에 담긴 값은 저장·표시 양쪽에서 normalizeUrl 로 스킴을 채우고, 카드/갤러리에서
+ * 글자가 아니라 **눌러서 여는 링크**로 그린다(card-news·gallery-view·worksheet-view 의
+ * echo·student/artifact 라우트). 새 URL 문항을 늘릴 때는 그 문항 key 를 여기 한 곳에만
+ * 더하면 네 자리가 함께 따라온다 — 각 자리에 키를 하드코딩하지 않는다.
+ *
+ *  - build_url : 진로탐색 「인간과 인공지능」 — 학생이 만든 앱 화면 주소
+ *  - song_url  : 「디지털 마음 톡톡」 4회기 — 학생이 만든 Suno 노래 주소
+ *
+ * ※ 이 집합은 "URL 로 그리기"만 정한다. 갤러리에 실제로 나가는지는 세션의
+ *   galleryAnswerKeys 화이트리스트가, 앱 링크 제출 판정은 교사 대시보드가 따로 정한다
+ *   (그 대시보드 로직은 진로탐색 build_url 전용이라 여기 song_url 을 섞지 않는다).
+ */
+export const URL_ANSWER_KEYS = new Set<string>(["build_url", "song_url"]);

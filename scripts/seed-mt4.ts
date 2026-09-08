@@ -322,12 +322,18 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
   {
-    key: "build_url",
+    key: "song_url",
     phase: "grill",
     /*
-     * ★ 갤러리 공개 키. hai 의 build_url 과 같은 이름·역할 — 카드에서 새 창 링크로 열린다
-     * (card-news.tsx 가 build_url 을 normalizeUrl 로 https 채워 target=_blank 앵커로 그린다).
+     * ★ 갤러리 공개 키. 노래 링크만의 URL 키다 — 카드에서 새 창 링크로 열린다
+     * (card-news.tsx 가 URL_ANSWER_KEYS 에 든 키를 normalizeUrl 로 https 채워 target=_blank
+     * 앵커로 그린다. song_url 은 src/lib/url.ts 의 URL_ANSWER_KEYS 에 들어 있다).
      * 그래서 이 링크가 곧 "노래 듣기" 단추가 된다. 못 만든 학생은 비워 둔다(가사만/카드만).
+     *
+     * 진로탐색의 build_url(만든 앱 주소)과는 다른 키다 — 예전엔 build_url 을 재사용했으나,
+     * 교사 대시보드가 build_url 을 "앱 링크 제출"로 읽어 마음 톡톡 신호등이 잘못 떠서
+     * 노래 링크 전용 키(song_url)로 분리했다. "URL 로 그리기"는 공용 집합(URL_ANSWER_KEYS)이
+     * 담당하므로 갤러리 링크는 그대로 열린다.
      */
     label: "⑧ 내 노래 링크 (Suno 의 Share 주소를 붙여 주세요)",
     hint:
@@ -525,7 +531,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
     /*
      * 제출(⑧ 노래 링크) 다음에 서로 노래를 듣고 응원하는 갤러리를 연다.
-     * 카드의 [작품 보러 가기(새 창)] 가 곧 노래 듣기(card-news.tsx 의 build_url 앵커).
+     * 카드의 [작품 보러 가기(새 창)] 가 곧 노래 듣기(card-news.tsx 의 song_url 앵커).
      * 친구 노래엔 반응 이모지(4부문)와 두 칸짜리 응원(feedbackPrompts)을 남긴다.
      *
      * 실명 표시: 이 세션은 galleryShowNames 로 작성자 이름을 카드에 띄운다(교사 승인).
@@ -542,7 +548,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
      * 거르는 자리는 서버다(gallery 라우트의 toCard) — 화면에서 숨겨도 응답엔 실린다.
      * 실명이라도 "이름"만 더해지는 것이지 이 목록은 그대로다.
      */
-    galleryAnswerKeys: ["build_url", "brag_title", "lyric_line", "stars"],
+    galleryAnswerKeys: ["song_url", "brag_title", "lyric_line", "stars"],
     galleryNoun: "노래",
     // 왼쪽 활동지 탭 이름 — 오른쪽 "노래 감상" 과 짝. 이 값이 없는 다른 세션은 "활동지 쓰기"
     worksheetTabLabel: "노래 생성하기",
@@ -602,8 +608,9 @@ async function main(): Promise<void> {
   console.log("영상②(회복탄력성): 마음일기 바로 앞(emotion)의 [회복탄력성 영상 보기] 링크로 재생. [교사] [2:36] 반전·[3:33] 자기 자비를 반드시 함께 다뤄 주세요.");
   console.log("탭: 왼쪽 '노래 생성하기'(worksheetTabLabel) · 오른쪽 '노래 감상'(galleryNoun). 도입 토론·강점 문항은 제거 — 활동지는 ① Suno 열기부터.");
   console.log("서로 구경하기: 켬(galleryEnabled: true) — 제출 뒤 친구 노래를 듣고 반응·응원. 생성 대기로 아직 안 나온 곡은 마지막에 다시 듣기.");
-  console.log("친구에게 나가는 칸: build_url · brag_title · lyric_line · stars 네 칸뿐. 실패 상세·배움 한 줄·Canva 실패담 그림(fail_comic)·프롬프트·마음일기는 뺐습니다(비공개).");
-  console.log("듣기: 카드의 [작품 보러 가기(새 창)] 가 노래 링크(build_url)를 새 창으로 연다 = 노래 듣기. / 피드백: 반응 이모지 4부문 + 두 칸 응원(feedbackPrompts, 서버 200자·rate limit).");
+  console.log("친구에게 나가는 칸: song_url · brag_title · lyric_line · stars 네 칸뿐. 실패 상세·배움 한 줄·Canva 실패담 그림(fail_comic)·프롬프트·마음일기는 뺐습니다(비공개).");
+  console.log("듣기: 카드의 [작품 보러 가기(새 창)] 가 노래 링크(song_url)를 새 창으로 연다 = 노래 듣기. / 피드백: 반응 이모지 4부문 + 두 칸 응원(feedbackPrompts, 서버 200자·rate limit).");
+  console.log("[교사] 노래 링크는 이제 진로탐색 build_url 이 아니라 전용 키 song_url 입니다 — 이미 4회기를 한 반이 있으면 로컬에서 scripts/migrate-mt4-song-url.ts 를 한 번 돌려 기존 링크를 옮겨 주세요.");
   console.log("실명 표시: galleryShowNames: true — 카드에 작성자 이름(○반 ○번 이름)이 뜹니다. 이 플래그는 4회기에만 — 다른 마음 톡톡 갤러리는 그대로 익명. (피드백 준 사람은 여전히 익명)");
   console.log("AI 감정 렌즈: 꺼짐(emotion_lens 문항 없음 → Gemini 호출 없음).");
   console.log("\n[교사] Suno·Canva 둘 다 학교(MS) 계정 로그인 — 이중 로그인이라 짝당 1계정·도입 병렬 권장, 수업 전 사전 테스트. 시상·회복탄력성 영상②·마무리 문장은 활동지에서 제거됨(아래 보고 참조).");

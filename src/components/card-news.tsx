@@ -2,7 +2,7 @@
 
 import { ArtifactCanvas } from "@/components/artifact-canvas";
 import type { Stroke, TextItem, WorksheetQuestion } from "@/lib/types";
-import { normalizeUrl } from "@/lib/url";
+import { normalizeUrl, URL_ANSWER_KEYS } from "@/lib/url";
 
 /**
  * 카드뉴스 — 그림 + 활동지 답을 한 장으로 묶어 보여준다.
@@ -102,10 +102,11 @@ export function CardNews({
       {filled.length > 0 && (
         <dl className="flex flex-col gap-3">
           {filled.map((question) => {
-            // 앱 링크(build_url)는 저장된 값에 스킴이 없어도 눌리게 https:// 를 채운다.
-            // 다른 칸은 자유 서술이라 손대지 않는다 — 붙였다간 문장이 링크로 둔갑한다.
+            // 주소 칸(build_url·song_url 등, URL_ANSWER_KEYS)은 저장된 값에 스킴이 없어도
+            // 눌리게 https:// 를 채운다. 다른 칸은 자유 서술이라 손대지 않는다 — 붙였다간
+            // 문장이 링크로 둔갑한다.
             const raw = (data.answers[question.key] ?? "").trim();
-            const href = question.key === "build_url" ? normalizeUrl(raw) : raw;
+            const href = URL_ANSWER_KEYS.has(question.key) ? normalizeUrl(raw) : raw;
             return (
             <div key={question.key}>
               {!hideQuestionLabels && <dt className="t-caption">{question.label}</dt>}

@@ -6,7 +6,7 @@ import { ArtifactCanvas } from "@/components/artifact-canvas";
 import { CardNews, type CardNewsData } from "@/components/card-news";
 import { usePolled } from "@/lib/use-polled";
 import { REACTIONS, type WorksheetQuestion } from "@/lib/types";
-import { normalizeUrl } from "@/lib/url";
+import { normalizeUrl, URL_ANSWER_KEYS } from "@/lib/url";
 
 /**
  * 작품 감상.
@@ -117,11 +117,11 @@ function summaryOf(
        * 안에 링크를 넣을 수도 없다 — 여기서는 표시만 하고, 실제로 여는 것은 카드를 눌러
        * 들어간 상세 화면이 맡는다 (card-news.tsx).
        *
-       * 앱 링크(build_url)는 스킴이 빠져 저장됐어도 주소로 알아보고 감춘다 — 다른 칸은
-       * 자유 서술이라 손대지 않는다 (card-news 와 같은 원칙).
+       * 주소 칸(build_url·song_url 등, URL_ANSWER_KEYS)은 스킴이 빠져 저장됐어도 주소로
+       * 알아보고 감춘다 — 다른 칸은 자유 서술이라 손대지 않는다 (card-news 와 같은 원칙).
        */
       .map(({ key, value }) => {
-        const shown = key === "build_url" ? normalizeUrl(value) : value;
+        const shown = URL_ANSWER_KEYS.has(key) ? normalizeUrl(value) : value;
         return { label: "", values: [/^https?:\/\//.test(shown) ? "🎨 눌러서 작품 보기" : value] };
       });
   }
