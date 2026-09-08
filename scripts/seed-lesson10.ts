@@ -14,9 +14,10 @@
  *   · 기분 체크와 출석
  *   · **오늘 할 일** 보드(assessment) — 학습목표 2개 + 저작권(CCL) 복습 + 사이버 폭력
  *     유형 6종 + 대처·예방 6단계. 되돌아가 볼 수 있는 읽기용 탭이다(슬라이드는 지나가면 없다)
- *   · **간접 체험** — 사이버 폭력 체험 사이트(doran.edunet.net/cyverse)를 새 창으로 연다
- *   · **활동 1 논술** — 두 사례를 읽고 "어떻게 대처할지" 각각 서술
- *   · **활동 2 자가진단** — 스마트폰 중독 15문항(1~4점). 점수는 서열화·공개 금지, 교사만 본다
+ *   · **활동 1(build 단계)** — 스마트폰 중독 자가진단 15문항(1~4점). 먼저 한다.
+ *     점수는 서열화·공개 금지, 교사만 본다
+ *   · **활동 2(emotion 단계)** — 사이버 폭력. 논술(대처방안) 두 사례를 먼저 쓰고,
+ *     체험 사이트(doran.edunet.net/cyverse/gl/web/)를 **맨 마지막**에 새 창으로 연다
  *   · 성찰
  *   · **다음 시간(progress)** — 수행평가 1 (2부): 디지털 시민 리포트
  *
@@ -105,42 +106,80 @@ const SELF_CHECK: { text: string; reverse?: boolean }[] = [
 
 const WORKSHEET: WorksheetQuestion[] = [
   /*
-   * 간접 체험 — 활동 앞에 둔다. 새 창으로 열어 겪고 돌아온다.
+   * ── 활동 1 · 스마트폰 중독 자가진단 (STEP 단계: build) ──
    *
-   * 체험 사이트는 바깥이라 iframe 대신 링크 단추로 연다(worksheet linkUrl 은 새 창).
-   * 이 단계를 focusExempt 로 두어, 학생이 창을 옮겨도 이탈로 세지 않는다.
+   * 자가진단을 **먼저** 한다. build 단계에 둔다 — LESSON_PHASES 순서에서 오늘 할 일
+   * (assessment) 다음의 STEP 단계이고, 뒤의 사이버 폭력(emotion, 더 뒤 STEP)보다 앞선다.
+   * 그래서 단추가 「활동 1 자가진단 → 활동 2 사이버 폭력」 순으로 뜬다. 두 단계 모두
+   * 기본 이름을 phaseLabels 로 덮는다(build="만들기", emotion="AI 감정 렌즈").
+   * 문항 kind 가 note/choice 라 STEP 전용 UI 는 뜨지 않는다(그 UI 는 kind 로만 뜬다).
+   *
+   * 15문항을 choice 로 하나씩 받는다. 각 답은 개인용으로만 저장되고(galleryEnabled: false),
+   * 점수는 자동 합산하지 않는다 — 역채점(8·10·13) 때문에 단순 합산이 틀린다.
    */
   {
-    key: "_cyber_intro",
-    phase: "worksheet",
-    label: "① 사이버 폭력, 간접 체험하기",
+    key: "_selfcheck_intro",
+    phase: "build",
+    label: "활동 1 · 청소년 스마트폰 중독 자가진단",
     hint:
-      "아래 사이트에 들어가 사이버 폭력을 간접 체험해 봅시다.\n" +
-      "사이트가 열리면 「혼자하기」를 누르고 시작하세요.\n" +
-      "겪어 본 다음, 앞 화면의 「사이버 폭력 유형」을 다시 보면 무엇이 무엇인지 남습니다.\n" +
-      "새 창으로 열려요 — 다 보고 이 화면으로 돌아오세요.",
+      "각 문항을 읽고 나에게 해당하는 정도를 하나 골라 표시해 보세요.\n" +
+      "· 이 결과는 나만 보는 개인용입니다. 친구와 비교하거나 점수를 서로 말하지 않습니다.\n" +
+      "· 정답이 있는 것이 아니라, 내 스마트폰 사용 습관을 스스로 돌아보는 것입니다.\n\n" +
+      "선지: 전혀 그렇지 않다(1점) · 그렇지 않다(2점) · 그렇다(3점) · 매우 그렇다(4점)",
     kind: "note",
-    linkUrl: "https://doran.edunet.net/cyverse/gl/web/",
-    linkLabel: "체험 사이트 열기",
+    maxLength: 0,
+  },
+  ...SELF_CHECK.map<WorksheetQuestion>((item, i) => ({
+    key: `sc_q${i + 1}`,
+    phase: "build",
+    label: `${i + 1}. ${item.text}`,
+    hint: "",
+    kind: "choice",
+    choices: SCALE,
+    maxLength: 20,
+  })),
+  {
+    key: "_selfcheck_score",
+    phase: "build",
+    label: "자가진단 점수 확인하기",
+    hint:
+      "표시한 것을 점수로 바꿔 더해 봅시다. 전혀 그렇지 않다=1점 · 그렇지 않다=2점 · " +
+      "그렇다=3점 · 매우 그렇다=4점 입니다.\n\n" +
+      "단, 8·10·13번은 거꾸로 채점합니다(‘조절할 수 있다 / 불안하지 않다 / 방해가 되지 않는다’ " +
+      "라서, 건강한 답이 오히려 낮은 점수여야 합니다).\n" +
+      "→ 8·10·13번만: 매우 그렇다=1점 · 그렇다=2점 · 그렇지 않다=3점 · 전혀 그렇지 않다=4점\n\n" +
+      "모두 더한 총점(60점 만점)으로 내 구간을 확인해 보세요.\n" +
+      "· 45점 이상 — 고위험 사용자군: 스마트폰 중독 경향이 높아, 도움이 필요하면 " +
+      "인터넷중독대응센터(☎ 1599-0075)에 요청할 수 있습니다.\n" +
+      "· 42~44점 — 잠재적 위험 사용자군: 주의가 필요합니다. 스스로 조절하고 계획적으로 " +
+      "사용하도록 노력해요.\n" +
+      "· 41점 이하 — 일반 사용자군: 건전한 사용을 이어 가되, 가끔 스스로 점검해 봅시다.\n\n" +
+      "결과가 걱정되면 혼자 두지 말고 선생님이나 부모님께 이야기해도 좋아요.",
+    kind: "note",
     maxLength: 0,
   },
 
   /*
-   * 활동 1 논술 — 두 사례. 지문을 hint 에 통째로 실어, 슬라이드가 지나가도 읽을 수 있게 한다.
+   * ── 활동 2 · 사이버 폭력 (STEP 단계: emotion) ──
    *
-   * 이 답은 개인적인 의견이라 친구에게 안 나간다(galleryEnabled: false).
+   * 자가진단(build) 다음의 STEP 단계라 단추가 뒤에 뜬다. 이 단계 **안의 순서**가 설계다:
+   * 논술(대처방안 작성)을 먼저 하고, 체험 사이트를 **맨 마지막**에 둔다 — 체험 사이트가
+   * 로딩·진행이 오래 걸려서, 나머지를 끝낸 뒤 체험으로 이어지게 한다. 문항 배열 순서가
+   * 곧 학생이 보는 순서다.
+   *
+   * 논술 답은 개인적인 의견이라 친구에게 안 나간다(galleryEnabled: false).
    */
   {
     key: "_cyber_essay_head",
-    phase: "worksheet",
-    label: "활동 1 · 사이버 윤리 논술",
+    phase: "emotion",
+    label: "활동 2 · 사이버 상황별 대처방안 작성",
     hint: "두 이야기를 읽고, 홍길동이 어떻게 대처해야 할지 자신의 의견을 각각 써 봅시다.",
     kind: "note",
     maxLength: 0,
   },
   {
     key: "cyber_essay1",
-    phase: "worksheet",
+    phase: "emotion",
     label: "사례 ①",
     hint:
       "장평중학교 1학년 10반 홍길동은 요즘 들어 등교하기가 너무 두렵다. 학교에 가면 반에 힘센 " +
@@ -157,7 +196,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "cyber_essay2",
-    phase: "worksheet",
+    phase: "emotion",
     label: "사례 ②",
     hint:
       "장평중학교 1학년 10반 홍길동은 갑자기 단체 카카오톡 대화방에 초대되었다. 대화방에는 평소 " +
@@ -174,50 +213,24 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
 
   /*
-   * 활동 2 자가진단 — 안내(개인용임을 못 박는다) → 15문항 → 채점 안내.
+   * 사이버 폭력 간접 체험 — 이 단계의 **맨 마지막**. 새 창으로 열어 겪는다.
    *
-   * 15문항을 choice 로 하나씩 받는다. 각 답은 개인용으로만 저장되고(galleryEnabled: false),
-   * 점수는 자동 합산하지 않는다 — 역채점(8·10·13) 때문에 단순 합산이 틀린다.
+   * 체험 사이트가 바깥이라 iframe 대신 링크 단추로 연다(worksheet linkUrl 은 새 창).
+   * 로딩·진행이 오래 걸려, 논술을 끝낸 학생이 마지막에 이어서 체험한다.
+   * 이 단계(emotion)를 focusExempt 로 두어, 학생이 창을 옮겨도 이탈로 세지 않는다.
    */
   {
-    key: "_selfcheck_intro",
-    phase: "worksheet",
-    label: "활동 2 · 청소년 스마트폰 중독 자가진단",
+    key: "_cyber_intro",
+    phase: "emotion",
+    label: "마지막 · 사이버 폭력 간접 체험",
     hint:
-      "각 문항을 읽고 나에게 해당하는 정도를 하나 골라 표시해 보세요.\n" +
-      "· 이 결과는 나만 보는 개인용입니다. 친구와 비교하거나 점수를 서로 말하지 않습니다.\n" +
-      "· 정답이 있는 것이 아니라, 내 스마트폰 사용 습관을 스스로 돌아보는 것입니다.\n\n" +
-      "선지: 전혀 그렇지 않다(1점) · 그렇지 않다(2점) · 그렇다(3점) · 매우 그렇다(4점)",
+      "마지막으로, 아래 사이트에 들어가 사이버 폭력을 직접 체험해 봅시다.\n" +
+      "사이트가 열리면 「혼자하기」를 누르고 시작하세요.\n" +
+      "(사이트가 뜨는 데 조금 시간이 걸릴 수 있어요. 잠시 기다려 주세요.)\n" +
+      "새 창으로 열려요 — 다 보고 이 화면으로 돌아오세요.",
     kind: "note",
-    maxLength: 0,
-  },
-  ...SELF_CHECK.map<WorksheetQuestion>((item, i) => ({
-    key: `sc_q${i + 1}`,
-    phase: "worksheet",
-    label: `${i + 1}. ${item.text}`,
-    hint: "",
-    kind: "choice",
-    choices: SCALE,
-    maxLength: 20,
-  })),
-  {
-    key: "_selfcheck_score",
-    phase: "worksheet",
-    label: "자가진단 점수 확인하기",
-    hint:
-      "표시한 것을 점수로 바꿔 더해 봅시다. 전혀 그렇지 않다=1점 · 그렇지 않다=2점 · " +
-      "그렇다=3점 · 매우 그렇다=4점 입니다.\n\n" +
-      "단, 8·10·13번은 거꾸로 채점합니다(‘조절할 수 있다 / 불안하지 않다 / 방해가 되지 않는다’ " +
-      "라서, 건강한 답이 오히려 낮은 점수여야 합니다).\n" +
-      "→ 8·10·13번만: 매우 그렇다=1점 · 그렇다=2점 · 그렇지 않다=3점 · 전혀 그렇지 않다=4점\n\n" +
-      "모두 더한 총점(60점 만점)으로 내 구간을 확인해 보세요.\n" +
-      "· 45점 이상 — 고위험 사용자군: 스마트폰 중독 경향이 높아, 도움이 필요하면 " +
-      "인터넷중독대응센터(☎ 1599-0075)에 요청할 수 있습니다.\n" +
-      "· 42~44점 — 잠재적 위험 사용자군: 주의가 필요합니다. 스스로 조절하고 계획적으로 " +
-      "사용하도록 노력해요.\n" +
-      "· 41점 이하 — 일반 사용자군: 건전한 사용을 이어 가되, 가끔 스스로 점검해 봅시다.\n\n" +
-      "결과가 걱정되면 혼자 두지 말고 선생님이나 부모님께 이야기해도 좋아요.",
-    kind: "note",
+    linkUrl: "https://doran.edunet.net/cyverse/gl/web/",
+    linkLabel: "체험 사이트 열기",
     maxLength: 0,
   },
 ];
@@ -283,7 +296,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         rows: [
           { label: "학습목표 ①", value: "사이버 윤리를 지켜야 하는 이유를 설명할 수 있다." },
           { label: "학습목표 ②", value: "사이버 폭력과 스마트폰 중독을 예방하는 방법을 실천할 수 있다." },
-          { label: "오늘 순서", value: "저작권 복습 → 사이버 폭력 유형 → 간접 체험 → 논술 → 자가진단 → 대처·예방" },
+          { label: "오늘 순서", value: "저작권 복습 → 사이버 폭력 유형·대처 → 활동 1 자가진단 → 활동 2 논술 → 체험" },
         ],
         highlights: [
           "사이버 공간에서 한 일은 현실에도 그대로 영향을 줍니다. 화면 뒤에도 사람이 있어요.",
@@ -365,13 +378,20 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   reflectionPublic: false,
 
   /*
-   * 체험 사이트가 바깥 창이라, worksheet 단계에서 창을 옮기는 것을 이탈로 세지 않는다
-   * (9차시가 활동 링크 단계를 focusExempt 로 둔 것과 같은 이유).
+   * 체험 사이트가 바깥 창이라, 그 단계(emotion, 활동 2)에서 창을 옮기는 것을 이탈로
+   * 세지 않는다 (9차시가 활동 링크 단계를 focusExempt 로 둔 것과 같은 이유).
    */
-  focusExempt: ["worksheet"],
+  focusExempt: ["emotion"],
+  /*
+   * 두 활동을 STEP 단계에 배정하고 기본 이름을 덮는다.
+   *  · 활동 1 자가진단 → build 단계 (기본 "만들기")   — 먼저
+   *  · 활동 2 사이버 폭력 → emotion 단계 (기본 "AI 감정 렌즈") — 나중
+   * LESSON_PHASES 순서상 build(먼저) < emotion(나중) 이라 단추도 이 순서로 뜬다.
+   */
   phaseLabels: {
     assessment: "오늘 할 일",
-    worksheet: "활동하기",
+    build: "활동 1 · 스마트폰 중독 자가진단",
+    emotion: "활동 2 · 사이버 폭력 알아보기",
     progress: "다음 시간",
   },
   freeNavigation: false,
@@ -448,8 +468,11 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (9·10·11차시가 함께 쓰는 통 — 문항 key 는 9차시와 안 겹칩니다)`);
-  console.log("단계: 대기 → 기분 → 오늘 할 일 → 활동하기 → 성찰 → 다음 시간 → 마침");
-  console.log("체험 사이트: https://doran.edunet.net/cyverse (새 창)");
+  console.log(
+    "단계: 대기 → 기분 → 오늘 할 일 → 활동 1 자가진단(build) → 활동 2 사이버 폭력(emotion) → 성찰 → 다음 시간 → 마침",
+  );
+  console.log("활동 1=자가진단(build), 활동 2=사이버 폭력(emotion). 활동 2 안: 논술 사례①·② → (맨 끝) 체험 사이트.");
+  console.log("체험 사이트: https://doran.edunet.net/cyverse/gl/web/ (새 창)");
   console.log("자가진단 15문항은 개인용으로 저장하고, 점수는 자동 합산하지 않습니다(역채점 8·10·13 안내).");
   console.log("galleryEnabled: false — 논술·자가진단이 친구에게 안 나갑니다.");
   process.exit(0);
