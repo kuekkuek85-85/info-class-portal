@@ -3,12 +3,14 @@ import { fail, guard, ok } from "@/lib/api";
 import { todayKST, isDateKey } from "@/lib/datetime";
 import {
   getSession,
+  listArtifacts,
   listAttendance,
   listMoodEntries,
   listReflections,
   listSessionsByDate,
   listRoster,
 } from "@/lib/db";
+import { activityIdFor } from "@/lib/gallery";
 import { getMood } from "@/lib/mood";
 import { pickCurrentSession } from "@/lib/pick-session";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
@@ -156,9 +158,26 @@ export async function GET(request: Request) {
      * 진도(answeredKeys 개수)만 보여서, 링크 하나만 안 낸 학생이 초록 가까이에 묻힌다.
      * 실시간 피드백을 주려면 "아직 링크 안 낸 학생"이 따로 보여야 한다. 링크 칸이 없는
      * 차시에서는 null 로 보내 화면에서 이 표시가 아예 뜨지 않게 한다.
+     *
+     * **판정은 작품(artifact)의 build_url 값으로 한다 — answeredKeys 가 아니다.**
+     * 링크는 활동에 묶여 지난 차시에서 이어진다(2·3차시에 낸 링크가 4차시 화면에 이미
+     * 채워져 있다). answeredKeys 는 그 세션에서 저장을 눌러야 채워지므로, 지난 시간에
+     * 링크를 낸 학생이 오늘 아직 저장을 안 했으면 "안 냄"으로 잘못 떴다. 작품 문서가
+     * 진짜 낸 링크이고, 「미리 피드백」이 여는 값도 이것이다.
+     *
+     * 이 읽기는 링크 칸이 있는 차시에서만 한다 — 그 외 차시(정보과 등)는 여전히 작품을
+     * 폴링하지 않는다. 한 활동의 작품을 질의 하나로 가져오고, 이 화면에서만 쓴다.
      */
     const LINK_KEY = "build_url";
     const hasLinkQuestion = (session.activity?.worksheet ?? []).some((q) => q.key === LINK_KEY);
+    const linkByStudent = new Map<string, boolean>();
+    if (hasLinkQuestion) {
+      const artifacts = await listArtifacts(activityIdFor(session)).catch(() => []);
+      for (const art of artifacts) {
+        const url = String(art.answers?.[LINK_KEY] ?? "").trim();
+        if (url) linkByStudent.set(art.studentId, true);
+      }
+    }
 
     const rows = attendance.map((entry) => {
       const mood = moodByStudent.get(entry.studentId);
@@ -201,11 +220,11 @@ export async function GET(request: Request) {
          * 여기 싣지 않는다 — 교사가 그 학생을 누를 때만 artifact 를 1건 읽는다.
          */
         /*
-         * 앱 링크를 냈는가 (진로탐색 2·3·4차시). 링크 칸이 없는 차시에서는 null —
-         * 화면에서 이 값이 null 이면 링크 관련 표시를 통째로 접는다. 추가 읽기는 없다
-         * (answeredKeys 는 이미 출석 문서에 얹혀 온다).
+         * 앱 링크를 냈는가 (진로탐색 2·3·4차시). 작품의 build_url 값으로 판정한다 —
+         * 지난 차시에 낸 링크가 이어져 있는 학생도 제대로 "냄"으로 잡힌다. 링크 칸이
+         * 없는 차시에서는 null 이라 화면에서 링크 표시를 통째로 접는다.
          */
-        linkSubmitted: hasLinkQuestion ? answered.has(LINK_KEY) : null,
+        linkSubmitted: hasLinkQuestion ? linkByStudent.get(entry.studentId) === true : null,
         stage: entry.submitStage ?? 0,
         /*
          * 검토를 기다리는 학생.
