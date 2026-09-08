@@ -22,6 +22,7 @@ import {
   type WorksheetQuestion,
 } from "@/lib/types";
 import { normalizeUrl, URL_ANSWER_KEYS } from "@/lib/url";
+import { computeScaleResult } from "@/lib/scale-score";
 
 /**
  * 활동지 — 그린 것을 말로 옮기는 단계.
@@ -477,7 +478,8 @@ export function WorksheetView({
             note 는 답할 것이 없다. label 로 두면 눌렀을 때 엉뚱한 칸에 커서가 가고,
             읽는 프로그램에는 "답이 없는 입력칸" 으로 들린다.
           */}
-          {question.kind === "note" ? (
+          {question.kind === "note" || question.kind === "scale_result" ? (
+            // scale_result 도 답할 칸이 없어 note 처럼 제목으로만 둔다 (아래에 결과 박스)
             <p className="block bg-cream t-subhead">
               {named(question.label, studentName, studentId)}
             </p>
@@ -811,6 +813,39 @@ export function WorksheetView({
                 );
               })}
             </div>
+          ) : question.kind === "scale_result" ? (
+            /*
+              척도 문항 자동 채점 결과. 학생의 현재 답에서 실시간 계산해 보여준다.
+              입력칸이 아니라 계산 결과라 답을 저장하지 않는다 — 계산은 이 화면에서만
+              돌고, 친구에게 안 나간다 (scale-score.ts).
+            */
+            (() => {
+              const result = question.scale
+                ? computeScaleResult(value.answers, question.scale)
+                : null;
+              if (!result) return null;
+              if (result.score === null) {
+                return (
+                  <p className="rounded-lg border border-line bg-cream px-4 py-4 t-body-sm">
+                    아직 {result.answered}/{result.total} 응답했어요. 15문항을 다 고르면 여기에
+                    총점과 결과가 나옵니다.
+                  </p>
+                );
+              }
+              return (
+                <div className="flex flex-col gap-2 rounded-lg border-2 border-ink bg-surface px-4 py-4">
+                  <p className="t-headline">
+                    총점 {result.score} / {result.max}점
+                  </p>
+                  {result.band && (
+                    <>
+                      <p className="t-subhead">{result.band.label}</p>
+                      <p className="t-body-sm whitespace-pre-line">{result.band.desc}</p>
+                    </>
+                  )}
+                </div>
+              );
+            })()
           ) : question.kind === "long" ? (
             <textarea
               id={`ws-${question.key}`}

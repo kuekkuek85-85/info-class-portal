@@ -6,6 +6,7 @@
  */
 
 import type { CheckItem } from "./article-check";
+import type { ScaleConfig } from "./scale-score";
 
 /**
  * 1학년 반 번호.
@@ -455,6 +456,12 @@ export interface WorksheetQuestion {
     | "mood_recheck"
     | "scam_sim"
     | "masking"
+    /**
+     * scale_result — 척도 문항(choice)들의 답을 실시간으로 합산해 "총점 N/만점" 과
+     * 결과 구간을 박스로 보여준다 (scale). 입력칸이 아니라 계산 결과 표시라 답을
+     * 저장하지 않는다. 계산은 학생 본인 화면에서만 돈다 (scale-score.ts).
+     */
+    | "scale_result"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
@@ -578,6 +585,13 @@ export interface WorksheetQuestion {
    * 일부러 비우는 학생이 있고 오탐이 있기 때문이다.
    */
   submitFields?: { key: string; label: string; minSentences: number }[];
+  /**
+   * scale_result 가 합산할 대상과 구간 규격 (scale-score.ts 의 ScaleConfig).
+   *
+   * sumKeys 로 지정한 choice 문항들의 답을 선지 배열(choices) index 로 점수화해 더하고,
+   * reverseKeys 문항은 뒤집는다. 다 고르면 총점과 bands 로 정한 구간을 띄운다.
+   */
+  scale?: ScaleConfig;
   /**
    * emotion_lens 가 AI 에게 보낼 글이 들어 있는 칸.
    *
