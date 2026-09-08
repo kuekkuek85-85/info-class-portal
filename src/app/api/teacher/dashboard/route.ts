@@ -152,11 +152,17 @@ export async function GET(request: Request) {
       (session.activity?.worksheet ?? []).find((q) => q.key === "news_check2")?.choices?.[0] ?? "";
 
     /*
-     * 앱(화면) 링크를 내야 하는 차시인가 — 진로탐색 2·3·4차시가 같은 build_url 칸을 쓴다.
+     * 앱(화면) 링크를 내야 하는 차시인가 — 진로탐색(인간과 인공지능) 2·3·4차시가 같은
+     * build_url 칸을 쓴다. 앱 링크 제출은 **진로탐색 차시에만** 해당한다.
+     *
+     * ★ build_url 이 있다는 것만으로는 부족하다. 「디지털 마음 톡톡」 4회기(실패를 노래로
+     * 자랑하기)도 **노래(Suno) 링크**를 같은 build_url 키에 담는다 — 그것은 앱 링크가
+     * 아니라 노래 링크라, 이 표시가 뜨면 안 된다. 그래서 활동 통이 hai- 로 시작하는
+     * 진로탐색 차시로 한정한다(대시보드의 「미리 피드백」 버튼과 같은 판정 기준).
      *
      * 이 칸이 있는 차시에서만 학생별로 "링크를 냈는지"를 얹어 보낸다. 신호등은 전체
      * 진도(answeredKeys 개수)만 보여서, 링크 하나만 안 낸 학생이 초록 가까이에 묻힌다.
-     * 실시간 피드백을 주려면 "아직 링크 안 낸 학생"이 따로 보여야 한다. 링크 칸이 없는
+     * 실시간 피드백을 주려면 "아직 링크 안 낸 학생"이 따로 보여야 한다. 해당 없는
      * 차시에서는 null 로 보내 화면에서 이 표시가 아예 뜨지 않게 한다.
      *
      * **판정은 작품(artifact)의 build_url 값으로 한다 — answeredKeys 가 아니다.**
@@ -165,11 +171,13 @@ export async function GET(request: Request) {
      * 링크를 낸 학생이 오늘 아직 저장을 안 했으면 "안 냄"으로 잘못 떴다. 작품 문서가
      * 진짜 낸 링크이고, 「미리 피드백」이 여는 값도 이것이다.
      *
-     * 이 읽기는 링크 칸이 있는 차시에서만 한다 — 그 외 차시(정보과 등)는 여전히 작품을
-     * 폴링하지 않는다. 한 활동의 작품을 질의 하나로 가져오고, 이 화면에서만 쓴다.
+     * 이 읽기는 진로탐색 차시에서만 한다 — 그 외 차시(정보과·마음 톡톡 등)는 여전히
+     * 작품을 폴링하지 않는다. 한 활동의 작품을 질의 하나로 가져오고, 이 화면에서만 쓴다.
      */
     const LINK_KEY = "build_url";
-    const hasLinkQuestion = (session.activity?.worksheet ?? []).some((q) => q.key === LINK_KEY);
+    const hasLinkQuestion =
+      (session.activity?.activityId?.startsWith("hai-") ?? false) &&
+      (session.activity?.worksheet ?? []).some((q) => q.key === LINK_KEY);
     const linkByStudent = new Map<string, boolean>();
     if (hasLinkQuestion) {
       const artifacts = await listArtifacts(activityIdFor(session)).catch(() => []);
