@@ -376,10 +376,12 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   moodCheckEnabled: true,
 
   game: {
-    heading: "기다리는 동안 — 똥 피하기",
+    heading: "기다리는 동안 — 한붓그리기",
     body:
-      "위에서 떨어지는 똥을 좌우로 피하세요. 한 번이라도 맞으면 끝이에요.\n화살표 키나 화면 좌·우를 누르면 움직입니다.\n수업이 시작되면 닫습니다.",
-    url: "https://dodge-poop-game.vercel.app/",
+      "수업이 시작되길 기다리는 동안 잠깐 쉬어요.\n" +
+      "선을 한 번도 떼지 않고, 같은 길을 두 번 지나지 않게 모든 선을 그려 보세요.\n" +
+      "점과 점을 이으면 됩니다. 막히면 다시 시작할 수 있어요.\n수업이 시작되면 닫습니다.",
+    url: "https://euler-path-game.vercel.app/",
   },
   gameExplainer: empty(),
   progress: empty(),
