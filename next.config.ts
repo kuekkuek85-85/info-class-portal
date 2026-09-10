@@ -50,9 +50,45 @@ const SECURITY_HEADERS = [
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
 ];
 
+/*
+ * 피싱 체험 소품(public/phish-demo/*.html)만은 우리 페이지가 <iframe> 으로 얹어야 한다
+ * (scam-sim 의 로그인 체험). 그런데 위의 방어선은 X-Frame-Options: DENY 와
+ * frame-ancestors 'none' 을 모든 응답에 걸어, 이 정적 파일까지 **같은 오리진 프레이밍마저**
+ * 막아 버린다 → 학생 화면에 "연결을 거부했습니다" 만 뜬다.
+ *
+ * 그래서 이 경로에만 프레이밍을 우리 오리진에 한해 연다(frame-ancestors 'self' ·
+ * X-Frame-Options: SAMEORIGIN). 소품은 네트워크로 나가는 코드가 한 줄도 없는 자립형
+ * 정적 HTML(인라인 <style>·<script>) 이라, 나머지는 오히려 기본보다 더 좁게 잠근다:
+ * default-src 'none' 에 인라인 스타일·스크립트만 허용하고 폼 전송·바깥 리소스는 전부 차단.
+ * 바깥 사이트가 이 소품을 훔쳐 얹는 것은 여전히 막힌다(프레이밍은 'self' 뿐).
+ */
+const PHISH_CSP = [
+  "default-src 'none'",
+  "script-src 'unsafe-inline'",
+  "style-src 'unsafe-inline'",
+  "img-src 'self' data:",
+  "base-uri 'none'",
+  "form-action 'none'",
+  "frame-ancestors 'self'",
+].join("; ");
+
+const PHISH_HEADERS = [
+  { key: "Content-Security-Policy", value: PHISH_CSP },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+];
+
 const nextConfig: NextConfig = {
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    return [
+      // 이 소품 경로만 프레이밍을 열고, 나머지 전 경로는 DENY 방어선을 그대로 받는다.
+      // 넓은 규칙에서 phish-demo 를 빼지 않으면 두 규칙이 겹쳐 헤더가 충돌한다(브라우저는
+      // 충돌하는 X-Frame-Options 를 DENY 로 처리 → 다시 막힌다). 그래서 부정형 룩어헤드로 뺀다.
+      { source: "/phish-demo/:path*", headers: PHISH_HEADERS },
+      { source: "/((?!phish-demo).*)", headers: SECURITY_HEADERS },
+    ];
   },
 };
 
