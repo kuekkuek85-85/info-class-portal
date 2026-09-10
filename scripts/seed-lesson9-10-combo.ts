@@ -19,9 +19,9 @@
  * 그래서 오늘 1-2반이 쓴 한 줄이 11차시 수행평가(디지털 시민 리포트) 화면에서 그대로
  * 열린다 — 다른 반과 똑같은 자리에 담긴다.
  *
- * worksheet 단계만 다르다. 개인정보 마스킹(pi_mask) 대신 **비밀번호 강함 체크 체험**
- * (pw_check)을 둔다 — 이 통에 새 key 하나가 더 생기는 것뿐이라 11차 리포트/대시보드는
- * 그대로다(pi_mask 를 직접 참조하는 곳이 없다). 마스킹은 정상 진도 반에서 여전히 쓴다.
+ * worksheet 단계만 다르다. 개인정보 마스킹(pi_mask) 대신 **비밀번호 강함 체크(security.org
+ * 링크 체험)** 를 둔다. 링크로 나가는 note 문항이라 답을 저장하지 않아 통에 새 key 도 안
+ * 생긴다 — 11차 리포트/대시보드는 그대로다. 마스킹은 정상 진도 반에서 여전히 쓴다.
  *
  * ## 40분에 맞춘 압축 (교사 확정)
  *
@@ -30,7 +30,7 @@
  *   0–3   대기·기분·출석
  *   3–8   오늘 할 일 보드(assessment) — 개념 3주제 + 저작권 복습, 읽기용
  *   8–20  한 번 속아 보기(problem, pi_sim) — 피싱·파밍·스미싱·보이스피싱   ← 최우선
- *   20–24 비밀번호 강함 체크 체험(worksheet, pw_check) — 짧게 (40분 넘으면 여기부터 축약)
+ *   20–24 비밀번호 강함 체크(worksheet, security.org 링크 체험) — 짧게 (40분 넘으면 여기부터 축약)
  *   24–36 사이버 폭력 논술 1사례(emotion, cyber_essay2) — 단톡방 언어폭력
  *   36–38 통합 성찰 1문항(reflection)
  *   38–40 다음 시간(progress) — 디지털 시민 리포트(수행평가) 안내 → 태블릿 정리
@@ -43,14 +43,16 @@
  *   · wordwall 개인정보 퀴즈 — 필수 흐름에서 뺀다. 다음 시간 보드에 「자율(선택)」 로만
  *     가볍게 둔다 — 활동을 다 한 사람이 남는 시간에 눌러 보는 것.
  *     (요즘은 집에 내주는 과제를 두지 않는다. 어디에도 그런 안내를 넣지 않는다.)
- *   · security.org 비밀번호 테스트 — 이제 worksheet 정규 활동(비밀번호 강함 체크 체험)과
- *     겹쳐 자율 링크에서도 뺐다. 체험은 화면 안에서 도는 자립형이라 바깥 링크가 필요 없다.
+ *   · security.org 비밀번호 테스트 — 이제 worksheet **정규 활동**으로 들어간다(아래 참조).
+ *     그래서 자율(선택) 링크에는 넣지 않는다 — 같은 링크가 두 번 뜨는 중복을 피한다.
  *
  * ## worksheet 단계 (1-2반 한정 교체)
  *
- *   개인정보 마스킹(pi_mask, masking) 대신 **비밀번호 강함 체크 체험**(pw_check,
- *   pw_strength)을 둔다. 마스킹보다 학생이 직접 쳐 보는 재미가 있고, 개인정보를 지키는
- *   실천(강한 비밀번호)으로 곧장 이어진다. 마스킹은 정상 진도 반에서 그대로 쓴다.
+ *   개인정보 마스킹(pi_mask, masking) 대신 **비밀번호 강함 체크(security.org 링크 체험)** 를
+ *   둔다. 가짜 비밀번호를 넣어 보며 길이·기호·숫자·대소문자를 섞으면 뚫는 시간이 어떻게
+ *   달라지는지 직접 관찰하는 것이라, 개인정보를 지키는 실천(강한 비밀번호)으로 곧장
+ *   이어진다. security.org 는 바깥 사이트라 iframe 이 막혀 「새 창」 버튼(linkUrl)으로만
+ *   나간다. 마스킹은 정상 진도 반에서 그대로 쓴다.
  */
 
 import { cert, initializeApp } from "firebase-admin/app";
@@ -215,11 +217,11 @@ const SCENES: ScamScene[] = [
  * 활동지 — 세 조각만 담는다. 자가진단·wordwall·cyverse 는 다 뺐다.
  *
  *   · problem : pi_sim  — 한 번 속아 보기 (9차 심장)
- *   · worksheet: pw_check — 비밀번호 강함 체크 체험 (짧게)
+ *   · worksheet: _pw_test — 비밀번호 강함 체크 (security.org 링크 체험, 짧게)
  *   · emotion : cyber_essay2 — 사이버 폭력 논술 1사례
  *
- * pi_sim·cyber_essay2 key 는 9·10 원본 그대로라 11차시에서 열린다. worksheet 만 새 key
- * (pw_check)다 — 같은 digital-ethics 통에 새로 담기는 것뿐이라 무해하다.
+ * pi_sim·cyber_essay2 key 는 9·10 원본 그대로라 11차시에서 열린다. worksheet 은 링크로
+ * 나가는 note 문항이라 답을 저장하지 않아 통에 새 key 를 남기지 않는다.
  */
 const WORKSHEET: WorksheetQuestion[] = [
   {
@@ -233,15 +235,28 @@ const WORKSHEET: WorksheetQuestion[] = [
     scenes: SCENES,
     maxLength: 20,
   },
+  /*
+   * 비밀번호 강하게 — security.org 체험으로 새 창에서 나간다 (교사 확정: 링크만).
+   *
+   * security.org 는 바깥 사이트라 iframe 프레이밍이 막혀 있어, worksheet 문항의 linkUrl
+   * 로 「새 창」 버튼만 건다 (9차 원본 _pi_password 와 같은 방식). 체험이라 결과를 저장하지
+   * 않는다 — note kind 라 답 칸이 없다. 경고를 안내 맨 앞에 둔다: 뒤에 붙이면 이미 자기
+   * 비밀번호를 치고 난 뒤에 읽는다.
+   */
   {
-    key: "pw_check",
+    key: "_pw_test",
     phase: "worksheet",
-    label: "비밀번호 강하게 · 얼마나 안전할까",
+    label: "비밀번호 강하게 · 얼마나 버틸까",
     hint:
-      "가짜 비밀번호를 지어서 쳐 보면 강함 정도가 실시간으로 나와요.\n" +
-      "진짜 비밀번호는 절대 치지 마세요! 무엇을 바꾸면 더 강해지는지 살펴봅시다.",
-    kind: "pw_strength",
-    maxLength: 20,
+      "진짜 비밀번호는 절대 넣지 마세요! 오늘 배우는 것이 바로 그것입니다.\n\n" +
+      "아무 가짜 비밀번호나 지어서 넣어 보세요.\n" +
+      "예) 영문 소문자 여덟 자리라면 → abcdefgh\n\n" +
+      "그다음 길이를 늘리고 대문자·숫자·기호를 하나씩 섞으면서, 뚫는 데 걸리는 시간이 " +
+      "어떻게 달라지는지 보세요. 새 창으로 열려요.",
+    kind: "note",
+    linkUrl: "https://www.security.org/how-secure-is-my-password/",
+    linkLabel: "테스트 열기 (새 창)",
+    maxLength: 0,
   },
   /*
    * 사이버 폭력 논술 — 10차의 두 사례 중 사례②(단톡방 언어폭력·따돌림) 하나만. 중1에게
