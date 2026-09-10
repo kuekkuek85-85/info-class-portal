@@ -37,6 +37,8 @@ export interface ScaleResult {
   answered: number;
   /** 채점 대상 문항 수 */
   total: number;
+  /** 지금까지 고른 문항만 더한 합(실시간). 하나도 안 골랐으면 0 */
+  running: number;
   /** 다 응답했을 때의 총점. 아직 다 안 골랐으면 null */
   score: number | null;
   /** 만점 (total × 선지 수) */
@@ -73,10 +75,10 @@ export function computeScaleResult(
     score += reverse.has(key) ? n + 1 - base : base;
   }
 
-  if (answered < total) return { answered, total, score: null, max, band: null };
+  if (answered < total) return { answered, total, running: score, score: null, max, band: null };
 
   // 큰 경계부터 맞춰 본다 — 총점이 그 경계 이상인 첫 구간
   const sorted = [...cfg.bands].sort((a, b) => b.min - a.min);
   const band = sorted.find((b) => score >= b.min) ?? sorted[sorted.length - 1] ?? null;
-  return { answered, total, score, max, band };
+  return { answered, total, running: score, score, max, band };
 }

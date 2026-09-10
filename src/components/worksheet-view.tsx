@@ -826,10 +826,15 @@ export function WorksheetView({
               if (!result) return null;
               if (result.score === null) {
                 return (
-                  <p className="rounded-lg border border-line bg-cream px-4 py-4 t-body-sm">
-                    아직 {result.answered}/{result.total} 응답했어요. 15문항을 다 고르면 여기에
-                    총점과 결과가 나옵니다.
-                  </p>
+                  <div className="flex flex-col gap-1 rounded-lg border-2 border-ink bg-surface px-4 py-4">
+                    <p className="t-headline">
+                      현재 총점 {result.running} / {result.max}점
+                    </p>
+                    <p className="t-body-sm">
+                      아직 {result.answered}/{result.total} 응답했어요. {result.total}문항을 다 고르면
+                      아래에 결과 구간이 나옵니다.
+                    </p>
+                  </div>
                 );
               }
               return (
