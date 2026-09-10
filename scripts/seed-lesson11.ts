@@ -194,9 +194,13 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "de11_case",
     phase: "worksheet",
     label: "나는 이 사례를 고릅니다",
-    hint: "하나만 고르세요. 고른 사례의 이야기가 바로 아래에 나타납니다.",
+    hint:
+      "하나만 고르고 「이 사례로 확정」을 누르세요. 확정하면 잠겨서 바꿀 수 없어요.\n" +
+      "확정한 사례의 이야기가 바로 아래에 나타납니다. (잘못 확정했으면 선생님께 말하세요.)",
     kind: "choice",
     choices: CASES.map((c) => c.label),
+    /* 고르고 「확정」을 눌러 잠근다 — 고르는 것을 첫 단계로 못 박는다 (worksheet-view) */
+    confirmLock: true,
     maxLength: 0,
   },
   {

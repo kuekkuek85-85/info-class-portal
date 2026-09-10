@@ -887,27 +887,58 @@ export function WorksheetView({
               보기 중 하나. 고른 문구가 그대로 답이 된다.
               보기 안에 판단 근거가 들어 있어서(types.ts 의 choices 참조) 고르는 순간
               이유를 함께 고르게 된다 — 그래서 짧은 라벨로 줄이지 않는다.
+
+              confirmLock 이면 「확정」을 눌러 선택을 잠근다 (11차시 사례 고르기). 잠금은
+              동반 키(`${key}__locked`)에 "1" 로 저장돼 새로고침에도 유지된다. 답 자체
+              (question.key)는 고른 라벨 그대로라 case_story·submit·Grill 이 읽는 값은
+              안 바뀐다 — 잠금은 UI·영속 플래그일 뿐이다. confirmLock 이 없으면(다른 차시)
+              아래 확정 단추가 아예 안 그려지고 보기는 자유롭게 바꿀 수 있다 — 지금 그대로다.
             */
-            <div className="flex flex-col gap-2" id={`ws-${question.key}`}>
-              {(question.choices ?? []).map((choice) => {
-                const on = (value.answers[question.key] ?? "") === choice;
-                return (
-                  <button
-                    key={choice}
-                    type="button"
-                    // 누른 것을 다시 누르면 고른 것이 풀린다. 잘못 눌러 놓고 못 바꾸면 답답하다
-                    onClick={() => setAnswer(question.key, on ? "" : choice)}
-                    aria-pressed={on}
-                    disabled={disabled}
-                    className={`rounded-lg border-2 px-4 py-3 text-left t-body-sm transition active:scale-[0.99] ${
-                      on ? "border-ink bg-ink text-canvas" : "border-line bg-canvas"
-                    }`}
-                  >
-                    {choice}
-                  </button>
-                );
-              })}
-            </div>
+            (() => {
+              const chosen = value.answers[question.key] ?? "";
+              const lockKey = `${question.key}__locked`;
+              const locked =
+                question.confirmLock === true && (value.answers[lockKey] ?? "") === "1";
+              return (
+                <div className="flex flex-col gap-2" id={`ws-${question.key}`}>
+                  {(question.choices ?? []).map((choice) => {
+                    const on = chosen === choice;
+                    // 잠기면 고른 것만 남기고 나머지 보기는 감춘다
+                    if (locked && !on) return null;
+                    return (
+                      <button
+                        key={choice}
+                        type="button"
+                        // 누른 것을 다시 누르면 풀린다. 잘못 눌러 놓고 못 바꾸면 답답하다
+                        // (단 잠긴 뒤에는 못 바꾼다)
+                        onClick={() => setAnswer(question.key, on ? "" : choice)}
+                        aria-pressed={on}
+                        disabled={disabled || locked}
+                        className={`rounded-lg border-2 px-4 py-3 text-left t-body-sm transition active:scale-[0.99] disabled:opacity-60 ${
+                          on ? "border-ink bg-ink text-canvas" : "border-line bg-canvas"
+                        }`}
+                      >
+                        {choice}
+                      </button>
+                    );
+                  })}
+
+                  {question.confirmLock &&
+                    (locked ? (
+                      <p className="t-note">확정됨 🔒 — 바꾸려면 선생님께 말하세요.</p>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setAnswer(lockKey, "1")}
+                        disabled={disabled || !chosen}
+                        className="pill pill-primary t-body-sm self-start disabled:opacity-35"
+                      >
+                        이 사례로 확정
+                      </button>
+                    ))}
+                </div>
+              );
+            })()
           ) : question.kind === "scale_result" ? (
             /*
               척도 문항 자동 채점 결과. 학생의 현재 답에서 실시간 계산해 보여준다.

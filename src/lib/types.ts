@@ -625,6 +625,13 @@ export interface WorksheetQuestion {
    */
   noPaste?: boolean;
   /**
+   * choice 문항을 「확정」 단추로 잠근다 (11차시 사례 고르기). 학생이 하나 고른 뒤
+   * 확정을 누르면 선택이 잠겨 더 못 바꾼다. 잠금은 동반 키(`${key}__locked`)에 "1" 로
+   * 저장돼 새로고침에도 유지되고, 답(question.key) 자체는 고른 라벨 그대로다 — 다운스트림
+   * (case_story·submit·reviewFields)이 읽는 값은 안 바뀐다. **없으면 지금 그대로**(자유 변경).
+   */
+  confirmLock?: boolean;
+  /**
    * case_story 가 읽을 choice 문항의 key (11차시). 그 칸에 저장된 답(고른 보기 문구)과
    * stories[].match 를 견줘 맞는 지문 하나만 펼친다. 안 고르면 안내만 뜬다.
    */
