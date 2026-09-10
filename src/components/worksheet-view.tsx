@@ -643,7 +643,16 @@ export function WorksheetView({
                 );
               }
               return (
-                <div className="rounded-lg border-2 border-ink bg-surface px-4 py-4">
+                <div className="flex flex-col gap-3 rounded-lg border-2 border-ink bg-surface px-4 py-4">
+                  {story.image && (
+                    /* 사례 삽화(4컷 만화). 지문 위에 크게 띄워 상황을 먼저 눈으로 잡게 한다 */
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={story.image}
+                      alt="사례 상황 만화"
+                      className="h-auto w-full rounded-md border border-line bg-white"
+                    />
+                  )}
                   <p className="t-body whitespace-pre-line">{story.text}</p>
                 </div>
               );

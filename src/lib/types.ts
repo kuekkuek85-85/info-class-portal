@@ -642,8 +642,11 @@ export interface WorksheetQuestion {
   /**
    * case_story 가 펼칠 고정 지문들. `match` 는 storySourceKey 칸의 값(고른 보기 문구)과
    * **정확히 같아야** 한다 — 시드에서 choices 와 한 배열로 만들어 어긋나지 않게 한다.
+   *
+   * `image` 는 그 사례의 삽화(4컷 만화 등) 정적 파일 경로(예 `/lesson11-case-1.png`).
+   * 있으면 지문 위에 그림을 함께 띄운다. 없으면 지문만 — 없어도 동작에 지장 없다.
    */
-  stories?: { match: string; text: string }[];
+  stories?: { match: string; text: string; image?: string }[];
   /**
    * submit 이 판정할 칸들. 없으면 article-check 의 ARTICLE_RULES 기본값을 쓴다.
    *
