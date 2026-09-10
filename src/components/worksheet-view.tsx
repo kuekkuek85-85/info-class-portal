@@ -37,6 +37,37 @@ import { computeScaleResult } from "@/lib/scale-score";
 const AUTOSAVE_MS = 1500;
 
 /**
+ * 붙여넣기 막기 — text·long 입력에 켜는 핸들러 묶음 (11차시 복붙 방지, noPaste).
+ *
+ * onPaste 하나만으로도 Ctrl/⌘+V·우클릭 붙여넣기·메뉴 붙여넣기가 다 막히지만,
+ * 우클릭 메뉴 자체와 드래그-드롭·키 조합까지 함께 닫아 **직접 타이핑을 유도**한다.
+ * 노트북(데스크톱) 전제이고 완벽 차단은 아니다 — 목적은 AI 답을 통째로 옮겨 붙이는
+ * 것을 번거롭게 해 자기 말로 다시 쓰게 하는 것이다.
+ *
+ * 끄면(대부분의 차시) 빈 객체라 기존 입력칸은 그대로 붙여넣기가 된다.
+ */
+function pasteBlockProps(block: boolean) {
+  if (!block) return {};
+  const stop = (event: { preventDefault: () => void }) => event.preventDefault();
+  return {
+    onPaste: stop,
+    onDrop: stop,
+    onContextMenu: stop,
+    onKeyDown: (event: {
+      ctrlKey: boolean;
+      metaKey: boolean;
+      key: string;
+      preventDefault: () => void;
+    }) => {
+      // 붙여넣기 키만 막는다. Ctrl+C·Ctrl+A·화살표 등 나머지는 그대로 둔다
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v") {
+        event.preventDefault();
+      }
+    },
+  };
+}
+
+/**
  * 마지막으로 자동으로 채워 넣은 글을 적어 두는 자리.
  *
  * 학생이 그 뒤에 손을 댔는지 가리는 데 쓴다 — 지금 칸에 있는 글이 이것과 같으면
@@ -852,16 +883,24 @@ export function WorksheetView({
               );
             })()
           ) : question.kind === "long" ? (
-            <textarea
-              id={`ws-${question.key}`}
-              value={value.answers[question.key] ?? ""}
-              onChange={(event) => setAnswer(question.key, event.target.value)}
-              rows={3}
-              maxLength={question.maxLength || 500}
-              disabled={disabled}
-              className="field disabled:opacity-60"
-              placeholder="여기에 적어 주세요"
-            />
+            <>
+              <textarea
+                id={`ws-${question.key}`}
+                value={value.answers[question.key] ?? ""}
+                onChange={(event) => setAnswer(question.key, event.target.value)}
+                rows={3}
+                maxLength={question.maxLength || 500}
+                disabled={disabled}
+                className="field disabled:opacity-60"
+                placeholder="여기에 적어 주세요"
+                {...pasteBlockProps(!!question.noPaste)}
+              />
+              {question.noPaste && (
+                <span className="t-caption self-start text-muted">
+                  직접 입력하는 활동이에요 — 붙여넣기는 꺼져 있어요.
+                </span>
+              )}
+            </>
           ) : (
             <>
               <input
@@ -872,7 +911,13 @@ export function WorksheetView({
                 disabled={disabled}
                 className="field disabled:opacity-60"
                 placeholder="여기에 적어 주세요"
+                {...pasteBlockProps(!!question.noPaste)}
               />
+              {question.noPaste && (
+                <span className="t-caption self-start text-muted">
+                  직접 입력하는 활동이에요 — 붙여넣기는 꺼져 있어요.
+                </span>
+              )}
               {question.maxLength > 0 && question.maxLength <= 80 && (
                 <span className="t-caption self-end">
                   {(value.answers[question.key] ?? "").length} / {question.maxLength}자

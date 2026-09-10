@@ -68,13 +68,26 @@ export async function POST(request: Request) {
     const count = question.reviewCount ?? 2;
 
     /*
+     * 문항이 조력자 정의·폴백을 주면 그 맥락으로 부른다 (11차시 논술 Grill).
+     * 안 주면 undefined 가 넘어가 기본값(앱 기획 검토)으로 돈다 — 기존 hai 차시는 그대로다.
+     *
+     * 고른 사례 텍스트는 reviewFields 로 함께 온다 — 사례 선택 choice 문항의 답(고른
+     * 보기 문구)을 reviewFields 에 넣어 두면, AI 가 "학생 답 + 학생이 고른 사례" 를
+     * 함께 보고 캐묻는다 (seed-lesson11 의 de11_case 참조).
+     */
+    const options = {
+      persona: question.reviewPersona,
+      fallback: question.reviewFallback,
+    };
+
+    /*
      * 부르기 전에 자리를 잡는다. 부르고 나서 세면 연타한 둘이 같은 값을 읽고 통과한다.
      * 실패해도 되돌리지 않는다 — 되돌리는 코드가 곧 무한 재시도의 입구다.
      */
     const claim = await claimAiCall(session.id, me.studentId);
     const result: ReviewResult = claim.allowed
-      ? await reviewBuild(fields, count)
-      : fallbackResult("quota", 0, count);
+      ? await reviewBuild(fields, count, options)
+      : fallbackResult("quota", 0, count, question.reviewFallback);
 
     await tallyOutcome(session.id, result.source).catch(() => undefined);
     await logAiCall({

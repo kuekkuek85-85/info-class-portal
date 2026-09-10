@@ -85,12 +85,46 @@ export interface ReviewInput {
   value: string;
 }
 
-/** 질문이 모자라거나 없을 때 고정 질문으로 채운다. 개수는 항상 맞춰 나간다 */
-export function fallbackResult(reason: ReviewReason, latencyMs = 0, count = 2): ReviewResult {
-  return { questions: FALLBACK_QUESTIONS.slice(0, count), source: "fallback", reason, latencyMs };
+/**
+ * AI 검토의 조력자 정의. 문항이 주면 그 맥락으로 프롬프트를 갈아끼운다.
+ *
+ * 기본값은 진로탐색(인간과 인공지능)의 "앱 기획 검토" 그대로다 — 안 주면 지금과
+ * 똑같이 돈다. 11차시 논술 Grill 은 여기에 논술용 정의를 넣어 부른다.
+ */
+export interface ReviewPersona {
+  /** "너는 …다" 자리 */
+  role: string;
+  /** "아래는 …다" 자리 — AI 가 보는 대상 */
+  subject: string;
 }
 
-function buildPrompt(fields: ReviewInput[], count: number): string {
+const DEFAULT_PERSONA: ReviewPersona = {
+  role: "중학교 1학년의 앱 기획을 함께 검토하는 조력자",
+  subject: "학생이 오늘 만든 것과, 학생이 스스로 한 검토",
+};
+
+/** 문항이 준 값과 기본값을 합친다 (부분만 줘도 됨) */
+export interface ReviewOptions {
+  persona?: Partial<ReviewPersona>;
+  fallback?: readonly string[];
+}
+
+/** 질문이 모자라거나 없을 때 고정 질문으로 채운다. 개수는 항상 맞춰 나간다 */
+export function fallbackResult(
+  reason: ReviewReason,
+  latencyMs = 0,
+  count = 2,
+  fallback: readonly string[] = FALLBACK_QUESTIONS,
+): ReviewResult {
+  /*
+   * 문항이 준 폴백이 개수보다 모자라면 기본 질문으로 채운다 — 화면은 늘 count 개를
+   * 기대한다. 안 주면(기본값) 지금 그대로 FALLBACK_QUESTIONS 다.
+   */
+  const pool = fallback.length >= count ? fallback : [...fallback, ...FALLBACK_QUESTIONS];
+  return { questions: pool.slice(0, count), source: "fallback", reason, latencyMs };
+}
+
+function buildPrompt(fields: ReviewInput[], count: number, persona: ReviewPersona): string {
   const lines = fields
     .map(({ label, value }) => value.trim() && `${label}: ${value.trim()}`)
     .filter(Boolean);
@@ -107,8 +141,8 @@ function buildPrompt(fields: ReviewInput[], count: number): string {
       : [];
 
   return [
-    "너는 중학교 1학년의 앱 기획을 함께 검토하는 조력자다.",
-    "아래는 학생이 오늘 만든 것과, 학생이 스스로 한 검토다.",
+    `너는 ${persona.role}다.`,
+    `아래는 ${persona.subject}다.`,
     `학생이 아직 생각하지 못했을 만한 질문을 정확히 ${count}개만 던져라.`,
     "",
     "규칙:",
@@ -129,6 +163,7 @@ async function callOnce(
   apiKey: string,
   fields: ReviewInput[],
   count: number,
+  persona: ReviewPersona,
 ): Promise<{ questions: string[] } | { failed: ReviewReason }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -140,7 +175,7 @@ async function callOnce(
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: buildPrompt(fields, count) }] }],
+          contents: [{ parts: [{ text: buildPrompt(fields, count, persona) }] }],
           generationConfig: { temperature: 0.4, responseMimeType: "application/json" },
         }),
         signal: controller.signal,
@@ -179,18 +214,26 @@ async function callOnce(
  * 형식이 깨졌을 때만 한 번 더 부른다. 시간 초과와 오류는 다시 불러도 같은 결과일
  * 가능성이 높고, 스물두 명이 동시에 누르는 자리라 두 배로 기다리게 할 수 없다.
  */
-export async function reviewBuild(fields: ReviewInput[], count = 2): Promise<ReviewResult> {
+export async function reviewBuild(
+  fields: ReviewInput[],
+  count = 2,
+  options: ReviewOptions = {},
+): Promise<ReviewResult> {
   const started = Date.now();
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return fallbackResult("nokey", 0, count);
+  // 문항이 준 persona 로 기본값을 덮는다. 안 주면 앱 기획 검토 그대로다
+  const persona: ReviewPersona = { ...DEFAULT_PERSONA, ...options.persona };
+  const fallback = options.fallback ?? FALLBACK_QUESTIONS;
 
-  let outcome = await callOnce(apiKey, fields, count);
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return fallbackResult("nokey", 0, count, fallback);
+
+  let outcome = await callOnce(apiKey, fields, count, persona);
   if ("failed" in outcome && outcome.failed === "format") {
-    outcome = await callOnce(apiKey, fields, count);
+    outcome = await callOnce(apiKey, fields, count, persona);
   }
 
   const latencyMs = Date.now() - started;
-  if ("failed" in outcome) return fallbackResult(outcome.failed, latencyMs, count);
+  if ("failed" in outcome) return fallbackResult(outcome.failed, latencyMs, count, fallback);
   return { questions: outcome.questions, source: "ai", reason: "ok", latencyMs };
 }
 
