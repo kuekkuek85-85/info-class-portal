@@ -103,7 +103,7 @@ const ESSAY_MAX = 800;
 const CASES: { label: string; story: string; image: string }[] = [
   {
     label: "① 데이터 셔틀 — 힘센 친구들이 매번 내 폰 데이터를 빌려 써 요금이 다 나간다",
-    image: "/lesson11-case-1.png",
+    image: "/lesson11-case-1.jpg",
     story:
       "쉬는 시간마다 같은 친구들이 내 자리로 온다.\n" +
       "“핫스팟 좀 켜 봐, 데이터 조금만 쓸게.” 처음엔 한두 명이었다.\n" +
@@ -118,7 +118,7 @@ const CASES: { label: string; story: string; image: string }[] = [
   },
   {
     label: "② 카카오톡 감옥 — 단톡방에서 여러 명이 나에게 욕을 하고, 나가도 다시 초대한다",
-    image: "/lesson11-case-2.png",
+    image: "/lesson11-case-2.jpg",
     story:
       "모르는 번호로 단체 대화방 초대가 왔다.\n" +
       "들어가 보니 평소 나를 못마땅해하던 아이들과, 얼굴도 모르는 다른 반 아이들이 있었다.\n" +
@@ -133,7 +133,7 @@ const CASES: { label: string; story: string; image: string }[] = [
   },
   {
     label: "③ 신상 유출 — 내 사진·이름·학교가 단톡방과 SNS에 퍼져 모르는 사람들이 조롱한다",
-    image: "/lesson11-case-3.png",
+    image: "/lesson11-case-3.jpg",
     story:
       "아침에 등교하니 반 아이들이 나를 보며 수군거렸다.\n" +
       "알고 보니 누군가 내 사진과 함께 이름, 학교, 사는 동네까지 단톡방과 SNS에 올려 놓았다.\n" +
@@ -148,7 +148,7 @@ const CASES: { label: string; story: string; image: string }[] = [
   },
   {
     label: "④ 초상권·저작권 — 카드뉴스에 친구 얼굴과 남의 이미지를 무단으로 써서 문제가 됐다",
-    image: "/lesson11-case-4.png",
+    image: "/lesson11-case-4.jpg",
     story:
       "동아리 홍보를 하려고 카드뉴스를 만들었다.\n" +
       "더 멋져 보이라고 친구가 나온 사진을 넣고, 인터넷에서 검색한 예쁜 이미지도 몇 장 가져다 붙였다.\n" +
