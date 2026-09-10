@@ -1114,7 +1114,7 @@ export function WorksheetView({
               onChange({ ...value, sources: { ...value.sources, site: event.target.value } })
             }
             maxLength={300}
-            disabled={disabled}
+            disabled={disabled || gateLocked}
             placeholder={sourceHints.site}
             className="field disabled:opacity-60"
           />
@@ -1128,7 +1128,7 @@ export function WorksheetView({
               onChange({ ...value, sources: { ...value.sources, ai: event.target.value } })
             }
             maxLength={300}
-            disabled={disabled}
+            disabled={disabled || gateLocked}
             placeholder={sourceHints.ai}
             className="field disabled:opacity-60"
           />
