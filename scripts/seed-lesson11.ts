@@ -392,6 +392,23 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
 
+  /*
+   * 성찰 — 활동의 **마지막 필수 단계**(제출 직전)로 둔다. 별도 성찰 phase 로 두면
+   * 통과(=게임)가 성찰보다 먼저 일어날 수 있어, 성찰을 여기 넣고 submitFields 에 걸어
+   * "성찰을 써야 제출·통과·게임" 순서를 보장한다. 그래서 reflectionQuestions 는 비운다.
+   */
+  {
+    key: "de11_reflect",
+    phase: "worksheet",
+    label: "⑤ 마무리 성찰 — 오늘 배운 것을 내 삶으로",
+    hint:
+      "한 문장 이상. 오늘 고른 사례에서, 내가 오늘부터 실천할 예방·대처 한 가지를 적어 봅시다.\n" +
+      "예) 링크는 함부로 누르지 않고, 이상하면 먼저 어른께 물어보겠다.",
+    kind: "long",
+    maxLength: ESSAY_MAX,
+    noPaste: true,
+  },
+
   {
     key: "de11_submit",
     phase: "worksheet",
@@ -412,6 +429,7 @@ const WORKSHEET: WorksheetQuestion[] = [
       { key: "de11_prevent_self", label: "③-1 예방 · 나 혼자", minSentences: 1 },
       { key: "de11_prevent_group", label: "③-2 예방 · 우리 반이나 사회", minSentences: 1 },
       { key: "de11_grill_ans", label: "④ 꼬리답변", minSentences: 2 },
+      { key: "de11_reflect", label: "⑤ 마무리 성찰", minSentences: 1 },
     ],
     /*
      * 교사가 「통과」를 준 학생에게만 뜨는 게임 4종 (done-portal).
@@ -503,11 +521,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   },
 
   /*
-   * 성찰 한 줄 — 마감 뒤라 가볍게. 오늘 고른 사례에서 실천할 것 하나.
+   * 성찰은 별도 phase 가 아니라 **활동지 마지막 필수 단계(de11_reflect)** 로 옮겼다 —
+   * 통과(=게임)보다 성찰이 먼저 오게 하려고. 그래서 여기 성찰 phase 질문은 비운다.
    */
-  reflectionQuestions: [
-    "오늘 고른 사례에서, 내가 오늘부터 실천할 예방·대처 한 가지를 적어 봅시다.",
-  ],
+  reflectionQuestions: [],
   reflectionPublic: false,
 
   /*
@@ -604,7 +621,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (9·10·11차시가 함께 쓰는 통 — 문항 key 는 news_check2 만 재사용)`);
-  console.log("단계: 대기 → 기분 → 오늘 할 일(assessment) → 사례 골라 쓰고 제출하기(worksheet) → 성찰 → 마침");
+  console.log("단계: 대기 → 기분 → 오늘 할 일(assessment) → 사례 골라 쓰고·성찰까지·제출하기(worksheet, 성찰이 제출 직전 필수 단계) → 마침");
   console.log("25분 핵심 + ~10분 보상: 통과한 학생은 게임 4종(한붓그리기·똥 피하기·하노이탑·2048)으로 넘어갑니다.");
   console.log("사례 4편 고정 지문(각 ~10줄): 학생이 고르면 case_story 가 그 사례 이야기만 펼침(실시간 AI 생성 아님).");
   console.log("복붙 방지: 답 칸 noPaste + Grill me(논술 persona/폴백). 제출 문턱=분석·대처·예방·꼬리답변 각 2문장.");
