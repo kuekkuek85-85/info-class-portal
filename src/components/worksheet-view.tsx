@@ -453,6 +453,18 @@ export function WorksheetView({
     onChange({ ...value, traits: next });
   }
 
+  /*
+    사례 확정 게이트 (11차시). confirmLock 문항(사례 고르기)이 있는데 아직 확정
+    (`${key}__locked` = "1")되지 않았다면, 그 문항 하나만 빼고 나머지 입력 칸을 잠근다.
+    사례를 확정해야 비로소 1번부터 답을 쓸 수 있다. confirmLock 문항이 없는 차시는
+    confirmGate 가 없어 gateLocked 가 늘 false — 아무 영향이 없다.
+  */
+  const confirmGate = questions.find((question) => question.confirmLock === true);
+  const gateLocked =
+    !!confirmGate && (value.answers[`${confirmGate.key}__locked`] ?? "") !== "1";
+  // 문항 렌더 안에서 disabled 를 게이트로 덧씌우기 위해, 바깥 값을 따로 잡아 둔다.
+  const disabledBase = disabled;
+
   return (
     <section className="flex flex-col gap-6">
       {/*
@@ -522,7 +534,13 @@ export function WorksheetView({
       */}
       {questions
         .filter((question) => question.kind !== "submit")
-        .map((question) => (
+        .map((question) => {
+          /*
+            사례 확정 전에는 이 문항 입력을 잠근다 (사례 고르기 문항 자신은 제외).
+            이 블록 안에서 disabled 를 게이트 값으로 덧씌워, 아래 모든 입력 칸이 함께 잠긴다.
+          */
+          const disabled = disabledBase || (gateLocked && question.confirmLock !== true);
+          return (
         <div key={question.key} id={`q-${question.key}`} className="flex flex-col gap-2">
           {/*
             note 는 답할 것이 없다. label 로 두면 눌렀을 때 엉뚱한 칸에 커서가 가고,
@@ -927,14 +945,19 @@ export function WorksheetView({
                     (locked ? (
                       <p className="t-note">확정됨 🔒 — 바꾸려면 선생님께 말하세요.</p>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => setAnswer(lockKey, "1")}
-                        disabled={disabled || !chosen}
-                        className="pill pill-primary t-body-sm self-start disabled:opacity-35"
-                      >
-                        이 사례로 확정
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setAnswer(lockKey, "1")}
+                          disabled={disabled || !chosen}
+                          className="pill pill-primary t-body-sm self-start disabled:opacity-35"
+                        >
+                          이 사례로 확정
+                        </button>
+                        <p className="t-note">
+                          사례를 확정해야 아래 ①~④ 칸이 열립니다.
+                        </p>
+                      </>
                     ))}
                 </div>
               );
@@ -1066,7 +1089,8 @@ export function WorksheetView({
             </button>
           )}
         </div>
-        ))}
+          );
+        })}
 
       {/*
         출처 두 칸은 고정이다. 수행평가1이 "출처 밝히기 태도"를 평가하므로,
