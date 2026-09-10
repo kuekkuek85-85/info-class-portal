@@ -187,6 +187,14 @@ export async function POST(request: Request) {
       const allowed = new Map((activity.worksheet ?? []).map((q) => [q.key, q]));
       const answers: Record<string, string> = { ...(artifact.answers ?? {}) };
       for (const [key, value] of Object.entries(body.answers)) {
+        // confirmLock 동반 키(<질문키>__locked): 활동지 문항 목록엔 없지만, 이 값이
+        // 저장돼야 새로고침 뒤에도 「확정」 잠금이 유지된다(worksheet-view 의 locked 판정).
+        // 활동지에 그 문항이 있고 confirmLock 일 때만, "1"/"" 로만 받는다.
+        if (key.endsWith("__locked")) {
+          const base = allowed.get(key.slice(0, -"__locked".length));
+          if (base?.confirmLock) answers[key] = String(value ?? "") === "1" ? "1" : "";
+          continue;
+        }
         const question = allowed.get(key);
         // 활동지에 없는 키는 버린다 — 문서에 임의의 필드가 쌓이는 것을 막는다
         if (!question || question.kind === "traits") continue;
@@ -230,7 +238,7 @@ export async function POST(request: Request) {
      */
     const savedAnswers = (patch.answers as Record<string, string> | undefined) ?? artifact.answers ?? {};
     const answeredKeys = Object.entries(savedAnswers)
-      .filter(([key, value]) => !key.startsWith("_") && String(value ?? "").trim())
+      .filter(([key, value]) => !key.startsWith("_") && !key.endsWith("__locked") && String(value ?? "").trim())
       .map(([key]) => key);
 
     // -------------------------------------------------------------- 그림
