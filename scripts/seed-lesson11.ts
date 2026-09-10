@@ -337,12 +337,12 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         subtitle: "디지털 윤리 위반 사례 하나를 골라 깊게 다룹니다",
         note: "지금까지 배운 개인정보 보호·저작권·사이버 윤리가 오늘 글의 바탕이 됩니다.",
         rows: [
-          { label: "기분(2분)", value: "기분 체크로 시작합니다" },
-          { label: "안내(3분)", value: "오픈북 규칙 · Grill me · 제출 방법을 함께 봅니다" },
-          { label: "고르기(3~4분)", value: "네 사례 중 하나를 고릅니다" },
-          { label: "쓰기(8~9분)", value: "① 원인·피해 · ② 대처 · ③ 예방(개인+공동체, 근거 포함)" },
-          { label: "Grill(4~5분)", value: "AI가 되물으면 ④ 꼬리답변을 내 말로 씁니다" },
-          { label: "제출(3분)", value: "1차 제출 → AI 점검 → 2차 제출 → 선생님 검토 → 통과" },
+          { label: "기분", value: "기분 체크로 시작합니다" },
+          { label: "안내", value: "오픈북 규칙 · Grill me · 제출 방법을 함께 봅니다" },
+          { label: "고르기", value: "네 사례 중 하나를 고릅니다" },
+          { label: "쓰기", value: "① 원인·피해 · ② 대처 · ③ 예방(개인+공동체, 근거 포함)" },
+          { label: "Grill", value: "AI가 되물으면 ④ 꼬리답변을 내 말로 씁니다" },
+          { label: "제출", value: "1차 제출 → AI 점검 → 2차 제출 → 선생님 검토 → 통과" },
           { label: "통과 후", value: "선생님이 「통과」를 누르면 게임 4종으로 넘어갑니다" },
         ],
         highlights: [
