@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /**
  * 자유서술 반복 입력 — 칸을 늘려 가며 여러 개를 적는다 (11차시 ② 대처방안).
@@ -39,6 +39,18 @@ function hasAny(items: string[]): boolean {
   return items.some((v) => v.trim().length > 0);
 }
 
+/** 최소 칸 수만큼 빈 칸을 채운다 */
+function padded(items: string[], minItems: number): string[] {
+  return items.length >= minItems
+    ? items
+    : [...items, ...Array(minItems - items.length).fill("")];
+}
+
+/** 이 컴포넌트가 저장으로 내보내는 형태 — 빈 칸만 남으면 "" */
+function serialize(items: string[]): string {
+  return hasAny(items) ? JSON.stringify(items) : "";
+}
+
 const stop = (event: { preventDefault: () => void }) => event.preventDefault();
 
 export function ListField({
@@ -58,12 +70,28 @@ export function ListField({
   disabled?: boolean;
   onChange: (next: string) => void;
 }) {
-  const items = parse(value);
-  /* 처음엔 minItems 개의 빈 칸을 보여준다 — "여러 개 적는 자리" 가 바로 보이게 */
-  const shown = items.length >= minItems ? items : [...items, ...Array(minItems - items.length).fill("")];
+  /*
+   * 보여줄 칸을 **내부 상태**로 든다. 저장된 값(배열)에서만 칸 수를 도출하면, 빈 칸만
+   * 남았을 때 값이 "" 로 저장돼(배열이 사라짐) [칸 추가]로 만든 빈 칸이 바로 사라진다.
+   * 그래서 칸 수는 여기서 들고, 저장은 내용이 있을 때만 내보낸다(serialize).
+   */
+  const [shown, setShown] = useState<string[]>(() => padded(parse(value), minItems));
+
+  /*
+   * 밖에서 값이 바뀌면(다시 열기·프리필 등) 맞춘다. 내가 방금 쓴 것과 같으면 건드리지
+   * 않는다 — 안 그러면 타이핑 → onChange → 값 변경 → 여기서 되돌림 이 되어 빈 칸이 날아간다.
+   */
+  useEffect(() => {
+    if (value !== serialize(shown)) setShown(padded(parse(value), minItems));
+    // shown 은 의도적으로 뺀다 — 밖의 value 변화에만 반응한다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, minItems]);
 
   const write = useCallback(
-    (next: string[]) => onChange(hasAny(next) ? JSON.stringify(next) : ""),
+    (next: string[]) => {
+      setShown(next);
+      onChange(serialize(next));
+    },
     [onChange],
   );
 
