@@ -463,6 +463,13 @@ export interface WorksheetQuestion {
      */
     | "scale_result"
     /**
+     * list — 자유서술 여러 칸(반복 입력). 「+ 칸 추가」로 칸을 늘린다 (11차시 대처방안).
+     * 처음 minItems 개가 뜨고, maxItems 까지 늘릴 수 있다. 답은 문자열 배열을 JSON 으로
+     * 한 칸에 담는다(rows 와 같은 방식). 제출 문턱은 문장 수가 아니라 **채워진 항목 수**로
+     * 세므로, submitFields 의 그 칸에 mode:"list" 를 줘 minSentences 를 최소 개수로 쓴다.
+     */
+    | "list"
+    /**
      * case_story — 앞의 choice 문항(storySourceKey)에서 학생이 고른 사례의 **고정 지문**을
      * 펼쳐 보여준다 (11차시). 고른 것 하나만 뜨고, 안 고르면 안내만 뜬다. 지문은 미리
      * 써 둔 것이라(stories) 실시간 AI 생성이 아니다 — 같은 사례를 고르면 모두 같은
@@ -623,6 +630,16 @@ export interface WorksheetQuestion {
    */
   storySourceKey?: string;
   /**
+   * list 가 처음 보여줄(그리고 최소로 요구하는) 칸 수. 기본 2 (11차시 대처방안).
+   */
+  minItems?: number;
+  /**
+   * list 가 늘릴 수 있는 최대 칸 수. 기본 6.
+   */
+  maxItems?: number;
+  /** list 각 칸의 placeholder */
+  itemPlaceholder?: string;
+  /**
    * case_story 가 펼칠 고정 지문들. `match` 는 storySourceKey 칸의 값(고른 보기 문구)과
    * **정확히 같아야** 한다 — 시드에서 choices 와 한 배열로 만들어 어긋나지 않게 한다.
    */
@@ -637,7 +654,16 @@ export interface WorksheetQuestion {
    * 빈 칸과 문장이 모자란 칸만 2차 제출 문턱이 되고, 출처와 오탈자는 문턱에서 빠진다 —
    * 일부러 비우는 학생이 있고 오탐이 있기 때문이다.
    */
-  submitFields?: { key: string; label: string; minSentences: number }[];
+  submitFields?: {
+    key: string;
+    label: string;
+    minSentences: number;
+    /**
+     * mode:"list" 면 이 칸은 list 문항이라, minSentences 를 **채워진 항목 수**의 최소치로
+     * 쓴다(문장 수가 아니라). 없으면 지금처럼 문장 수로 센다 (article-check).
+     */
+    mode?: "list";
+  }[];
   /**
    * scale_result 가 합산할 대상과 구간 규격 (scale-score.ts 의 ScaleConfig).
    *

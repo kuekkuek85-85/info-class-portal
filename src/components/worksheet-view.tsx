@@ -6,6 +6,7 @@ import { AiReviewPanel } from "@/components/ai-review-panel";
 import { EmotionLensPanel } from "@/components/emotion-lens-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
 import { ImageField } from "@/components/image-field";
+import { ListField } from "@/components/list-field";
 import { RowsField } from "@/components/rows-field";
 import { MoodRecheck } from "@/components/mood-recheck";
 import { MaskingField } from "@/components/masking-field";
@@ -46,6 +47,24 @@ const AUTOSAVE_MS = 1500;
  *
  * 끄면(대부분의 차시) 빈 객체라 기존 입력칸은 그대로 붙여넣기가 된다.
  */
+/**
+ * list 문항 답(문자열 배열 JSON)을 사람이 읽는 한 줄로 바꾼다 (echo 표시용).
+ *
+ * "[" 로 시작하고 문자열 배열로 파싱되면 빈 항목을 빼고 " · " 로 잇는다. 아니면 원문
+ * 그대로 — 대괄호로 시작하지 않는 보통 답은 손대지 않는다.
+ */
+function listDisplay(raw: string): string {
+  if (!raw.startsWith("[")) return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return raw;
+    const items = parsed.filter((v): v is string => typeof v === "string" && v.trim().length > 0);
+    return items.length > 0 ? items.map((v) => v.trim()).join(" · ") : raw;
+  } catch {
+    return raw;
+  }
+}
+
 function pasteBlockProps(block: boolean) {
   if (!block) return {};
   const stop = (event: { preventDefault: () => void }) => event.preventDefault();
@@ -640,8 +659,10 @@ export function WorksheetView({
                 // 주소 칸(build_url·song_url 등, URL_ANSWER_KEYS)은 저장된 값에 스킴이 없어도
                 // 눌리게 https:// 를 채운다. 다른 칸은 자유 서술이라 손대지 않는다 — 붙였다간
                 // 문장이 링크로 둔갑한다.
-                const raw = (value.answers[row.key] ?? "").trim();
-                const written = URL_ANSWER_KEYS.has(row.key) ? normalizeUrl(raw) : raw;
+                const stored = (value.answers[row.key] ?? "").trim();
+                // list 문항 답(문자열 배열 JSON)은 사람이 읽게 " · " 로 잇는다. 아니면 그대로
+                const raw = listDisplay(stored);
+                const written = URL_ANSWER_KEYS.has(row.key) ? normalizeUrl(stored) : raw;
                 return (
                   <p key={row.key} className="t-body-sm">
                     <span className="font-semibold">{row.label} · </span>
@@ -729,6 +750,16 @@ export function WorksheetView({
               value={value.answers[question.key] ?? ""}
               columns={question.rowColumns ?? []}
               maxRows={question.maxRows ?? 10}
+              onChange={(next) => setAnswer(question.key, next)}
+              disabled={disabled}
+            />
+          ) : question.kind === "list" ? (
+            <ListField
+              value={value.answers[question.key] ?? ""}
+              minItems={question.minItems ?? 2}
+              maxItems={question.maxItems ?? 6}
+              placeholder={question.itemPlaceholder}
+              noPaste={question.noPaste}
               onChange={(next) => setAnswer(question.key, next)}
               disabled={disabled}
             />

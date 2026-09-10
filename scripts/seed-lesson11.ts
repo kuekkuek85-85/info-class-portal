@@ -229,30 +229,54 @@ const WORKSHEET: WorksheetQuestion[] = [
     noPaste: true,
   },
 
-  /* 루브릭 차원 ② 대처방안 (근거 포함) */
+  /*
+   * 루브릭 차원 ② 대처방안 — 반복 입력(list). 방법을 2개 이상, 근거는 선택.
+   *
+   * 「+ 칸 추가」로 칸을 늘린다. 처음 2칸이 뜨고, 채워진 칸이 2개 미만이면 2차에서 막힌다
+   * (submitFields 의 mode:"list"). 붙여넣기는 각 칸도 막는다(noPaste).
+   */
   {
     key: "de11_cope",
     phase: "worksheet",
-    label: "② 대처방안 — 이 상황에서 어떻게 대처할까 (근거도 함께)",
+    label: "② 대처방안 — 이 상황에서 어떻게 대처할까 (2개 이상, 근거는 원하면)",
     hint:
-      "이 상황 이야기 속 '나'가 지금 할 수 있는 일을 두 문장 이상 쓰고, 왜 그 방법이 맞는지\n" +
-      "근거를 한 문장 붙이세요. 지난 시간 '대처 6단계'를 근거로 써도 좋아요.\n" +
-      "예) 먼저 증거를 화면 캡처로 남긴다. 감정으로 맞서면 상황이 커지고 증거만 흐려지기 때문이다.",
-    kind: "long",
+      "이 상황 이야기 속 '나'가 지금 할 수 있는 대처를 한 칸에 하나씩, 2개 이상 적으세요.\n" +
+      "칸이 모자라면 「+ 칸 추가」를 누르면 됩니다. 근거(왜 그 방법이 맞는지)는 원하면 함께 적어도 좋아요.\n" +
+      "예) 먼저 증거를 화면 캡처로 남긴다. / 혼자 참지 말고 부모님·선생님께 알린다.",
+    kind: "list",
+    minItems: 2,
+    maxItems: 6,
+    itemPlaceholder: "대처방안을 하나 적어 주세요 (근거는 원하면 함께)",
     maxLength: ESSAY_MAX,
     noPaste: true,
   },
 
-  /* 루브릭 차원 ③ 예방(개인+공동체) 실천방안 (근거 포함) */
+  /*
+   * 루브릭 차원 ③ 예방 — 개인/공동체 두 칸으로 나눈다. 각 칸에 근거도 함께.
+   *
+   * 한 칸에 몰아 쓰면 '공동체' 가 빠지기 쉬워서 라벨된 두 칸으로 나눈다. 별표(**)는
+   * 쓰지 않는다 — 앱 힌트는 마크다운 볼드를 렌더하지 않아 별표가 글자로 그대로 보인다.
+   * 볼드 구분은 두 문항의 라벨("나 혼자" / "우리 반이나 사회…")이 대신한다.
+   */
   {
-    key: "de11_prevent",
+    key: "de11_prevent_self",
     phase: "worksheet",
-    label: "③ 예방방법 — 개인이 할 일 + 우리 반·사회가 할 일 (근거도 함께)",
+    label: "③-1 예방방법 · 나 혼자",
     hint:
-      "두 문장 이상. **나 혼자** 할 예방 하나와, **우리 반이나 사회**가 함께 할 예방 하나를\n" +
-      "각각 쓰고, 왜 그것이 예방이 되는지 근거를 붙이세요.\n" +
-      "예) 개인 — 개인정보를 함부로 올리지 않는다. 공동체 — 목격하면 편들어 주고 함께 신고한다.\n" +
-      "    방관하지 않는 반 분위기가 있어야 가해가 힘을 잃기 때문이다.",
+      "나 혼자 실천할 수 있는 예방방법을 쓰고, 왜 그것이 예방이 되는지 근거도 붙이세요.\n" +
+      "예) 개인정보를 함부로 올리지 않는다. 정보가 적을수록 표적이 되기 어렵기 때문이다.",
+    kind: "long",
+    maxLength: ESSAY_MAX,
+    noPaste: true,
+  },
+  {
+    key: "de11_prevent_group",
+    phase: "worksheet",
+    label: "③-2 예방방법 · 우리 반이나 사회 (단체, 국가 등)",
+    hint:
+      "우리 반이나 사회(단체, 국가 등)가 함께 실천할 예방방법을 쓰고, 왜 그것이 예방이 되는지\n" +
+      "근거도 붙이세요.\n" +
+      "예) 목격하면 편들어 주고 함께 신고한다. 방관하지 않는 반 분위기가 있어야 가해가 힘을 잃기 때문이다.",
     kind: "long",
     maxLength: ESSAY_MAX,
     noPaste: true,
@@ -269,7 +293,8 @@ const WORKSHEET: WorksheetQuestion[] = [
       { key: "de11_case", label: "내가 고른 사례" },
       { key: "de11_cause", label: "① 원인·피해" },
       { key: "de11_cope", label: "② 대처방안" },
-      { key: "de11_prevent", label: "③ 예방방법" },
+      { key: "de11_prevent_self", label: "③-1 예방 · 나 혼자" },
+      { key: "de11_prevent_group", label: "③-2 예방 · 우리 반이나 사회" },
     ],
     maxLength: 0,
   },
@@ -296,8 +321,9 @@ const WORKSHEET: WorksheetQuestion[] = [
     reviewFields: [
       { key: "de11_case", label: "학생이 고른 사례" },
       { key: "de11_cause", label: "원인·피해 분석" },
-      { key: "de11_cope", label: "대처방안" },
-      { key: "de11_prevent", label: "예방방법(개인+공동체)" },
+      { key: "de11_cope", label: "대처방안(여러 개)" },
+      { key: "de11_prevent_self", label: "예방 · 나 혼자" },
+      { key: "de11_prevent_group", label: "예방 · 우리 반이나 사회" },
     ],
     /* 앱 기획용 기본 프롬프트를 논술용으로 갈아끼운다 (ai-review.ts) */
     reviewPersona: {
@@ -364,13 +390,17 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "submit",
     maxLength: 0,
     /*
-     * 문장 수 문턱. 분석·대처·예방·꼬리답변이 비거나 한 줄이 안 되면 2차에서 되돌린다.
-     * 서버가 저장된 답을 다시 세서 판정하므로 「고쳤어요」만 눌러도 통과 안 된다.
+     * 2차 문턱. 비거나 모자라면 되돌린다. 서버가 저장된 답을 다시 세서 판정하므로
+     * 「고쳤어요」만 눌러도 통과 안 된다.
+     *
+     * de11_cope 는 list 라 mode:"list" 로 **채워진 항목 수**(2개)를 센다. 나머지는 문장 수다.
+     * 예방은 개인·공동체 두 칸을 각각 최소 1문장으로 — 둘 다 있어야 공동체가 안 빠진다.
      */
     submitFields: [
       { key: "de11_cause", label: "① 원인·피해 분석", minSentences: 2 },
-      { key: "de11_cope", label: "② 대처방안", minSentences: 2 },
-      { key: "de11_prevent", label: "③ 예방방법(개인+공동체)", minSentences: 2 },
+      { key: "de11_cope", label: "② 대처방안", minSentences: 2, mode: "list" },
+      { key: "de11_prevent_self", label: "③-1 예방 · 나 혼자", minSentences: 1 },
+      { key: "de11_prevent_group", label: "③-2 예방 · 우리 반이나 사회", minSentences: 1 },
       { key: "de11_grill_ans", label: "④ 꼬리답변", minSentences: 2 },
     ],
     /*
@@ -421,7 +451,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
           { label: "기분", value: "기분 체크로 시작합니다" },
           { label: "안내", value: "오픈북 규칙 · Grill me · 제출 방법을 함께 봅니다" },
           { label: "고르기", value: "네 사례 중 하나를 고릅니다" },
-          { label: "쓰기", value: "① 원인·피해 · ② 대처 · ③ 예방(개인+공동체, 근거 포함)" },
+          { label: "쓰기", value: "① 원인·피해 · ② 대처방안 2개 이상 · ③ 예방(나 혼자 / 우리 반·사회)" },
           { label: "Grill", value: "AI가 되물으면 ④ 꼬리답변을 내 말로 씁니다" },
           { label: "제출", value: "1차 제출 → AI 점검 → 2차 제출 → 선생님 검토 → 통과" },
           { label: "통과 후", value: "선생님이 「통과」를 누르면 게임 4종으로 넘어갑니다" },

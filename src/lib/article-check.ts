@@ -37,8 +37,29 @@ export interface CheckItem {
 export interface FieldRule {
   key: string;
   label: string;
-  /** 문장 수 최소치 */
+  /** 문장 수 최소치 (list 이면 채워진 항목 수 최소치) */
   minSentences: number;
+  /**
+   * "list" 면 값이 문자열 배열 JSON(11차시 대처방안)이라, 문장이 아니라 **채워진 항목 수**를
+   * 센다. 없으면 지금처럼 문장 수로 센다.
+   */
+  mode?: "list";
+}
+
+/**
+ * list 문항 값(문자열 배열 JSON)에서 채워진 항목 수를 센다.
+ *
+ * 깨진 값이면 0. 학기 중 문항을 바꿔 옛 형식이 남아 있어도 죽지 않는다 (rows-field 와 같은 원칙).
+ */
+export function countListItems(value: string | undefined): number {
+  if (!(value ?? "").trim()) return 0;
+  try {
+    const parsed = JSON.parse(value as string);
+    if (!Array.isArray(parsed)) return 0;
+    return parsed.filter((item) => typeof item === "string" && item.trim().length > 0).length;
+  } catch {
+    return 0;
+  }
 }
 
 /**
@@ -136,16 +157,18 @@ export function checkArticle(
       continue;
     }
 
-    const n = countSentences(answered[rule.key]);
+    const isList = rule.mode === "list";
+    const n = isList ? countListItems(answered[rule.key]) : countSentences(answered[rule.key]);
     if (n < rule.minSentences) {
       items.push({
         code: `short:${rule.key}`,
         field: rule.key,
         kind: "short",
         // 무엇을 하면 되는지가 문장에 들어 있어야 한다. 안 그러면 되물으러 온다
-        label:
-          `${subject(rule.label)} ${n}문장이에요 — ${rule.minSentences}문장은 써 주세요 ` +
-          `(줄을 바꾸거나 마침표를 찍으면 나뉩니다)`,
+        label: isList
+          ? `${subject(rule.label)} ${n}개예요 — ${rule.minSentences}개 이상 적어 주세요`
+          : `${subject(rule.label)} ${n}문장이에요 — ${rule.minSentences}문장은 써 주세요 ` +
+            `(줄을 바꾸거나 마침표를 찍으면 나뉩니다)`,
       });
     }
   }
@@ -224,8 +247,9 @@ export function resolveItems(
     }
 
     const rule = rules.find((r) => r.key === item.field);
-    const n = countSentences(answered[item.field]);
+    const isList = rule?.mode === "list";
+    const n = isList ? countListItems(answered[item.field]) : countSentences(answered[item.field]);
     const passed = rule ? n >= rule.minSentences : n > 0;
-    return { item, state: passed ? "fixed" : "open", now: `${n}문장` };
+    return { item, state: passed ? "fixed" : "open", now: isList ? `${n}개` : `${n}문장` };
   });
 }
