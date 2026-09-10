@@ -462,6 +462,13 @@ export interface WorksheetQuestion {
      * 저장하지 않는다. 계산은 학생 본인 화면에서만 돈다 (scale-score.ts).
      */
     | "scale_result"
+    /**
+     * case_story — 앞의 choice 문항(storySourceKey)에서 학생이 고른 사례의 **고정 지문**을
+     * 펼쳐 보여준다 (11차시). 고른 것 하나만 뜨고, 안 고르면 안내만 뜬다. 지문은 미리
+     * 써 둔 것이라(stories) 실시간 AI 생성이 아니다 — 같은 사례를 고르면 모두 같은
+     * 이야기를 본다(수행평가 공정성). 입력칸이 아니라 표시라 답을 저장하지 않는다.
+     */
+    | "case_story"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
@@ -610,6 +617,16 @@ export interface WorksheetQuestion {
    * **안 주면 지금 그대로** — 다른 차시 입력칸은 붙여넣기가 된다.
    */
   noPaste?: boolean;
+  /**
+   * case_story 가 읽을 choice 문항의 key (11차시). 그 칸에 저장된 답(고른 보기 문구)과
+   * stories[].match 를 견줘 맞는 지문 하나만 펼친다. 안 고르면 안내만 뜬다.
+   */
+  storySourceKey?: string;
+  /**
+   * case_story 가 펼칠 고정 지문들. `match` 는 storySourceKey 칸의 값(고른 보기 문구)과
+   * **정확히 같아야** 한다 — 시드에서 choices 와 한 배열로 만들어 어긋나지 않게 한다.
+   */
+  stories?: { match: string; text: string }[];
   /**
    * submit 이 판정할 칸들. 없으면 article-check 의 ARTICLE_RULES 기본값을 쓴다.
    *

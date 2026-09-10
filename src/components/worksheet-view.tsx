@@ -509,8 +509,10 @@ export function WorksheetView({
             note 는 답할 것이 없다. label 로 두면 눌렀을 때 엉뚱한 칸에 커서가 가고,
             읽는 프로그램에는 "답이 없는 입력칸" 으로 들린다.
           */}
-          {question.kind === "note" || question.kind === "scale_result" ? (
-            // scale_result 도 답할 칸이 없어 note 처럼 제목으로만 둔다 (아래에 결과 박스)
+          {question.kind === "note" ||
+          question.kind === "scale_result" ||
+          question.kind === "case_story" ? (
+            // scale_result·case_story 도 답할 칸이 없어 note 처럼 제목으로만 둔다 (아래 박스)
             <p className="block bg-cream t-subhead">
               {named(question.label, studentName, studentId)}
             </p>
@@ -605,7 +607,29 @@ export function WorksheetView({
             <TechExampleChips items={question.examples} note={question.examplesNote} />
           )}
 
-          {question.kind === "note" ? null : question.kind === "echo" ? (
+          {question.kind === "note" ? null : question.kind === "case_story" ? (
+            /*
+              고른 사례의 고정 지문만 펼친다 (11차시). storySourceKey 칸의 답과
+              stories[].match 를 견줘 하나만 보여준다. 안 고르면 안내만 — 고르지 않은
+              사례의 이야기는 감춘다(수행평가라 하나에 집중).
+            */
+            (() => {
+              const picked = (value.answers[question.storySourceKey ?? ""] ?? "").trim();
+              const story = (question.stories ?? []).find((row) => row.match === picked);
+              if (!story) {
+                return (
+                  <p className="t-note">
+                    먼저 위에서 사례를 하나 고르세요. 고른 사례의 이야기가 여기에 나타납니다.
+                  </p>
+                );
+              }
+              return (
+                <div className="rounded-lg border-2 border-ink bg-surface px-4 py-4">
+                  <p className="t-body whitespace-pre-line">{story.text}</p>
+                </div>
+              );
+            })()
+          ) : question.kind === "echo" ? (
             /*
               앞 단계에서 쓴 답. 고치는 칸이 아니라 **보고 옮겨 적으라고** 띄운다.
               한 시간에 여러 단계를 지나면 앞 단계 답이 화면에서 사라지는데,
