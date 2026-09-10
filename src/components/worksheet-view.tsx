@@ -10,6 +10,7 @@ import { ListField } from "@/components/list-field";
 import { RowsField } from "@/components/rows-field";
 import { MoodRecheck } from "@/components/mood-recheck";
 import { MaskingField } from "@/components/masking-field";
+import { PwStrengthField } from "@/components/pw-strength-field";
 import { ScamSim } from "@/components/scam-sim";
 import { SubmitPanel, useJumpToField } from "@/components/submit-panel";
 import { TeacherNotePanel } from "@/components/teacher-note-panel";
@@ -792,6 +793,16 @@ export function WorksheetView({
           ) : question.kind === "masking" ? (
             <MaskingField
               lines={question.maskLines ?? []}
+              value={value.answers[question.key] ?? ""}
+              onChange={(next) => setAnswer(question.key, next)}
+              disabled={disabled}
+            />
+          ) : question.kind === "pw_strength" ? (
+            /*
+              답으로 남는 것은 도달한 최고 등급 한 줄("강함")뿐이다. 친 글자는 어디로도
+              저장·전송하지 않는다 (pw-strength-field 참조).
+            */
+            <PwStrengthField
               value={value.answers[question.key] ?? ""}
               onChange={(next) => setAnswer(question.key, next)}
               disabled={disabled}

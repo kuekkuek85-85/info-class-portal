@@ -457,6 +457,13 @@ export interface WorksheetQuestion {
     | "scam_sim"
     | "masking"
     /**
+     * pw_strength — 비밀번호 강함 체크 체험 (9·10 통합 차시). 가짜 비밀번호를 쳐 보면
+     * 실시간으로 약함/보통/강함/아주 강함이 뜨고, 무엇을 고치면 강해지는지 알려 준다.
+     * masking·scam_sim 처럼 **아무것도 브라우저 밖으로 안 나가고**, 저장하는 것은 도달한
+     * 최고 등급 한 줄뿐이다 (추가 설정 필드 없음, kind 만 — pw-strength-field 참조).
+     */
+    | "pw_strength"
+    /**
      * scale_result — 척도 문항(choice)들의 답을 실시간으로 합산해 "총점 N/만점" 과
      * 결과 구간을 박스로 보여준다 (scale). 입력칸이 아니라 계산 결과 표시라 답을
      * 저장하지 않는다. 계산은 학생 본인 화면에서만 돈다 (scale-score.ts).

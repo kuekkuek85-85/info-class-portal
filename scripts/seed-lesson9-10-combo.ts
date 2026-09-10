@@ -15,9 +15,13 @@
  * ## 같은 통(digital-ethics)을 그대로 쓴다
  *
  * activityId 는 9·10·11차시가 함께 쓰는 `digital-ethics` 통이다. lessonNo 만 910 으로
- * 다를 뿐, **문항 key 는 9·10 원본 그대로 재사용**한다(pi_sim·pi_mask·cyber_essay2).
- * 그래서 오늘 2반이 쓴 한 줄이 11차시 수행평가(디지털 시민 리포트) 화면에서 그대로
+ * 다를 뿐, **속아 보기·논술 문항 key 는 9·10 원본 그대로 재사용**한다(pi_sim·cyber_essay2).
+ * 그래서 오늘 1-2반이 쓴 한 줄이 11차시 수행평가(디지털 시민 리포트) 화면에서 그대로
  * 열린다 — 다른 반과 똑같은 자리에 담긴다.
+ *
+ * worksheet 단계만 다르다. 개인정보 마스킹(pi_mask) 대신 **비밀번호 강함 체크 체험**
+ * (pw_check)을 둔다 — 이 통에 새 key 하나가 더 생기는 것뿐이라 11차 리포트/대시보드는
+ * 그대로다(pi_mask 를 직접 참조하는 곳이 없다). 마스킹은 정상 진도 반에서 여전히 쓴다.
  *
  * ## 40분에 맞춘 압축 (교사 확정)
  *
@@ -26,7 +30,7 @@
  *   0–3   대기·기분·출석
  *   3–8   오늘 할 일 보드(assessment) — 개념 3주제 + 저작권 복습, 읽기용
  *   8–20  한 번 속아 보기(problem, pi_sim) — 피싱·파밍·스미싱·보이스피싱   ← 최우선
- *   20–24 개인정보 마스킹(worksheet, pi_mask) — 짧게 (40분 넘으면 여기부터 축약)
+ *   20–24 비밀번호 강함 체크 체험(worksheet, pw_check) — 짧게 (40분 넘으면 여기부터 축약)
  *   24–36 사이버 폭력 논술 1사례(emotion, cyber_essay2) — 단톡방 언어폭력
  *   36–38 통합 성찰 1문항(reflection)
  *   38–40 다음 시간(progress) — 디지털 시민 리포트(수행평가) 안내 → 태블릿 정리
@@ -36,9 +40,17 @@
  *   · cyverse 메타버스 체험 — **완전 제외.** 자율 링크로도 넣지 않는다.
  *   · 스마트폰 중독 자가진단(sc_q*·scale_result) — 이 차시에선 뺀다. 자율 링크로도 안 넣는다
  *     (40분이 빠듯하다). 위험군 파악이 필요하면 별도 회차에서 다룬다.
- *   · wordwall 개인정보 퀴즈 · security.org 비밀번호 테스트 — 필수 흐름에서 뺀다.
- *     다음 시간 보드에 「자율(선택)」 로만 가볍게 둔다 — 활동을 다 한 사람이 남는 시간에 눌러 보는 것.
+ *   · wordwall 개인정보 퀴즈 — 필수 흐름에서 뺀다. 다음 시간 보드에 「자율(선택)」 로만
+ *     가볍게 둔다 — 활동을 다 한 사람이 남는 시간에 눌러 보는 것.
  *     (요즘은 집에 내주는 과제를 두지 않는다. 어디에도 그런 안내를 넣지 않는다.)
+ *   · security.org 비밀번호 테스트 — 이제 worksheet 정규 활동(비밀번호 강함 체크 체험)과
+ *     겹쳐 자율 링크에서도 뺐다. 체험은 화면 안에서 도는 자립형이라 바깥 링크가 필요 없다.
+ *
+ * ## worksheet 단계 (1-2반 한정 교체)
+ *
+ *   개인정보 마스킹(pi_mask, masking) 대신 **비밀번호 강함 체크 체험**(pw_check,
+ *   pw_strength)을 둔다. 마스킹보다 학생이 직접 쳐 보는 재미가 있고, 개인정보를 지키는
+ *   실천(강한 비밀번호)으로 곧장 이어진다. 마스킹은 정상 진도 반에서 그대로 쓴다.
  */
 
 import { cert, initializeApp } from "firebase-admin/app";
@@ -46,7 +58,6 @@ import { getFirestore } from "firebase-admin/firestore";
 
 import type {
   LessonPlan,
-  MaskLine,
   PhaseContent,
   ScamScene,
   WorksheetQuestion,
@@ -200,47 +211,15 @@ const SCENES: ScamScene[] = [
   },
 ];
 
-/* ──────────────────────────────────────────────────────────────
- * 9차시에서 가져온 것 — 마스킹 문장 (원본 seed-lesson9.ts 그대로)
- * 진짜 배울 것은 학교·학년·반·번호다. 합치면 한 사람이 특정된다.
- * ────────────────────────────────────────────────────────────── */
-const MASK_LINES: MaskLine[] = [
-  {
-    parts: [
-      { text: "안녕하세요," },
-      { text: "저는" },
-      { text: "장평중학교", hide: true },
-      { text: "1학년", hide: true },
-      { text: "4반", hide: true },
-      { text: "12번", hide: true },
-      { text: "김민수", hide: true },
-      { text: "입니다." },
-    ],
-  },
-  {
-    parts: [
-      { text: "궁금한" },
-      { text: "점이" },
-      { text: "있으면" },
-      { text: "010-1234-5678", hide: true },
-      { text: "로" },
-      { text: "연락" },
-      { text: "주세요." },
-      { text: "집은" },
-      { text: "역곡역", hide: true },
-      { text: "근처예요." },
-    ],
-  },
-];
-
 /**
- * 활동지 — 세 조각만 담는다. 자가진단·wordwall·비번테스트·cyverse 는 다 뺐다.
+ * 활동지 — 세 조각만 담는다. 자가진단·wordwall·cyverse 는 다 뺐다.
  *
  *   · problem : pi_sim  — 한 번 속아 보기 (9차 심장)
- *   · worksheet: pi_mask — 개인정보 마스킹 (짧게)
+ *   · worksheet: pw_check — 비밀번호 강함 체크 체험 (짧게)
  *   · emotion : cyber_essay2 — 사이버 폭력 논술 1사례
  *
- * key 는 9·10 원본 그대로다. 같은 digital-ethics 통에 나란히 담기고, 11차시에서 열린다.
+ * pi_sim·cyber_essay2 key 는 9·10 원본 그대로라 11차시에서 열린다. worksheet 만 새 key
+ * (pw_check)다 — 같은 digital-ethics 통에 새로 담기는 것뿐이라 무해하다.
  */
 const WORKSHEET: WorksheetQuestion[] = [
   {
@@ -255,14 +234,13 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 20,
   },
   {
-    key: "pi_mask",
+    key: "pw_check",
     phase: "worksheet",
-    label: "개인정보 마스킹 · 어디까지가 개인정보일까",
+    label: "비밀번호 강하게 · 얼마나 안전할까",
     hint:
-      "아래 자기소개에서 개인정보라고 생각하는 낱말을 눌러 가려 보세요.\n" +
-      "이름과 전화번호만 가리면 될까요? 한 번 더 생각해 보세요.",
-    kind: "masking",
-    maskLines: MASK_LINES,
+      "가짜 비밀번호를 지어서 쳐 보면 강함 정도가 실시간으로 나와요.\n" +
+      "진짜 비밀번호는 절대 치지 마세요! 무엇을 바꾸면 더 강해지는지 살펴봅시다.",
+    kind: "pw_strength",
     maxLength: 20,
   },
   /*
@@ -290,8 +268,7 @@ const WORKSHEET: WorksheetQuestion[] = [
       "않아 다시 그 대화방에 초대되었다. 단체 대화방의 친구들은 계속해서 욕을 했고 심지어는 " +
       "홍길동의 부모님 욕도 하기 시작했다. 홍길동은 화가 매우 났지만 이러한 상황에 어떻게 대처해야 " +
       "할지 몰라 당하고 있을 수밖에 없었다.\n\n" +
-      "→ 홍길동은 어떻게 대처해야 할까요? 자신의 의견을 써 봅시다.(2줄 이상)\n" +
-      "(위 「오늘 할 일 · 대처와 예방」 탭의 순서를 참고하세요.)",
+      "→ 홍길동은 어떻게 대처해야 할까요? 자신의 의견을 써 봅시다.(2줄 이상)",
     kind: "long",
     maxLength: 1000,
   },
@@ -355,10 +332,6 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
             label: "개인정보 퀴즈",
             value: "wordwall.net/ko/resource/73876091 — 이건 개인정보일까? 고르기 퀴즈",
           },
-          {
-            label: "비밀번호 세기",
-            value: "security.org/how-secure-is-my-password — 가짜 비밀번호를 넣어 보기(진짜 금지)",
-          },
         ],
         highlights: [
           "꼭 하지 않아도 됩니다 — 다 한 사람을 위한 선택 활동이에요.",
@@ -379,14 +352,14 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         rows: [
           { label: "학습목표 ①", value: "개인정보가 무엇이고 어떻게 지키는지 설명할 수 있다." },
           { label: "학습목표 ②", value: "사이버 폭력을 예방하고 바르게 대처하는 방법을 실천할 수 있다." },
-          { label: "오늘 순서", value: "한 번 속아 보기 → 개인정보 마스킹 → 사이버 폭력 논술 → 성찰" },
+          { label: "오늘 순서", value: "한 번 속아 보기 → 비밀번호 강하게 → 사이버 폭력 논술 → 성찰" },
         ],
         highlights: [
           "하나만으로는 누군지 몰라도, 다른 것과 합치면 알 수 있으면 그것도 개인정보입니다.",
           "사이버 공간에서 한 일은 현실에도 그대로 영향을 줍니다. 화면 뒤에도 사람이 있어요.",
         ],
       },
-      /* 개인정보란 — 9차 원본 탭. 마스킹에서 "학교 이름도 개인정보인가" 를 판단할 때 되돌아본다 */
+      /* 개인정보란 — 9차 원본 탭. "이름·생일도 개인정보라 비밀번호에 쓰면 안 된다" 를 짚을 때 되돌아본다 */
       {
         label: "개인정보란",
         subtitle: "나를 알아볼 수 있는 정보",
@@ -476,14 +449,14 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   /*
    * 속아 보기(problem)는 파밍 재현에서 바깥 주소로 튕기는 장면이 있어 이탈로 세면 안 된다.
-   * 마스킹·논술(worksheet·emotion)은 안에서 끝나지만, 9·10차와 같은 폭으로 함께 면제해
+   * 비밀번호 체험·논술(worksheet·emotion)은 안에서 끝나지만, 9·10차와 같은 폭으로 함께 면제해
    * 두어 교사 화면이 헛되이 빨개지지 않게 한다.
    */
   focusExempt: ["problem", "worksheet", "emotion"],
   phaseLabels: {
     assessment: "오늘 할 일",
     problem: "한 번 속아 보기",
-    worksheet: "개인정보 마스킹",
+    worksheet: "비밀번호 강하게",
     emotion: "사이버 폭력 논술",
     progress: "다음 시간",
   },
@@ -559,8 +532,8 @@ async function main(): Promise<void> {
 
   console.log(`\nlessonNo: ${LESSON_NO} (1-2반 전용 통합 차시 — 정상 진도 반의 9·10차 계획과 별개)`);
   console.log(`활동 ID: ${ACTIVITY_ID} (9·10·11차 공유 통 — 문항 key 는 원본 그대로, 11차 리포트에서 이어짐)`);
-  console.log("단계: 대기 → 기분 → 오늘 할 일 → 한 번 속아 보기 → 개인정보 마스킹 → 사이버 폭력 논술 → 성찰 → 다음 시간 → 마침");
-  console.log("수업에서 뺀 것: cyverse 체험(완전 제외) · 자가진단(이 차시엔 안 넣음) · wordwall/비번테스트(남는 시간 자율 링크만)");
+  console.log("단계: 대기 → 기분 → 오늘 할 일 → 한 번 속아 보기 → 비밀번호 강하게 → 사이버 폭력 논술 → 성찰 → 다음 시간 → 마침");
+  console.log("수업에서 뺀 것: cyverse 체험(완전 제외) · 자가진단(이 차시엔 안 넣음) · wordwall(남는 시간 자율 링크만)");
   process.exit(0);
 }
 
