@@ -175,6 +175,22 @@ interface DashboardData {
   };
   /** AI 검토가 있는 차시에서만 온다. 없는 차시에서는 서버가 읽지도 않는다 */
   aiQuota?: { ok: number; fallback: number; left: number } | null;
+  /** 도우미 선발 리더보드 (12차). 그 외 차시는 null */
+  leaderboard?: LeaderRow[] | null;
+  /** 교사가 확정 저장한 도우미 명단(있으면) */
+  helpersSaved?: { studentIds: string[]; updatedAt: number } | null;
+}
+
+/** 리더보드 한 줄 — 서버가 순위·도우미 여부까지 계산해 보낸다 (dashboard route) */
+interface LeaderRow {
+  studentId: string;
+  name: string;
+  number: number | null;
+  typing: number;
+  diag: number;
+  composite: number;
+  rank: number;
+  isHelper: boolean;
 }
 
 export default function DashboardPage() {
@@ -568,6 +584,129 @@ function ProgressBoard({
           })}
         </div>
       )}
+    </section>
+  );
+}
+
+/** 도우미 선발 인원 (교사 확정: 7명) */
+const HELPER_TARGET = 7;
+
+/**
+ * 도우미 선발 리더보드 (12차).
+ *
+ * 종합점수(진단 70% + 타자 30%)로 전원 실명 순위를 보여준다 — 경쟁을 유도하려고 전자칠판에
+ * 띄우는 것이 목적이라 이름을 그대로 낸다(교사 확정). 상위 7명을 도우미로 강조한다.
+ * 「도우미 7명 확정」을 누르면 지금 순위의 상위 7명을 반별로 저장해 이후 차시가 읽는다.
+ */
+function Leaderboard({
+  rows,
+  masked,
+  sessionId,
+  helpersSaved,
+  onSaved,
+}: {
+  rows: LeaderRow[];
+  masked: boolean;
+  sessionId: string;
+  helpersSaved: { studentIds: string[]; updatedAt: number } | null;
+  onSaved: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  const top = rows.slice(0, HELPER_TARGET);
+  const savedSet = new Set(helpersSaved?.studentIds ?? []);
+
+  async function confirm() {
+    setBusy(true);
+    setMsg("");
+    try {
+      const response = await fetch("/api/teacher/helpers", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sessionId, studentIds: top.map((r) => r.studentId) }),
+      });
+      const result = await response.json();
+      if (result?.ok) {
+        setMsg("저장했어요 — 이후 차시가 이 명단을 읽습니다.");
+        onSaved();
+      } else {
+        setMsg(result?.message ?? "저장하지 못했습니다.");
+      }
+    } catch {
+      setMsg("저장하지 못했습니다.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-3 rounded-xl border border-line p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="t-card-title">도우미 선발 — 실시간 순위</h2>
+        <span className="text-sm text-muted">종합 = 진단 70% + 타자 30% · 상위 {HELPER_TARGET}명 도우미</span>
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="t-body">아직 점수를 낸 학생이 없습니다.</p>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-line">
+          <table className="w-full min-w-[420px] border-collapse text-sm">
+            <thead className="bg-card text-left text-xs text-muted">
+              <tr>
+                <th className="px-3 py-2">순위</th>
+                <th className="px-3 py-2">학생</th>
+                <th className="px-3 py-2 text-right">종합</th>
+                <th className="px-3 py-2 text-right">진단</th>
+                <th className="px-3 py-2 text-right">타자</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr
+                  key={row.studentId}
+                  className={`border-t border-line align-top ${row.isHelper ? "bg-lime font-semibold" : ""}`}
+                >
+                  <td className="px-3 py-2 tabular-nums">
+                    {row.rank}
+                    {row.isHelper && <span className="ml-1">⭐</span>}
+                  </td>
+                  <td className="px-3 py-2">
+                    {masked ? `${row.number ?? row.studentId.slice(3)}번` : row.name || "임시"}
+                    {savedSet.has(row.studentId) && (
+                      <span className="ml-1 text-xs text-muted">(확정됨)</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">{row.composite}</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-muted">{row.diag}</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-muted">{row.typing}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={() => void confirm()}
+          disabled={busy || top.length === 0}
+          className="pill pill-primary text-sm disabled:opacity-40"
+        >
+          {busy ? "저장 중…" : `도우미 ${HELPER_TARGET}명 확정 저장`}
+        </button>
+        {helpersSaved && (
+          <span className="text-xs text-muted">
+            저장된 명단 {helpersSaved.studentIds.length}명 · 다시 누르면 현재 순위로 덮어씁니다
+          </span>
+        )}
+        {msg && <span className="text-sm">{msg}</span>}
+      </div>
+      <p className="t-caption text-muted">
+        명단 수정(결석·판단 보정)은 후속 기능입니다 — 지금은 자동 상위 {HELPER_TARGET}명을 확정하거나
+        다시 눌러 최신 순위로 덮어쓸 수 있어요.
+      </p>
     </section>
   );
 }
@@ -1090,6 +1229,20 @@ function Dashboard() {
           */}
           {data?.session && (session?.activity?.worksheet ?? []).some((q) => q.kind === "submit") && (
             <ProgressCards rows={rows} masked={masked} onRefresh={reload} />
+          )}
+
+          {/*
+            도우미 선발 리더보드 (12차) — 타자·진단 점수가 있는 차시에서만 뜬다.
+            서버가 leaderboard 를 계산해 보내고, 없으면 null 이라 여기가 통째로 접힌다.
+          */}
+          {data?.session && data?.leaderboard && (
+            <Leaderboard
+              rows={data.leaderboard}
+              masked={masked}
+              sessionId={data.session.id}
+              helpersSaved={data.helpersSaved ?? null}
+              onSaved={reload}
+            />
           )}
 
           {reviewing && data?.session && (

@@ -50,6 +50,11 @@ export const COLLECTIONS = {
    * 메모리로 세면 서버리스 인스턴스마다 따로 놀아 비용 상한이 되지 못한다 (ai-quota.ts).
    */
   aiQuota: "aiQuota",
+  /**
+   * 반별 도우미 명단 (12차 도우미 선발). 문서 ID = 반 번호 문자열("1"~"4").
+   * 이후 프로그래밍·피지컬 차시가 반 단위로 읽어 모둠 도우미로 세운다.
+   */
+  helpers: "helpers",
   meta: "meta",
 } as const;
 
@@ -766,6 +771,40 @@ export async function listArtifactsByStudent(studentId: string): Promise<Artifac
     db().collection(COLLECTIONS.artifacts).where("studentId", "==", studentId),
   );
   return rows.sort((a, b) => a.activityId.localeCompare(b.activityId));
+}
+
+// --------------------------------------------------------------- 도우미 명단
+
+/**
+ * 반별 도우미 명단 (12차 도우미 선발). 문서 ID = 반 번호 문자열.
+ *
+ * 교사가 대시보드에서 자동 top7 을 확인해 「확정」을 누르면 여기 저장된다. 이후
+ * 프로그래밍·피지컬 차시가 반 단위로 읽어 모둠 도우미로 세운다. 한 반의 명단을 통째로
+ * 덮어쓴다(교사 혼자 쓰는 도구라 쓰기 경합이 없다).
+ */
+export interface ClassHelpers {
+  classNo: number;
+  /** 순위대로 저장한 학번 목록(상위가 앞) */
+  studentIds: string[];
+  /** 확정한 근거 세션 — 나중에 어느 선발에서 나온 명단인지 알 수 있게 */
+  sessionId: string;
+  updatedAt: number;
+}
+
+export async function getClassHelpers(classNo: number): Promise<ClassHelpers | null> {
+  const doc = await db().collection(COLLECTIONS.helpers).doc(String(classNo)).get();
+  return doc.exists ? (doc.data() as ClassHelpers) : null;
+}
+
+export async function saveClassHelpers(
+  classNo: number,
+  studentIds: string[],
+  sessionId: string,
+): Promise<void> {
+  await db()
+    .collection(COLLECTIONS.helpers)
+    .doc(String(classNo))
+    .set({ classNo, studentIds, sessionId, updatedAt: Date.now() });
 }
 
 /**

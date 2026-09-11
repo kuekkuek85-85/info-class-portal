@@ -400,6 +400,31 @@ export interface MaskLine {
   parts: { text: string; hide?: boolean }[];
 }
 
+/**
+ * 진단평가 문항 하나 (12차 도우미 선발의 diagnostic).
+ *
+ * 자동 채점이 가능한 두 꼴만 둔다:
+ *  · mc   — 객관식. choices 중 answerIndex 가 정답. 출력 예측·오류 찾기·줄 순서(보기로
+ *           제시)를 모두 이 꼴로 담는다.
+ *  · fill — 한 줄(또는 한 낱말) 채우기. answer 와 정확일치로 채점한다(공백·대소문자 정규화).
+ *
+ * code 가 있으면 지문 코드로 등폭 표시한다. explain 은 채점 뒤 해설로 보여준다.
+ */
+export interface DiagnosticItem {
+  type: "mc" | "fill";
+  prompt: string;
+  /** 지문 코드(선택). 등폭으로 보여준다 */
+  code?: string;
+  /** mc 의 보기 */
+  choices?: string[];
+  /** mc 의 정답 index */
+  answerIndex?: number;
+  /** fill 의 정답(정확일치, 공백·대소문자 정규화) */
+  answer?: string;
+  /** 채점 뒤 해설(선택) */
+  explain?: string;
+}
+
 export interface WorksheetQuestion {
   /** 답을 저장할 키. artifacts.answers 의 키가 된다 */
   key: string;
@@ -456,6 +481,18 @@ export interface WorksheetQuestion {
     | "mood_recheck"
     | "scam_sim"
     | "masking"
+    /**
+     * typing_game — 파이썬 타자 게임 (12차 도우미 선발). 파이썬 키워드·코드 줄을
+     * 정확·빠르게 입력하고, 정확도+속도를 0~100 점수로 낸다. 최고점 한 줄만 answers 에
+     * 저장한다 — 대시보드 리더보드가 이 값을 읽어 순위에 쓴다 (typing-game 참조).
+     */
+    | "typing_game"
+    /**
+     * diagnostic — 진단평가(자동 채점, 12차 도우미 선발). 출력 예측·오류 찾기·순서·빈칸
+     * 채우기 문항을 객관식/정확일치로 채점해 0~100 점수를 낸다. 점수 한 줄만 answers 에
+     * 저장한다 — 리더보드가 읽는다 (diagnostic-quiz · diagnosticItems 참조).
+     */
+    | "diagnostic"
     /**
      * scale_result — 척도 문항(choice)들의 답을 실시간으로 합산해 "총점 N/만점" 과
      * 결과 구간을 박스로 보여준다 (scale). 입력칸이 아니라 계산 결과 표시라 답을
@@ -562,6 +599,13 @@ export interface WorksheetQuestion {
    * 가리면 ●●● 이 된다.
    */
   maskLines?: MaskLine[];
+  /**
+   * typing_game 이 입력하게 할 파이썬 낱말·코드 줄 (12차). 순서대로 한 줄씩 친다.
+   * 안 주면 컴포넌트 기본 목록을 쓴다 (typing-game 참조).
+   */
+  typingPrompts?: string[];
+  /** diagnostic 이 낼 진단 문항들 (12차). 자동 채점해 0~100 점수를 answers 에 남긴다 */
+  diagnosticItems?: DiagnosticItem[];
   /** 칸 옆에 복사 단추를 붙인다 (다른 곳에 붙여 넣을 값일 때) */
   copyable?: boolean;
   /**

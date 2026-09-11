@@ -2,6 +2,7 @@ import { readQuotaSummary } from "@/lib/ai-quota";
 import { fail, guard, ok } from "@/lib/api";
 import { todayKST, isDateKey } from "@/lib/datetime";
 import {
+  getClassHelpers,
   getSession,
   listArtifacts,
   listAttendance,
@@ -80,6 +81,31 @@ function bucketOf(ratio: number): "red" | "orange" | "yellow" | "lime" | "green"
   if (ratio >= 0.4) return "yellow";
   if (ratio >= 0.2) return "orange";
   return "red";
+}
+
+/* ── 도우미 선발 리더보드 (12차) ──
+ * 종합점수 = 진단 × 0.7 + 타자 × 0.3. 두 점수 모두 0~100 이라 종합도 0~100 이다.
+ * 상위 HELPER_COUNT 명이 도우미. 교사 확정값(반별 helpers 문서)과 별개로 매 폴링마다
+ * 학생 산출(작품 answers)에서 실시간 계산한다. */
+const HELPER_COUNT = 7;
+const W_DIAG = 0.7;
+const W_TYPING = 0.3;
+
+/** 점수 문자열을 0~100 정수로. 비었거나 깨지면 0 (아직 안 한 학생) */
+function clampScore(raw: unknown): number {
+  const n = Number(raw);
+  return Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : 0;
+}
+
+interface LeaderRow {
+  studentId: string;
+  name: string;
+  number: number | null;
+  typing: number;
+  diag: number;
+  composite: number;
+  rank: number;
+  isHelper: boolean;
 }
 
 /**
@@ -313,6 +339,58 @@ export async function GET(request: Request) {
     const hasAiReview = (session.activity?.worksheet ?? []).some((q) => q.kind === "ai_review");
     const aiQuota = hasAiReview ? await readQuotaSummary(session.id).catch(() => null) : null;
 
+    /*
+     * 도우미 선발 리더보드 (12차).
+     *
+     * 이 차시에서만 작품(artifact)을 한 번 읽는다 — hai 링크 판정과 같은 방식이라 다른
+     * 차시의 폴링 비용에는 영향이 없다. 타자·진단 점수를 학생별로 모아 종합점수로
+     * 순위를 매기고, 상위 7명을 도우미로 표시한다. 교사가 확정한 명단(helpers 문서)도
+     * 함께 읽어 "저장됨" 을 보여준다.
+     */
+    const helperWs = session.activity?.worksheet ?? [];
+    const typingKey = helperWs.find((q) => q.kind === "typing_game")?.key ?? "";
+    const diagKey = helperWs.find((q) => q.kind === "diagnostic")?.key ?? "";
+    const isHelperSelection = Boolean(typingKey || diagKey);
+
+    let leaderboard: LeaderRow[] | null = null;
+    let helpersSaved: { studentIds: string[]; updatedAt: number } | null = null;
+
+    if (isHelperSelection) {
+      const [arts, saved] = await Promise.all([
+        listArtifacts(activityIdFor(session)).catch(() => []),
+        getClassHelpers(session.classNo).catch(() => null),
+      ]);
+      const scoreByStudent = new Map<string, { typing: number; diag: number }>();
+      for (const art of arts) {
+        scoreByStudent.set(art.studentId, {
+          typing: typingKey ? clampScore(art.answers?.[typingKey]) : 0,
+          diag: diagKey ? clampScore(art.answers?.[diagKey]) : 0,
+        });
+      }
+      const board = attendance.map((entry) => {
+        const s = scoreByStudent.get(entry.studentId) ?? { typing: 0, diag: 0 };
+        const composite = Math.round(s.diag * W_DIAG + s.typing * W_TYPING);
+        return {
+          studentId: entry.studentId,
+          name: nameOf.get(entry.studentId) ?? "",
+          number: roster.find((r) => r.studentId === entry.studentId)?.number ?? null,
+          typing: s.typing,
+          diag: s.diag,
+          composite,
+        };
+      });
+      // 순위: 종합 desc → 동점이면 진단 → 타자 → 학번
+      board.sort(
+        (a, b) =>
+          b.composite - a.composite ||
+          b.diag - a.diag ||
+          b.typing - a.typing ||
+          a.studentId.localeCompare(b.studentId),
+      );
+      leaderboard = board.map((row, i) => ({ ...row, rank: i + 1, isHelper: i < HELPER_COUNT }));
+      helpersSaved = saved ? { studentIds: saved.studentIds, updatedAt: saved.updatedAt } : null;
+    }
+
     return ok({
       date,
       sessions,
@@ -327,6 +405,10 @@ export async function GET(request: Request) {
        * 다른 방법으로 넘어가는 판단을 3분 안에 내려야 한다.
        */
       aiQuota,
+      /** 도우미 선발 리더보드 (12차). 그 외 차시는 null 이라 화면에서 통째로 접힌다 */
+      leaderboard,
+      /** 교사가 확정 저장한 도우미 명단(있으면). 없으면 null */
+      helpersSaved,
       stats: {
         rosterCount: roster.filter((s) => !s.temporary).length,
         joinedCount: attendance.length,

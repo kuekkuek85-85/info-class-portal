@@ -9,8 +9,10 @@ import { ImageField } from "@/components/image-field";
 import { ListField } from "@/components/list-field";
 import { RowsField } from "@/components/rows-field";
 import { MoodRecheck } from "@/components/mood-recheck";
+import { DiagnosticQuiz } from "@/components/diagnostic-quiz";
 import { MaskingField } from "@/components/masking-field";
 import { ScamSim } from "@/components/scam-sim";
+import { TypingGame } from "@/components/typing-game";
 import { SubmitPanel, useJumpToField } from "@/components/submit-panel";
 import { TeacherNotePanel } from "@/components/teacher-note-panel";
 import { ArtifactCanvas } from "@/components/artifact-canvas";
@@ -845,6 +847,22 @@ export function WorksheetView({
           ) : question.kind === "masking" ? (
             <MaskingField
               lines={question.maskLines ?? []}
+              value={value.answers[question.key] ?? ""}
+              onChange={(next) => setAnswer(question.key, next)}
+              disabled={disabled}
+            />
+          ) : question.kind === "typing_game" ? (
+            /* 파이썬 타자 게임 — 최고점 한 줄만 answers 에 저장(리더보드가 읽음) */
+            <TypingGame
+              prompts={question.typingPrompts}
+              value={value.answers[question.key] ?? ""}
+              onChange={(next) => setAnswer(question.key, next)}
+              disabled={disabled}
+            />
+          ) : question.kind === "diagnostic" ? (
+            /* 진단평가 자동 채점 — 최고점 한 줄만 answers 에 저장(리더보드가 읽음) */
+            <DiagnosticQuiz
+              items={question.diagnosticItems ?? []}
               value={value.answers[question.key] ?? ""}
               onChange={(next) => setAnswer(question.key, next)}
               disabled={disabled}
