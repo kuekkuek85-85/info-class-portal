@@ -61,7 +61,20 @@ interface SessionRow {
   activity?: {
     activityId: string;
     places?: string[];
-    worksheet?: { key: string; phase?: LessonPhase; kind?: string }[];
+    /*
+      검토 패널이 문서 유형(기사/논설문)을 판별하고 논설문 섹션 순서를 그리는 데
+      쓰는 필드까지 함께 받는다 (teacher-review-panel 의 ReviewWorksheetItem).
+    */
+    worksheet?: {
+      key: string;
+      phase?: LessonPhase;
+      kind?: string;
+      label?: string;
+      confirmLock?: boolean;
+      storySourceKey?: string;
+      stories?: { match: string; text: string; image?: string }[];
+      submitFields?: { key: string; label: string; minSentences: number; mode?: "list" }[];
+    }[];
     /** 감정을 쓰는 차시는 감상을 막는다 (types.ts 의 galleryEnabled) */
     galleryEnabled?: boolean;
   };
@@ -1085,6 +1098,8 @@ function Dashboard() {
               studentId={reviewing.studentId}
               who={reviewing.who}
               selfCheck={reviewing.selfCheck}
+              /* 문서 유형(기사/논설문) 판별용 활동지 스냅샷 */
+              worksheet={session?.activity?.worksheet ?? []}
               /* 보내고 나면 대기 줄을 바로 다시 읽는다 — 다음 학생으로 이어서 간다 */
               onDone={() => {
                 setReviewing(null);
