@@ -621,6 +621,41 @@ export function WorksheetView({
           )}
 
           {/*
+            읽기용 코드 블록 — 고쳐 쓸 스타터 코드 (프로그래밍 단원, 12차~).
+
+            readonly 등폭 textarea 라 파이썬 들여쓰기가 그대로 보존된다 (hint 의
+            whitespace-pre-line 은 여러 칸 공백을 뭉개서 파이썬에 못 쓴다). 복사 단추는
+            copyText 와 같은 폴백을 쓴다 — 클립보드가 막히면 칸을 골라 준다. 학생은 이걸
+            복사해 외부 편집기에 붙여 고쳐 쓴다.
+          */}
+          {question.code && (
+            <div className="flex flex-col gap-2">
+              <textarea
+                id={`ws-code-${question.key}`}
+                readOnly
+                value={question.code}
+                rows={question.code.split("\n").length}
+                spellCheck={false}
+                onFocus={(event) => event.currentTarget.select()}
+                className="field font-mono text-sm"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  void copy(`${question.key}__code`, question.code ?? "", `ws-code-${question.key}`)
+                }
+                className="pill pill-secondary t-body-sm self-start"
+              >
+                {copied === `${question.key}__code`
+                  ? "복사됐어요"
+                  : copied === `${question.key}__code__manual`
+                    ? "골라 뒀어요 — Ctrl+C"
+                    : "코드 복사하기"}
+              </button>
+            </div>
+          )}
+
+          {/*
             주소를 글자로 보여주지 않고 누를 수 있게 한다. 캔바 초대 주소는 토큰이 붙어
             100자가 넘어서, 옮겨 적으라고 하면 그 자리에서 수업이 멈춘다.
             새 창으로 연다 — 같은 창에서 나가면 쓰던 답이 날아간다.
