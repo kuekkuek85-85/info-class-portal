@@ -928,7 +928,7 @@ export function WorksheetView({
                         key={choice}
                         type="button"
                         // 누른 것을 다시 누르면 풀린다. 잘못 눌러 놓고 못 바꾸면 답답하다
-                        // (단 잠긴 뒤에는 못 바꾼다)
+                        // (잠긴 뒤에는 아래 「다른 사례로 바꾸기」로 풀고 다시 고른다)
                         onClick={() => setAnswer(question.key, on ? "" : choice)}
                         aria-pressed={on}
                         disabled={disabled || locked}
@@ -943,7 +943,19 @@ export function WorksheetView({
 
                   {question.confirmLock &&
                     (locked ? (
-                      <p className="t-note">확정됨 🔒 — 바꾸려면 선생님께 말하세요.</p>
+                      <>
+                        <p className="t-note">이 사례로 확정했어요 ✓</p>
+                        {/* 잘못 골랐으면 학생이 스스로 풀어 다시 고를 수 있다. 풀면
+                            아래 칸이 잠시 잠겼다가, 새 사례를 다시 확정하면 열린다. */}
+                        <button
+                          type="button"
+                          onClick={() => setAnswer(lockKey, "")}
+                          disabled={disabled}
+                          className="pill pill-secondary t-body-sm self-start disabled:opacity-35"
+                        >
+                          다른 사례로 바꾸기
+                        </button>
+                      </>
                     ) : (
                       <>
                         <button
