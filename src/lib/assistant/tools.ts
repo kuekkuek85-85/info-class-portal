@@ -5,6 +5,7 @@ import {
   getSession,
   listAllSessions,
   listArtifactsByStudent,
+  listFeedbacksByOwners,
   listLessonPlans,
   listMoodEntriesByStudent,
   listMoodEntriesByStudents,
@@ -14,6 +15,7 @@ import {
   listStudents,
 } from "@/lib/db";
 import { getMood } from "@/lib/mood";
+import { TEACHER_AUTHOR_ID } from "@/lib/types";
 import type { ClassNo, ClassSession, MoodEntry, Student } from "@/lib/types";
 
 import { COURSES, courseKeyFromText, courseOf, type CourseKey } from "./courses";
@@ -288,6 +290,88 @@ async function classEmotions(args: Record<string, unknown>, ctx: ToolContext): P
   };
 }
 
+async function topFeedback(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult> {
+  const classNo = num(args.class);
+  const group = str(args.group);
+
+  let roster: Student[];
+  let courseKey: CourseKey;
+  if (group) {
+    roster = await listRoster({ classNo: 1 as ClassNo, groupKey: group });
+    courseKey = courseOf({ groupKey: group }).key;
+  } else if (classNo !== undefined && classNo >= 1 && classNo <= 4) {
+    roster = await listStudents(classNo as ClassNo);
+    courseKey = "informatics";
+  } else {
+    return { result: { 오류: "반(class 1~4) 또는 분반(group)을 알려주세요." } };
+  }
+  roster = roster.filter((s) => !s.temporary);
+  if (roster.length === 0) return { result: { 작품: [], 안내: "그 반에 학생이 없어요." } };
+
+  const rosterById = new Map(roster.map((s) => [s.studentId, s]));
+  const feedbacks = await listFeedbacksByOwners(roster.map((s) => s.studentId));
+
+  // 작품(artifactId)별로 동료 피드백을 센다. 교사 피드백은 제외 — '동료' 검토가 주제다.
+  type Agg = {
+    artifactId: string;
+    ownerId: string;
+    count: number;
+    withText: number;
+    reactions: Record<string, number>;
+  };
+  const byArtifact = new Map<string, Agg>();
+  for (const f of feedbacks) {
+    if (f.authorId === TEACHER_AUTHOR_ID) continue;
+    let agg = byArtifact.get(f.artifactId);
+    if (!agg) {
+      agg = { artifactId: f.artifactId, ownerId: f.ownerId, count: 0, withText: 0, reactions: {} };
+      byArtifact.set(f.artifactId, agg);
+    }
+    agg.count += 1;
+    if (str(f.foundTech).trim() || str(f.question).trim()) agg.withText += 1;
+    const reacts = f.reactions ?? (f.reaction ? [f.reaction] : []);
+    for (const r of reacts) agg.reactions[r] = (agg.reactions[r] ?? 0) + 1;
+  }
+
+  if (byArtifact.size === 0) {
+    return { result: { 작품: [], 안내: "이 반에서 받은 동료 피드백이 아직 없어요." } };
+  }
+
+  const limit = Math.min(Math.max(num(args.limit) ?? 5, 1), 20);
+  const 작품 = [...byArtifact.values()]
+    .sort((a, b) => b.count - a.count || b.withText - a.withText)
+    .slice(0, limit)
+    .map((agg) => {
+      const owner = rosterById.get(agg.ownerId);
+      const activityId = agg.artifactId.includes("__")
+        ? agg.artifactId.slice(0, agg.artifactId.lastIndexOf("__"))
+        : agg.artifactId;
+      const 근거 = addSource(ctx, {
+        label: owner ? `${owner.classNo}반 ${owner.number}번 · ${activityId}` : activityId,
+        course: courseKey,
+      });
+      return {
+        근거,
+        작품주인: ctx.pseud.pseudoFor(agg.ownerId),
+        활동: activityId,
+        받은피드백수: agg.count,
+        글피드백수: agg.withText,
+        반응: agg.reactions,
+      };
+    });
+
+  return {
+    result: {
+      반: group || `${classNo}반`,
+      작품수: 작품.length,
+      작품,
+      안내:
+        "동료 피드백을 많이 받은 작품 순입니다. 상위 작품을 근거와 함께 추천하세요. " +
+        "반·번호·실명은 근거(출처)에만 있으니 답에 지어내지 말고, 필요하면 '근거를 보라'고 안내하세요.",
+    },
+  };
+}
+
 async function findSessions(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult> {
   const date = str(args.date);
   const wantCourse = str(args.course) ? courseKeyFromText(str(args.course)) : null;
@@ -422,11 +506,16 @@ function maskRow(
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(row)) {
     if (key === "id" || key === "studentId" || key === "name") continue; // 정체·문서ID(학번 포함) 제외
+    if (key === "ownerId" || key === "authorId") continue; // 학번 → 아래에서 가명(작품주인·작성자)으로
     if (key === "number" || key === "classNo") continue; // 반·번호(준식별자)는 모델로 보내지 않는다 — 재식별 차단
     if (meta.heavyFields.includes(key)) continue;
     out[key] = meta.textFields.includes(key) ? maskDeep(value, ctx) : value;
   }
   if (typeof row.studentId === "string") out["학생"] = ctx.pseud.pseudoFor(row.studentId);
+  // 동료 피드백: 작품 주인·작성자도 학번이라 가명으로. 교사가 쓴 것은 '선생님'.
+  if (typeof row.ownerId === "string") out["작품주인"] = ctx.pseud.pseudoFor(row.ownerId);
+  if (typeof row.authorId === "string")
+    out["작성자"] = row.authorId === TEACHER_AUTHOR_ID ? "선생님" : ctx.pseud.pseudoFor(row.authorId);
 
   // 출처: 날짜·세션이 있으면 그 수업으로 점프. 세션 자체(classSessions)는 문서ID 가 세션ID.
   const date = typeof row.date === "string" ? row.date : undefined;
@@ -470,7 +559,9 @@ async function queryData(args: Record<string, unknown>, ctx: ToolContext): Promi
   // 학생 참조(가명 '학생A')를 학번으로 번역. 그 외 값은 타입 정규화.
   for (const f of filters) {
     if (f.field === "학생" || f.field === "student") f.field = "studentId";
-    if (f.field === "studentId") {
+    if (f.field === "작품주인") f.field = "ownerId";
+    if (f.field === "작성자") f.field = "authorId";
+    if (f.field === "studentId" || f.field === "ownerId" || f.field === "authorId") {
       if (typeof f.value === "string") f.value = ctx.pseud.realFor(f.value) ?? f.value;
       else if (Array.isArray(f.value)) f.value = f.value.map((v) => (typeof v === "string" ? ctx.pseud.realFor(v) ?? v : v));
     } else {
@@ -521,6 +612,7 @@ export const toolExecutors: Record<string, (args: Record<string, unknown>, ctx: 
   studentWork,
   studentEmotions,
   classEmotions,
+  topFeedback,
   findSessions,
   lessonContent: (args) => lessonContent(args),
   queryData,
@@ -575,6 +667,19 @@ export const TOOL_DECLARATIONS = [
       properties: {
         class: { type: "INTEGER", description: "반 번호(1~4). 정보 정규수업." },
         group: { type: "STRING", description: "분반 열쇠(hai-tue-1 등). 선택과목일 때." },
+      },
+    },
+  },
+  {
+    name: "topFeedback",
+    description:
+      "한 반(또는 분반)에서 동료 피드백을 많이 받은 작품을 순위로 집계한다. '동료 피드백 많이 받은 작품 추천' 처럼 작품을 피드백 수로 줄 세울 때 반드시 이 도구를 쓴다 — 작품을 하나씩 돌지 마라. 작품마다 작품주인(가명)·받은 피드백 수·글 피드백 수·이모지 반응 집계가 온다.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        class: { type: "INTEGER", description: "반 번호(1~4). 정보 정규수업." },
+        group: { type: "STRING", description: "분반 열쇠(hai-tue-1 등). 선택과목일 때." },
+        limit: { type: "INTEGER", description: "상위 몇 개(기본 5, 최대 20)" },
       },
     },
   },
