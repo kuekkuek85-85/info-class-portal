@@ -250,6 +250,15 @@ const WORKSHEET: WorksheetQuestion[] = [
       "이 점수는 도우미 순위의 30%에 들어갑니다.",
     kind: "typing_game",
     typingPrompts: TYPING_PROMPTS,
+    /*
+     * 완성된 외부 타자게임 URL 을 넣으면 내장 게임 대신 그 앱을 iframe 으로 임베드한다
+     * (비우면 내장 게임 그대로). 외부 앱 규격:
+     *  · 끝날 때 window.parent.postMessage({ type: "typing-score", score: 0~100 }, "*") 전송
+     *  · score 는 0~100 정수(포털이 유한수·범위 clamp 후 최고점만 helper_typing 에 저장)
+     *  · 포털 오리진에서의 프레이밍을 허용해야 한다(X-Frame-Options/frame-ancestors 로 막지 말 것)
+     *  · https 로 서빙(포털 CSP frame-src 'self' https:)
+     */
+    typingUrl: "",
     maxLength: 0,
   },
 

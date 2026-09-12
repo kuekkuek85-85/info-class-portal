@@ -855,6 +855,7 @@ export function WorksheetView({
             /* 파이썬 타자 게임 — 최고점 한 줄만 answers 에 저장(리더보드가 읽음) */
             <TypingGame
               prompts={question.typingPrompts}
+              typingUrl={question.typingUrl}
               value={value.answers[question.key] ?? ""}
               onChange={(next) => setAnswer(question.key, next)}
               disabled={disabled}

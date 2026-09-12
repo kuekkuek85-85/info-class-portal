@@ -604,6 +604,14 @@ export interface WorksheetQuestion {
    * 안 주면 컴포넌트 기본 목록을 쓴다 (typing-game 참조).
    */
   typingPrompts?: string[];
+  /**
+   * 외부 타자게임 웹앱 주소 (12차, 선택). **있으면** 내장 타자게임 대신 이 URL 을
+   * iframe 으로 얹고, 그 앱이 끝날 때 보내는 점수 메시지
+   * (`window.parent.postMessage({ type: "typing-score", score: 0~100 }, "*")`)를 받아
+   * 최고점을 helper_typing 에 저장한다(ScamSim 의 postMessage 수신과 같은 방식). **없으면/빈
+   * 문자열**이면 내장 게임 그대로다 — 저장 키(helper_typing)와 리더보드는 어느 쪽이든 같다.
+   */
+  typingUrl?: string;
   /** diagnostic 이 낼 진단 문항들 (12차). 자동 채점해 0~100 점수를 answers 에 남긴다 */
   diagnosticItems?: DiagnosticItem[];
   /** 칸 옆에 복사 단추를 붙인다 (다른 곳에 붙여 넣을 값일 때) */
