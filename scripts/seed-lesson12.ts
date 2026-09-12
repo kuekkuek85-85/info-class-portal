@@ -24,7 +24,7 @@
  *
  *   0–3   대기·기분·출석
  *   3–8   오늘 할 일 보드 — 도우미 선발 안내 + 파이썬 아주 조금(문법 미니, 읽기용)
- *   8–13  파이썬 문법 미리보기(worksheet 첫 카드, print·변수·for·if 를 코드로)
+ *   8–13  파이썬 문법 미리보기(worksheet 첫 카드, print·변수·연산 을 코드로 — 첫 진단이라 제어문 제외)
  *   13–23 파이썬 타자 게임(typing_game) — 정확+속도 0~100
  *   23–35 진단평가 10문항(diagnostic) — 자동 채점 0~100
  *   35–38 성찰
@@ -111,35 +111,34 @@ name = "지민"
 age = 14
 print(name)
 
-# for — 여러 번 반복하기
-for i in range(3):
-    print(i)      # 0, 1, 2 가 차례로
-
-# if — 조건에 따라 다르게
-if age > 10:
-    print("열 살보다 크다")`;
+# 연산 — 숫자는 계산, 글자는 이어 붙이기
+print(3 + 4)              # 7
+print(age + 1)            # 15
+print("안녕" + "하세요")   # 안녕하세요`;
 
 /* ──────────────────────────────────────────────────────────────
  * 파이썬 타자 게임 프롬프트 — 키워드에서 짧은 코드 줄로.
  * ────────────────────────────────────────────────────────────── */
 const TYPING_PROMPTS = [
   "print",
-  "for",
-  "if",
-  "range(5)",
+  "name",
   'print("Hello")',
-  "name = 10",
-  "for i in range(3):",
-  "if x > 5:",
+  "age = 14",
+  "x = 3 + 4",
+  "price = 1000",
+  'print("2" + "3")',
   "total = a + b",
+  "print(x + y)",
   "print(name)",
 ];
 
 /* ──────────────────────────────────────────────────────────────
- * 진단 10문항 (초안 — 선생님이 고칠 것). 문법 + 컴퓨팅 사고.
- * 출력 예측 / 오류 찾기 / 줄 순서(보기로) / 빈칸 채우기 혼합. 모두 자동 채점.
+ * 진단 10문항 (교사 확정). 첫 진단이라 **출력·변수·연산만** — if·for 등 제어문은 뺀다.
+ * 출력 예측 / 오류 찾기 / 빈칸 채우기. 쉬움 3 → 중 3 → 변별 4(우선순위·재대입·스냅샷·빈칸연산).
+ * 모두 자동 채점(객관식 index, 빈칸 정확일치).
  * ────────────────────────────────────────────────────────────── */
 const DIAGNOSTIC: DiagnosticItem[] = [
+  /* ── 쉬움 (전원 성공) — 출력·연산·변수 ── */
   {
     type: "mc",
     prompt: "이 코드를 실행하면 화면에 무엇이 나올까요?",
@@ -151,18 +150,28 @@ const DIAGNOSTIC: DiagnosticItem[] = [
   {
     type: "mc",
     prompt: "출력 결과는?",
-    code: "x = 3\ny = 4\nprint(x + y)",
-    choices: ["7", "34", "x + y", "12"],
+    code: "print(3 + 4)",
+    choices: ["7", "34", "3 + 4", "오류가 난다"],
     answerIndex: 0,
-    explain: "x 와 y 는 숫자라서 + 는 더하기. 3 + 4 = 7.",
+    explain: "숫자끼리 + 는 더하기예요. 3 + 4 = 7.",
   },
   {
     type: "mc",
     prompt: "출력 결과는?",
-    code: 'print("2" + "3")',
-    choices: ["5", "23", "2 + 3", "오류가 난다"],
-    answerIndex: 1,
-    explain: "따옴표가 있으면 글자예요. 글자끼리 + 는 이어 붙이기라 23 이 됩니다.",
+    code: "x = 5\nprint(x)",
+    choices: ["5", "x", "print(x)", "아무것도 안 나온다"],
+    answerIndex: 0,
+    explain: "변수 x 에 5 를 담았으니 print(x) 는 5 를 보여줘요.",
+  },
+
+  /* ── 중간 ── */
+  {
+    type: "mc",
+    prompt: "출력 결과는?",
+    code: "x = 3\ny = 4\nprint(x + y)",
+    choices: ["7", "34", "x + y", "12"],
+    answerIndex: 0,
+    explain: "x 와 y 는 숫자라서 + 는 더하기. 3 + 4 = 7.",
   },
   {
     type: "mc",
@@ -174,53 +183,44 @@ const DIAGNOSTIC: DiagnosticItem[] = [
   {
     type: "mc",
     prompt: "출력 결과는?",
-    code: "for i in range(3):\n    print(i)",
-    choices: ["0 1 2 (세 줄)", "1 2 3", "0 1 2 3", "3"],
+    code: 'print("2" + "3")',
+    choices: ["5", "23", "2 + 3", "오류가 난다"],
+    answerIndex: 1,
+    explain: "따옴표가 있으면 글자예요. 글자끼리 + 는 이어 붙이기라 23 이 됩니다.",
+  },
+
+  /* ── 변별 (상위권 가리기 — 여전히 출력·변수·연산) ── */
+  {
+    type: "mc",
+    prompt: "출력 결과는?",
+    code: "print(2 + 3 * 4)",
+    choices: ["14", "20", "24", "오류가 난다"],
     answerIndex: 0,
-    explain: "range(3) 은 0, 1, 2. 세 번 반복하며 한 줄씩 출력해요.",
+    explain: "곱하기를 먼저 해요. 3 * 4 = 12, 그다음 2 + 12 = 14.",
   },
   {
     type: "mc",
     prompt: "출력 결과는?",
-    code: 'x = 5\nif x > 3:\n    print("크다")\nelse:\n    print("작다")',
-    choices: ["크다", "작다", "오류가 난다", "아무것도 안 나온다"],
+    code: "x = 2\nx = x + 3\nprint(x)",
+    choices: ["5", "2", "x + 3", "오류가 난다"],
     answerIndex: 0,
-    explain: "x 는 5 이고 5 > 3 은 참이라 if 쪽인 '크다' 가 출력돼요.",
+    explain: "x 에 2 를 담고, 다시 x + 3(=5) 을 x 에 담아요. 그래서 5.",
+  },
+  {
+    type: "mc",
+    prompt: "출력 결과는?",
+    code: "x = 5\ny = x\nx = 10\nprint(y)",
+    choices: ["5", "10", "15", "오류가 난다"],
+    answerIndex: 0,
+    explain:
+      "y = x 하는 순간 y 에는 그때의 x 값 5 가 담겨요. 나중에 x 가 10 이 돼도 y 는 그대로 5.",
   },
   {
     type: "fill",
-    prompt: "0부터 4까지 다섯 번 반복하려고 해요. 빈칸(______)에 들어갈 것을 쓰세요.",
-    code: "for i in ______:\n    print(i)",
-    answer: "range(5)",
-    explain: "range(5) 는 0, 1, 2, 3, 4 — 다섯 번 반복합니다.",
-  },
-  {
-    type: "mc",
-    prompt: "name 에 \"김\" 을 담고 화면에 보여주려 합니다. 알맞은 순서는?",
-    choices: ['name = "김"  →  print(name)', 'print(name)  →  name = "김"'],
-    answerIndex: 0,
-    explain: "변수에 값을 먼저 담아야 출력할 수 있어요. 순서가 중요합니다.",
-  },
-  {
-    type: "mc",
-    prompt: "출력 결과는?",
-    code: 'friends = ["가", "나", "다"]\nprint(len(friends))',
-    choices: ["3", "2", "가나다", "오류가 난다"],
-    answerIndex: 0,
-    explain: "len 은 개수를 세요. 목록에 3개가 들어 있으니 3.",
-  },
-  {
-    type: "mc",
-    prompt: "for 문 바로 아래, 반복할 줄은 어떻게 써야 할까요?",
-    code: "for i in range(3):\n???  print(i)",
-    choices: [
-      "앞에 띄어쓰기(들여쓰기)를 넣는다",
-      "맨 앞에 붙여 쓴다",
-      "줄 끝에 세미콜론(;)을 붙인다",
-      "대문자로 쓴다",
-    ],
-    answerIndex: 0,
-    explain: "파이썬은 들여쓰기로 '이 줄이 for 에 속한다' 를 나타내요.",
+    prompt: "화면에 7 이 나오게 하려고 해요. 빈칸(______)에 알맞은 연산 기호를 쓰세요.",
+    code: "x = 10\ny = 3\nprint(x ______ y)",
+    answer: "-",
+    explain: "10 - 3 = 7. 빼기 기호 - 를 넣으면 됩니다.",
   },
 ];
 
@@ -231,8 +231,8 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "worksheet",
     label: "파이썬 아주 조금 — 오늘 진단에 나올 것만",
     hint:
-      "아래 코드를 눈으로 읽어 보세요. 오늘 진단·타자에 나오는 건 이 네 가지예요:\n" +
-      "· print(보여주기) · 변수(값 담기) · for(반복) · if(조건).\n" +
+      "아래 코드를 눈으로 읽어 보세요. 오늘 진단·타자에 나오는 건 이 세 가지예요:\n" +
+      "· print(보여주기) · 변수(값 담기) · 연산(더하기·이어붙이기).\n" +
       "다 이해 못 해도 괜찮아요 — 모양만 익혀 두면 됩니다.",
     kind: "note",
     code: GRAMMAR_CODE,
@@ -335,17 +335,16 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
       },
       {
         label: "파이썬 아주 조금",
-        subtitle: "진단에 나오는 네 가지",
+        subtitle: "진단에 나오는 세 가지",
         note: "설명은 앞 화면으로 같이 봅니다. 이 탭은 활동 중에 되돌아와 볼 수 있어요.",
         rows: [
           { label: "print", value: "화면에 글자를 보여준다 — print(\"안녕\")" },
-          { label: "변수", value: "값을 담는 상자 — name = \"지민\"" },
-          { label: "for", value: "여러 번 반복한다 — for i in range(3):" },
-          { label: "if", value: "조건에 따라 다르게 한다 — if x > 3:" },
+          { label: "변수", value: "값을 담는 상자 — name = \"지민\", age = 14" },
+          { label: "연산", value: "숫자는 계산, 글자는 이어붙이기 — 3 + 4, \"2\" + \"3\"" },
         ],
         highlights: [
           "따옴표가 있으면 글자, 없으면 숫자나 변수예요.",
-          "for·if 아래 줄은 앞에 띄어쓰기(들여쓰기)를 넣어요.",
+          "숫자끼리 + 는 더하기, 글자끼리 + 는 이어 붙이기예요.",
         ],
       },
       {
