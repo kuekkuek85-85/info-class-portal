@@ -42,6 +42,13 @@ export const COLLECTION_META: Record<string, CollectionMeta> = {
     textFields: ["answers", "teacherFeedback", "sources"],
     heavyFields: ["strokes", "texts"],
   },
+  artifactFeedbacks: {
+    label: "동료 피드백",
+    // ownerId·authorId 는 학번이라 마스킹 층에서 가명(작품주인·작성자)으로 바뀐다
+    indexable: ["ownerId", "authorId", "classNo", "artifactId"],
+    textFields: ["foundTech", "question", "authorReply"],
+    heavyFields: [],
+  },
   classSessions: {
     label: "수업 세션",
     indexable: ["date", "classNo", "groupKey", "lessonNo", "status", "period"],
@@ -71,6 +78,7 @@ export const SCHEMA_TEXT = [
   "- moodEntries(기분 체크): studentId, classNo, date, sessionId, mood(감정어), valence(-2 불쾌~+2 쾌), arousal(-2 비활성~+2 활성), reason(사유), reviewedByTeacher(교사 확인). 필터: studentId, classNo, date, reviewedByTeacher.",
   "- reflections(성찰): studentId, classNo, date, sessionId, answers(질문별 답 배열), draft(작성중). 필터: studentId, classNo, date, draft.",
   "- artifacts(작품/활동지): activityId, studentId, classNo, answers(활동지 답; build_url=만든 앱 주소), status, submitStage(0~3), teacherFeedback.note(교사 피드백). 필터: activityId, studentId, classNo, status, submitStage.",
+  "- artifactFeedbacks(동료 피드백): 작품주인·작성자(둘 다 가명), classNo, artifactId, foundTech(찾은 기술), question(궁금한 점), authorReply(작품 주인의 답), reactions(이모지 배열). 필터: 작품주인, 작성자, classNo, artifactId. ※ '피드백 많이 받은 작품' 처럼 작품을 피드백 수로 줄 세우는 건 queryData 말고 topFeedback 도구를 써라(집계는 그쪽이 정확).",
   "- classSessions(수업): date, period, classNo, groupKey, groupLabel, lessonNo, title, status(scheduled/active/ended). 필터: date, classNo, groupKey, lessonNo, status.",
   "- attendance(출석·진행): studentId, sessionId, classNo, date, passed(통과 여부), submitStage, selfCheck(자기점검), away(이탈 누적), careAlert(위기 신호). 필터: studentId, classNo, date, passed.",
   "- quizAnswers(퀴즈): studentId, sessionId, classNo, date, answers.",

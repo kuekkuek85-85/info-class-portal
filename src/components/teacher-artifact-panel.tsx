@@ -45,6 +45,7 @@ interface Detail {
     foundTech: string;
     question: string;
     authorReply: string;
+    reactions: string[];
   }[];
 }
 
@@ -236,6 +237,12 @@ export function TeacherArtifactPanel({
                         <p className="t-caption">{item.from}</p>
                         {item.foundTech && <p className="t-body-sm">찾은 기술 · {item.foundTech}</p>}
                         {item.question && <p className="t-body-sm">궁금한 점 · {item.question}</p>}
+                        {item.reactions.length > 0 && (
+                          <p className="t-body-sm">반응 · {item.reactions.join(" ")}</p>
+                        )}
+                        {!item.foundTech && !item.question && item.reactions.length === 0 && (
+                          <p className="t-body-sm text-muted">(글 없이 남긴 피드백)</p>
+                        )}
                         {item.authorReply && (
                           <p className="t-body-sm mt-1">↳ 작성자 답 · {item.authorReply}</p>
                         )}

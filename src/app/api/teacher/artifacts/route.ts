@@ -85,6 +85,9 @@ export async function GET(request: Request) {
           foundTech: row.foundTech,
           question: row.question,
           authorReply: row.authorReply ?? "",
+          // 이모지 반응도 내용이다 — 글 없이 반응만 남긴 피드백이면 이것만 뜬다.
+          // 옛 단일 reaction 값은 reactions 로 옮겨 읽는다 (types 의 @deprecated).
+          reactions: row.reactions ?? (row.reaction ? [row.reaction] : []),
         })),
       });
     }

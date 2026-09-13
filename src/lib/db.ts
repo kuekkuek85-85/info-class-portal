@@ -1059,6 +1059,24 @@ export async function listFeedbacksFor(artifactIds: string[]): Promise<ArtifactF
   return rows.sort((a, b) => a.createdAt - b.createdAt);
 }
 
+/** 작품 주인(ownerId)들이 받은 동료 피드백을 한 번에 — AI 조교의 topFeedback 집계용 */
+export async function listFeedbacksByOwners(ownerIds: string[]): Promise<ArtifactFeedback[]> {
+  const unique = [...new Set(ownerIds)].filter(Boolean);
+  if (unique.length === 0) return [];
+  const rows: ArtifactFeedback[] = [];
+  // Firestore `in` 은 한 번에 30개까지
+  for (let i = 0; i < unique.length; i += 30) {
+    rows.push(
+      ...(await collectAll<ArtifactFeedback>(
+        db()
+          .collection(COLLECTIONS.artifactFeedbacks)
+          .where("ownerId", "in", unique.slice(i, i + 30)),
+      )),
+    );
+  }
+  return rows;
+}
+
 /** 내가 쓴 피드백 — 갤러리에서 "이미 남겼는지" 표시에 쓴다 */
 export async function listFeedbacksByAuthor(
   authorId: string,
