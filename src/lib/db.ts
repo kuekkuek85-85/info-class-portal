@@ -55,6 +55,13 @@ export const COLLECTIONS = {
    * 이후 프로그래밍·피지컬 차시가 반 단위로 읽어 모둠 도우미로 세운다.
    */
   helpers: "helpers",
+  /**
+   * 파이썬 타자게임 점수 (12차 도우미 선발). 문서 ID = 학번.
+   *
+   * 타자게임은 별도 세션(외부 웹앱)에서 열리고, 끝날 때 학번·점수를 /api/typing-score 로
+   * 보낸다. 세션이 아니라 **학번**에 묶어 저장하므로, 리더보드가 학번으로 조회한다.
+   */
+  typingScores: "typingScores",
   meta: "meta",
 } as const;
 
@@ -805,6 +812,52 @@ export async function saveClassHelpers(
     .collection(COLLECTIONS.helpers)
     .doc(String(classNo))
     .set({ classNo, studentIds, sessionId, updatedAt: Date.now() });
+}
+
+// --------------------------------------------------------------- 타자게임 점수
+
+/**
+ * 타자게임 점수를 **최고점만** 저장한다 (12차, 학번에 묶임).
+ *
+ * 외부 타자게임 앱이 /api/typing-score 로 보낸 점수를 저장한다. 여러 번 도전하므로
+ * **더 높을 때만** 갱신한다 — 트랜잭션으로 읽고 비교해, 동시에 두 번 도착해도 낮은
+ * 점수가 높은 점수를 덮지 않는다. score 는 라우트에서 이미 0~100 정수로 정제해 넘긴다.
+ */
+export async function saveTypingScore(studentId: string, score: number): Promise<void> {
+  const ref = db().collection(COLLECTIONS.typingScores).doc(studentId);
+  await db().runTransaction(async (tx) => {
+    const doc = await tx.get(ref);
+    const prev = doc.exists ? Number(doc.data()?.score ?? 0) : 0;
+    if (doc.exists && prev >= score) return; // 최고점이 이미 더 높다 — 그대로 둔다
+    tx.set(ref, { studentId, score, updatedAt: Date.now() }, { merge: true });
+  });
+}
+
+export async function getTypingScore(studentId: string): Promise<number | null> {
+  const doc = await db().collection(COLLECTIONS.typingScores).doc(studentId).get();
+  return doc.exists ? Number(doc.data()?.score ?? 0) : null;
+}
+
+/**
+ * 여러 학번의 타자 점수를 한 번에 읽어 학번→점수 맵으로 (리더보드가 쓴다).
+ *
+ * Firestore `in` 은 한 번에 30개까지라 나눠 조회한다 (studentNameMap 과 같은 방식).
+ * 점수가 없는 학번은 맵에 안 들어간다 — 부르는 쪽에서 0 으로 본다.
+ */
+export async function listTypingScores(studentIds: string[]): Promise<Map<string, number>> {
+  const unique = [...new Set(studentIds)].filter(Boolean);
+  const map = new Map<string, number>();
+  if (unique.length === 0) return map;
+
+  for (let i = 0; i < unique.length; i += 30) {
+    const chunk = unique.slice(i, i + 30);
+    const snap = await db()
+      .collection(COLLECTIONS.typingScores)
+      .where(FieldPath.documentId(), "in", chunk)
+      .get();
+    for (const doc of snap.docs) map.set(doc.id, Number(doc.data()?.score ?? 0));
+  }
+  return map;
 }
 
 /**

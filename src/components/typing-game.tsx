@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 /**
  * 파이썬 타자 게임 (12차 도우미 선발).
@@ -9,12 +9,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * 내고, 최고점 한 줄만 onChange 로 남긴다(대시보드 리더보드가 이 값을 읽는다). 무엇을
  * 쳤는지·오타 내용은 저장하지 않는다 — 점수 한 줄뿐이다.
  *
- * ## 두 갈래 — 내장 게임 / 외부 앱 임베드
+ * ## 두 갈래 — 내장 게임 / 외부 앱(새 탭)
  *
- * `typingUrl` 이 있으면 그 **외부 타자게임 웹앱을 iframe 으로 얹고**, 그 앱이 끝날 때 보내는
- * 점수 메시지(`postMessage({ type: "typing-score", score })`)를 받아 최고점을 저장한다
- * (ScamSim 의 LoginScene postMessage 수신과 같은 방식). 없으면 아래 **내장 타자게임** 그대로다.
- * 저장 키(helper_typing)와 리더보드 계산은 어느 쪽이든 같다.
+ * `typingUrl` 이 있으면 그 **외부 타자게임을 새 탭 링크**로 연다. 실제 게임과 점수 처리는
+ * 그 앱에서 일어난다 — 학생이 학번으로 로그인해 게임을 하면, 그 앱이 끝날 때 학번·점수를
+ * 포털의 `POST /api/typing-score` 로 보내고, 리더보드가 학번으로 그 점수를 읽는다. 그래서
+ * 이 컴포넌트는 링크만 보여주고 점수를 직접 받지 않는다. `typingUrl` 이 없으면 아래 **내장
+ * 타자게임** 그대로다(자리지기, 점수를 helper_typing 에 저장 — 리더보드가 fallback 으로 읽음).
  *
  * ## 점수 공식 (근거를 코드로 남긴다)
  *
@@ -60,103 +61,52 @@ export function TypingGame({
   disabled,
 }: {
   prompts?: string[];
-  /** 있으면 외부 타자게임을 iframe 으로 얹고 점수 메시지를 받는다 */
+  /** 있으면 외부 타자게임을 새 탭 링크로 연다(점수는 그 앱이 POST /api/typing-score 로 보냄) */
   typingUrl?: string;
   /** 지난 최고점(문자열 숫자) */
   value: string;
   onChange: (next: string) => void;
   disabled?: boolean;
 }) {
-  // 외부 앱 주소가 있으면 임베드 판으로 간다 (내장 게임은 자리지기)
+  // 외부 앱 주소가 있으면 새 탭 링크로 간다 (내장 게임은 자리지기)
   if (typingUrl && typingUrl.trim()) {
-    return (
-      <EmbeddedTyping url={typingUrl.trim()} value={value} onChange={onChange} disabled={disabled} />
-    );
+    return <ExternalTyping url={typingUrl.trim()} />;
   }
 
   return <BuiltInTyping prompts={prompts} value={value} onChange={onChange} disabled={disabled} />;
 }
 
 /**
- * 외부 타자게임 임베드.
+ * 외부 타자게임 링크 (새 탭).
  *
- * iframe 으로 외부 앱을 띄우고, 그 앱이 끝날 때 보내는 점수 메시지를 받아 최고점을
- * 저장한다. **외부에서 온 값이라 신뢰하지 않는다** — 형식이 맞는 `typing-score` 메시지의
- * score 만, 유한수인지 확인하고 0~100 정수로 clamp 해서 쓴다. 다른 타입·필드는 무시한다.
- * 주소의 오리진과 다른 곳에서 온 메시지도 버린다.
- *
- * sandbox 는 `allow-scripts allow-forms` 만 준다 — 점수 postMessage 에 same-origin 권한이
- * 필요 없다. 포털 CSP 가 `frame-src 'self' https:` 라 외부 https 임베드는 허용된다.
+ * 게임과 점수 처리는 그 앱에서 한다 — 학생이 학번으로 로그인해 게임을 하면, 앱이 끝날 때
+ * 학번·점수를 포털의 `POST /api/typing-score` 로 보낸다. 리더보드는 학번으로 그 점수를
+ * 읽는다. 그래서 여기서는 링크와 안내만 보여주고, 점수를 이 화면에서 직접 받지 않는다.
  */
-function EmbeddedTyping({
-  url,
-  value,
-  onChange,
-  disabled,
-}: {
-  url: string;
-  value: string;
-  onChange: (next: string) => void;
-  disabled?: boolean;
-}) {
-  const best = Number(value) || 0;
-  const [received, setReceived] = useState<number | null>(null);
-
-  const expectedOrigin = useMemo(() => {
-    try {
-      return new URL(url).origin;
-    } catch {
-      return "";
-    }
-  }, [url]);
-
-  useEffect(() => {
-    function onMessage(event: MessageEvent) {
-      if (disabled) return;
-      // 오리진이 다르면 버린다 — 다른 iframe·창이 보낸 메시지를 받지 않는다
-      if (expectedOrigin && event.origin !== expectedOrigin) return;
-      const data = event.data as unknown;
-      if (!data || typeof data !== "object") return;
-      const msg = data as { type?: unknown; score?: unknown };
-      if (msg.type !== "typing-score") return;
-      const n = Number(msg.score);
-      if (!Number.isFinite(n)) return;
-      const score = Math.max(0, Math.min(100, Math.round(n)));
-      setReceived(score);
-      // 최고점만 올린다. best 는 클로저에 갇히지 않게 저장값에서 다시 읽는다
-      if (score > (Number(value) || 0)) onChange(String(score));
-    }
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [expectedOrigin, value, onChange, disabled]);
-
+function ExternalTyping({ url }: { url: string }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1 rounded-lg bg-cream p-3">
-        <p className="t-body-lg font-bold">파이썬 타자 — 게임 안에서 도전!</p>
+        <p className="t-body-lg font-bold">파이썬 타자 게임</p>
         <p className="t-body-sm">
-          아래 타자게임에서 도전하세요. 게임이 끝나면 점수가 자동으로 이 화면에 저장돼요.
-          여러 번 해서 최고점을 올릴 수 있어요. 이 점수는 도우미 순위의 30%예요.
+          아래 「타자게임 열기」를 눌러 새 탭에서 열고, <b>학번으로 로그인</b>해서 게임을 하세요.
+          게임에서 받은 점수가 여기 순위(도우미 선발)에 자동으로 반영돼요. 여러 번 해서 최고점을
+          올릴 수 있어요. 이 점수는 도우미 순위의 30%예요.
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-lg border-2 border-ink">
-        <iframe
-          src={url}
-          title="파이썬 타자게임"
-          className="h-[520px] w-full"
-          // 점수 메시지에는 same-origin 권한이 필요 없다 (allow-same-origin 을 주지 않는다)
-          sandbox="allow-scripts allow-forms"
-        />
-      </div>
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="pill pill-primary pill-block text-center"
+      >
+        타자게임 열기 (새 탭)
+      </a>
 
-      {received !== null ? (
-        <p className="t-body-sm rounded-lg bg-surface px-4 py-3">
-          방금 점수 {received}점을 받았어요. 지금까지 최고점: {Math.max(best, received)} / 100.
-        </p>
-      ) : (
-        best > 0 && <p className="t-caption">지금까지 최고점: {best} / 100</p>
-      )}
+      <p className="t-caption text-muted">
+        점수는 게임을 끝내면 잠시 뒤 순위에 반영돼요. 바로 안 보이면 선생님이 화면을 새로고침합니다.
+      </p>
     </div>
   );
 }

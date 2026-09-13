@@ -10,6 +10,7 @@ import {
   listReflections,
   listSessionsByDate,
   listRoster,
+  listTypingScores,
 } from "@/lib/db";
 import { activityIdFor } from "@/lib/gallery";
 import { getMood } from "@/lib/mood";
@@ -356,26 +357,31 @@ export async function GET(request: Request) {
     let helpersSaved: { studentIds: string[]; updatedAt: number } | null = null;
 
     if (isHelperSelection) {
-      const [arts, saved] = await Promise.all([
+      const [arts, saved, typingStore] = await Promise.all([
         listArtifacts(activityIdFor(session)).catch(() => []),
         getClassHelpers(session.classNo).catch(() => null),
+        // 타자점수는 학번에 묶인 typingScores 에서 읽는다(외부 게임이 학번으로 보냄)
+        listTypingScores(attendance.map((a) => a.studentId)).catch(() => new Map<string, number>()),
       ]);
-      const scoreByStudent = new Map<string, { typing: number; diag: number }>();
+      // 진단은 작품(helper_diag)에서. 타자는 내장 게임 자리지기(helper_typing)를 fallback 으로 둔다
+      const diagByStudent = new Map<string, number>();
+      const artTypingByStudent = new Map<string, number>();
       for (const art of arts) {
-        scoreByStudent.set(art.studentId, {
-          typing: typingKey ? clampScore(art.answers?.[typingKey]) : 0,
-          diag: diagKey ? clampScore(art.answers?.[diagKey]) : 0,
-        });
+        if (diagKey) diagByStudent.set(art.studentId, clampScore(art.answers?.[diagKey]));
+        if (typingKey) artTypingByStudent.set(art.studentId, clampScore(art.answers?.[typingKey]));
       }
       const board = attendance.map((entry) => {
-        const s = scoreByStudent.get(entry.studentId) ?? { typing: 0, diag: 0 };
-        const composite = Math.round(s.diag * W_DIAG + s.typing * W_TYPING);
+        const diag = diagByStudent.get(entry.studentId) ?? 0;
+        // 외부 게임 점수(typingScores) 우선, 없으면 내장 게임(artifact helper_typing), 둘 다 없으면 0
+        const typing =
+          typingStore.get(entry.studentId) ?? artTypingByStudent.get(entry.studentId) ?? 0;
+        const composite = Math.round(diag * W_DIAG + typing * W_TYPING);
         return {
           studentId: entry.studentId,
           name: nameOf.get(entry.studentId) ?? "",
           number: roster.find((r) => r.studentId === entry.studentId)?.number ?? null,
-          typing: s.typing,
-          diag: s.diag,
+          typing,
+          diag,
           composite,
         };
       });

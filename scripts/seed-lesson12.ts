@@ -34,11 +34,14 @@
  *
  * ## 저장·리더보드 (구현)
  *
- *   · 타자·진단은 worksheet-view 에 배선된 컴포넌트(typing_game·diagnostic). 각자 **최고점
- *     한 줄**만 answers 에 저장한다(helper_typing·helper_diag). 무엇을 쳤는지·문항별 답은
- *     저장하지 않는다.
- *   · 대시보드 route 가 이 차시에서만 작품을 한 번 읽어(hai 링크 판정과 같은 방식) 점수를
- *     모으고, 종합점수로 순위·top7 을 계산해 리더보드로 보낸다. 확정 저장은 교사가 누른다.
+ *   · **타자**는 별도 세션의 외부 웹앱에서 연다(새 탭 링크, typingUrl). 학생이 학번으로
+ *     로그인해 게임하면 그 앱이 끝날 때 학번·점수를 `POST /api/typing-score` 로 보내고,
+ *     포털이 **최고점만** typingScores/{학번} 에 저장한다. (typingUrl 이 비면 내장 게임이
+ *     자리지기로 뜨고 helper_typing answers 에 저장 — 리더보드가 fallback 으로 읽는다.)
+ *   · **진단**은 worksheet-view 에 배선된 컴포넌트(diagnostic)가 자동 채점해 **최고점 한 줄**만
+ *     helper_diag answers 에 저장한다. 문항별 답은 저장하지 않는다.
+ *   · 대시보드 route 가 이 차시에서만 타자점수(typingScores/학번)와 작품(helper_diag)을 모아
+ *     종합점수로 순위·top7 을 계산해 리더보드로 보낸다. 확정 저장은 교사가 누른다.
  *
  * ## 열어 둔 선택 (첫 초안 — 선생님이 보고 확정)
  *
@@ -245,18 +248,24 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "worksheet",
     label: "① 파이썬 타자 — 정확하게, 빠르게",
     hint:
-      "뜨는 파이썬 낱말·코드를 똑같이 입력해요. 대문자·기호·괄호까지 정확히!\n" +
-      "정확도와 속도로 점수가 나오고, 여러 번 도전해 최고점을 올릴 수 있어요.\n" +
+      "타자게임을 열어 학번으로 로그인하고 도전해요. 대문자·기호·괄호까지 정확히!\n" +
+      "게임에서 받은 점수가 순위에 자동으로 반영돼요. 여러 번 도전해 최고점을 올릴 수 있어요.\n" +
       "이 점수는 도우미 순위의 30%에 들어갑니다.",
     kind: "typing_game",
+    // 내장 게임 자리지기용 프롬프트 — typingUrl 을 비워 두면 이 목록으로 내장 게임이 뜬다
     typingPrompts: TYPING_PROMPTS,
     /*
-     * 완성된 외부 타자게임 URL 을 넣으면 내장 게임 대신 그 앱을 iframe 으로 임베드한다
-     * (비우면 내장 게임 그대로). 외부 앱 규격:
-     *  · 끝날 때 window.parent.postMessage({ type: "typing-score", score: 0~100 }, "*") 전송
-     *  · score 는 0~100 정수(포털이 유한수·범위 clamp 후 최고점만 helper_typing 에 저장)
-     *  · 포털 오리진에서의 프레이밍을 허용해야 한다(X-Frame-Options/frame-ancestors 로 막지 말 것)
-     *  · https 로 서빙(포털 CSP frame-src 'self' https:)
+     * 완성된 외부 타자게임 URL 을 넣으면 내장 게임 대신 **새 탭 링크**로 전환한다
+     * (비우면 내장 게임 그대로). 실제 게임·점수 처리는 그 앱에서 한다. 외부 앱 규격:
+     *  · 학생이 **학번으로 로그인**(포털과 같은 5자리 학번 체계).
+     *  · 게임이 끝나면 포털로 점수를 보낸다:
+     *      POST https://<포털주소>/api/typing-score
+     *      Content-Type: application/json
+     *      body: { "studentId": "10109", "score": 0~100, "key": "<TYPING_SCORE_SECRET>" }
+     *  · key 는 포털 환경변수 TYPING_SCORE_SECRET 과 같아야 한다(불일치 401).
+     *  · 포털이 학번 형식·유한수·0~100 을 검증하고 **최고점만** typingScores/{학번} 에 저장한다.
+     *  · 리더보드는 typingScores(학번)에서 타자점수를 읽는다 — helper_typing answers 는 내장
+     *    게임 자리지기의 fallback 일 뿐, 외부 방식에서는 쓰지 않는다.
      */
     typingUrl: "",
     maxLength: 0,
@@ -469,7 +478,7 @@ async function main(): Promise<void> {
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (도우미 선발 전용 통 — 마이크로비트 physical-computing 과 분리)`);
   console.log("단계: 대기 → 기분 → 오늘 할 일(assessment) → 타자와 진단(worksheet) → 성찰 → 다음 시간 → 마침");
-  console.log(`점수 키: 타자=${TYPING_KEY}(30%) · 진단=${DIAG_KEY}(70%). 대시보드가 kind 로 문항을 찾아 읽음.`);
+  console.log(`점수: 타자(30%)=외부앱→POST /api/typing-score→typingScores/{학번} (typingUrl 비면 내장게임→${TYPING_KEY}) · 진단(70%)=${DIAG_KEY} answers.`);
   console.log("리더보드·top7·확정 저장은 교사 대시보드(도우미 선발 섹션). 확정 시 helpers/{반번호} 문서에 저장.");
   console.log("진단 10문항·타자 공식은 초안 — 선생님이 대시보드로 확인하고 조정.");
   process.exit(0);
