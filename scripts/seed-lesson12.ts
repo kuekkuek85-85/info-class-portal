@@ -119,6 +119,8 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "note",
     linkUrl: "https://playentry.org/maze/2020-2/1",
     linkLabel: "② 이상한 티파티 열기",
+    // ① 미로를 한 번 연 뒤에야 활성화된다 (순서 강제)
+    enabledAfterOpen: "_bd_maze1",
     maxLength: 0,
   },
 ];

@@ -534,6 +534,13 @@ export interface WorksheetQuestion {
   linkUrl?: string;
   linkLabel?: string;
   /**
+   * 이 링크(linkUrl)는 앞의 다른 링크를 연 뒤에야 활성화된다 (그 문항 key).
+   *
+   * 12차시 엔트리 미로가 순서를 강제한다 — ② 미로는 ① 미로를 한 번 연 뒤에야 열린다.
+   * "열었는가"는 이 화면 안의 상태로만 본다(새로고침하면 다시 ①부터). 서버에 안 남긴다.
+   */
+  enabledAfterOpen?: string;
+  /**
    * 분반마다 다른 주소 (분반 열쇠 → 주소).
    *
    * 캔바 초대 주소가 분반별 그룹으로 따로 나 있다. 여기 넷을 다 적어 두고, **수업을
