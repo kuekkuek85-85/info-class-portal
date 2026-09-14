@@ -20,8 +20,11 @@
  *  - 카드 밑 두 칸짜리 피드백 폼(gallery-view 의 FeedbackForm)은 그대로 두고,
  *    **문구만** 좋은 점·개선할 점 두 칸으로 바꾼다(feedbackPrompts). 폼 필드 자체는 코드
  *    변경이라 건드리지 않는다 — 검토 기준은 안내(note)로 주고 기존 칸을 재사용한다.
- *  - privacy: 친구에게는 **앱 주소(build_url)만** 연다(galleryAnswerKeys). 앱은 서로 눌러
- *    열어 봐야 검토가 되므로 링크는 보이되, 자기 성찰·기획 칸은 목록에 없어 안 나간다. 익명 유지.
+ *  - privacy: 친구에게는 **앱 주소(build_url)** 와 검토에 필요한 **앱 소개 문구**(누구의 불편·
+ *    한 줄 소개·기능 셋)만 연다(galleryAnswerKeys). 링크만으로는 검토가 어려워 소개를 함께
+ *    보이되(라벨은 galleryAnswerLabels), 자기 성찰·회고 칸(fix_teacher·fix5·grill_a2)은 목록에
+ *    없어 안 나간다. 그 소개 문구는 검토 직전에 팝업으로 최종 수정할 수 있다(reviewDescribe,
+ *    아래). 익명 유지.
  *
  * ## 활동 ID 를 2·3·4차시와 같게 둔다
  *
@@ -474,6 +477,32 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         placeholder: "예) 첫 화면에 무슨 앱인지 제목이 있으면 더 좋겠어요",
       },
     },
+
+    /*
+     * "내 앱 소개 최종 수정" 팝업 (review-desc 라우트·review-desc-modal).
+     *
+     * 2·3차시에 쓴 앱 기획이 차시를 지나며 바뀌어, 위 galleryAnswerKeys 로 검토 카드에 뜨는
+     * 소개 문구(누구의 불편·한 줄 소개·기능 셋)가 지금 생각과 다른 학생이 많다. 그래서 검토를
+     * 시작할 때(phases: grill·gallery) 이 다섯 칸을 프리필한 편집 모달로 띄워, 고치거나 그대로
+     * 두고 내면 그 값이 검토 카드에 곧바로 반영되게 한다. 앱 링크(build_url)는 그대로 가져오고
+     * 여기서 고치는 것은 소개 문구뿐이다.
+     *
+     * fields 의 key 는 galleryAnswerKeys·galleryAnswerLabels 와 같은 다섯이다 — 팝업이 같은 키를
+     * 덮어쓰므로 카드가 자동으로 최종본을 보여주고, 갤러리 설정을 하나도 바꾸지 않아도 된다.
+     * 저장은 전용 라우트가 이 화이트리스트 key 만 받아 병합한다(worksheet 문항이 아니라 기존
+     * artifact 저장 경로로는 저장되지 않기 때문). maxLength 는 원 문항 수준(80~120).
+     */
+    reviewDescribe: {
+      enabled: true,
+      phases: ["grill", "gallery"],
+      fields: [
+        { key: "problem_who", label: "누구의 불편", maxLength: 120, multiline: true },
+        { key: "mvp_one", label: "한 줄 소개", maxLength: 120, multiline: true },
+        { key: "mvp_must1", label: "기능 ①", maxLength: 100 },
+        { key: "mvp_must2", label: "기능 ②", maxLength: 100 },
+        { key: "mvp_must3", label: "기능 ③", maxLength: 100 },
+      ],
+    },
   },
 };
 
@@ -540,7 +569,8 @@ async function main(): Promise<void> {
   console.log("  ※ 동료 검토는 gallery.ts 재사용: 배정한 3편만(자유 선택·전체 둘러보기 없음), 모든 앱 정확히 3번 배정 (peerCount 3 · galleryAssignedOnly).");
   console.log("  ※ 배정은 진짜 랜덤 (peerAssign: \"random\") — 세션 시드로 섞어 반 쏠림을 풀되 균등·안정·전원 커버 유지. 세 플래그 안 켠 다른 차시는 필수 2 + 자유 1 + 전체 그대로.");
   console.log("  ※ 피드백 폼은 좋은 점·개선할 점 두 칸 (feedbackPrompts) — 폼 필드 자체는 그대로.");
-  console.log("  ※ 친구에게 보이는 칸은 build_url(앱 주소) 하나뿐 (galleryAnswerKeys) — 자기 성찰·기획 칸은 안 나갑니다. 익명 유지.");
+  console.log("  ※ 친구에게 보이는 칸: build_url(앱 주소) + 앱 소개 문구(누구의 불편·한 줄 소개·기능 셋, galleryAnswerKeys/Labels) — 링크만으론 검토가 어려워 소개를 함께 보입니다. 자기 성찰·회고 칸은 안 나갑니다. 익명 유지.");
+  console.log("  ※ 그 소개 문구는 검토 시작(grill·gallery 단계)에 팝업으로 최종 수정 (reviewDescribe · review-desc 라우트·모달). 늦게 고쳐도 검토 화면이 주기 새로고침으로 반영(assignedOnly 폴링).");
   console.log("  ※ 교사 피드백은 teacher/pre-review 에서 각 학생 teacherFeedback.note 를 미리 채워 두세요 (build 화면에 바로 뜹니다).");
   console.log("서로 구경하기를 켰습니다 (galleryEnabled: true). 40분 흐름 — 5/14/12분 배분, ‘다 못 해도 괜찮다’ 톤.");
   process.exit(0);

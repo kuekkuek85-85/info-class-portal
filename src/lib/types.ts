@@ -1045,6 +1045,26 @@ export interface ActivityContent {
     found: { label: string; placeholder: string };
     question: { label: string; placeholder: string };
   };
+  /**
+   * 검토 직전에 자기 앱 소개 문구를 **최종 수정**하게 하는 팝업.
+   *
+   * 차시를 지나며 기획이 바뀌어, 검토 카드에 뜨는 소개 문구(누구의 불편·한 줄 소개·기능)가
+   * 지금 생각과 다른 학생이 많다. 그래서 검토를 시작할 때(phases) 자기 소개 칸을 프리필한
+   * 편집 모달로 띄워, 고치거나 그대로 두고 내면 그 값이 곧 검토 카드에 반영되게 한다.
+   *
+   * fields 의 key 는 이미 answers 에 있는 앱 기획 칸을 그대로 가리킨다 — 팝업이 **같은 키를
+   * 덮어쓰므로** galleryAnswerKeys 를 바꿀 필요가 없고, 카드가 자동으로 최종본을 보여준다.
+   * 저장은 전용 라우트(review-desc)가 이 화이트리스트 key 만 받아 병합한다.
+   *
+   *  · enabled : 켤지. 없거나 false 면 팝업이 아예 안 뜬다(다른 차시·과목 무영향).
+   *  · phases  : 어느 단계에서 뜰지 (예: ["grill","gallery"]). 없으면 active 동안 항상.
+   *  · fields  : 편집할 칸들. multiline 은 textarea, maxLength 로 저장 시 자른다.
+   */
+  reviewDescribe?: {
+    enabled?: boolean;
+    phases?: LessonPhase[];
+    fields: { key: string; label: string; maxLength?: number; multiline?: boolean }[];
+  };
 }
 
 /** 출처 두 칸의 기본 예시. 차시가 따로 정하지 않으면 이것을 쓴다 (그림 활동 기준) */

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ArtifactCanvas } from "@/components/artifact-canvas";
 import { CardNews, type CardNewsData } from "@/components/card-news";
@@ -178,8 +178,27 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
   const [picked, setPicked] = useState<Record<string, string[]>>({});
   const [onlyAssigned, setOnlyAssigned] = useState(false);
 
-  // 간격을 주지 않는다 — 열 때 한 번만 읽고, 남긴 뒤에만 reload() 한다
-  const { data, reload } = usePolled<GalleryData>("/api/student/gallery");
+  /*
+   * 기본은 간격을 주지 않는다 — 열 때 한 번만 읽고, 남긴 뒤에만 reload() 한다. 전체 감상은
+   * 28명 × 작품 28개라 재폴링이 비싸서 일부러 1회만 부른다.
+   *
+   * 예외는 assignedOnly(배정 3편만, 카드 ≤3개) 차시다. 이 검토는 친구가 검토 직전에 자기
+   * 앱 소개를 늦게 고칠 수 있어(review-desc), 그 최종본이 저절로 반영되게 주기 폴링을 켠다.
+   * 카드가 3개뿐이라 재폴링이 싸다. data.assignedOnly 를 받은 뒤에만 간격을 켜므로,
+   * assignedOnly 가 아닌 다른 감상 수업은 그대로 1회만 부른다(회귀 없음).
+   */
+  const [pollMs, setPollMs] = useState<number | undefined>(undefined);
+  const { data, reload } = usePolled<GalleryData>("/api/student/gallery", pollMs);
+
+  // 첫 응답이 assignedOnly 면 그때 한 번만 주기를 켠다. ref 로 한 번만 반영해
+  // (pollMs 를 deps 에 넣지 않아) 연쇄 렌더를 만들지 않는다.
+  const pollStarted = useRef(false);
+  useEffect(() => {
+    if (data?.assignedOnly && !pollStarted.current) {
+      pollStarted.current = true;
+      setPollMs(15_000);
+    }
+  }, [data]);
 
   // ?? [] 를 그대로 두면 렌더마다 새 배열이 되어 아래 useMemo 가 매번 다시 돈다
   const works = useMemo(() => data?.works ?? [], [data]);
