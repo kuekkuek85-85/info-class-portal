@@ -6,10 +6,13 @@
  * ## 완성 회기가 아니라 "활동 모듈" 을 하나씩 붙여 가는 초안이다
  *
  * 선생님은 활동을 하나씩 만들고 리허설로 확인한 뒤, 나중에 순서를 재배치해 조합하려
- * 하신다. 그래서 이 스크립트는 5회기를 **모듈 단위로** 담는다. 지금은 두 모듈이 있다:
+ * 하신다. 그래서 이 스크립트는 5회기를 **모듈 단위로** 담는다. 지금은 다섯 모듈이 있다:
  *
  *   · 활동1 「우리는 왜 다르게 생각할까?」 — 관점 차이 → 문화별 감정 표현
  *   · 활동2 「감정 추측하기」          — 듣고 감정 맞히기 → AI로 감정 분석하기
+ *   · 활동3 「감정 캐릭터 만들기」       — Canva AI 로 감정 아이콘 캐릭터 n종 창작 (SNS 이모티콘 맥락)
+ *   · 활동4 「효과적인 의사소통」        — 언어·비언어·톤 → 나 전달법 → 갈등 분석 → 관계 캘리그래피(Canva)
+ *   · 활동5 「공감 문장 · 감정 대화」     — 공감 문장·말풍선 → 감정 대화 이어가기 → 만화 생성 프롬프트
  *
  * 골격은 **대기 → 기분 체크 → 활동1 → 활동2 → 마음일기** 순서다(교사 단계 버튼이 이
  * 순서로 흐르게 phase 를 배치했다). 뒤에 활동이 더 붙고 순서가 재배치될 수 있게
@@ -32,7 +35,22 @@
  *   ─ 활동1 ─ progress(오늘 할 일+착시 영상) → assessment(토끼? 오리?)
  *            → quiz(투표) → problem(관점 차이) → mvp(문화별 감정) → build(정리)
  *   ─ 활동2 ─ grill(듣고 감정 맞히기) → emotion(AI로 감정 분석하기)
+ *   ─ 활동3 ─ worksheet(감정 캐릭터 만들기 · Canva AI)
  *   → reflection(마음일기)
+ *   ─ 활동4 ─ wrapmap(효과적인 의사소통 · 나 전달법·갈등·캘리그래피)
+ *   ─ 활동5 ─ wrapheal(공감 문장 · 감정 대화 · 만화 프롬프트)
+ *   → done
+ *
+ *   ※ 단계 순서는 LESSON_PHASES 로 고정이라, 활동을 붙일 수 있는 **빈 단계**에 얹었다. 그래서:
+ *     · 활동3(worksheet)은 고정 순서상 grill 과 emotion 사이라, 활동1·2·3 을 한 세션에 다
+ *       켜면 활동3 버튼이 활동2 중간(grill 다음, emotion 앞)에 낀다. 원래 활동2 의 grill→emotion
+ *       사이에도 빈 buttons(draw·worksheet·gallery)가 있어 교사가 이미 그 줄을 오간다 — 그 빈
+ *       worksheet 자리를 활동3 이 채운 셈이다.
+ *     · 활동4·5(wrapmap·wrapheal)는 마음일기(reflection) **뒤에 오는 "얹는 활동"** 단계다
+ *       (types.ts 의 그 두 단계 설명 참조 — 3회기 감정조절이 같은 자리를 쓴다). 그래서 활동
+ *       버튼이 마음일기 뒤에 붙는다. places 가 비어 있어(그리기 없음) wrapheal 에서도 그림판이
+ *       안 뜨고 활동지 문항만 뜬다(lesson/page.tsx 의 canDraw = places.length>0).
+ *     선생님이 모듈을 재배치해 조합할 때 이 자리를 감안한다(각 활동 상세 주석 참조).
  *
  * ## ⚠ 활동1/활동2 가 완벽히 안 나뉘는 한 곳 — 퀴즈 단계가 하나뿐
  *
@@ -208,6 +226,39 @@ const EMOTION_CHOICES = ["기쁨 · 반가움", "슬픔 · 서운함", "화남 �
  * 서버로 올라가지 않는다(프라이버시 안내에 못박음).
  */
 const TEACHABLE_MACHINE_URL = "https://teachablemachine.withgoogle.com/train/image";
+
+/* ─────────────── 활동3·4 「Canva」 공통 재료 ─────────────── */
+
+/**
+ * Canva 학교 팀 초대 주소 — 활동3(감정 캐릭터)·활동4(관계 캘리그래피)가 함께 쓴다.
+ *
+ * 분반마다 다른 토큰이라, 저장소가 공개인 만큼 **.env.local 에서만** 읽는다(seed-mt4 와 같은 방식).
+ * 세션을 열 때(open-mt5-*.ts) 그 분반 것 하나만 각 문항의 linkUrl 에 박고 linkUrlByGroup 은
+ * 지운다 — 남의 분반 토큰이 학생 브라우저로 새지 않게 한다(db.ts 의 snapshotOf). env 가 없으면
+ * 아래 기본 주소로 물러난다.
+ */
+const CANVA_BY_GROUP: Record<string, string> = {
+  "mt-tue-1": process.env.CANVA_INVITE_MT_TUE_1 ?? "",
+  "mt-thu-1": process.env.CANVA_INVITE_MT_THU_1 ?? "",
+  "mt-tue-2": process.env.CANVA_INVITE_MT_TUE_2 ?? "",
+  "mt-thu-2": process.env.CANVA_INVITE_MT_THU_2 ?? "",
+};
+/** 분반 토큰이 없을 때 물러날 기본 주소. 교사가 정확한 학교 Canva 초대 주소로 바꿀 수 있다 */
+const CANVA_FALLBACK = "https://www.canva.com/";
+/** linkUrlByGroup 에 넣을 값 — 토큰이 있는 분반만 남긴다(빈 분반은 뺀다) */
+const CANVA_GROUP_LINKS: Record<string, string> = Object.fromEntries(
+  Object.entries(CANVA_BY_GROUP).filter(([, url]) => url),
+);
+
+/**
+ * 활동3 감정 캐릭터 개수 — 원문의 "n종" 에 대한 현실적 기본값.
+ *
+ * 40분 블록에서 Canva Magic Media(AI 이미지)는 프롬프트를 쓰고 → 결과를 보고 → 다듬어 다시
+ * 뽑는 반복이 필요하다. 감정 하나당 2~3분을 잡으면 3~4개가 현실적이다 — 너무 적으면 감정 폭이
+ * 안 나오고, 많으면 시간에 쫓겨 대충 뽑는다. 선생님이 시간·수준에 맞게 이 값과 아래 문항 문구만
+ * 바꾸면 된다.
+ */
+const EMOTION_ICON_COUNT = "3~4종";
 
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
@@ -549,6 +600,373 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "long",
     maxLength: 300,
   },
+
+  /* ══════════════ 활동3 「감정 캐릭터 만들기」 (worksheet) ══════════════
+   *
+   * Canva AI 로 나만의 감정 아이콘 캐릭터를 3~4종 만들어, 카톡·인스타·유튜브 같은 SNS
+   * 이모티콘처럼 쓸 수 있음을 체험하는 활동. 앞의 "감정을 알아차리고 표현한다" 흐름을 이어,
+   * 이번엔 감정을 **시각 캐릭터로 표현·창작**한다.
+   *
+   * 산출물은 이 과목 관례대로 **Canva 공유 링크(URL)** 로 남긴다(그림 파일 업로드가 아니라
+   * 링크 기록). 감정 캐릭터는 '그림' 창작이라 초상 프라이버시 부담이 낮지만, 실명·개인정보를
+   * 캐릭터·파일명에 넣지 않도록 가볍게 안내한다. galleryEnabled: false 라 이 링크·성찰 글은
+   * 친구에게 안 나가고 본인·교사만 본다(서버 갤러리 라우트가 막음).
+   */
+  {
+    key: "_a3_intro",
+    phase: "worksheet",
+    label: "이번엔 감정을 ‘캐릭터’ 로 표현해 볼게요",
+    hint:
+      "앞에서 우리는 관점의 차이를 알아차리고(활동1), 소리·맥락으로 감정을 읽었어요(활동2).\n" +
+      "이제 내 감정을 눈에 보이는 ‘캐릭터’ 로 만들어 표현해 봅니다.\n" +
+      `Canva AI 로 나만의 감정 아이콘 캐릭터를 ${EMOTION_ICON_COUNT} 만들 거예요.`,
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "_a3_canva_login",
+    phase: "worksheet",
+    // Canva 로그인 — 활동4·mt4 와 같은 패턴. 세션 생성 때 그 분반 것만 linkUrl 에 박고
+    // linkUrlByGroup 은 지운다(남의 분반 토큰 유출 방지).
+    label: "① Canva 열기 — 먼저 눌러 학교 계정으로 로그인해 두세요",
+    hint:
+      "아래 [Canva 열기] 를 눌러 새 창에서 열고, 학교 계정으로 로그인해요.\n" +
+      "로그인되면 초대받은 팀에 들어가 있는지 확인하고, 새 디자인을 하나 만들어요.",
+    kind: "note",
+    linkUrl: CANVA_BY_GROUP["mt-tue-1"] || CANVA_FALLBACK,
+    linkUrlByGroup: CANVA_GROUP_LINKS,
+    linkLabel: "Canva 열기 (새 창)",
+    maxLength: 0,
+  },
+  {
+    key: "_a3_howto",
+    phase: "worksheet",
+    label: `② 감정별로 캐릭터를 ${EMOTION_ICON_COUNT} 만들기`,
+    hint:
+      "표현하고 싶은 감정을 3~4가지 골라요. 예) 기쁨 · 슬픔 · 화남 · 설렘\n" +
+      "Canva 의 ‘Magic Media(AI 이미지)’ 에 감정을 담은 캐릭터를 글로 설명해 만들거나,\n" +
+      "그리기·요소로 직접 꾸며도 좋아요.\n" +
+      "예) ‘기쁨을 나타내는 둥근 노란 젤리 캐릭터, 활짝 웃는 얼굴, 심플한 아이콘’\n\n" +
+      "🔒 실명·전화번호 같은 내 개인정보는 캐릭터나 파일 이름에 넣지 않아요.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "a3_emotions",
+    phase: "worksheet",
+    // 개인 계획 메모 — 어떤 감정을 캐릭터로 만들지. 비공개(본인·교사만).
+    label: `내가 캐릭터로 만들 감정 ${EMOTION_ICON_COUNT} 을 적어 보세요`,
+    hint:
+      "예) 기쁨, 슬픔, 화남, 설렘\n" +
+      "이 칸은 나와 선생님만 봐요.",
+    kind: "text",
+    maxLength: 100,
+  },
+  {
+    key: "a3_canva_url",
+    phase: "worksheet",
+    /*
+     * ★ 산출물 기록 = Canva 공유 링크. 이 과목 관례대로 그림 파일이 아니라 URL 로 남긴다.
+     * galleryEnabled: false 라 친구에게 안 나가고 본인·교사만 본다.
+     */
+    label: "③ 내 감정 캐릭터 모음 — Canva 공유 링크를 붙여 주세요",
+    hint:
+      "Canva 오른쪽 위 [공유] → [링크 복사] 로 주소를 받아 여기에 붙여넣어요.\n" +
+      "예) https://www.canva.com/design/....  이 칸은 나와 선생님만 봐요.",
+    kind: "text",
+    maxLength: 300,
+  },
+  {
+    key: "_a3_sns_note",
+    phase: "worksheet",
+    label: "이렇게 쓸 수 있어요 — SNS 이모티콘처럼",
+    hint:
+      "내가 만든 감정 캐릭터는 카카오톡·인스타그램·유튜브 같은 SNS 에서 이모티콘·스티커처럼\n" +
+      "쓸 수 있어요(프로필 그림, 댓글 스티커, 영상 자막 옆 감정 표시 등).\n" +
+      "오늘은 ‘이렇게 쓸 수 있다’ 를 떠올려 보는 것으로 충분해요 — 실제로 올리거나 배포하지\n" +
+      "않아도 됩니다.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "a3_reflect",
+    phase: "worksheet",
+    // 성찰 — 개인 글, 비공개.
+    label: "캐릭터로 표현하기 가장 어려웠던 감정은 무엇이었고, 내 캐릭터가 가장 잘 담아낸 감정은 무엇인가요?",
+    hint:
+      "예) ‘설렘’ 은 기쁨과 비슷해 보여서 다르게 그리기 어려웠고, ‘화남’ 은 빨간 얼굴로 딱 담겼다.\n" +
+      "이 칸은 나와 선생님만 봐요.",
+    kind: "long",
+    maxLength: 300,
+  },
+
+  /* ══════════════ 활동4 「효과적인 의사소통」 (wrapmap) ══════════════
+   *
+   * 마음일기 뒤에 오는 "얹는 활동" 단계(wrapmap)에 담는다. 흐름:
+   *   ① 의사소통 3요소(언어·비언어·목소리 톤) → ② 나 전달법(I-message) 바꿔 쓰기
+   *   → ③ 갈등 상황 분석(사회·가정) → ④ 관계 캘리그래피(Canva) 로 덕목 표현
+   *
+   * ③ 갈등 예시 챗봇: 포털에 챗봇 kind 를 새로 만들지 않는다(활동2 의 Gemini·TM 처리와 같은
+   * 패턴). 갈등 시나리오를 note 로 제시하고, 심화가 필요하면 교사가 공유화면에서 챗봇을 시연한다.
+   * 포털은 학생의 **갈등 분석 기록**(입장·감정·원하는 것)만 남긴다 — 챗봇 호출은 포털에서 안 한다.
+   *
+   * ④ 관계 캘리그래피: 활동3 과 같은 Canva 초대(위 CANVA_BY_GROUP)를 쓴다. 산출물은 공유 링크로.
+   * 모든 서술 칸은 개인 성찰이라 친구에게 안 나간다(galleryEnabled: false).
+   */
+  {
+    key: "_a4_intro",
+    phase: "wrapmap",
+    label: "말이 마음을 잇는다 — 효과적인 의사소통",
+    hint:
+      "우리는 말로만 대화하지 않아요. 세 가지가 함께 전해집니다.\n" +
+      " · 언어(말의 내용)   · 비언어(표정·몸짓·눈빛)   · 목소리 톤(높낮이·빠르기·세기)\n" +
+      "같은 “괜찮아” 도 웃으며 하면 안심이 되고, 톤이 차가우면 서운하게 들려요.\n" +
+      "오늘은 말이 관계를 살리는 몇 가지 방법을 익혀 봐요.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "_a4_imsg_note",
+    phase: "wrapmap",
+    label: "① 나 전달법(I-message) — ‘너’ 대신 ‘나’ 로 말하기",
+    hint:
+      "‘너 전달법’ 은 상대를 탓해요. 예) “너 왜 맨날 늦어?” → 상대는 방어하고 싸움이 커져요.\n" +
+      "‘나 전달법’ 은 내 마음을 전해요. [상황] + [내 감정] + [바라는 것] 순서예요.\n" +
+      "예) “네가 늦게 오면(상황) 나는 걱정돼(감정). 늦을 땐 미리 알려 주면 좋겠어(바람).”",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "a4_imsg",
+    phase: "wrapmap",
+    // 개인 연습·성찰. 비공개.
+    label: "아래 ‘너 전달법’ 을 ‘나 전달법’ 으로 바꿔 써 보세요",
+    hint:
+      "바꿀 문장: “너는 왜 내 말을 안 들어?”\n" +
+      "[상황] + [내 감정] + [바라는 것] 을 담아 보세요.\n" +
+      "예) “내 말이 끊기면 서운해. 끝까지 들어주면 좋겠어.”  이 칸은 나와 선생님만 봐요.",
+    kind: "long",
+    maxLength: 300,
+  },
+  {
+    key: "_a4_conflict_note",
+    phase: "wrapmap",
+    label: "② 갈등 상황 들여다보기",
+    hint:
+      "갈등은 나쁜 게 아니라, 서로 원하는 것이 부딪히는 자연스러운 일이에요. 잘 ‘분석’ 하면 풀려요.\n\n" +
+      "상황 예시(하나 골라 분석해 보세요):\n" +
+      " · [가정] 나는 시험이 끝나 쉬고 싶은데, 부모님은 바로 다음 공부를 시작하라고 하신다.\n" +
+      " · [학교·사회] 모둠 과제에서 한 친구가 자기 방식만 고집해 다른 친구들이 불편해한다.\n\n" +
+      "※ 선생님이 필요하면 공유화면에서 갈등 상황 챗봇으로 다른 예시도 함께 살펴볼 거예요.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "a4_conflict_analysis",
+    phase: "wrapmap",
+    // 갈등 분석 기록. 개인 글, 비공개. 챗봇 호출은 포털에서 안 한다(교사 시연/외부).
+    label: "고른 갈등 상황을 분석해 보세요 — 양쪽의 ‘입장 · 감정 · 원하는 것’",
+    hint:
+      "예) 나: 입장=쉬고 싶다 / 감정=지침·억울함 / 원하는 것=잠깐의 휴식\n" +
+      "    부모님: 입장=성적이 걱정 / 감정=불안 / 원하는 것=내가 잘되는 것\n" +
+      "양쪽 모두를 적어 보면, 서로 ‘원하는 것’ 이 보여요. 이 칸은 나와 선생님만 봐요.",
+    kind: "long",
+    maxLength: 400,
+  },
+  {
+    key: "_a4_calli_login",
+    phase: "wrapmap",
+    // Canva 로그인 — 활동3 과 같은 초대(같은 세션이면 이미 로그인되어 이어짐).
+    label: "③ 관계 캘리그래피 — Canva 열기",
+    hint:
+      "대인관계에서 중요하다고 생각하는 덕목을 하나 골라, Canva 로 캘리그래피(멋글씨) 작품을\n" +
+      "만들어 볼 거예요. 아래 [Canva 열기] 를 눌러 새 창에서 열어요(이미 로그인했으면 이어져요).",
+    kind: "note",
+    linkUrl: CANVA_BY_GROUP["mt-tue-1"] || CANVA_FALLBACK,
+    linkUrlByGroup: CANVA_GROUP_LINKS,
+    linkLabel: "Canva 열기 (새 창)",
+    maxLength: 0,
+  },
+  {
+    key: "_a4_calli_howto",
+    phase: "wrapmap",
+    label: "덕목 하나를 골라 캘리그래피로",
+    hint:
+      "예) 존중 · 경청 · 신뢰 · 배려 · 정직 · 공감 …\n" +
+      "Canva 에서 글자 디자인(텍스트·폰트·색)이나 손글씨 요소로 그 덕목을 멋지게 표현해요.\n" +
+      "직접 손으로 써서 사진으로 올려도 좋아요.\n\n" +
+      "🔒 실명·개인정보는 작품이나 파일 이름에 넣지 않아요.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "a4_virtue",
+    phase: "wrapmap",
+    // 개인 기록. 비공개.
+    label: "내가 고른 덕목과, 그것이 관계에서 중요하다고 생각한 이유를 한두 줄로",
+    hint:
+      "예) 경청 — 잘 들어주는 것만으로도 상대가 존중받는다고 느끼니까.\n" +
+      "이 칸은 나와 선생님만 봐요.",
+    kind: "long",
+    maxLength: 200,
+  },
+  {
+    key: "a4_calli_url",
+    phase: "wrapmap",
+    /*
+     * ★ 산출물 기록 = Canva 공유 링크(캘리그래피). 이 과목 관례대로 URL 로 남긴다. 비공개.
+     */
+    label: "④ 내 캘리그래피 작품 — Canva 공유 링크를 붙여 주세요",
+    hint:
+      "Canva 오른쪽 위 [공유] → [링크 복사] 로 주소를 받아 여기에 붙여넣어요.\n" +
+      "손글씨 사진으로 했으면 그 사진 링크를 붙여도 돼요. 이 칸은 나와 선생님만 봐요.",
+    kind: "text",
+    maxLength: 300,
+  },
+  {
+    key: "a4_reflect",
+    phase: "wrapmap",
+    // 성찰 1문항 — 개인 글, 비공개.
+    label: "오늘 배운 의사소통 방법 중, 실제 관계에서 써보고 싶은 것 한 가지를 적어 주세요",
+    hint:
+      "예) 화날 때 ‘너 왜 그래’ 대신 나 전달법으로 “나는 서운했어” 라고 말해보고 싶다.\n" +
+      "이 칸은 나와 선생님만 봐요.",
+    kind: "long",
+    maxLength: 300,
+  },
+
+  /* ══════════════ 활동5 「공감 문장 · 감정 대화」 (wrapheal) ══════════════
+   *
+   * 마음일기 뒤 "얹는 활동" 단계(wrapheal)에 담는다(places 가 비어 그림판은 안 뜨고 활동지 문항만
+   * 뜬다). 흐름:
+   *   ① 생활 속 공감 문장 만들기 → ② 감정 말풍선 채우기 → ③ 감정 대화 이어가기
+   *   → ④ 대화를 바탕으로 '만화 생성 프롬프트' 정리
+   *
+   * ⚠ [만화 생성 = 스코프 밖] 이 포털에는 ChatGPT/DALL·E 같은 외부 이미지 생성 API 연동이
+   * **없다**(코드 확인: AI 는 Gemini 기반 emotion-lens·ai-review 뿐, 이미지 생성 라우트 없음).
+   * 그래서 이번 시드는 새 API·새 kind·새 서버 라우트를 만들지 않는다. 학생은 자기 감정 대화를
+   * 바탕으로 **만화 생성 프롬프트를 글로 정리해 기록**하고, 실제 만화 생성은 **교사 시연 / 외부
+   * 도구**로 둔다(활동2 의 Gemini·TM 처리와 같은 안전한 기본값). 실제 API 연동을 원하면 별도
+   * 작업(API 키·비용·새 kind·서버 라우트)이 필요하다 — 보고에 남긴다.
+   *
+   * 모든 서술 칸은 개인 글이라 친구에게 안 나간다(galleryEnabled: false).
+   */
+  {
+    key: "_a5_intro",
+    phase: "wrapheal",
+    label: "공감으로 마음 잇기 — 오늘의 마무리",
+    hint:
+      "관계를 살리는 마지막 열쇠는 ‘공감’ 이에요. 상대의 감정을 알아주는 한마디가 큰 힘이 됩니다.\n" +
+      "오늘은 ① 공감 문장 만들기 → ② 감정 말풍선 채우기 → ③ 감정 대화 이어가기 →\n" +
+      "④ 그 대화로 만화 프롬프트 정리 순서로 해봐요.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "_a5_empathy_note",
+    phase: "wrapheal",
+    label: "① 공감 문장이란",
+    hint:
+      "공감 문장은 상대의 마음을 ‘읽어 주는’ 말이에요. [상황 되짚기] + [감정 알아주기] 로 만들어요.\n" +
+      "예) “그랬구나, 열심히 준비했는데 결과가 아쉬워서 속상했겠다.”\n" +
+      "충고·평가(“그러게 더 하지”)보다, 감정을 알아주는 한마디가 먼저예요.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "a5_empathy",
+    phase: "wrapheal",
+    // 개인 작성. 비공개.
+    label: "아래 상황에 건넬 ‘공감 문장’ 을 만들어 보세요",
+    hint:
+      "상황: 친구가 “시험 망친 것 같아…” 하고 시무룩하게 말한다.\n" +
+      "[상황 되짚기] + [감정 알아주기] 로 한 문장. 이 칸은 나와 선생님만 봐요.",
+    kind: "long",
+    maxLength: 300,
+  },
+  {
+    key: "_a5_bubble_note",
+    phase: "wrapheal",
+    label: "② 감정 말풍선 채우기",
+    hint:
+      "한 장면을 떠올려 보세요. 아래 인물의 말풍선을, 그 감정에 어울리게 채워 봅니다.\n" +
+      "장면: 넘어진 동생을 언니/오빠가 일으켜 준다. 동생은 창피하고 고맙다.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "a5_bubble",
+    phase: "wrapheal",
+    // 개인 작성. 비공개.
+    label: "동생의 말풍선과 언니/오빠의 말풍선을 감정에 맞게 채워 주세요",
+    hint:
+      "예) 동생: “아… 봤어? 창피해. 그래도… 고마워.”  언니/오빠: “괜찮아? 누구나 넘어져.”\n" +
+      "이 칸은 나와 선생님만 봐요.",
+    kind: "long",
+    maxLength: 300,
+  },
+  {
+    key: "_a5_dialogue_note",
+    phase: "wrapheal",
+    label: "③ 감정 대화 이어가기",
+    hint:
+      "감정이 담긴 짧은 대화(또는 이야기)를 이어 써 봐요. 짝과 한 줄씩 주고받아도 좋고,\n" +
+      "선생님이 공유화면에서 AI 와 함께 이어가는 것을 보고 내 것을 써도 돼요.\n" +
+      "한 인물이 속상한 마음을 꺼내면, 다른 인물이 공감으로 답하는 흐름이면 좋아요.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "a5_dialogue",
+    phase: "wrapheal",
+    // 감정 대화 기록. 개인 글, 비공개. AI 대화는 교사 시연 — 포털에서 호출 안 함.
+    label: "내가 이어 쓴 감정 대화를 적어 주세요 (3~6줄)",
+    hint:
+      "예) A: 나 오늘 발표 완전 망친 것 같아.\n" +
+      "    B: 많이 긴장했겠다. 준비 많이 했잖아, 속상했겠어.\n" +
+      "    A: 응… 근데 그렇게 말해주니까 좀 낫다.\n" +
+      "이 칸은 나와 선생님만 봐요.",
+    kind: "long",
+    maxLength: 500,
+  },
+  {
+    key: "_a5_comic_note",
+    phase: "wrapheal",
+    /*
+     * ⚠ 만화 생성 = 포털 밖. 이미지 생성 API 연동이 없어 새로 만들지 않는다. 학생은 프롬프트를
+     * 글로 정리하고, 실제 생성은 교사 시연/외부 도구로 둔다(위 활동5 머리말 참조).
+     */
+    label: "④ 이 대화로 ‘만화’ 를 만든다면? — 만화 생성 프롬프트 정리하기",
+    hint:
+      "내 감정 대화를 만화로 만든다고 상상해 봐요. 어떤 장면·인물·감정·분위기가 담기면 좋을까요?\n" +
+      "그것을 ‘프롬프트(만들라고 주는 설명)’ 로 정리해 아래에 적어요.\n" +
+      "실제 만화 생성은 선생님이 공유화면에서 함께 보여주거나 외부 도구로 시연할 거예요.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "a5_comic_prompt",
+    phase: "wrapheal",
+    // 만화 생성 프롬프트 정리 기록. 개인 글, 비공개. 실제 생성은 포털 밖(교사 시연/외부).
+    label: "만화 생성 프롬프트를 정리해 적어 주세요",
+    hint:
+      "예) ‘두 친구가 학교 복도에서 대화하는 2컷 만화. 1컷: 시무룩한 친구. 2컷: 어깨를 토닥이며\n" +
+      "    공감해 주자 표정이 밝아짐. 따뜻하고 부드러운 색감, 귀여운 그림체.’\n" +
+      "이 칸은 나와 선생님만 봐요.",
+    kind: "long",
+    maxLength: 400,
+  },
+  {
+    key: "a5_reflect",
+    phase: "wrapheal",
+    // 성찰 1문항 — 개인 글, 비공개.
+    label: "감정을 말과 그림으로 표현해 보니 어땠나요? 공감이 관계에 어떤 도움이 될까요?",
+    hint:
+      "예) 내 마음을 말풍선으로 그려 보니 정리가 됐다. 공감 한마디가 사이를 풀어줄 것 같다.\n" +
+      "이 칸은 나와 선생님만 봐요.",
+    kind: "long",
+    maxLength: 300,
+  },
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
@@ -640,9 +1058,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   /*
    * 이탈 면제. progress 는 착시 영상 임베드(화면 안 재생이라 원래 이탈 아님)라 혹시 몰라,
-   * emotion 은 Teachable Machine 을 새 탭으로 열기 때문에 면제한다(활동이라 이탈로 안 센다).
+   * emotion 은 Teachable Machine 을, worksheet(활동3)·wrapmap(활동4)은 Canva 를 새 탭으로
+   * 열기 때문에 면제한다(활동이라 이탈로 안 센다). wrapheal(활동5)은 외부 창을 안 열지만,
+   * 마무리 활동이라 함께 면제해 둔다.
    */
-  focusExempt: ["progress", "emotion"],
+  focusExempt: ["progress", "emotion", "worksheet", "wrapmap", "wrapheal"],
 
   phaseLabels: {
     mood: "마음 체크인",
@@ -656,7 +1076,12 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     // ── 활동2 ──
     grill: "감정 추측 — 듣고 맞히기",
     emotion: "AI로 감정 분석하기",
+    // ── 활동3 (worksheet 자리) ──
+    worksheet: "감정 캐릭터 만들기 (Canva AI)",
     reflection: "마음일기",
+    // ── 활동4·5 (마음일기 뒤 얹는 활동) ──
+    wrapmap: "효과적인 의사소통",
+    wrapheal: "공감 문장 · 감정 대화",
   },
 
   // 투표(활동1 토끼오리 + 활동2 가사·감정) — 포털 퀴즈로. 교사가 공유화면에서 집계를 본다.
@@ -709,11 +1134,18 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log(`\n활동 ID: ${ACTIVITY_ID} · 차시 번호 ${LESSON_NO} (5회기 대인관계 — 활동1+활동2, 모듈 단위로 붙임)`);
-  console.log("교사 버튼 순서: 대기 → 마음 체크인 →");
+  console.log(`\n활동 ID: ${ACTIVITY_ID} · 차시 번호 ${LESSON_NO} (5회기 대인관계 — 활동1~5, 모듈 단위로 붙임)`);
+  console.log("교사 버튼 순서(고정 단계 위): 대기 → 마음 체크인 →");
   console.log("  [활동1] 오늘 할 일+착시 영상 → 토끼? 오리? 그림 → (투표) → 관점 차이 → 문화별 감정 표현 → 정리");
   console.log("  [활동2] 감정 추측 — 듣고 맞히기(grill) → AI로 감정 분석하기(emotion)");
+  console.log("  [활동3] 감정 캐릭터 만들기 · Canva AI (worksheet — 고정 순서상 grill 과 emotion 사이에 낌)");
   console.log("  → 마음일기");
+  console.log("  [활동4] 효과적인 의사소통 (wrapmap — 마음일기 뒤 얹는 활동)");
+  console.log("  [활동5] 공감 문장 · 감정 대화 (wrapheal — 마음일기 뒤 얹는 활동)");
+  console.log("  → 마침");
+  console.log("\n⚠ 단계 순서는 LESSON_PHASES 로 고정 — 활동3~5 는 붙일 수 있는 빈 단계에 얹었습니다. 활동3(worksheet)은 활동2 의 grill·emotion 사이에 낍니다. 활동4·5(wrapmap·wrapheal)는 마음일기 뒤 '얹는 활동' 자리입니다. 모듈을 재배치해 조합할 때 감안하세요.");
+  console.log("Canva(활동3 감정 캐릭터 · 활동4 관계 캘리그래피): 분반별 초대 토큰은 .env.local(CANVA_INVITE_MT_*)에서만 읽습니다. 세션 열 때 open-mt5-*.ts 가 그 분반 것만 linkUrl 에 박고 linkUrlByGroup 은 지웁니다(남의 분반 토큰 유출 방지). 산출물은 그림 파일이 아니라 공유 링크(URL)로 기록합니다.");
+  console.log("⚠ 활동5 만화 생성: 이 포털엔 ChatGPT/이미지 생성 API 연동이 없습니다 — 학생은 만화 생성 프롬프트만 글로 정리·기록하고, 실제 만화 생성은 교사 시연/외부 도구입니다. 실제 API 연동을 원하면 별도 작업(API 키·비용·새 kind·서버 라우트)이 필요합니다.");
   console.log("\n리허설: 위 seed 를 재실행(재시드)하면 아직 시작 안 한 세션에 반영됩니다. 리허설 세션을 열어 대기→기분→활동1→활동2 로 눌러 보세요. (리허설 흔적 __rehearsal 은 그대로 두면 됩니다.)");
   console.log("\n⚠ 투표(퀴즈)는 단계가 하나뿐 — 활동1·활동2 문항이 한 [투표] 단계에 모입니다(quiz[0] 토끼오리 · quiz[1] 가사 · quiz[2] 감정(내용만) · quiz[3] 감정(억양+맥락)).");
   console.log("   활동2 에서는 grill/emotion 에 있다가 투표할 때 [투표] 단계로 잠깐 돌아가 quizIndex 를 맞춰 투표를 받고 다시 옵니다. prompt 앞 [활동1]/[활동2] 라벨로 구분하세요.");
@@ -722,7 +1154,7 @@ async function main(): Promise<void> {
   console.log(`\n⚠ 이미지: 토끼-오리 그림 파일이 아직 없습니다 — 교사가 public${RABBIT_DUCK_IMG} 로 넣어야 화면에 뜹니다. (예: 위키미디어 공용 "Kaninchen und Ente")`);
   console.log(`착시 영상: 안내 화면(progress)에 임베드 (${ILLUSION_VIDEO_WATCH}). 앞 화면 재생을 원하면 교사가 같은 링크를 전자칠판에 열면 됩니다.`);
   console.log("가사 퀴즈: quiz[1] 선택지·정답은 예시(강남스타일)입니다 — 교사가 고른 곡에 맞게 KPOP_CHOICES·KPOP_ANSWER_INDEX 를 바꾸거나 대시보드에서 수정하세요. 가사 전문은 넣지 않습니다(저작권).");
-  console.log("프라이버시: 서로 구경하기 꺼짐(galleryEnabled: false) — 관점·문화·재해석·AI 비교·표정 소감·마음일기 모두 본인·교사만. 투표는 익명 집계 수치. 포털에서 Gemini 호출 없음.");
+  console.log("프라이버시: 서로 구경하기 꺼짐(galleryEnabled: false) — 관점·문화·재해석·AI 비교·표정 소감·마음일기, 그리고 활동3~5(감정 캐릭터 링크·나 전달법·갈등 분석·캘리그래피 링크·공감 문장·감정 대화·만화 프롬프트) 모두 본인·교사만. 투표는 익명 집계 수치. 포털에서 Gemini/외부 API 호출 없음(galleryAnswerKeys 없음 — 열 것이 없음).");
   console.log("블록타임: 6·7교시 90분 연속 → 세션은 7교시로 하나만 엽니다 (여는 스크립트 open-mt5-*.ts 의 몫, 이번엔 seed 만).");
   process.exit(0);
 }
