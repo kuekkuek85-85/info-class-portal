@@ -161,13 +161,19 @@ async function main(): Promise<void> {
   }
 
   const dumped = JSON.stringify(back.activity);
-  const act = back.activity as { peerAssign?: string; galleryEnabled?: boolean } | undefined;
+  const act = back.activity as
+    | { peerAssign?: string; peerCount?: number; galleryAssignedOnly?: boolean; galleryEnabled?: boolean }
+    | undefined;
   console.log(`✓ 열림  ${SESSION_ID}`);
   console.log(`  ${DATE} ${PERIOD}교시 · ${GROUP_LABEL} · ${LESSON_NO}차시`);
   console.log(`  수업 코드  ${back.code}`);
   console.log(`  상태 ${back.status} · 단계 ${back.phase} · 되돌아가기 ${back.freeNavigation ? "켬" : "끔"}`);
   console.log(`  남의 분반 토큰 실림  ${dumped.includes("linkUrlByGroup") ? "예 ← 문제" : "아니오"}`);
-  console.log(`  동료 검토  ${act?.galleryEnabled ? "켬" : "끔"} · 배정 ${act?.peerAssign ?? "cyclic"}`);
+  console.log(
+    `  동료 검토  ${act?.galleryEnabled ? "켬" : "끔"} · 배정 ${act?.peerAssign ?? "cyclic"}` +
+      ` ${act?.peerCount ?? 2}편` +
+      ` · ${act?.galleryAssignedOnly ? "배정만 노출(자유 선택 없음)" : "전체 + 자유 선택"}`,
+  );
   console.log(`  대기 게임  ${(back.game as { heading?: string })?.heading ?? "없음"}`);
   process.exit(0);
 }

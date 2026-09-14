@@ -158,10 +158,10 @@ function seededShuffle<T>(canonical: T[], seed: string): T[] {
  *
  * 자유 선택만 두면 결과가 뻔하다 — 그림 잘 그리는 몇 명에게 몰리고, 나머지는 아무도 안 본다.
  * 30분 수업에서 "아무도 내 걸 안 봤다"는 경험은 다음 활동 참여를 그대로 깎아먹는다.
- * 그래서 **필수 2편은 서버가 배정**하고, 자유 선택 1편만 학생에게 맡긴다.
+ * 그래서 **필수 N편은 서버가 배정**한다 (기본 2편 + 자유 선택 1편, 또는 자유 없이 배정만).
  *
- * 배정은 제출한 사람들을 한 줄로 늘어놓고 내 뒤 두 명을 준다. 마지막 사람은 처음으로
- * 돌아온다(순환). 이러면 모든 작품이 정확히 두 번씩 배정된다 — 아무도 빠지지 않는다.
+ * 배정은 제출한 사람들을 한 줄로 늘어놓고 내 뒤 N명을 준다. 마지막 사람은 처음으로
+ * 돌아온다(순환). 이러면 모든 작품이 정확히 N번씩 배정된다 — 아무도 빠지지 않는다.
  *
  * 학번 자체에 +1 을 하지 않는 이유: 결석하거나 아직 제출하지 않은 학생이 있으면 그 번호가
  * 비어 배정이 통째로 어긋난다. 제출한 사람들 안에서 세는 쪽이 항상 성립한다.
@@ -172,13 +172,21 @@ function seededShuffle<T>(canonical: T[], seed: string): T[] {
  *    options 를 안 주면 여기다 — 기존 동작이 한 줄도 바뀌지 않는다.
  *  - "random" — 학번순 canonical 을 세션 시드로 **한 번** 섞은 순서. 그 위에 같은 순환
  *    로직을 그대로 얹는다. 여러 반이 섞인 분반에서 학번순이면 같은 반끼리 몰리는 것을 푼다.
- *    폴링마다 다시 섞이지 않고(시드가 세션 고정), 모든 작품은 여전히 정확히 두 번 배정된다.
+ *    폴링마다 다시 섞이지 않고(시드가 세션 고정), 모든 작품은 여전히 정확히 N번 배정된다.
+ *
+ * ## 몇 편을 배정할지 (options.count)
+ *
+ * 안 주면 **2** — 지금까지의 필수 2편 그대로다. 자유 선택을 없애고 배정만으로 채우는
+ * 차시는 3 을 준다(인간과 인공지능 5차시). "내 뒤 N명" 이라 제출자가 N+1명 이상이면
+ * 모든 작품이 정확히 N번씩 배정된다.
  */
 export function assignPeers(
   submitted: Artifact[],
   myStudentId: string,
-  options?: { mode?: PeerAssignMode; seed?: string },
+  options?: { mode?: PeerAssignMode; seed?: string; count?: number },
 ): Artifact[] {
+  // 배정 편수. 안 주면 2 (기존 동작). 최소 1 로 막아 이상한 값에도 무너지지 않게.
+  const count = Math.max(1, options?.count ?? 2);
   // 어느 방식이든 먼저 학번순 canonical 로 세운다 — 입력 차례에 결과가 흔들리지 않게.
   const canonical = [...submitted].sort((a, b) => a.studentId.localeCompare(b.studentId));
   const ordered =
@@ -190,22 +198,26 @@ export function assignPeers(
 
   /*
    * 아직 제출하지 않은 학생에게도 볼 것은 줘야 한다 (안 그리고 있는 학생일수록 남의 것을
-   * 봐야 시작한다). 다만 전부 맨 앞 두 편으로 보내면 1·2번 작품에만 사람이 몰린다.
-   * 학번을 시작점으로 삼아 흩뜨린다.
+   * 봐야 시작한다). 다만 전부 맨 앞 편으로 보내면 앞 작품에만 사람이 몰린다.
+   * 학번을 시작점으로 삼아 흩뜨린다. (이 학생들은 배정 균형에는 안 든다 — 볼 것만 준다.)
    */
   if (myIndex < 0) {
     const seed = Number(myStudentId.slice(-2)) || 0;
     const start = seed % others.length;
-    return [others[start], others[(start + 1) % others.length]].filter(
-      (row, index, list) => list.indexOf(row) === index,
-    );
+    const picked: Artifact[] = [];
+    for (let step = 0; step < others.length && picked.length < count; step += 1) {
+      const candidate = others[(start + step) % others.length];
+      if (picked.some((row) => row.id === candidate.id)) continue;
+      picked.push(candidate);
+    }
+    return picked;
   }
 
-  // 제출한 학생은 자기 뒤 두 명 — 마지막 사람은 처음으로 돌아온다.
-  // 제출자가 3명 이상이면 모든 작품이 정확히 두 번씩 배정된다.
-  // 2명이면 1편, 1명(나뿐)이면 0편 — 인원이 모자란 것이지 배정이 틀린 것은 아니다.
+  // 제출한 학생은 자기 뒤 N명 — 마지막 사람은 처음으로 돌아온다.
+  // 제출자가 N+1명 이상이면 모든 작품이 정확히 N번씩 배정된다.
+  // 제출자가 그보다 적으면 있는 만큼만 — 인원이 모자란 것이지 배정이 틀린 것은 아니다.
   const picked: Artifact[] = [];
-  for (let step = 1; step <= ordered.length && picked.length < 2; step += 1) {
+  for (let step = 1; step <= ordered.length && picked.length < count; step += 1) {
     const candidate = ordered[(myIndex + step) % ordered.length];
     if (candidate.studentId === myStudentId) continue;
     if (picked.some((row) => row.id === candidate.id)) continue;

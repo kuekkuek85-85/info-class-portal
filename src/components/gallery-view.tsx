@@ -59,6 +59,12 @@ interface GalleryData {
   /** 친구에게 열어 둔 답 칸의 차례. 비면 필터 값으로 요약한다 */
   sharedKeys?: string[];
   feedbackPrompts: FeedbackPrompts;
+  /**
+   * 배정된 작품만 노출하는 차시인가 (5차시). true 면 서버가 배정 편만 내려보내고,
+   * 화면은 필터·자유 선택·전체 둘러보기를 감춘 채 배정된 몇 편만 격자로 보여준다.
+   * 안 오면 false — 지금까지처럼 전체 + 필터 + 배정 표시.
+   */
+  assignedOnly?: boolean;
 }
 
 /** 필터 한 묶음. 무엇으로 거를지는 차시가 정한다 (gallery 라우트의 facetsFor) */
@@ -168,7 +174,12 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
   // ?? [] 를 그대로 두면 렌더마다 새 배열이 되어 아래 useMemo 가 매번 다시 돈다
   const works = useMemo(() => data?.works ?? [], [data]);
 
+  // 배정만 노출하는 차시. 서버가 이미 배정 편만 내려보내므로 필터를 걸 것도 없다
+  const assignedOnly = data?.assignedOnly ?? false;
+
   const filtered = useMemo(() => {
+    // 배정만 노출하는 차시는 서버가 준 그대로 — 자유 선택·필터가 없다
+    if (assignedOnly) return works;
     return works.filter((work) => {
       if (onlyAssigned && !work.assigned) return false;
 
@@ -183,7 +194,7 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
       }
       return true;
     });
-  }, [works, onlyAssigned, picked]);
+  }, [works, onlyAssigned, picked, assignedOnly]);
 
   const open = works.find((work) => work.id === openId) ?? null;
 
@@ -227,16 +238,22 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
 
           {works.length > 0 && (
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
-              <FilterPanel
-                facets={data.facets ?? []}
-                picked={picked}
-                onPicked={setPicked}
-                onlyAssigned={onlyAssigned}
-                onAssigned={setOnlyAssigned}
-                noun={noun}
-                total={works.length}
-                shown={filtered.length}
-              />
+              {/*
+                배정만 노출하는 차시(5차시)에서는 필터·자유 선택을 감춘다. 서버가 배정된
+                몇 편만 내려보내므로 거를 것이 없고, 자유 선택 UI 도 없어야 한다.
+              */}
+              {!assignedOnly && (
+                <FilterPanel
+                  facets={data.facets ?? []}
+                  picked={picked}
+                  onPicked={setPicked}
+                  onlyAssigned={onlyAssigned}
+                  onAssigned={setOnlyAssigned}
+                  noun={noun}
+                  total={works.length}
+                  shown={filtered.length}
+                />
+              )}
 
               <div className="min-w-0 flex-1">
                 {/*

@@ -248,8 +248,17 @@ export async function GET() {
     const assigned = assignPeers(visible, me.studentId, {
       mode: session.activity?.peerAssign,
       seed: session.id,
+      count: session.activity?.peerCount,
     });
     const assignedIds = new Set(assigned.map((row) => row.id));
+
+    /*
+     * 배정된 것만 노출하는 차시(galleryAssignedOnly)면, 배정 외 작품은 아예 내려보내지 않는다.
+     * 자유 선택·전체 둘러보기가 없는 5차시가 그렇다 — 화면에서 감추는 것만으로는 부족하고
+     * (응답에 실려 있으면 개발자 도구로 읽힌다), 목록 자체에서 빼야 한다.
+     * 기본(false)은 지금까지처럼 반 전체를 내려보내고 배정 편에 표시만 한다.
+     */
+    const assignedOnly = session.activity?.galleryAssignedOnly === true;
 
     /*
      * 실명 갤러리(galleryShowNames: true)인 세션에서만 작성자 이름을 붙인다.
@@ -271,6 +280,8 @@ export async function GET() {
     const works = inViewingOrder(
       visible
         .filter((row) => row.studentId !== me.studentId)
+        // 배정만 노출하는 차시면 여기서 배정 외를 통째로 뺀다 (응답에 아예 안 실린다)
+        .filter((row) => !assignedOnly || assignedIds.has(row.id))
         .map((row) => ({
           // 정해진 답 칸만 싣는다 — 감정 낱말은 열고 경험 글은 닫는다.
           // 실명 세션이면 author 에 이름을 채우고(익명 세션은 "" 그대로), 답 칸 범위는 그대로다.
@@ -321,8 +332,13 @@ export async function GET() {
       sharedKeys: allowKeys ?? [],
       // 친구 것에 남기는 두 칸의 질문 — 차시가 정하지 않았으면 그림용 기본값
       feedbackPrompts: session.activity?.feedbackPrompts ?? DEFAULT_FEEDBACK_PROMPTS,
+      /*
+       * 배정만 노출하는 차시면 화면이 자유 선택·필터·전체 둘러보기를 감춘다.
+       * 필터도 쓸모가 없으므로 항목을 비워 보낸다 (배정된 몇 편에 필터는 과하다).
+       */
+      assignedOnly,
       /** 왼쪽 필터를 무엇으로 세울지. 차시마다 다르다 (facetsFor 참조) */
-      facets: facetsFor(session, visible),
+      facets: assignedOnly ? [] : facetsFor(session, visible),
     });
   });
 }
