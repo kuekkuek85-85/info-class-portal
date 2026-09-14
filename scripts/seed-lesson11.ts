@@ -447,6 +447,7 @@ const WORKSHEET: WorksheetQuestion[] = [
       { label: "똥 피하기", url: "https://dodge-poop-game.vercel.app/" },
       { label: "하노이탑", url: "https://hanoi-tower-game-rosy.vercel.app/" },
       { label: "2048", url: "https://2048-game-gilt-kappa.vercel.app/" },
+      { label: "지뢰찾기", url: "https://mine-sweeper-game-seven.vercel.app/home" },
     ],
   },
 ];
