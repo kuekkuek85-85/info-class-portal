@@ -123,6 +123,35 @@ const WORKSHEET: WorksheetQuestion[] = [
     enabledAfterOpen: "_bd_maze1",
     maxLength: 0,
   },
+  /*
+   * 맨 하단 — 최종 진도 기록. 팝업(20·30·40분)을 놓쳐도, 오늘 끝에 어느 미로 몇 미션까지
+   * 했는지 학생이 스스로 한 번 더 남긴다. 활동지 자동저장으로 작품 answers 에 들어간다.
+   */
+  {
+    key: "_bd_final_head",
+    phase: "worksheet",
+    label: "오늘 어디까지 했나요? (마지막 기록)",
+    hint: "수업을 마치기 전에, 오늘 최종적으로 어느 미로 몇 번째 미션까지 풀었는지 아래에 남겨 주세요.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "bd_final_maze",
+    phase: "worksheet",
+    label: "오늘 마지막으로 푼 미로",
+    hint: "오늘 마지막에 풀고 있던(또는 끝낸) 미로를 골라 주세요.",
+    kind: "choice",
+    choices: ["① 이상한 숲", "② 이상한 티파티"],
+    maxLength: 20,
+  },
+  {
+    key: "bd_final_mission",
+    phase: "worksheet",
+    label: "몇 번째 미션까지 했나요?",
+    hint: "숫자로 적어 주세요 (1~12).",
+    kind: "text",
+    maxLength: 10,
+  },
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
