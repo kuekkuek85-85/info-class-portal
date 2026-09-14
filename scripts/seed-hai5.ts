@@ -416,6 +416,15 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     galleryNoun: "앱",
 
     /*
+     * 이 차시는 활동지에 글만 쓰는 게 아니라 **받은 피드백으로 자기 앱을 고치고**, 감상 탭에서
+     * **친구 앱을 검토**한다. 그래서 두 탭 이름을 활동에 맞게 바꾼다(코드 변경 없이 라벨만).
+     *   · 왼쪽 활동지 탭  "활동지 쓰기" → "앱 수정"  (worksheetTabLabel)
+     *   · 감상 탭         "앱 감상"     → "앱 검토"  (galleryTabLabel; 비면 "{galleryNoun} 감상")
+     */
+    worksheetTabLabel: "앱 수정",
+    galleryTabLabel: "앱 검토",
+
+    /*
      * 친구에게 보여줄 답 칸을 딱 집는다 (privacy — 서버가 toCard 에서 거른다).
      *
      * **앱 주소(build_url) 하나만 연다.** 앱은 서로 눌러 열어 봐야 검토가 되므로 링크는

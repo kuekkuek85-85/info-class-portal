@@ -60,6 +60,8 @@ export interface ActivityInfo {
   galleryNoun?: string;
   /** 왼쪽 활동지 탭 이름. 비면 "활동지 쓰기" */
   worksheetTabLabel?: string;
+  /** 감상 탭 이름. 비면 "{galleryNoun} 감상" (예: "작품 감상"). 검토 활동에서 "앱 검토" 처럼 바꾼다 */
+  galleryTabLabel?: string;
 }
 
 interface LessonData {
@@ -1168,7 +1170,7 @@ export default function LessonPage() {
                 onClick={() => setWorkTab("gallery")}
                 className={`pill flex-1 ${activeTab === "gallery" ? "pill-primary" : "pill-secondary"}`}
               >
-                {workNoun} 감상
+                {session.activity?.galleryTabLabel || `${workNoun} 감상`}
               </button>
             )}
           </div>
