@@ -166,14 +166,18 @@ const ILLUSION_VIDEO_EMBED = "https://www.youtube.com/embed/6JgPeBPwRvY";
 const ILLUSION_VIDEO_WATCH = "https://youtu.be/6JgPeBPwRvY";
 
 /**
- * ② 토끼-오리 착시 그림.
+ * ② 토끼-오리 착시 그림 (교사 제공 URL).
  *
- * ⚠️ 이 이미지 파일은 아직 저장소에 없다. 교사가 토끼-오리 착시 그림을 이 경로에 맞춰
- *    public/mt5/rabbit-duck.png 로 넣어야 화면에 뜬다. (붙여넣은 이미지를 파일로 저장할
- *    수단이 없어 여기서는 경로만 잡아 둔다.) 파일이 없으면 해당 칸이 깨진 그림으로 보인다.
- *    무료 이용 가능한 그림 예: 위키미디어 공용 "Kaninchen und Ente"(토끼-오리, 퍼블릭 도메인).
+ * 학생 브라우저가 이 외부 URL 에서 직접 불러온다(포털 CSP img-src 는 https 허용). 저장소에
+ * 파일을 두지 않아 배포 없이 seed 만으로 뜬다.
+ *
+ * ⚠️ 외부 호스트(i.pinimg.com) 의존이라, 그쪽이 핫링크를 막거나 학교망이 그 도메인을
+ *    차단하면 안 뜰 수 있다. **리허설에서 실제로 뜨는지 꼭 확인.** 안 뜨면 그림 파일을
+ *    public/mt5/rabbit-duck.png 로 넣고 이 값을 "/mt5/rabbit-duck.png" 로 바꿔 자체 호스팅한다
+ *    (그 경우 정적 파일 추가라 배포 필요).
  */
-const RABBIT_DUCK_IMG = "/mt5/rabbit-duck.png";
+const RABBIT_DUCK_IMG =
+  "https://i.pinimg.com/736x/1c/f3/75/1cf3752623f5a81e4955214862d4d8ac.jpg";
 
 /* ─────────────── 활동2 「감정 추측하기」 재료 ─────────────── */
 
@@ -604,7 +608,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    *
    * 안내 화면(assessment)은 퀴즈 바로 앞이라, 투표 직전에 그림을 크게 보여주기 좋다.
    * PhaseContent 는 그림을 탭(tab.imageUrl)으로만 그리므로 탭 하나에 담는다.
-   * ⚠️ RABBIT_DUCK_IMG 파일은 아직 없다 — 교사가 public/mt5/rabbit-duck.png 로 넣어야 뜬다.
+   * 그림은 교사가 준 외부 URL(RABBIT_DUCK_IMG) — 학생 브라우저가 직접 불러온다. 리허설에서
+   * 실제로 뜨는지 확인할 것(외부 호스트 차단 시 자체 호스팅으로 전환 — 위 상수 주석 참고).
    */
   assessment: {
     heading: "토끼일까요, 오리일까요?",
