@@ -813,6 +813,20 @@ export interface WorksheetQuestion {
   phase?: LessonPhase;
 }
 
+/**
+ * 동료 검토에서 필수 2편을 **누구에게 배정할지** 정하는 방식.
+ *
+ *  - "cyclic"(기본) — 제출자를 학번순으로 세우고 내 뒤 두 명을 준다 (gallery.ts 의 assignPeers).
+ *    모든 앱이 정확히 두 번씩 배정되지만, 학번이 가까운 사람끼리 이어진다.
+ *  - "random" — 제출자 순서를 **세션마다 한 번** 결정적으로 섞은 뒤 같은 순환 로직을 얹는다.
+ *    여러 반이 한 분반에 섞여 있어 학번순이면 같은 반끼리 몰리는 차시(인간과 인공지능 5차시)에서 쓴다.
+ *    섞되 폴링마다 다시 섞이지 않고(세션 시드), 모든 앱은 여전히 정확히 두 번 배정된다.
+ *
+ * 안 적으면 "cyclic" — 지금까지의 모든 동료 검토 차시(정보과·마음 톡톡 등)는 이 값이 없어
+ * 기존 학번순 순환 그대로다. 이 값을 켠 세션만 랜덤이다.
+ */
+export type PeerAssignMode = "cyclic" | "random";
+
 export interface ActivityContent {
   /**
    * 그림을 묶는 열쇠. **2차시와 3차시 차시 계획에 같은 값을 넣는다.**
@@ -916,6 +930,15 @@ export interface ActivityContent {
    * 학생 화면의 감상 탭, 교사 대시보드의 감상 단추, 감상 API 가 모두 이 값을 본다.
    */
   galleryEnabled?: boolean;
+  /**
+   * 동료 검토 필수 2편의 배정 방식 (기본 "cyclic" = 학번순 순환).
+   *
+   * "random" 을 켜면 제출자 순서를 세션마다 한 번 결정적으로 섞은 뒤 순환을 얹는다 —
+   * 여러 반이 섞인 분반에서 학번순으로 같은 반끼리 몰리는 것을 푼다 (PeerAssignMode 참조).
+   * 안 적으면 "cyclic" 이라 기존 차시 동작은 완전히 그대로다. gallery 라우트가 이 값을 읽어
+   * assignPeers 에 넘긴다.
+   */
+  peerAssign?: PeerAssignMode;
   /**
    * 갤러리 카드에 **작성자 실명을 붙인다** (기본값 없음 = 익명).
    *

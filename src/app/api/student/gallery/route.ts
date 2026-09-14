@@ -239,7 +239,16 @@ export async function GET() {
       byArtifact.set(row.artifactId, entry);
     }
 
-    const assigned = assignPeers(visible, me.studentId);
+    /*
+     * 필수 2편 배정. 배정 방식은 차시가 정한다 (기본 학번순 순환).
+     * "random" 세션은 세션 ID 를 시드로 한 번 섞은 순서 위에 같은 순환을 얹는다 —
+     * 여러 반이 섞인 분반에서 학번순으로 같은 반끼리 몰리는 것을 푼다 (gallery.ts 의 assignPeers).
+     * 시드가 세션 고정이라 폴링마다 다시 섞이지 않고, 모든 앱은 여전히 정확히 두 번 배정된다.
+     */
+    const assigned = assignPeers(visible, me.studentId, {
+      mode: session.activity?.peerAssign,
+      seed: session.id,
+    });
     const assignedIds = new Set(assigned.map((row) => row.id));
 
     /*

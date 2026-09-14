@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto";
 
-import type { Artifact, ClassSession, Student } from "./types";
+import type { Artifact, ClassSession, PeerAssignMode, Student } from "./types";
 
 /**
  * 이 수업에서 쓸 활동 ID.
@@ -112,20 +112,77 @@ export function toCard(artifact: Artifact, author: string, allowKeys?: string[])
 }
 
 /**
+ * 문자열 하나를 32비트 부호없는 정수로 접는다 (FNV-1a).
+ *
+ * 세션마다 다른, 그러나 **같은 세션에서는 늘 같은** 시드를 얻으려는 것뿐이다.
+ * 보안 용도가 아니다 — 작품 번호(publicIdOf)는 지금까지처럼 서버 열쇠로 서명한다.
+ */
+function hashString(input: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < input.length; i += 1) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+/** 시드 하나로 늘 같은 난수열을 내는 작은 PRNG (mulberry32) */
+function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * 시드로 결정적으로 섞는다 (Fisher–Yates).
+ *
+ * **입력 순서에 흔들리지 않게, 부르는 쪽에서 먼저 학번순으로 세워 canonical 로 만든 뒤**
+ * 넘긴다. 그래야 목록이 어떤 차례로 들어오든 같은 세션·같은 제출자 집합이면 같은 결과가 난다.
+ */
+function seededShuffle<T>(canonical: T[], seed: string): T[] {
+  const rng = mulberry32(hashString(seed));
+  const arr = [...canonical];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/**
  * 누가 누구 작품을 보는지 정한다.
  *
  * 자유 선택만 두면 결과가 뻔하다 — 그림 잘 그리는 몇 명에게 몰리고, 나머지는 아무도 안 본다.
  * 30분 수업에서 "아무도 내 걸 안 봤다"는 경험은 다음 활동 참여를 그대로 깎아먹는다.
  * 그래서 **필수 2편은 서버가 배정**하고, 자유 선택 1편만 학생에게 맡긴다.
  *
- * 배정은 제출한 사람들을 학번 순으로 늘어놓고 내 뒤 두 명을 준다. 마지막 사람은 처음으로
+ * 배정은 제출한 사람들을 한 줄로 늘어놓고 내 뒤 두 명을 준다. 마지막 사람은 처음으로
  * 돌아온다(순환). 이러면 모든 작품이 정확히 두 번씩 배정된다 — 아무도 빠지지 않는다.
  *
  * 학번 자체에 +1 을 하지 않는 이유: 결석하거나 아직 제출하지 않은 학생이 있으면 그 번호가
  * 비어 배정이 통째로 어긋난다. 제출한 사람들 안에서 세는 쪽이 항상 성립한다.
+ *
+ * ## 줄 세우는 방식은 두 가지다 (options.mode)
+ *
+ *  - "cyclic"(기본) — **학번 순.** 지금까지의 모든 동료 검토 차시가 이 길로 온다.
+ *    options 를 안 주면 여기다 — 기존 동작이 한 줄도 바뀌지 않는다.
+ *  - "random" — 학번순 canonical 을 세션 시드로 **한 번** 섞은 순서. 그 위에 같은 순환
+ *    로직을 그대로 얹는다. 여러 반이 섞인 분반에서 학번순이면 같은 반끼리 몰리는 것을 푼다.
+ *    폴링마다 다시 섞이지 않고(시드가 세션 고정), 모든 작품은 여전히 정확히 두 번 배정된다.
  */
-export function assignPeers(submitted: Artifact[], myStudentId: string): Artifact[] {
-  const ordered = [...submitted].sort((a, b) => a.studentId.localeCompare(b.studentId));
+export function assignPeers(
+  submitted: Artifact[],
+  myStudentId: string,
+  options?: { mode?: PeerAssignMode; seed?: string },
+): Artifact[] {
+  // 어느 방식이든 먼저 학번순 canonical 로 세운다 — 입력 차례에 결과가 흔들리지 않게.
+  const canonical = [...submitted].sort((a, b) => a.studentId.localeCompare(b.studentId));
+  const ordered =
+    options?.mode === "random" ? seededShuffle(canonical, options.seed ?? "") : canonical;
   const others = ordered.filter((row) => row.studentId !== myStudentId);
   if (others.length === 0) return [];
 
