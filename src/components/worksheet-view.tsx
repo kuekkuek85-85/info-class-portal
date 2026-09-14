@@ -418,6 +418,8 @@ export function WorksheetView({
 
   /** 방금 복사한 칸 — 눌렀는데 아무 일도 안 일어난 것처럼 보이면 또 누른다 */
   const [copied, setCopied] = useState("");
+  // 순서 잠금이 있는 링크(enabledAfterOpen)를 위해, 이 화면에서 연 링크의 key 를 모아 둔다.
+  const [openedLinks, setOpenedLinks] = useState<Set<string>>(new Set());
 
   /**
    * @param mark  「복사됐어요」를 어느 단추에 띄울지. 한 문항에 단추가 둘일 수 있다
@@ -662,16 +664,32 @@ export function WorksheetView({
             100자가 넘어서, 옮겨 적으라고 하면 그 자리에서 수업이 멈춘다.
             새 창으로 연다 — 같은 창에서 나가면 쓰던 답이 날아간다.
           */}
-          {question.linkUrl && (
-            <a
-              href={question.linkUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="pill pill-primary pill-block text-center"
-            >
-              {question.linkLabel || "열기"}
-            </a>
-          )}
+          {question.linkUrl &&
+            (question.enabledAfterOpen && !openedLinks.has(question.enabledAfterOpen) ? (
+              // 순서 잠금: 앞 링크를 아직 안 열었으면 비활성 — 누를 수 없다.
+              <div className="flex flex-col gap-1">
+                <span className="pill pill-block cursor-not-allowed text-center opacity-40">
+                  {question.linkLabel || "열기"}
+                </span>
+                <span className="t-caption">앞의 ① 미로를 먼저 열면 여기가 열려요.</span>
+              </div>
+            ) : (
+              <a
+                href={question.linkUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() =>
+                  setOpenedLinks((prev) => {
+                    const next = new Set(prev);
+                    next.add(question.key);
+                    return next;
+                  })
+                }
+                className="pill pill-primary pill-block text-center"
+              >
+                {question.linkLabel || "열기"}
+              </a>
+            ))}
 
           {/*
             낱말 보기. 힌트 한 줄로는 모자란 질문에만 붙는다.

@@ -38,7 +38,7 @@
  */
 
 import { cert, initializeApp } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
 import type { LessonPlan, PhaseContent, WorksheetQuestion } from "../src/lib/types.ts";
 
@@ -119,7 +119,38 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "note",
     linkUrl: "https://playentry.org/maze/2020-2/1",
     linkLabel: "② 이상한 티파티 열기",
+    // ① 미로를 한 번 연 뒤에야 활성화된다 (순서 강제)
+    enabledAfterOpen: "_bd_maze1",
     maxLength: 0,
+  },
+  /*
+   * 맨 하단 — 최종 진도 기록. 팝업(20·30·40분)을 놓쳐도, 오늘 끝에 어느 미로 몇 미션까지
+   * 했는지 학생이 스스로 한 번 더 남긴다. 활동지 자동저장으로 작품 answers 에 들어간다.
+   */
+  {
+    key: "_bd_final_head",
+    phase: "worksheet",
+    label: "오늘 어디까지 했나요? (마지막 기록)",
+    hint: "수업을 마치기 전에, 오늘 최종적으로 어느 미로 몇 번째 미션까지 풀었는지 아래에 남겨 주세요.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "bd_final_maze",
+    phase: "worksheet",
+    label: "오늘 마지막으로 푼 미로",
+    hint: "오늘 마지막에 풀고 있던(또는 끝낸) 미로를 골라 주세요.",
+    kind: "choice",
+    choices: ["① 이상한 숲", "② 이상한 티파티"],
+    maxLength: 20,
+  },
+  {
+    key: "bd_final_mission",
+    phase: "worksheet",
+    label: "몇 번째 미션까지 했나요?",
+    hint: "숫자로 적어 주세요 (1~12).",
+    kind: "text",
+    maxLength: 10,
   },
 ];
 
@@ -141,28 +172,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   /*
    * 다음 시간(progress) — 교사가 수업 끝에 눌러 보여준다. 다음엔 미로 3개 + 도우미 뽑기 예고.
    */
-  progress: {
-    heading: "다음 시간 — 진단활동 ②",
-    body: "",
-    url: "",
-    tabs: [
-      {
-        label: "다음 시간에 할 일",
-        subtitle: "미로를 더 풀고, 정보 도우미를 뽑기 시작해요",
-        note:
-          "다음 시간에는 미로가 3개로 늘어나요(여왕의 정원 추가).\n" +
-          "여러 번의 진단활동을 참고해 정보 모둠장(정보 도우미)을 뽑기 시작합니다.",
-        rows: [
-          { label: "오늘", value: "엔트리 미로 2개 (이상한 숲 · 이상한 티파티)" },
-          { label: "다음", value: "미로 3개 (여왕의 정원 추가)" },
-          { label: "무엇을 위해", value: "정보 모둠장(정보 도우미) 뽑기에 참고" },
-        ],
-        highlights: [
-          "점수로 줄 세우는 게 아니에요 — 여러 번 해 보는 것 자체가 오늘 하는 일이에요.",
-        ],
-      },
-    ],
-  },
+  // 다음 시간 단계는 두지 않는다 — 안내(assessment) 단계가 이미 있어 중복이다.
+  progress: empty(),
 
   /*
    * 안내 보드 — 진단활동 취지 + 오늘 할 일. 활동 중 되돌아와 볼 수 있다.
@@ -257,7 +268,13 @@ async function main(): Promise<void> {
 
   if (!existing.empty) {
     const doc = existing.docs[0];
-    await doc.ref.set({ ...PLAN, updatedAt: now }, { merge: true });
+    // quiz(타임머신 퀴즈)는 옛 12차시(파이썬 도우미선발)의 잔재다. 이 차시엔 안 쓰므로 지운다.
+    // merge 로는 안 지워져서 FieldValue.delete() 로 명시 삭제한다.
+    // progress 도 merge 로는 옛 tabs 가 남아 안 비워진다 — quiz 처럼 아예 지운다.
+    await doc.ref.set(
+      { ...PLAN, updatedAt: now, quiz: FieldValue.delete(), progress: FieldValue.delete() },
+      { merge: true },
+    );
     console.log(`↻ 갱신 — ${PLAN.title} (${doc.id})`);
 
     /* 9~11차시와 같은 규칙 — 아직 아무도 안 들어온 수업에만 반영한다 */
@@ -287,7 +304,8 @@ async function main(): Promise<void> {
           title: PLAN.title,
           moodCheckEnabled: PLAN.moodCheckEnabled,
           game: PLAN.game,
-          progress: PLAN.progress,
+          // progress(다음 시간) 단계 제거 — merge 로 안 비워지므로 세션에서도 지운다.
+          progress: FieldValue.delete(),
           assessment: PLAN.assessment,
           reflectionQuestions: PLAN.reflectionQuestions,
           reflectionPublic: PLAN.reflectionPublic,
@@ -296,6 +314,8 @@ async function main(): Promise<void> {
           freeNavigation: PLAN.freeNavigation,
           progressChecks: PLAN.progressChecks,
           activity: PLAN.activity,
+          // 옛 12차시(파이썬)에서 딸려 온 타임머신 퀴즈를 세션에서도 지운다.
+          quiz: FieldValue.delete(),
         },
         { merge: true },
       );
@@ -307,7 +327,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (진단활동 전용 통 — 파이썬 도우미선발/마이크로비트와 분리)`);
-  console.log("단계: 대기(지뢰찾기) → 기분 → 안내(assessment) → 진단활동(worksheet, 미로 2개 한 페이지) → 다음 시간 → 마침");
+  console.log("단계: 대기(지뢰찾기) → 기분 → 안내(assessment) → 진단활동(worksheet, 미로 2개 한 페이지) → 마침 (다음 시간·타임머신 퀴즈 단계 없음)");
   console.log("진도 체크 팝업: 수업 시작 후 20·30·40분에 '지금 어느 미로 몇 미션' 을 물음. 대시보드에 시각별 스냅샷.");
   console.log("① 이상한 숲 playentry.org/maze/2020-1/1 · ② 이상한 티파티 2020-2/1 (각 12미션). ③ 여왕의 정원은 다음 차시.");
   console.log("로그인 불필요·새 탭. 점수·자동채점·성찰 기록 없음(진도는 팝업이 남김).");
