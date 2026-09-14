@@ -330,6 +330,8 @@ export async function GET() {
        * 안 정한 차시에서는 비어 있고, 지금까지처럼 필터 값으로 요약한다.
        */
       sharedKeys: allowKeys ?? [],
+      /** 그 칸들에 붙일 짧은 이름표 (검토 활동에서 "기능 · …" 처럼). 없으면 이름표 없이 값만 */
+      sharedLabels: session.activity?.galleryAnswerLabels ?? {},
       // 친구 것에 남기는 두 칸의 질문 — 차시가 정하지 않았으면 그림용 기본값
       feedbackPrompts: session.activity?.feedbackPrompts ?? DEFAULT_FEEDBACK_PROMPTS,
       /*

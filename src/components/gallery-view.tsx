@@ -58,6 +58,8 @@ interface GalleryData {
   facets: Facet[];
   /** 친구에게 열어 둔 답 칸의 차례. 비면 필터 값으로 요약한다 */
   sharedKeys?: string[];
+  /** 그 칸들에 붙일 짧은 이름표 (key → 이름표). 없으면 이름표 없이 값만 */
+  sharedLabels?: Record<string, string>;
   feedbackPrompts: FeedbackPrompts;
   /**
    * 배정된 작품만 노출하는 차시인가 (5차시). true 면 서버가 배정 편만 내려보내고,
@@ -102,14 +104,19 @@ function summaryOf(
   work: Work,
   facets: Facet[],
   sharedKeys: string[],
+  sharedLabels: Record<string, string> = {},
 ): { label: string; values: string[] }[] {
   /*
    * 차시가 "이 칸만 친구에게 보인다" 고 골라 둔 경우에는 그 칸을 차례대로 그대로 보여준다.
    *
-   * 이름표는 붙이지 않는다. 골라 둔 칸의 질문 이름표는 쓰라고 시키는 문장이라
+   * 이름표는 기본적으로 붙이지 않는다. 골라 둔 칸의 질문 이름표는 쓰라고 시키는 문장이라
    * ("그 감정을 한 줄로 적어 주세요 — 이 줄만 친구들에게 보입니다") 카드에 붙이면
    * 읽을 것보다 안내가 길어진다. 값만 두 줄로 세우면 "지침 / 요즘 학원이 늘어서
    * 계속 지친다" 가 되어 그대로 읽힌다.
+   *
+   * 예외로, 차시가 sharedLabels(galleryAnswerLabels)에 짧은 이름표를 준 키는 "이름표 · 값"
+   * 으로 보여준다. 서로 앱을 **검토**하는 활동에서는 "누구의 불편 · … / 기능 · …" 처럼
+   * 이름표가 있어야 무엇을 보는지 바로 읽히기 때문이다. 이름표가 없는 키는 그대로 값만.
    */
   if (sharedKeys.length > 0) {
     return sharedKeys
@@ -128,7 +135,10 @@ function summaryOf(
        */
       .map(({ key, value }) => {
         const shown = URL_ANSWER_KEYS.has(key) ? normalizeUrl(value) : value;
-        return { label: "", values: [/^https?:\/\//.test(shown) ? "🎨 눌러서 작품 보기" : value] };
+        return {
+          label: sharedLabels[key] ?? "",
+          values: [/^https?:\/\//.test(shown) ? "🎨 눌러서 작품 보기" : value],
+        };
       });
   }
 
@@ -291,7 +301,7 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
                             />
                           ) : (
                             <div className="flex min-h-32 flex-col gap-1.5 rounded bg-white p-3">
-                              {summaryOf(work, data.facets ?? [], data.sharedKeys ?? []).map((row, i) => (
+                              {summaryOf(work, data.facets ?? [], data.sharedKeys ?? [], data.sharedLabels ?? {}).map((row, i) => (
                                 <p key={row.label || i} className="t-body-sm">
                                   {/*
                                     이름표를 반드시 붙인다. 값만 늘어놓으면

@@ -427,13 +427,36 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     /*
      * 친구에게 보여줄 답 칸을 딱 집는다 (privacy — 서버가 toCard 에서 거른다).
      *
-     * **앱 주소(build_url) 하나만 연다.** 앱은 서로 눌러 열어 봐야 검토가 되므로 링크는
-     * 보여야 한다 — build_url 은 URL 칸이라 카드에서 "눌러서 작품 보기" 로 뜨고, 눌러
-     * 들어가면 실제 앱이 새 창으로 열린다(card-news).
-     * 반대로 mvp_one·fix1·grill_a2 같은 **자기 성찰·기획 칸은 목록에 없으니 안 나간다.**
+     * 링크만으로는 검토가 어렵다 — 무슨 앱인지, 무슨 문제를 풀려는지, 어떤 기능이어야
+     * 하는지가 카드에 함께 떠야 눌러 보기 전에 무엇을 볼지 알고 검토가 수월하다. 그래서
+     * 앱을 **설명·기획하는 칸**(누구의 불편·한 줄 소개·꼭 필요한 기능 셋)을 앱 주소와 함께 연다.
+     *   · problem_who / mvp_one / mvp_must1~3 : 이전 차시에 쓴 **앱 기획**(성찰이 아님) — 검토용
+     *   · build_url : 앱 주소. URL 칸이라 카드에서 "눌러서 작품 보기" 로 뜨고 새 창으로 열린다
+     * 반대로 fix_teacher·fix5·grill_a2 같은 **자기 성찰·회고 칸은 목록에 없으니 안 나간다.**
      * 익명은 그대로 유지한다(galleryShowNames 를 켜지 않는다).
      */
-    galleryAnswerKeys: ["build_url"],
+    galleryAnswerKeys: [
+      "problem_who",
+      "mvp_one",
+      "mvp_must1",
+      "mvp_must2",
+      "mvp_must3",
+      "build_url",
+    ],
+
+    /*
+     * 위 칸들에 **짧은 이름표**를 붙여 "누구의 불편 · … / 기능 · …" 로 읽히게 한다.
+     * (기본 감상 카드는 이름표 없이 값만 세우지만, 검토 활동에선 무엇을 보는지가 바로 보여야
+     * 한다 — types.ts 의 galleryAnswerLabels · gallery-view 의 summaryOf.)
+     * build_url 은 이름표 없이 "눌러서 작품 보기" 버튼 문구만 둔다(주소는 감춘다).
+     */
+    galleryAnswerLabels: {
+      problem_who: "누구의 불편",
+      mvp_one: "한 줄 소개",
+      mvp_must1: "기능 ①",
+      mvp_must2: "기능 ②",
+      mvp_must3: "기능 ③",
+    },
 
     /*
      * 친구 앱에 남기는 두 칸의 문구를 **좋은 점 · 개선할 점** 두 칸으로 바꾼다 (교사 확정).
