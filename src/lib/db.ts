@@ -668,6 +668,8 @@ export function snapshotOf(plan: LessonPlan, groupKey?: string) {
      */
     phaseLabels: plan.phaseLabels ?? {},
     focusExempt: plan.focusExempt ?? [],
+    // 진도 체크 팝업 설정 — 없으면 안 실린다(ignoreUndefinedProperties). 화면에서 팝업 없음
+    progressChecks: plan.progressChecks,
     /*
      * 되돌아가기 초기값도 계획이 정한다.
      *

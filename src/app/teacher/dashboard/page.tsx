@@ -179,6 +179,20 @@ interface DashboardData {
   leaderboard?: LeaderRow[] | null;
   /** 교사가 확정 저장한 도우미 명단(있으면) */
   helpersSaved?: { studentIds: string[]; updatedAt: number } | null;
+  /** 진도 체크 스냅샷 (도우미 선발 속도 체크). 그 외 차시는 null */
+  progressCheck?: ProgressCheckData | null;
+}
+
+/** 진도 체크 스냅샷 (도우미 선발 속도 체크) */
+interface ProgressCheckData {
+  minutes: number[];
+  stages: string[];
+  rows: {
+    studentId: string;
+    name: string;
+    number: number | null;
+    marks: Record<number, { stage: string; mission: number; at: number }>;
+  }[];
 }
 
 /** 리더보드 한 줄 — 서버가 순위·도우미 여부까지 계산해 보낸다 (dashboard route) */
@@ -706,6 +720,71 @@ function Leaderboard({
       <p className="t-caption text-muted">
         명단 수정(결석·판단 보정)은 후속 기능입니다 — 지금은 자동 상위 {HELPER_TARGET}명을 확정하거나
         다시 눌러 최신 순위로 덮어쓸 수 있어요.
+      </p>
+    </section>
+  );
+}
+
+/**
+ * 진도 체크 패널 (도우미 선발 속도 체크).
+ *
+ * 학생별로 마크(20/30/40분)별 응답을 표로 본다 — 어느 단계 몇 미션까지, 그리고 응답 시각.
+ * 미응답은 빈칸. 같은 마크에서 더 앞선 미션을 기록한 학생이 그 시점에 더 빠른 것이다.
+ */
+function ProgressCheckPanel({ data, masked }: { data: ProgressCheckData; masked: boolean }) {
+  return (
+    <section className="flex flex-col gap-3 rounded-xl border border-line p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="t-card-title">진도 체크 — 속도 스냅샷</h2>
+        <span className="text-sm text-muted">
+          마크: {data.minutes.map((m) => `${m}분`).join(" · ")}
+        </span>
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-line">
+        <table className="w-full min-w-[520px] border-collapse text-sm">
+          <thead className="bg-card text-left text-xs text-muted">
+            <tr>
+              <th className="px-3 py-2">학생</th>
+              {data.minutes.map((m) => (
+                <th key={m} className="px-3 py-2">
+                  {m}분
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.rows.map((row) => (
+              <tr key={row.studentId} className="border-t border-line align-top">
+                <td className="px-3 py-2">
+                  {masked ? `${row.number ?? row.studentId.slice(3)}번` : row.name || "임시"}
+                </td>
+                {data.minutes.map((m) => {
+                  const mark = row.marks[m];
+                  return (
+                    <td key={m} className="px-3 py-2">
+                      {mark ? (
+                        <span className="flex flex-col gap-0.5">
+                          <span className="font-semibold">
+                            {mark.stage} · {mark.mission}미션
+                          </span>
+                          <span className="text-xs text-muted tabular-nums">
+                            {formatTimeKST(mark.at)}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="t-caption text-muted">
+        같은 마크에서 더 앞선 미션을 기록한 학생이 그 시점에 더 빠른 거예요. 도우미(모둠장)
+        선발에 참고하세요.
       </p>
     </section>
   );
@@ -1243,6 +1322,14 @@ function Dashboard() {
               helpersSaved={data.helpersSaved ?? null}
               onSaved={reload}
             />
+          )}
+
+          {/*
+            진도 체크 패널 (도우미 선발 속도 체크) — progressChecks 를 켠 차시에서만.
+            서버가 progressCheck 를 계산해 보내고, 없으면 null 이라 여기가 접힌다.
+          */}
+          {data?.session && data?.progressCheck && (
+            <ProgressCheckPanel data={data.progressCheck} masked={masked} />
           )}
 
           {reviewing && data?.session && (

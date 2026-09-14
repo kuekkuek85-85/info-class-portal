@@ -397,12 +397,68 @@ export async function GET(request: Request) {
       helpersSaved = saved ? { studentIds: saved.studentIds, updatedAt: saved.updatedAt } : null;
     }
 
+    /*
+     * 진도 체크 스냅샷 (도우미 선발 속도 체크).
+     *
+     * progressChecks 를 켠 차시에서만 작품을 한 번 읽어(리더보드와 같은 방식) 학생별로
+     * 마크(20/30/40분)별 응답을 모은다. 켜지 않은 차시에서는 null 이라 화면에서 접힌다.
+     */
+    const progressConfig = session.progressChecks ?? null;
+    let progressCheck: {
+      minutes: number[];
+      stages: string[];
+      rows: {
+        studentId: string;
+        name: string;
+        number: number | null;
+        marks: Record<number, { stage: string; mission: number; at: number }>;
+      }[];
+    } | null = null;
+
+    if (progressConfig && Array.isArray(progressConfig.minutes) && progressConfig.minutes.length > 0) {
+      const arts = await listArtifacts(activityIdFor(session)).catch(() => []);
+      const marksByStudent = new Map<
+        string,
+        Record<number, { stage: string; mission: number; at: number }>
+      >();
+      for (const art of arts) {
+        const marks: Record<number, { stage: string; mission: number; at: number }> = {};
+        for (const minute of progressConfig.minutes) {
+          const raw = art.answers?.[`progress_${minute}`];
+          if (typeof raw !== "string" || !raw.trim()) continue;
+          try {
+            const parsed = JSON.parse(raw) as { stage?: unknown; mission?: unknown; at?: unknown };
+            marks[minute] = {
+              stage: typeof parsed.stage === "string" ? parsed.stage : "",
+              mission: Number(parsed.mission) || 0,
+              at: Number(parsed.at) || 0,
+            };
+          } catch {
+            /* 깨진 값은 건너뛴다 */
+          }
+        }
+        if (Object.keys(marks).length > 0) marksByStudent.set(art.studentId, marks);
+      }
+      progressCheck = {
+        minutes: progressConfig.minutes,
+        stages: progressConfig.stages ?? [],
+        rows: attendance.map((entry) => ({
+          studentId: entry.studentId,
+          name: nameOf.get(entry.studentId) ?? "",
+          number: roster.find((r) => r.studentId === entry.studentId)?.number ?? null,
+          marks: marksByStudent.get(entry.studentId) ?? {},
+        })),
+      };
+    }
+
     return ok({
       date,
       sessions,
       session,
       rows,
       missing,
+      /** 진도 체크 스냅샷 (도우미 선발 속도 체크). 그 외 차시는 null */
+      progressCheck,
       /**
        * 오늘 AI 가 실제로 돌았는가.
        *

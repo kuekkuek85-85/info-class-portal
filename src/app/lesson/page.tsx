@@ -13,6 +13,7 @@ import { QuizView, type QuizState } from "@/components/quiz-view";
 import { ReviewView } from "@/components/review-view";
 import { SiteFooter } from "@/components/site-footer";
 import { useFocusTracker } from "@/hooks/use-focus-tracker";
+import { ProgressCheckModal } from "@/components/progress-check-modal";
 import { WorksheetView, type WorksheetValue } from "@/components/worksheet-view";
 import { artifactTitle } from "@/lib/artifact-title";
 import {
@@ -824,6 +825,12 @@ export default function LessonPage() {
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
+      {/*
+        진도 체크 팝업 (도우미 선발 속도 체크). 자립형이라 여기 한 번 얹으면
+        자기 상태를 직접 받아 온다 — progressChecks 가 없는 차시에서는 아무것도 안 그린다.
+      */}
+      <ProgressCheckModal />
+
       {/*
         돌아온 순간 한 번 띄운다.
 

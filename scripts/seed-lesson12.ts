@@ -14,20 +14,20 @@
  *
  * ## 흐름 — 심플하게 (교사 확정)
  *
- *   대기(지뢰찾기) → 안내(assessment) → 진단① 이상한 숲(build) → 진단② 티파티(emotion) → 성찰
+ *   대기(지뢰찾기) → 안내(assessment) → 진단활동(엔트리 미로 2개, 한 페이지) → 다음 시간
  *
- * 미로는 **두 단계로 쪼갠다** — 미로1을 먼저 하고 교사가 넘겨야 미로2가 열린다(순서 강제·
- * 진도 확인). 파이썬·타자·리더보드·자동채점은 **전부 없다.** 기존 worksheet kind(note +
- * linkUrl)만 재사용하고, phase(build·emotion)+phaseLabels 로 단계를 나눈다(코드 변경 없음).
- * 미로는 새 탭 링크로 열고 **로그인이 필요 없다**.
+ * 미로 2개는 한 페이지에 둔다. **순서·진도 확인은 진도 체크 팝업**이 맡는다 — 수업 시작 후
+ * 20·30·40분에 "지금 어느 미로 몇 미션" 을 물어, 교사가 시각별 스냅샷으로 속도를 본다
+ * (도우미 선발 참고). 그래서 페이지 분할·성찰 기록은 없다. 파이썬·타자·리더보드·자동채점도
+ * 전부 없다. 기존 worksheet kind(note + linkUrl)만 재사용하고, 미로는 새 탭·**로그인 불필요**.
  *
  * ## 40분에 맞춘 흐름
  *
  *   0–3   대기·기분·출석 (대기 중 지뢰찾기)
  *   3–7   안내 보드(assessment) — 진단활동 취지 + 오늘 할 일
- *   7–21  진단① 이상한 숲(build) — 미로1 풀기 → 교사가 다음 단계로
- *   21–35 진단② 이상한 티파티(emotion) — 미로2 풀기
- *   35–40 성찰(어느 미로 몇 미션까지) → 다음 시간 예고 → 정리
+ *   7–40  진단활동 — 엔트리 미로 2개를 순서대로 풀기
+ *   (그 사이) 20·30·40분에 진도 체크 팝업 — "지금 어느 미로 몇 미션" 기록
+ *   ~40    다음 시간 예고 → 정리
  *
  * ## 오늘 여는 미로 (교사 확정)
  *
@@ -80,28 +80,30 @@ function empty(): PhaseContent {
 }
 
 /*
- * 미로 2개를 **두 단계로 쪼갠다** — 미로1(build) → 미로2(emotion).
- *
- * ## 왜 phase 로 나누나
- *
- * 한 페이지에 둘을 같이 두면 학생이 순서 없이 아무거나 누른다. STEP 단계(build·emotion)에
- * 하나씩 배정하면, 교사가 단계를 넘겨야 다음 미로가 열린다 — 미로1을 먼저 하게 순서가
- * 잡히고, 페이지가 나뉘어 교사가 "지금 어느 미로 단계인지" 진도를 본다(9·10차 STEP 방식).
- *
- * lesson10 이 활동1=build, 활동2=emotion 으로 쓴 것과 같다. STEP 전용 UI 는 kind 로만
- * 뜨므로(note 는 안 뜬다) note+linkUrl 카드가 그대로 그려진다. phaseLabels 로 이름을 덮고,
- * 하드 잠금 없이 교사 진행으로 순서만 잡는다(freeNavigation false).
+ * 미로 2개를 **한 페이지(worksheet)에** 나란히 둔다. 순서·진도 확인은 페이지 분할이 아니라
+ * 진도 체크 팝업(progressChecks)이 맡는다 — 정해진 분에 "지금 어느 미로 몇 미션" 을 물어
+ * 교사가 시각별 스냅샷으로 속도를 본다. 그래서 STEP 분할·성찰 기록은 두지 않는다.
  */
 const WORKSHEET: WorksheetQuestion[] = [
   {
+    key: "_bd_intro",
+    phase: "worksheet",
+    label: "진단활동 — 엔트리 미로 풀기",
+    hint:
+      "아래 두 미로를 순서대로 열어 미션을 풀어 보세요. 새 탭에서 열리고, 로그인은 필요 없어요.\n" +
+      "· 각 미로는 총 12미션이에요. ①부터 차례로 풀면 됩니다.\n" +
+      "· 수업 중에 가끔 '지금 어디까지 했나요?' 팝업이 떠요 — 그때 어느 미로 몇 미션인지 알려 주세요.\n" +
+      "· 미로를 열었다가 이 화면으로 돌아오면 됩니다.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
     key: "_bd_maze1",
-    phase: "build",
+    phase: "worksheet",
     label: "① 이상한 숲 속의 엔트리봇 (12미션)",
     hint:
-      "먼저 이 미로부터 풀어요. 엔트리봇을 움직여 길을 찾는 활동이에요. 로그인은 필요 없어요.\n" +
-      "· 총 12미션이에요. 처음부터 순서대로 풀어 봅니다.\n" +
-      "· 다 해 보면 선생님이 다음 단계(② 이상한 티파티)로 넘겨 줍니다.\n" +
-      "· 새 탭으로 열려요 — 열었다가 이 화면으로 돌아오면 됩니다.",
+      "먼저 이 미로부터 풀어요. 엔트리봇을 움직여 길을 찾는 활동이에요.\n" +
+      "새 탭으로 열려요 — 다 하고 이 화면으로 돌아오세요.",
     kind: "note",
     linkUrl: "https://playentry.org/maze/2020-1/1",
     linkLabel: "① 이상한 숲 속의 엔트리봇 열기",
@@ -109,12 +111,11 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "_bd_maze2",
-    phase: "emotion",
+    phase: "worksheet",
     label: "② 이상한 티파티 (12미션)",
     hint:
-      "①을 해 봤으면 이 미로에 도전해요. 조금 더 생각이 필요한 미션들이에요. 로그인은 필요 없어요.\n" +
-      "· 총 12미션이에요. 다 못 풀어도 괜찮아요 — 어디까지 했는지는 마지막에 적어요.\n" +
-      "· 새 탭으로 열려요 — 열었다가 이 화면으로 돌아오면 됩니다.",
+      "①을 하고 나면 이 미로에 도전해요. 조금 더 생각이 필요한 미션들이에요.\n" +
+      "새 탭으로 열려요 — 다 하고 이 화면으로 돌아오세요.",
     kind: "note",
     linkUrl: "https://playentry.org/maze/2020-2/1",
     linkLabel: "② 이상한 티파티 열기",
@@ -189,12 +190,12 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
       },
       {
         label: "오늘 순서",
-        subtitle: "미로1 → (다음 단계) → 미로2 → 성찰",
-        note: "미로는 한 번에 하나씩 열려요. ①을 해 보면 선생님이 ②로 넘겨 줍니다.",
+        subtitle: "미로 2개를 순서대로 + 진도 체크 팝업",
+        note: "가끔 '지금 어디까지 했나요?' 팝업이 떠요 — 그때 어느 미로 몇 미션인지 알려 주세요.",
         rows: [
-          { label: "1단계", value: "① 이상한 숲 속의 엔트리봇 (12미션)" },
-          { label: "2단계", value: "② 이상한 티파티 (12미션)" },
-          { label: "마무리", value: "어느 미로 몇 번째 미션까지 했는지 적기" },
+          { label: "1", value: "① 이상한 숲 속의 엔트리봇 (12미션)" },
+          { label: "2", value: "② 이상한 티파티 (12미션)" },
+          { label: "진도 체크", value: "20·30·40분에 팝업 — 지금 어디까지 했는지 기록" },
         ],
         highlights: [
           "③ 여왕의 정원은 다음 시간에 열려요 — 오늘은 위 2개만 하면 됩니다.",
@@ -206,29 +207,29 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   video: empty(),
 
   /*
-   * 성찰(마무리) — 기록 한 가지만. "어느 미로를 몇 번째 미션까지 깼는지"만 남긴다
-   * (재밌던/어려웠던 점 문항은 뺐다 — 교사 요구). 개인적이라 비공개.
+   * 성찰(마무리 기록 문항)은 두지 않는다 — 진도는 진도 체크 팝업이 시각별로 남긴다.
    */
-  reflectionQuestions: [
-    "오늘 어디까지 했는지 적어 봅시다 — ① 이상한 숲: 몇 번째 미션까지 / ② 이상한 티파티: 몇 번째 미션까지.",
-  ],
+  reflectionQuestions: [],
   reflectionPublic: false,
 
   /*
-   * 미로는 새 탭(외부)이라 창을 옮기는 것을 이탈로 세지 않는다 — 미로가 있는 두 단계
-   * (build·emotion)를 면제한다 (마이크로비트·보안 링크 차시와 같은 이유).
+   * 진도 체크 팝업 — 수업 시작 후 20·30·40분에 "지금 어느 미로 몇 미션" 을 묻는다.
+   * 교사 대시보드가 시각별 스냅샷으로 속도를 보고 도우미(모둠장) 선발에 참고한다.
+   * 단계 라벨은 미로 이름 그대로.
    */
-  focusExempt: ["build", "emotion"],
+  progressChecks: {
+    minutes: [20, 30, 40],
+    stages: ["① 이상한 숲", "② 이상한 티파티"],
+  },
+
   /*
-   * 두 미로를 STEP 단계에 배정하고 이름을 덮는다.
-   *  · 미로1 → build 단계   · 미로2 → emotion 단계
-   * LESSON_PHASES 순서상 build(먼저) < emotion(나중) 이라 단추도 이 순서로 뜬다
-   * (lesson10 의 활동1·활동2 와 같은 방식). 성찰은 그 뒤 마무리 단계다.
+   * 미로는 새 탭(외부)이라 창을 옮기는 것을 이탈로 세지 않는다 (마이크로비트·보안 링크
+   * 차시가 활동 링크 단계를 focusExempt 로 둔 것과 같은 이유).
    */
+  focusExempt: ["worksheet"],
   phaseLabels: {
     assessment: "안내",
-    build: "진단활동 ① 이상한 숲",
-    emotion: "진단활동 ② 이상한 티파티",
+    worksheet: "진단활동",
     progress: "다음 시간",
   },
   freeNavigation: false,
@@ -237,8 +238,12 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     activityId: ACTIVITY_ID,
     places: [],
     year: 2036,
-    // worksheetIntro 는 두지 않는다 — 미로는 STEP 단계(build·emotion)라 각 단계 이름
-    // (phaseLabels)이 머리글이 되고, 안내는 각 미로 카드의 hint 가 맡는다.
+    worksheetIntro: {
+      heading: "진단활동 — 엔트리 미로",
+      body:
+        "아래 두 미로를 순서대로 열어 미션을 풀어 보세요. 새 탭으로 열리고 로그인은 필요 없어요.\n" +
+        "수업 중에 가끔 '지금 어디까지 했나요?' 팝업이 떠요 — 그때 어느 미로 몇 미션인지 알려 주세요.",
+    },
     worksheet: WORKSHEET,
     // 점수·산출물을 서로 보는 활동이 아니다
     galleryEnabled: false,
@@ -289,6 +294,7 @@ async function main(): Promise<void> {
           focusExempt: PLAN.focusExempt,
           phaseLabels: PLAN.phaseLabels,
           freeNavigation: PLAN.freeNavigation,
+          progressChecks: PLAN.progressChecks,
           activity: PLAN.activity,
         },
         { merge: true },
@@ -301,10 +307,10 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (진단활동 전용 통 — 파이썬 도우미선발/마이크로비트와 분리)`);
-  console.log("단계: 대기(지뢰찾기) → 기분 → 안내(assessment) → 진단① 이상한 숲(build) → 진단② 티파티(emotion) → 성찰 → 다음 시간 → 마침");
-  console.log("미로를 두 STEP 단계로 분할(build·emotion) — 교사가 넘겨야 미로2가 열림(순서 강제). 로그인 불필요, 새 탭.");
+  console.log("단계: 대기(지뢰찾기) → 기분 → 안내(assessment) → 진단활동(worksheet, 미로 2개 한 페이지) → 다음 시간 → 마침");
+  console.log("진도 체크 팝업: 수업 시작 후 20·30·40분에 '지금 어느 미로 몇 미션' 을 물음. 대시보드에 시각별 스냅샷.");
   console.log("① 이상한 숲 playentry.org/maze/2020-1/1 · ② 이상한 티파티 2020-2/1 (각 12미션). ③ 여왕의 정원은 다음 차시.");
-  console.log("점수·자동채점 없음. 성찰은 '어느 미로 몇 미션까지' 한 문항만.");
+  console.log("로그인 불필요·새 탭. 점수·자동채점·성찰 기록 없음(진도는 팝업이 남김).");
   process.exit(0);
 }
 

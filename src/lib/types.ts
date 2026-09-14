@@ -1016,6 +1016,21 @@ export interface Student {
   createdAt: number;
 }
 
+/**
+ * 진도 체크 팝업 설정 (도우미 선발용 속도 체크).
+ *
+ * 수업 시작(startedAt) 기준으로 정해진 분에 학생 전체 화면에 팝업을 띄워 "지금 어느
+ * 단계 몇 번째 미션인지" 기록하게 한다. 교사 대시보드가 시각별 스냅샷을 본다.
+ *
+ * 어떤 차시든 plan 에 이 값을 넣으면 켜진다. 없으면 팝업이 아예 안 뜬다(기존 차시 무영향).
+ */
+export interface ProgressChecks {
+  /** 수업 시작 후 팝업을 띄울 분 마크들 (예: [20, 30, 40]) */
+  minutes: number[];
+  /** 학생이 고를 단계 라벨 (예: ["① 이상한 숲", "② 이상한 티파티"]) */
+  stages: string[];
+}
+
 /** 수업 내용. 반과 무관하게 한 번만 등록해 4반에 공용으로 쓴다. */
 export interface LessonPlan {
   id: string;
@@ -1067,6 +1082,8 @@ export interface LessonPlan {
    * 잊어버리기 좋은 자리다.
    */
   freeNavigation?: boolean;
+  /** 진도 체크 팝업 설정 (도우미 선발 속도 체크). 없으면 팝업 없음 (ProgressChecks) */
+  progressChecks?: ProgressChecks;
   /**
    * 이 차시를 여는 단위. 선택과목처럼 반이 아니라 **분반**으로 여는 경우에만 적는다.
    *
@@ -1194,6 +1211,8 @@ export interface ClassSession {
    * 들여다보면 수업을 끌고 갈 수가 없다.
    */
   freeNavigation?: boolean;
+  /** 진도 체크 팝업 설정 (도우미 선발 속도 체크). 없으면 팝업 없음 (ProgressChecks) */
+  progressChecks?: ProgressChecks;
 
   /**
    * 이 차시에서만 쓰는 단계 이름.
