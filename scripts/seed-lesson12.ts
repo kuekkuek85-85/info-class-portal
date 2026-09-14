@@ -239,7 +239,11 @@ async function main(): Promise<void> {
     const doc = existing.docs[0];
     // quiz(타임머신 퀴즈)는 옛 12차시(파이썬 도우미선발)의 잔재다. 이 차시엔 안 쓰므로 지운다.
     // merge 로는 안 지워져서 FieldValue.delete() 로 명시 삭제한다.
-    await doc.ref.set({ ...PLAN, updatedAt: now, quiz: FieldValue.delete() }, { merge: true });
+    // progress 도 merge 로는 옛 tabs 가 남아 안 비워진다 — quiz 처럼 아예 지운다.
+    await doc.ref.set(
+      { ...PLAN, updatedAt: now, quiz: FieldValue.delete(), progress: FieldValue.delete() },
+      { merge: true },
+    );
     console.log(`↻ 갱신 — ${PLAN.title} (${doc.id})`);
 
     /* 9~11차시와 같은 규칙 — 아직 아무도 안 들어온 수업에만 반영한다 */
@@ -269,7 +273,8 @@ async function main(): Promise<void> {
           title: PLAN.title,
           moodCheckEnabled: PLAN.moodCheckEnabled,
           game: PLAN.game,
-          progress: PLAN.progress,
+          // progress(다음 시간) 단계 제거 — merge 로 안 비워지므로 세션에서도 지운다.
+          progress: FieldValue.delete(),
           assessment: PLAN.assessment,
           reflectionQuestions: PLAN.reflectionQuestions,
           reflectionPublic: PLAN.reflectionPublic,
