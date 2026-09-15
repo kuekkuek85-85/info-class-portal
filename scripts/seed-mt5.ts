@@ -878,17 +878,6 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "long",
     maxLength: 400,
   },
-  {
-    key: "a5_reflect",
-    phase: "wrapheal",
-    // 성찰 1문항 — 개인 글, 비공개.
-    label: "감정을 말과 그림으로 표현해 보니 어땠나요? 공감이 관계에 어떤 도움이 될까요?",
-    hint:
-      "예) 내 마음을 말풍선으로 그려 보니 정리가 됐다. 공감 한마디가 사이를 풀어줄 것 같다.\n" +
-      "이 칸은 나와 선생님만 봐요.",
-    kind: "long",
-    maxLength: 300,
-  },
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
