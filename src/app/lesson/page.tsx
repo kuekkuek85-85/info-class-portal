@@ -569,7 +569,9 @@ export default function LessonPage() {
 
   async function pickQuizChoice(choiceIndex: number) {
     if (!quiz) return;
-    const questionIndex = quiz.index;
+    // 전체 배열 기준 번호로 저장한다 — 집계(quiz-stats)가 글로벌 인덱스로 세므로 단계가
+    // 달라도 어긋나지 않는다.
+    const questionIndex = quiz.globalIndex;
     // 이미 고른 문항이면 아무 일도 하지 않는다 (서버에서도 다시 막는다)
     if ((quizAnswers[questionIndex] ?? -1) >= 0) return;
 
@@ -1005,11 +1007,16 @@ export default function LessonPage() {
           </>
         )}
 
-        {viewPhase === "quiz" && quiz && (
+        {/*
+          퀴즈는 이제 여러 단계에 뜰 수 있다(노래 맞히기·감정 추측·AI 감정분석 등).
+          서버가 지금 단계(phase)에 맞는 quiz 를 내려주므로, 학생이 그 단계를 보고 있으면
+          퀴즈를 띄운다. quiz.globalIndex 로 전체 배열에서 문항을 찾는다(집계와 같은 번호).
+        */}
+        {quiz && viewPhase === phase && (
           <QuizView
-            question={session.quizQuestions[quiz.index]}
+            question={session.quizQuestions[quiz.globalIndex]}
             state={quiz}
-            picked={quizAnswers[quiz.index] ?? -1}
+            picked={quizAnswers[quiz.globalIndex] ?? -1}
             onPick={pickQuizChoice}
             saving={quizSaving}
             disabled={closed}
@@ -1080,7 +1087,11 @@ export default function LessonPage() {
           같은 활동지 화면을 쓰되 그 단계 문항만 보여준다. 교사가 단계를 넘겨야 다음 칸이
           열리므로 시간을 끌고 갈 수 있다 (한 화면에 다 넣으면 첫 칸에서 붙잡힌다).
         */}
-        {!showDone && STEP_PHASES.includes(viewPhase) &&
+        {/*
+          STEP 단계 중 일부는 이제 활동지 대신 퀴즈가 뜬다(노래·감정 추측·AI 감정분석).
+          그 단계에서는 위의 QuizView 가 그려지므로, 여기 활동지/대기 placeholder 는 건너뛴다.
+        */}
+        {!showDone && STEP_PHASES.includes(viewPhase) && !(quiz && viewPhase === phase) &&
           (session.activity && artifact && stepQuestions.length > 0 ? (
             <WorksheetView
               questions={stepQuestions}
@@ -1250,13 +1261,14 @@ export default function LessonPage() {
               hideSubmit={viewPhase !== finalWorkPhase}
               hideSources={session.activity.sourcesEnabled === false}
               /*
-                제목은 차시가 붙인 단계 이름을 따른다.
+                제목은 지금 단계(viewPhase)의 이름을 따른다.
 
-                이 칸을 다른 이름으로 빌려 쓰는 차시가 있다 — 「인간과 인공지능」 3차시는
-                여기에 "2차 살펴보기" 를 얹는다. 기본값 "활동지 쓰기" 를 그대로 두면
-                교사가 넘긴 단계 이름과 화면 제목이 서로 다른 말을 한다.
+                이 활동지 칸은 worksheet 뿐 아니라 wrapheal(공감 문장·감정 대화) 같은
+                단계도 함께 쓴다. worksheet 라벨을 박아 두면 wrapheal 화면에도 "이미지 AI
+                체험" 처럼 엉뚱한 제목이 뜬다 — 그래서 지금 단계의 라벨을 쓴다.
+                (「인간과 인공지능」 3차시가 worksheet 에 얹는 "2차 살펴보기" 도 그대로 나온다.)
               */
-              heading={session.phaseLabels?.worksheet ?? undefined}
+              heading={session.phaseLabels?.[viewPhase] ?? PHASE_LABELS[viewPhase]}
             />
           ) : (
             <Placeholder title="활동지를 준비하고 있어요" description="잠시만 기다려 주세요." />

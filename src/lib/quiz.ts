@@ -1,4 +1,4 @@
-import type { ClassSession, QuizMedia, Trait } from "./types";
+import type { ClassSession, LessonPhase, QuizMedia, Trait } from "./types";
 
 /**
  * 퀴즈 진행 상태를 세션에서 읽어 학생 화면이 쓸 형태로 만든다.
@@ -11,9 +11,32 @@ import type { ClassSession, QuizMedia, Trait } from "./types";
  */
 
 export interface QuizView {
+  /** 이 단계 안에서의 위치 (0부터). 화면 표시용 — 3/10 의 3 */
   index: number;
+  /** 이 단계의 문항 수 — 3/10 의 10 */
   total: number;
+  /**
+   * 전체 배열 기준 문항 번호. 학생이 답을 제출·기록할 때 이 번호를 쓴다 — 집계가
+   * 단계와 무관하게 어긋나지 않도록(quiz-stats 는 글로벌 인덱스로 센다).
+   */
+  globalIndex: number;
+  /** 화면에 표시할 퀴즈 이름 (기본 "타임머신") */
+  label: string;
+  /** 답하는 방식 (기본 "choice"). "text" 면 학생이 글칸에 직접 적는다 */
+  answerType: "choice" | "text";
+  /** 단답형 입력칸 (answerType 이 "text" 일 때만 채워진다). audioUrl 은 절대 안 내려간다 */
+  answerFields: { key: string; label: string; placeholder?: string }[];
+  /**
+   * 이 문항에 교사 화면 재생용 음성(audioUrl)이 있는가. 주소 자체는 안 내려보내고
+   * "앞 화면을 듣고" 안내만 켜는 용도다(노래·문장 감정 문항).
+   */
+  hasAudio: boolean;
   revealed: boolean;
+  /**
+   * 의견형 문항을 「분포 공개」했을 때 학생 화면에 보일 응답 분포. 아니면 null.
+   * counts 는 선지별 응답 수. answered 는 총 응답 수.
+   */
+  dist: { counts: number[]; answered: number } | null;
   /** 공개 뒤에만 채워진다 */
   answerIndex: number | null;
   nowText: string;
@@ -36,35 +59,63 @@ export interface QuizView {
 }
 
 export function quizView(session: ClassSession): QuizView | null {
-  const questions = session.quiz?.questions ?? [];
-  if (questions.length === 0) return null;
+  const all = session.quiz?.questions ?? [];
+  if (all.length === 0) return null;
 
-  const total = questions.length;
-  const index = clamp(session.quizIndex ?? 0, 0, total - 1);
+  // 이 단계(phase)에 속한 문항만 — group 이 없으면 "quiz" 단계 소속(기존 타임머신 퀴즈).
+  const phase = session.phase as LessonPhase;
+  const inGroup = (q: { group?: LessonPhase }) => (q.group ?? "quiz") === phase;
+
+  const globalIndex = clamp(session.quizIndex ?? 0, 0, all.length - 1);
+  const current = all[globalIndex];
+  // 지금 quizIndex 가 이 단계 문항이 아니면(다른 단계 퀴즈를 가리킴) 이 화면엔 퀴즈가 없다.
+  if (!current || !inGroup(current)) return null;
+
+  // 이 단계 문항들의 글로벌 인덱스 목록 → 화면 표시용 위치(3/10)와 스티커 누적에 쓴다.
+  const groupIdx: number[] = [];
+  for (let i = 0; i < all.length; i += 1) if (inGroup(all[i])) groupIdx.push(i);
+  const index = groupIdx.indexOf(globalIndex);
+  const total = groupIdx.length;
+
   const revealed = session.quizRevealed === true;
-  const current = questions[index];
 
-  // 이미 지나간 문항의 스티커 + (공개됐다면) 지금 문항의 스티커
+  // 이 단계에서 지나온 문항의 스티커 + (공개됐다면) 지금 문항의 스티커
   const earned: Trait[] = [];
-  for (let i = 0; i < index; i += 1) {
-    for (const trait of questions[i]?.stickers ?? []) {
+  for (let k = 0; k < index; k += 1) {
+    for (const trait of all[groupIdx[k]]?.stickers ?? []) {
       if (!earned.includes(trait)) earned.push(trait);
     }
   }
   if (revealed) {
-    for (const trait of current?.stickers ?? []) {
+    for (const trait of current.stickers ?? []) {
       if (!earned.includes(trait)) earned.push(trait);
     }
   }
 
+  // 투표 중에도 보여줄 문항(mediaWhileVoting)은 공개 전에도 media 를 내려보낸다.
+  const showMedia = revealed || current.mediaWhileVoting === true;
+  // 의견형 문항은 정답이 없다 — 공개돼도 "← 정답" 강조가 뜨지 않도록 answerIndex 를 안 보낸다.
+  const showAnswer = revealed && current.opinion !== true;
+  // 의견형을 「분포 공개」했으면(서버가 quizDist 를 채움) 학생에게 분포를 내려보낸다.
+  const dist =
+    revealed && current.opinion === true && session.quizDist?.index === globalIndex
+      ? { counts: session.quizDist.counts, answered: session.quizDist.answered }
+      : null;
+
   return {
     index,
     total,
+    globalIndex,
+    label: session.quiz?.label ?? "타임머신",
+    answerType: current.answerType ?? "choice",
+    answerFields: current.answerType === "text" ? (current.answerFields ?? []) : [],
+    hasAudio: Boolean(current.audioUrl),
     revealed,
-    answerIndex: revealed ? current.answerIndex : null,
+    dist,
+    answerIndex: showAnswer ? current.answerIndex : null,
     nowText: revealed ? current.nowText : "",
     stickers: revealed ? (current.stickers ?? []) : [],
-    media: revealed ? studentMedia(current.media) : null,
+    media: showMedia ? studentMedia(current.media) : null,
     earned,
   };
 }

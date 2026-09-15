@@ -49,11 +49,16 @@ interface SessionRow {
       answerIndex: number;
       nowText: string;
       stickers: string[];
+      answerType?: "choice" | "text";
+      opinion?: boolean;
+      group?: LessonPhase;
       media?: { kind: "image" | "video"; url: string; caption: string; credit: string };
     }[];
+    label?: string;
   };
   quizIndex?: number;
   quizRevealed?: boolean;
+  quizDist?: { index: number; counts: number[]; answered: number };
 }
 
 /** 교사 조작을 따라가는 주기. 학생 화면(4초)과 비슷하게 둔다 */
@@ -95,7 +100,10 @@ function Screen() {
     session?.videoPrompts && session.videoPrompts.length > 0
       ? session.videoPrompts
       : (session?.reflectionQuestions ?? []);
-  const showQuiz = session?.phase === "quiz" && (session.quiz?.questions.length ?? 0) > 0;
+  // 퀴즈는 여러 단계에 붙을 수 있다(문항별 group) — 지금 단계에 속한 문항이 있으면 띄운다.
+  const showQuiz =
+    !!session &&
+    (session.quiz?.questions ?? []).some((q) => (q.group ?? "quiz") === session.phase);
 
   return (
     <div className="flex flex-col gap-4">
@@ -197,17 +205,23 @@ function Screen() {
 
 /** 교실 뒤에서도 읽혀야 한다 — 글자를 최대한 키운다 */
 function QuizBoard({ session }: { session: SessionRow }) {
-  const questions = session.quiz?.questions ?? [];
-  const index = Math.min(Math.max(session.quizIndex ?? 0, 0), questions.length - 1);
-  const question = questions[index];
+  const all = session.quiz?.questions ?? [];
+  const inGroup = (q: { group?: LessonPhase }) => (q.group ?? "quiz") === session.phase;
+  const globalIndex = Math.min(Math.max(session.quizIndex ?? 0, 0), all.length - 1);
+  const question = all[globalIndex];
   const revealed = session.quizRevealed === true;
 
-  if (!question) return null;
+  if (!question || !inGroup(question)) return null;
+
+  // 이 단계 문항들의 전체 배열 번호 → 화면 표시 위치(3/10)와 특성 누적에 쓴다.
+  const groupIdx = all.map((q, i) => ({ q, i })).filter((x) => inGroup(x.q)).map((x) => x.i);
+  const index = groupIdx.indexOf(globalIndex);
+  const total = groupIdx.length;
 
   // 지나간 문항 + 공개된 지금 문항의 특성 (학생 화면과 같은 규칙)
   const earned: string[] = [];
-  for (let i = 0; i < index; i += 1) {
-    for (const trait of questions[i]?.stickers ?? []) {
+  for (let k = 0; k < index; k += 1) {
+    for (const trait of all[groupIdx[k]]?.stickers ?? []) {
       if (!earned.includes(trait)) earned.push(trait);
     }
   }
@@ -217,26 +231,39 @@ function QuizBoard({ session }: { session: SessionRow }) {
     }
   }
 
+  // 의견형을 「분포 공개」했으면 전자칠판에도 응답 분포를 크게 보인다.
+  const dist =
+    revealed && question.opinion === true && session.quizDist?.index === globalIndex
+      ? session.quizDist
+      : null;
+
   return (
     <section className="flex flex-col gap-5">
       <p className="text-lg font-semibold text-muted">
-        타임머신 {index + 1} / {questions.length}
+        {session.quiz?.label ?? "타임머신"} {index + 1} / {total}
       </p>
       <h2 className="text-4xl leading-snug font-bold">{question.prompt}</h2>
 
       <ul className="flex flex-col gap-3">
         {question.choices.map((choice, i) => {
-          const isAnswer = revealed && i === question.answerIndex;
+          const isAnswer = revealed && question.opinion !== true && i === question.answerIndex;
+          const count = dist?.counts[i] ?? 0;
+          const ratio = dist && dist.answered > 0 ? Math.round((count / dist.answered) * 100) : 0;
           return (
             <li
               key={i}
-              className={`flex items-start gap-4 rounded-2xl border-2 px-6 py-5 text-2xl ${
+              className={`flex items-center gap-4 rounded-2xl border-2 px-6 py-5 text-2xl ${
                 isAnswer ? "border-ink bg-lime font-bold" : "border-line bg-card"
               }`}
             >
               <span className="font-bold">{CHOICE_LABELS[i]}</span>
               <span className="flex-1">{choice}</span>
               {isAnswer && <span className="shrink-0">정답</span>}
+              {dist && (
+                <span className="shrink-0 font-bold">
+                  {count}명 · {ratio}%
+                </span>
+              )}
             </li>
           );
         })}
@@ -250,7 +277,9 @@ function QuizBoard({ session }: { session: SessionRow }) {
 
       {revealed && question.nowText && (
         <div className="rounded-2xl bg-cream px-6 py-5">
-          <p className="text-lg font-semibold">그럼 지금은?</p>
+          <p className="text-lg font-semibold">
+            {question.answerType === "text" ? "정답" : "그럼 지금은?"}
+          </p>
           <p className="mt-2 text-2xl leading-snug whitespace-pre-wrap">{question.nowText}</p>
         </div>
       )}

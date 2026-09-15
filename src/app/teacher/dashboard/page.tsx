@@ -52,10 +52,24 @@ interface SessionRow {
   rehearsal?: boolean;
   /** 이 차시에서만 쓰는 단계 이름 (4차시 진도 안내 → AI 직업 관상 체험) */
   phaseLabels?: Partial<Record<LessonPhase, string>>;
+  phaseOrder?: LessonPhase[];
   reflectionQuestions: string[];
   moodCheckEnabled: boolean;
   date: string;
-  quiz?: { questions: { prompt: string; choices: string[]; answerIndex: number }[] };
+  quiz?: {
+    questions: {
+      prompt: string;
+      choices: string[];
+      answerIndex: number;
+      answerType?: "choice" | "text";
+      audioUrl?: string;
+      nowText?: string;
+      opinion?: boolean;
+      group?: LessonPhase;
+    }[];
+    hideReveal?: boolean;
+    label?: string;
+  };
   quizIndex?: number;
   quizRevealed?: boolean;
   activity?: {
@@ -1077,8 +1091,20 @@ function Dashboard() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {LESSON_PHASES.filter((item) => availablePhase(session, item)).map(
-                (item) => (
+              {/*
+                버튼 순서 — 차시가 phaseOrder 로 바꿀 수 있다. 각 버튼은 자기 phase 를
+                바로 지정하므로 순서는 표시일 뿐(동작 무관). phaseOrder 에 적은 것 먼저,
+                안 적은 단계는 LESSON_PHASES 순서로 뒤에 붙여 하나도 빠지지 않게 한다.
+              */}
+              {(session.phaseOrder && session.phaseOrder.length > 0
+                ? [
+                    ...session.phaseOrder,
+                    ...LESSON_PHASES.filter((p) => !session.phaseOrder!.includes(p)),
+                  ]
+                : LESSON_PHASES
+              )
+                .filter((item) => availablePhase(session, item))
+                .map((item) => (
                   <button
                     key={item}
                     type="button"
@@ -1124,16 +1150,33 @@ function Dashboard() {
             </div>
           </section>
 
-          {/* 퀴즈가 붙은 차시에서 퀴즈 단계일 때만. 다른 단계에서는 자리만 차지한다 */}
-          {session.phase === "quiz" && session.quiz && (
-            <TeacherQuizPanel
-              sessionId={session.id}
-              questions={session.quiz.questions}
-              index={session.quizIndex ?? 0}
-              revealed={session.quizRevealed === true}
-              onPatch={patchSession}
-            />
-          )}
+          {/*
+            퀴즈는 이제 여러 단계에 붙을 수 있다(문항별 group). 지금 단계(session.phase)에
+            속한 문항이 있을 때만, 그 부분집합만 패널에 넘긴다. index 는 그 단계 안의 위치,
+            globalIndices 로 전체 배열 번호를 되짚어 이전·다음·집계를 맞춘다.
+          */}
+          {(() => {
+            const quiz = session.quiz;
+            if (!quiz) return null;
+            const sub = quiz.questions
+              .map((q, gi) => ({ q, gi }))
+              .filter(({ q }) => (q.group ?? "quiz") === session.phase);
+            if (sub.length === 0) return null;
+            const globalIndices = sub.map((x) => x.gi);
+            const local = Math.max(0, globalIndices.indexOf(session.quizIndex ?? 0));
+            return (
+              <TeacherQuizPanel
+                sessionId={session.id}
+                questions={sub.map((x) => x.q)}
+                globalIndices={globalIndices}
+                index={local}
+                revealed={session.quizRevealed === true}
+                hideReveal={quiz.hideReveal === true}
+                label={quiz.label}
+                onPatch={patchSession}
+              />
+            );
+          })()}
 
           {/*
             학생이 뭔가 쓰기 시작한 뒤로는 계속 띄운다.
@@ -1495,8 +1538,12 @@ function Dashboard() {
  * 그래서 내용이 없는 단계는 아예 버튼을 만들지 않는다.
  */
 function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
+  // 이 단계에 뜨는 퀴즈 문항 수(문항별 group). group 이 없으면 "quiz" 단계 소속.
+  const quizIn = (item: LessonPhase) =>
+    (session.quiz?.questions ?? []).filter((q) => (q.group ?? "quiz") === item).length;
+
   if (phase === "mood") return session.moodCheckEnabled;
-  if (phase === "quiz") return (session.quiz?.questions.length ?? 0) > 0;
+  if (phase === "quiz") return quizIn("quiz") > 0;
   /*
    * 활동이 있어도 그리기가 없는 차시가 있다 (4차시 직업 조사는 글만 쓴다).
    * 장소가 하나도 없으면 눌러 봐야 고를 것이 없는 빈 화면이 나온다.
@@ -1535,7 +1582,8 @@ function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
   const questionsIn = (item: LessonPhase) =>
     (session.activity?.worksheet ?? []).filter((q) => (q.phase ?? "worksheet") === item).length;
 
-  if (STEP_PHASES.includes(phase)) return questionsIn(phase) > 0;
+  // STEP 단계는 활동지 문항 또는 그 단계의 퀴즈 문항(노래·감정 추측·AI 감정분석)이 있으면 연다.
+  if (STEP_PHASES.includes(phase)) return questionsIn(phase) > 0 || quizIn(phase) > 0;
   if (phase === "worksheet") return questionsIn("worksheet") > 0;
   /*
    * 감상은 볼 것이 있어야 한다 — 어느 단계에 배정됐든 활동지 문항이 있으면 열린다.
