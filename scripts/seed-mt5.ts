@@ -1003,7 +1003,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   progress: {
     heading: "오늘 할 일 — 관점과 감정 읽기",
     body:
-      "오늘은 두 가지 활동을 해요. 먼저 아래 ‘착시 영상’ 을 함께 보며 시작합니다.\n\n" +
+      "먼저 앞 화면(전자칠판)의 ‘착시 영상’ 을 함께 봐요 — 각자 화면이 아니라 앞을 봐 주세요.\n\n" +
       "[활동1] 우리는 왜 다르게 생각할까?\n" +
       " ① 착시 영상  ② 토끼일까 오리일까? 투표  ③ 관점 차이 깨닫기\n" +
       " ④ 문화마다 다른 감정 표현  ⑤ 정리 — 다른 건 틀린 게 아니라 다른 것\n\n" +
@@ -1011,8 +1011,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
       " ① 가사만 듣고 노래 맞히기  ② 말의 내용만 듣고 감정 맞히기\n" +
       " ③ 억양·상황까지 듣고 다시  ④ 텍스트 AI(제미나이)와 감정 분석 비교\n" +
       " ⑤ 이미지 AI(Teachable Machine)로 표정 분류 체험\n\n" +
-      "영상을 보며 생각해 보세요: 왜 어떤 건 사람마다 다르게 보일까?",
-    url: ILLUSION_VIDEO_EMBED,
+      "앞 영상을 보며 생각해 보세요: 왜 어떤 건 사람마다 다르게 보일까?",
+    // 학생 화면엔 영상을 임베드하지 않는다 — 앞 화면(전자칠판)에서 교사가 틀고,
+    // 학생은 앞을 본다. 영상은 아래 video 단계(교사 대시보드 '영상 재생')에 둔다.
+    url: "",
   },
 
   /*
@@ -1042,8 +1044,13 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     ],
   },
 
-  // 착시 영상은 progress 에 임베드했다. 앞 화면(video 단계) 재생은 쓰지 않는다.
-  video: empty(),
+  // 착시 영상은 교사가 앞 화면에서 튼다 — 교사 대시보드 '영상 재생'(video 단계)에 둔다.
+  // 학생 '오늘 할 일' 화면엔 임베드하지 않는다(위 progress.url 비움).
+  video: {
+    heading: "착시 영상 — 11가지 착시 현상",
+    body: "앞 화면(전자칠판)으로 함께 봅니다. 학생은 앞을 봐 주세요.",
+    url: ILLUSION_VIDEO_EMBED,
+  },
 
   /*
    * 마음일기 — 매 회기 루틴. reflectionPublic 은 반드시 false(비공개).
@@ -1067,7 +1074,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   phaseLabels: {
     mood: "마음 체크인",
     // ── 활동1 ──
-    progress: "오늘 할 일 · 착시 영상",
+    progress: "오늘 할 일",
+    video: "착시 영상 (앞 화면 재생)",
     assessment: "토끼? 오리?",
     quiz: "투표 (활동1·2 문항 모음)",
     problem: "관점 차이 깨닫기",
