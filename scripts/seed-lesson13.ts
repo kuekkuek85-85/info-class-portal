@@ -45,6 +45,7 @@
  *   0–3   대기·기분·출석 (대기 중 지뢰찾기)
  *   3–7   안내 보드(assessment) — 이어가기 취지 + 오늘 할 일
  *   7–38  진단활동 — 지난 시간 멈춘 미로부터 이어서, 미로 3개 (미로마다 상태·미션 기록)
+ *         · 미로 3개를 다 푼 학생은 마지막 지뢰찾기 게임 단계로 넘어가 쉰다(_bd_game).
  *   38–40 미로별 기록 확인 → 정리
  *
  * 대상 1~4반 중1. 각 반 30번은 테스트 학생(리허설). 숙제/집에 내주는 것 없음. seed 멱등(--force).
@@ -208,6 +209,33 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint: "숫자로 적어 주세요 (1~12). 아직 시작 안 했으면 비워 둬도 돼요.",
     kind: "text",
     maxLength: 10,
+  },
+
+  /*
+   * 미로 3개를 다 푼 학생을 위한 **지뢰찾기 게임 단계**(교사 요청). 미로 ①②③ 의 status 가
+   * **모두 "다 풀었어요"** 일 때만 링크가 켜진다(enabledWhen — 답값 기반 잠금). 학생이 마지막
+   * "다 풀었어요" 를 고르는 순간 화면이 다시 그려져 바로 열린다. 그전에는 잠긴 상태로 보이고
+   * enabledWhenNote 안내가 뜬다. 대기 게임(game 필드)과 같은 지뢰찾기 주소를 새 탭으로 연다.
+   * maze1/2 status 는 12차에서 이어져 프리필되므로, 13차에선 보통 미로 ③ 만 마치면 켜진다.
+   */
+  {
+    key: "_bd_game",
+    phase: "worksheet",
+    label: "🎉 미로 3개를 다 풀었나요? — 지뢰찾기로 쉬어요",
+    hint:
+      "미로 ①·②·③ 을 모두 풀고 위에서 셋 다 '다 풀었어요' 를 고르면, 아래 지뢰찾기가 켜져요.\n" +
+      "남은 시간엔 지뢰찾기 게임으로 쉬어요. 새 탭에서 열려요.",
+    kind: "note",
+    linkUrl: "https://mine-sweeper-game-seven.vercel.app/home",
+    linkLabel: "지뢰찾기 열기 (새 탭)",
+    // 미로 ①②③ status 가 모두 "다 풀었어요" 일 때만 켜진다 (답값 기반 잠금)
+    enabledWhen: [
+      { key: "maze1_status", equals: "다 풀었어요" },
+      { key: "maze2_status", equals: "다 풀었어요" },
+      { key: "maze3_status", equals: "다 풀었어요" },
+    ],
+    enabledWhenNote: "미로 ①②③ 을 다 풀고 셋 다 '다 풀었어요' 를 고르면 켜져요.",
+    maxLength: 0,
   },
 
   /*
@@ -418,7 +446,8 @@ async function main(): Promise<void> {
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (12차와 같은 통 — 12차 미로별 기록/요약을 13차가 이어 읽음. 파이썬/마이크로비트와 분리)`);
   console.log("단계: 대기(지뢰찾기) → 기분 → 안내(assessment) → 진단활동(worksheet, 미로 3개 한 페이지, 순서 잠금 없음) → 정리 (진도 팝업 없음)");
-  console.log("미로 ① 2020-1/1 · ② 2020-2/1 · ③ 2020-3/1 (각 12미션). enabledAfterOpen 없음 — 지난 시간 멈춘 미로부터 자유 이어가기.");
+  console.log("미로 ① 2020-1/1 · ② 2020-2/1 · ③ 2020-3/1 (각 12미션). 미로 순서 잠금 없음 — 지난 시간 멈춘 미로부터 자유 이어가기.");
+  console.log("다 푼 학생용 지뢰찾기 게임 단계(_bd_game): 미로 ①②③ status 가 모두 '다 풀었어요' 일 때만 켜짐(enabledWhen, 답값 기반). 대기 게임과 같은 주소, 새 탭.");
   console.log("미로별 기록: maze1/2/3_status·mission (maze1/2 는 12차와 같은 키라 프리필). 최종 요약(bd_final_*)은 중복이라 제거(12차와 동일).");
   console.log("이어가기 배너: carryOver 로 같은 통(block-diagnostic)의 bd_final_*·maze1/2_status 를 활동지 맨 위에 읽기 전용 표시(공유 코드 변경 없음).");
   console.log("freeNavigation: true. 로그인 불필요·새 탭. 점수·자동채점 없음.");

@@ -602,6 +602,18 @@ export interface WorksheetQuestion {
    */
   enabledAfterOpen?: string;
   /**
+   * 이 문항의 링크(linkUrl)는 **다른 문항의 답이 정해진 값일 때만** 활성화된다.
+   *
+   * enabledAfterOpen 이 "링크를 열었는가"로 잠그는 반면, 이건 **답값**으로 잠근다. 조건을
+   * 여러 개 주면 **모두 맞아야**(AND) 열린다. 각 조건은 answers[key] 가 equals(문자열 하나
+   * 또는 여럿 중 하나)와 같은지를 본다. 예) 13차 지뢰찾기 게임은 미로 ①②③ status 가 모두
+   * "다 풀었어요" 일 때만 켜진다. 답을 고르는 순간 화면이 다시 그려져 바로 반영된다.
+   * 안 적은 문항엔 아무 영향이 없다(기존 동작 유지).
+   */
+  enabledWhen?: { key: string; equals: string | string[] }[];
+  /** enabledWhen 이 아직 안 맞았을 때 잠긴 링크 밑에 보여줄 안내. 비면 기본 문구. */
+  enabledWhenNote?: string;
+  /**
    * 분반마다 다른 주소 (분반 열쇠 → 주소).
    *
    * 캔바 초대 주소가 분반별 그룹으로 따로 나 있다. 여기 넷을 다 적어 두고, **수업을

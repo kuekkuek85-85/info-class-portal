@@ -673,6 +673,20 @@ export function WorksheetView({
                 </span>
                 <span className="t-caption">앞의 ① 미로를 먼저 열면 여기가 열려요.</span>
               </div>
+            ) : question.enabledWhen &&
+              !question.enabledWhen.every((cond) => {
+                // 답값 잠금: 조건 answers[key] 가 정해진 값이어야 열린다 (여러 개면 모두 AND).
+                const got = (value.answers[cond.key] ?? "").trim();
+                return Array.isArray(cond.equals) ? cond.equals.includes(got) : got === cond.equals;
+              }) ? (
+              <div className="flex flex-col gap-1">
+                <span className="pill pill-block cursor-not-allowed text-center opacity-40">
+                  {question.linkLabel || "열기"}
+                </span>
+                <span className="t-caption">
+                  {question.enabledWhenNote || "아직 잠겨 있어요."}
+                </span>
+              </div>
             ) : (
               <a
                 href={question.linkUrl}
