@@ -59,6 +59,7 @@ interface SessionRow {
   quiz?: {
     questions: { prompt: string; choices: string[]; answerIndex: number }[];
     hideReveal?: boolean;
+    label?: string;
   };
   quizIndex?: number;
   quizRevealed?: boolean;
@@ -1148,6 +1149,7 @@ function Dashboard() {
               index={session.quizIndex ?? 0}
               revealed={session.quizRevealed === true}
               hideReveal={session.quiz.hideReveal === true}
+              label={session.quiz.label}
               onPatch={patchSession}
             />
           )}

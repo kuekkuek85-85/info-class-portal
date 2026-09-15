@@ -15,6 +15,8 @@ import { useState } from "react";
 export interface QuizState {
   index: number;
   total: number;
+  /** 화면에 표시할 퀴즈 이름 (기본 "타임머신") */
+  label: string;
   revealed: boolean;
   answerIndex: number | null;
   nowText: string;
@@ -51,10 +53,18 @@ export function QuizView({ question, state, picked, onPick, saving, disabled }: 
     <section className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
         <p className="t-eyebrow">
-          타임머신 · {state.index + 1} / {state.total}
+          {state.label} · {state.index + 1} / {state.total}
         </p>
         <h2 className="t-display">{question.prompt}</h2>
       </header>
+
+      {/*
+        투표하는 동안 보여주는 그림 (mediaWhileVoting). 선지 위에 크게 둬서 "그림을 보며
+        투표"가 되게 한다. 공개 뒤 자료(아래 MediaFigure)와 겹치지 않게 공개 전에만 띄운다.
+      */}
+      {!state.revealed && state.media && state.media.kind === "image" && (
+        <MediaFigure media={state.media} />
+      )}
 
       <ul className="flex flex-col gap-3">
         {question.choices.map((choice, index) => {

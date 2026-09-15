@@ -27,6 +27,8 @@ interface TeacherQuizPanelProps {
   revealed: boolean;
   /** 의견형 투표 차시는 「정답 공개」를 숨긴다 (정답이 없어 공개가 오해를 준다) */
   hideReveal?: boolean;
+  /** 화면에 표시할 퀴즈 이름 (기본 "타임머신 퀴즈") */
+  label?: string;
   onPatch: (patch: Record<string, unknown>) => Promise<void> | void;
 }
 
@@ -36,6 +38,7 @@ export function TeacherQuizPanel({
   index,
   revealed,
   hideReveal = false,
+  label = "타임머신 퀴즈",
   onPatch,
 }: TeacherQuizPanelProps) {
   const [stats, setStats] = useState<QuestionStat[] | null>(null);
@@ -63,7 +66,7 @@ export function TeacherQuizPanel({
     <section className="card flex flex-col gap-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="t-body font-bold">
-          타임머신 퀴즈 — {index + 1} / {total}
+          {label} — {index + 1} / {total}
         </h2>
         <p className="t-caption">
           {hideReveal

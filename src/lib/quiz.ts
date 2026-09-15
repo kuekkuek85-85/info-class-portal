@@ -13,6 +13,8 @@ import type { ClassSession, QuizMedia, Trait } from "./types";
 export interface QuizView {
   index: number;
   total: number;
+  /** 화면에 표시할 퀴즈 이름 (기본 "타임머신") */
+  label: string;
   revealed: boolean;
   /** 공개 뒤에만 채워진다 */
   answerIndex: number | null;
@@ -57,14 +59,18 @@ export function quizView(session: ClassSession): QuizView | null {
     }
   }
 
+  // 투표 중에도 보여줄 문항(mediaWhileVoting)은 공개 전에도 media 를 내려보낸다.
+  const showMedia = revealed || current.mediaWhileVoting === true;
+
   return {
     index,
     total,
+    label: session.quiz?.label ?? "타임머신",
     revealed,
     answerIndex: revealed ? current.answerIndex : null,
     nowText: revealed ? current.nowText : "",
     stickers: revealed ? (current.stickers ?? []) : [],
-    media: revealed ? studentMedia(current.media) : null,
+    media: showMedia ? studentMedia(current.media) : null,
     earned,
   };
 }

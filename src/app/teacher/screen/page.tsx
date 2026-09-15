@@ -51,6 +51,7 @@ interface SessionRow {
       stickers: string[];
       media?: { kind: "image" | "video"; url: string; caption: string; credit: string };
     }[];
+    label?: string;
   };
   quizIndex?: number;
   quizRevealed?: boolean;
@@ -220,7 +221,7 @@ function QuizBoard({ session }: { session: SessionRow }) {
   return (
     <section className="flex flex-col gap-5">
       <p className="text-lg font-semibold text-muted">
-        타임머신 {index + 1} / {questions.length}
+        {session.quiz?.label ?? "타임머신"} {index + 1} / {questions.length}
       </p>
       <h2 className="text-4xl leading-snug font-bold">{question.prompt}</h2>
 

@@ -274,6 +274,8 @@ const QUIZ: QuizContent = {
   // 이 회기 투표는 대부분 의견형(토끼/오리·감정)이라 정답 공개가 오해를 준다.
   // 교사 퀴즈 패널에서 「정답 공개」 버튼을 숨긴다 — 분포만 본다.
   hideReveal: true,
+  // 이 차시는 "타임머신" 이 아니라 "투표" 로 표시한다 (학생·교사·전자칠판 공통).
+  label: "투표",
   questions: [
     // ── quiz[0] · [활동1] 토끼/오리 (의견형 · 공개 안 함) ─────────────
     {
@@ -287,6 +289,14 @@ const QUIZ: QuizContent = {
         "보는 사람마다 관점이 다를 수 있다는 것 — 그게 오늘 우리가 확인한 거예요.",
       // 디지털 특성 스티커는 이 과목과 무관하다. 비워 두면 스티커가 안 붙는다.
       stickers: [],
+      // 토끼-오리 그림을 투표하는 동안 선지 위에 크게 띄운다(그림 보며 투표). 별도 단계 없음.
+      media: {
+        kind: "image",
+        url: RABBIT_DUCK_IMG,
+        caption: "토끼로도 오리로도 보이는 유명한 착시 그림",
+        credit: "",
+      },
+      mediaWhileVoting: true,
     },
     // ── quiz[1] · [활동2-①] 가사 → 제목·가수 (정답형 · 공개해도 됨) ────
     {
@@ -1019,31 +1029,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   },
 
   /*
-   * ② 토끼-오리 착시 그림 제시.
-   *
-   * 안내 화면(assessment)은 퀴즈 바로 앞이라, 투표 직전에 그림을 크게 보여주기 좋다.
-   * PhaseContent 는 그림을 탭(tab.imageUrl)으로만 그리므로 탭 하나에 담는다.
-   * 그림은 자체 호스팅(public/mt5/rabbit-duck.png). 정적 파일이라 배포되어 있어야 뜬다.
+   * 토끼-오리 그림은 이제 quiz[0](투표) 문항에 붙어 "그림 보며 투표"로 합쳐졌다
+   * (media + mediaWhileVoting). 별도 assessment(토끼? 오리?) 단계는 두지 않는다.
    */
-  assessment: {
-    heading: "토끼일까요, 오리일까요?",
-    body: "",
-    url: "",
-    tabs: [
-      {
-        label: "이 그림, 뭐로 보여요?",
-        subtitle: "잘 보세요 — 토끼로도, 오리로도 보입니다",
-        note: "착시",
-        rows: [],
-        highlights: [
-          "정답은 없어요. 처음에 무엇으로 보였는지 마음속으로 정해 두세요.",
-          "다음 화면에서 ‘토끼 / 오리’ 를 투표할 거예요. 우리 반 결과를 함께 봅니다.",
-        ],
-        imageUrl: RABBIT_DUCK_IMG,
-        imageAlt: "토끼로도 오리로도 보이는 유명한 착시 그림",
-      },
-    ],
-  },
+  assessment: empty(),
 
   // 착시 영상은 교사가 앞 화면에서 튼다 — 교사 대시보드 '영상 재생'(video 단계)에 둔다.
   // 학생 '오늘 할 일' 화면엔 임베드하지 않는다(위 progress.url 비움).
@@ -1074,14 +1063,13 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   // 교사 버튼 순서: 착시 영상(video)을 토끼/오리(assessment) 앞으로. 안 적은 단계는
   // LESSON_PHASES 순서로 뒤에 붙는다(대시보드가 처리). 버튼은 각자 phase 를 바로 지정.
-  phaseOrder: ["waiting", "mood", "progress", "video", "assessment", "quiz"],
+  phaseOrder: ["waiting", "mood", "progress", "video", "quiz"],
 
   phaseLabels: {
     mood: "마음 체크인",
     // ── 활동1 ──
     progress: "오늘 할 일",
     video: "착시 영상 (앞 화면 재생)",
-    assessment: "토끼? 오리?",
     quiz: "투표 (활동1·2 문항 모음)",
     problem: "관점 차이 깨닫기",
     mvp: "문화마다 다른 감정 표현",
