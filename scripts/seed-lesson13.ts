@@ -1,5 +1,8 @@
 /**
- * 13차시 차시 계획 등록 — 「정보 진단활동 ② · 블록 코딩 진단평가 1~3」.
+ * 13차시 차시 계획 등록 — 「정보 진단활동 ② · 블록 코딩 이어서」.
+ *
+ * 12차(진단활동 ①)에 **이어서** 하는 차시다 — 같은 활동 통(block-diagnostic)을 쓰고,
+ * 지난 시간 멈춘 미로부터 이어서 미로 3개를 푼다. 제목·안내를 12차와 나란한 시리즈로 둔다.
  *
  *   node --env-file=.env.local scripts/seed-lesson13.ts
  *   node --env-file=.env.local scripts/seed-lesson13.ts --force   (이미 학생이 들어온 수업도 덮어씀)
@@ -240,7 +243,7 @@ const WORKSHEET: WorksheetQuestion[] = [
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   lessonNo: LESSON_NO,
-  title: "정보 진단활동 ② · 블록 코딩 진단평가 1~3",
+  title: "정보 진단활동 ② · 블록 코딩 이어서",
   moodCheckEnabled: true,
 
   game: {
