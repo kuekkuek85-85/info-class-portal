@@ -88,13 +88,12 @@ function empty(): PhaseContent {
  * 미로에서 멈췄는지" 가 미로별로 남는다. 이 기록은 활동 통(block-diagnostic)의 작품 answers 에
  * 저장되고, **13차가 같은 통에서 읽어** 학생을 이어 할 미로로 안내한다(이어가기의 핵심).
  *
- * ## 키 규약 — 미로별 + 요약 둘 다 (교사 확정)
+ * ## 키 규약 — 미로별만 (교사 확정: 최종 요약은 중복이라 제거)
  *
- *  · 미로별: maze1_status / maze1_mission, maze2_status / maze2_mission — 13차가 max 계산의
- *    한 신호(ⓐ)로 쓴다.
- *  · 요약: bd_final_maze / bd_final_mission — 마지막에 한 번 더 남기는 "오늘 최종 진도". 13차가
- *    두 번째 신호(ⓑ)로 쓰고, **옛 12차(1반)에도 있던 키**라 1반 대비도 된다(그 반은 미로별 기록이
- *    없어도 이 요약만으로 이어가기 계산이 동작).
+ *  · 미로별: maze1_status / maze1_mission, maze2_status / maze2_mission — 이것이 "학생별 종료
+ *    단계" 기록이자 13차 이어가기의 신호다.
+ *  · '오늘 최종 진도 요약(bd_final_*)' 은 미로별 기록과 중복이라 **넣지 않는다**. 다만 옛 12차
+ *    (1반)에는 bd_final_* 가 남아 있으므로 13차 carryOver 가 그 값도 함께 읽어 1반 대비는 유지된다.
  */
 const STATUS_CHOICES = ["다 풀었어요", "푸는 중이에요", "아직 시작 못 했어요"];
 
@@ -177,35 +176,11 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
 
   /*
-   * 맨 하단 — 오늘 최종 진도 요약(한 번 더). 미로별 기록과 별개로, 오늘 마지막에 어느 미로
-   * 몇 미션까지 했는지 한 줄로 남긴다. 13차가 미로별 기록과 이 요약 중 **더 나아간 미로**로
-   * 이어가기 시작점을 정한다. 옛 12차(1반)에도 있던 키(bd_final_*)라 1반 대비도 된다.
+   * '오늘 최종 진도 요약(bd_final_*)' 은 제거했다(교사 확정) — 미로별 기록(maze1/2_status·
+   * mission)과 중복이라 한 번 더 묻지 않는다. 학생별 종료 단계는 미로별 기록이 그대로 남기고,
+   * 13차 이어가기도 그 미로별 기록을 신호로 쓴다(옛 12차 1반의 bd_final_* 는 13차 carryOver 가
+   * 계속 읽으므로 1반 대비는 유지된다).
    */
-  {
-    key: "_bd_final_head",
-    phase: "worksheet",
-    label: "오늘 어디까지 했나요? (마지막 요약)",
-    hint: "수업을 마치기 전에, 오늘 최종적으로 어느 미로 몇 번째 미션까지 풀었는지 한 번 더 남겨 주세요.",
-    kind: "note",
-    maxLength: 0,
-  },
-  {
-    key: "bd_final_maze",
-    phase: "worksheet",
-    label: "오늘 마지막으로 푼 미로",
-    hint: "오늘 마지막에 풀고 있던(또는 끝낸) 미로를 골라 주세요.",
-    kind: "choice",
-    choices: ["① 이상한 숲", "② 이상한 티파티"],
-    maxLength: 20,
-  },
-  {
-    key: "bd_final_mission",
-    phase: "worksheet",
-    label: "몇 번째 미션까지 했나요?",
-    hint: "숫자로 적어 주세요 (1~12).",
-    kind: "text",
-    maxLength: 10,
-  },
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
@@ -374,7 +349,7 @@ async function main(): Promise<void> {
   console.log(`\n활동 ID: ${ACTIVITY_ID} (진단활동 전용 통 — 13차가 같은 통을 이어 씀. 파이썬 도우미선발/마이크로비트와 분리)`);
   console.log("단계: 대기(지뢰찾기) → 기분 → 안내(assessment) → 진단활동(worksheet, 미로 2개 한 페이지, 미로별 기록) → 마침 (진도 팝업·퀴즈 단계 없음)");
   console.log("진도 팝업 없음(교사 확정): 순서는 enabledAfterOpen(①→②)으로만 강제. 이미 열린 세션의 progressChecks 도 재시드 때 지웁니다.");
-  console.log("미로별 기록: maze1_status/maze1_mission · maze2_status/maze2_mission (학생별 종료 단계). 요약: bd_final_maze/bd_final_mission — 13차 이어가기 신호.");
+  console.log("미로별 기록: maze1_status/maze1_mission · maze2_status/maze2_mission (학생별 종료 단계 = 13차 이어가기 신호). 최종 요약(bd_final_*)은 중복이라 제거.");
   console.log("① 이상한 숲 playentry.org/maze/2020-1/1 · ② 이상한 티파티 2020-2/1 (각 12미션). ③ 여왕의 정원은 다음 차시(13차).");
   console.log("로그인 불필요·새 탭. 점수·자동채점 없음. 미로별 기록은 작품 answers 에 저장되어 13차가 읽음.");
   process.exit(0);
