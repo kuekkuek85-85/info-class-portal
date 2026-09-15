@@ -985,11 +985,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   ],
 
   game: {
-    heading: "기다리는 동안 — 한붓그리기",
+    heading: "기다리는 동안 — 지뢰찾기",
     body:
       "친구들이 다 모일 때까지 잠깐 쉬어요.\n" +
-      "선을 한 번도 떼지 않고, 같은 길을 두 번 지나지 않게 모든 선을 그려 보세요.",
-    url: "https://euler-path-game.vercel.app/",
+      "숫자는 그 칸 둘레에 숨은 지뢰의 개수예요. 지뢰가 없는 칸을 골라 열어 보세요.",
+    url: "https://mine-sweeper-game-seven.vercel.app/home",
   },
   gameExplainer: empty(),
 
