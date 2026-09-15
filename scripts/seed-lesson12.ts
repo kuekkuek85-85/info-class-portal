@@ -16,17 +16,16 @@
  *
  *   대기(지뢰찾기) → 안내(assessment) → 진단활동(엔트리 미로 2개, 한 페이지) → 다음 시간
  *
- * 미로 2개는 한 페이지에 둔다. **순서·진도 확인은 진도 체크 팝업**이 맡는다 — 수업 시작 후
- * 20·30·40분에 "지금 어느 미로 몇 미션" 을 물어, 교사가 시각별 스냅샷으로 속도를 본다
- * (도우미 선발 참고). 그래서 페이지 분할·성찰 기록은 없다. 파이썬·타자·리더보드·자동채점도
- * 전부 없다. 기존 worksheet kind(note + linkUrl)만 재사용하고, 미로는 새 탭·**로그인 불필요**.
+ * 미로 2개는 한 페이지에 둔다. 순서는 `enabledAfterOpen`(①을 연 뒤에야 ②) 으로만 강제하고,
+ * **진도 팝업은 쓰지 않는다**(교사 확정 — 10분마다 뜨는 진도 팝업 제거). 그래서 페이지 분할·
+ * 성찰 기록은 없다. 파이썬·타자·리더보드·자동채점도 전부 없다. 기존 worksheet kind(note +
+ * linkUrl)만 재사용하고, 미로는 새 탭·**로그인 불필요**.
  *
  * ## 40분에 맞춘 흐름
  *
  *   0–3   대기·기분·출석 (대기 중 지뢰찾기)
  *   3–7   안내 보드(assessment) — 진단활동 취지 + 오늘 할 일
  *   7–40  진단활동 — 엔트리 미로 2개를 순서대로 풀기
- *   (그 사이) 20·30·40분에 진도 체크 팝업 — "지금 어느 미로 몇 미션" 기록
  *   ~40    다음 시간 예고 → 정리
  *
  * ## 오늘 여는 미로 (교사 확정)
@@ -80,9 +79,9 @@ function empty(): PhaseContent {
 }
 
 /*
- * 미로 2개를 **한 페이지(worksheet)에** 나란히 둔다. 순서·진도 확인은 페이지 분할이 아니라
- * 진도 체크 팝업(progressChecks)이 맡는다 — 정해진 분에 "지금 어느 미로 몇 미션" 을 물어
- * 교사가 시각별 스냅샷으로 속도를 본다. 그래서 STEP 분할·성찰 기록은 두지 않는다.
+ * 미로 2개를 **한 페이지(worksheet)에** 나란히 둔다. 순서는 `enabledAfterOpen`(①을 연 뒤에야
+ * ②가 열림) 으로만 강제하고, 진도 팝업은 쓰지 않는다(교사 확정). 그래서 STEP 분할·성찰 기록은
+ * 두지 않는다.
  */
 const WORKSHEET: WorksheetQuestion[] = [
   {
@@ -124,8 +123,9 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
   /*
-   * 맨 하단 — 최종 진도 기록. 팝업(20·30·40분)을 놓쳐도, 오늘 끝에 어느 미로 몇 미션까지
-   * 했는지 학생이 스스로 한 번 더 남긴다. 활동지 자동저장으로 작품 answers 에 들어간다.
+   * 맨 하단 — 최종 진도 기록. 진도 팝업을 없앤 뒤로 이 칸이 **유일한 진도 기록**이다.
+   * 오늘 끝에 어느 미로 몇 미션까지 했는지 학생이 스스로 남긴다(교사가 속도·도우미 선발 참고).
+   * 활동지 자동저장으로 작품 answers 에 들어간다.
    */
   {
     key: "_bd_final_head",
@@ -201,12 +201,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
       },
       {
         label: "오늘 순서",
-        subtitle: "미로 2개를 순서대로 + 진도 체크 팝업",
-        note: "가끔 '지금 어디까지 했나요?' 팝업이 떠요 — 그때 어느 미로 몇 미션인지 알려 주세요.",
+        subtitle: "미로 2개를 순서대로",
+        note: "①을 먼저 열어야 ②가 열려요. 서두르지 말고 하나씩 미션을 풀어 봅니다.",
         rows: [
           { label: "1", value: "① 이상한 숲 속의 엔트리봇 (12미션)" },
           { label: "2", value: "② 이상한 티파티 (12미션)" },
-          { label: "진도 체크", value: "20·30·40분에 팝업 — 지금 어디까지 했는지 기록" },
         ],
         highlights: [
           "③ 여왕의 정원은 다음 시간에 열려요 — 오늘은 위 2개만 하면 됩니다.",
@@ -218,20 +217,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   video: empty(),
 
   /*
-   * 성찰(마무리 기록 문항)은 두지 않는다 — 진도는 진도 체크 팝업이 시각별로 남긴다.
+   * 성찰(마무리 기록 문항)은 두지 않는다 — 미로 자체가 활동이라 별도 기록을 강요하지 않는다.
    */
   reflectionQuestions: [],
   reflectionPublic: false,
-
-  /*
-   * 진도 체크 팝업 — 수업 시작 후 20·30·40분에 "지금 어느 미로 몇 미션" 을 묻는다.
-   * 교사 대시보드가 시각별 스냅샷으로 속도를 보고 도우미(모둠장) 선발에 참고한다.
-   * 단계 라벨은 미로 이름 그대로.
-   */
-  progressChecks: {
-    minutes: [20, 30, 40],
-    stages: ["① 이상한 숲", "② 이상한 티파티"],
-  },
 
   /*
    * 미로는 새 탭(외부)이라 창을 옮기는 것을 이탈로 세지 않는다 (마이크로비트·보안 링크
@@ -312,7 +301,9 @@ async function main(): Promise<void> {
           focusExempt: PLAN.focusExempt,
           phaseLabels: PLAN.phaseLabels,
           freeNavigation: PLAN.freeNavigation,
-          progressChecks: PLAN.progressChecks,
+          // 진도 팝업 제거(교사 확정) — 이미 열린 세션에 남아 있을 수 있어 명시 삭제한다
+          // (merge·ignoreUndefinedProperties 로는 안 비워진다).
+          progressChecks: FieldValue.delete(),
           activity: PLAN.activity,
           // 옛 12차시(파이썬)에서 딸려 온 타임머신 퀴즈를 세션에서도 지운다.
           quiz: FieldValue.delete(),
@@ -328,7 +319,7 @@ async function main(): Promise<void> {
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (진단활동 전용 통 — 파이썬 도우미선발/마이크로비트와 분리)`);
   console.log("단계: 대기(지뢰찾기) → 기분 → 안내(assessment) → 진단활동(worksheet, 미로 2개 한 페이지) → 마침 (다음 시간·타임머신 퀴즈 단계 없음)");
-  console.log("진도 체크 팝업: 수업 시작 후 20·30·40분에 '지금 어느 미로 몇 미션' 을 물음. 대시보드에 시각별 스냅샷.");
+  console.log("진도 팝업 없음(교사 확정): 순서는 enabledAfterOpen(①→②)으로만 강제. 이미 열린 세션의 progressChecks 도 재시드 때 지웁니다.");
   console.log("① 이상한 숲 playentry.org/maze/2020-1/1 · ② 이상한 티파티 2020-2/1 (각 12미션). ③ 여왕의 정원은 다음 차시.");
   console.log("로그인 불필요·새 탭. 점수·자동채점·성찰 기록 없음(진도는 팝업이 남김).");
   process.exit(0);
