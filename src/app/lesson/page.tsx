@@ -1087,7 +1087,11 @@ export default function LessonPage() {
           같은 활동지 화면을 쓰되 그 단계 문항만 보여준다. 교사가 단계를 넘겨야 다음 칸이
           열리므로 시간을 끌고 갈 수 있다 (한 화면에 다 넣으면 첫 칸에서 붙잡힌다).
         */}
-        {!showDone && STEP_PHASES.includes(viewPhase) &&
+        {/*
+          STEP 단계 중 일부는 이제 활동지 대신 퀴즈가 뜬다(노래·감정 추측·AI 감정분석).
+          그 단계에서는 위의 QuizView 가 그려지므로, 여기 활동지/대기 placeholder 는 건너뛴다.
+        */}
+        {!showDone && STEP_PHASES.includes(viewPhase) && !(quiz && viewPhase === phase) &&
           (session.activity && artifact && stepQuestions.length > 0 ? (
             <WorksheetView
               questions={stepQuestions}

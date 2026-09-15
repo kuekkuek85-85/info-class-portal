@@ -105,9 +105,11 @@ export function QuizView({ question, state, picked, onPick, saving, disabled }: 
       */}
       {isText && (
         <div className="flex flex-col gap-4">
-          <div className="block bg-navy text-center text-inverse-ink">
-            <p className="t-subhead">🎧 앞 화면의 노래를 듣고 적어 보세요</p>
-          </div>
+          {state.hasAudio && (
+            <div className="block bg-navy text-center text-inverse-ink">
+              <p className="t-subhead">🎧 앞 화면의 노래를 듣고 적어 보세요</p>
+            </div>
+          )}
           <div className="flex flex-col gap-3">
             {state.answerFields.map((field) => (
               <label key={field.key} className="flex flex-col gap-1">

@@ -680,8 +680,8 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "아래 ‘너 전달법’ 을 ‘나 전달법’ 으로 바꿔 써 보세요",
     hint:
       "바꿀 문장: “너는 왜 내 말을 안 들어?”\n" +
-      "[상황] + [내 감정] + [바라는 것] 을 담아 보세요.\n" +
-      "예) “내 말이 끊기면 서운해. 끝까지 들어주면 좋겠어.”  이 칸은 나와 선생님만 봐요.",
+      "[상황] + [내 감정] + [바라는 것] 을 담아 직접 써 보세요.\n" +
+      "이 칸은 나와 선생님만 봐요.",
     kind: "long",
     maxLength: 300,
   },
@@ -693,8 +693,7 @@ const WORKSHEET: WorksheetQuestion[] = [
       "갈등은 나쁜 게 아니라, 서로 원하는 것이 부딪히는 자연스러운 일이에요. 잘 ‘분석’ 하면 풀려요.\n\n" +
       "상황 예시(하나 골라 분석해 보세요):\n" +
       " · [가정] 나는 시험이 끝나 쉬고 싶은데, 부모님은 바로 다음 공부를 시작하라고 하신다.\n" +
-      " · [학교·사회] 모둠 과제에서 한 친구가 자기 방식만 고집해 다른 친구들이 불편해한다.\n\n" +
-      "※ 선생님이 필요하면 공유화면에서 갈등 상황 챗봇으로 다른 예시도 함께 살펴볼 거예요.",
+      " · [학교·사회] 모둠 과제에서 한 친구가 자기 방식만 고집해 다른 친구들이 불편해한다.",
     kind: "note",
     maxLength: 0,
   },
@@ -988,8 +987,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   // 교사 버튼 순서. 퀴즈가 여러 단계에 나뉘어(문항별 group) 뜨므로, 그 단계들도 순서에
   // 명시한다: 토끼오리(quiz) → 관점(problem·mvp·build) → 노래(wordquiz) → 감정추측(grill)
-  // → AI 감정분석(emotion) → 이미지 AI(worksheet) → 마음일기 → 활동4·5. 안 적은 단계는
-  // LESSON_PHASES 순서로 뒤에 붙는다(대시보드가 처리).
+  // → AI 감정분석(emotion) → 이미지 AI(worksheet) → 활동4·5(wrapmap·wrapheal) → 마음일기.
+  // 마음일기(reflection)를 맨 뒤(마침 직전)에 둬 오늘을 마무리로 장식한다.
   phaseOrder: [
     "waiting",
     "mood",
@@ -1003,9 +1002,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     "grill",
     "emotion",
     "worksheet",
-    "reflection",
     "wrapmap",
     "wrapheal",
+    "reflection",
   ],
 
   phaseLabels: {
@@ -1022,10 +1021,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     grill: "감정 추측 — 듣고 맞히기",
     emotion: "AI로 감정 분석하기",
     worksheet: "이미지 AI 체험 (표정 분석)",
-    reflection: "마음일기",
-    // ── 활동4·5 (마음일기 뒤 얹는 활동) ──
+    // ── 활동4·5 ──
     wrapmap: "효과적인 의사소통",
     wrapheal: "공감 문장 · 감정 대화",
+    // ── 마무리 ──
+    reflection: "마음일기",
   },
 
   // 퀴즈 — 문항별 group 으로 여러 단계에 나뉘어 뜬다(토끼오리·노래·감정추측·AI 감정분석).
@@ -1082,7 +1082,7 @@ async function main(): Promise<void> {
   console.log("교사 버튼 순서: 대기 → 마음 체크인 →");
   console.log("  [활동1 관점] 오늘 할 일 → 착시 영상 → 토끼? 오리? 투표(quiz) → 관점 차이 → 문화별 감정 → 정리");
   console.log("  [활동2 감정] 노래 맞히기(wordquiz) → 감정 추측 듣고 맞히기(grill) → AI로 감정 분석(emotion) → 이미지 AI 체험(worksheet)");
-  console.log("  → 마음일기 → [활동4] 효과적인 의사소통(wrapmap) → [활동5] 공감 문장·감정 대화(wrapheal) → 마침");
+  console.log("  → [활동4] 효과적인 의사소통(wrapmap) → [활동5] 공감 문장·감정 대화(wrapheal) → 마음일기(마무리) → 마침");
   console.log("\n★ 퀴즈가 이제 단계마다 뜹니다(문항별 group): 토끼오리→quiz, 노래 10곡→wordquiz, 감정 추측 3문항→grill, AI 감정분석 3문항→emotion.");
   console.log("   각 단계로 가면 그 단계 문항만 뜨고, 이전·다음·정답공개(또는 분포공개)를 그 안에서 합니다. quizIndex 는 글로벌이라 집계와 안 어긋납니다.");
   console.log("   노래(wordquiz): 교사 패널 ▶ 재생 → 학생이 가수·제목 적기 → [정답 공개](자기 채점). 답은 서버로 안 모읍니다.");
