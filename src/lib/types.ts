@@ -318,13 +318,23 @@ export interface QuizQuestion {
    */
   answerFields?: { key: string; label: string; placeholder?: string }[];
   /**
-   * 의견형 문항 — 정답이 없다. 이 문항에서는 「정답 공개」 버튼과 "← 정답" 강조를 숨긴다.
+   * 의견형 문항 — 정답이 없다. 이 문항에서는 "← 정답" 강조를 숨기고, 「정답 공개」 버튼은
+   * 「분포 공개」로 바뀌어 눌러도 정답이 아니라 응답 분포를 학생 화면에 보인다.
    *
    * 퀴즈 레벨 hideReveal 은 퀴즈 전체를 의견형으로 막는다. opinion 은 문항 하나씩 켠다:
    * 정답형(노래 단답)과 의견형(토끼/오리·감정 투표)이 한 퀴즈에 섞인 마음 톡톡 5회기가
    * 이 경우다 — 노래 문항만 정답을 공개하고, 투표 문항은 분포만 본다.
    */
   opinion?: boolean;
+  /**
+   * 이 문항이 뜨는 단계(phase). 안 주면 "quiz"(기존 타임머신 퀴즈 단계).
+   *
+   * 포털 퀴즈 UI 는 원래 quiz 단계에서만 떴지만, group 을 주면 그 단계에서 그 문항들만
+   * 뜬다 — 한 차시에서 노래 맞히기(wordquiz)·감정 추측(grill)·AI 감정분석(emotion)처럼
+   * 여러 단계에 각각의 퀴즈를 둘 수 있다. quizIndex 는 글로벌(전체 배열 기준)로 저장돼
+   * 집계와 어긋나지 않고, 화면 표시(3/10)와 이전·다음 이동만 그 단계 안으로 좁혀진다.
+   */
+  group?: LessonPhase;
 }
 
 export interface QuizContent {
@@ -1318,6 +1328,14 @@ export interface ClassSession {
   quizIndex?: number;
   /** 정답을 공개했는지 */
   quizRevealed?: boolean;
+  /**
+   * 의견형 문항의 응답 분포를 학생 화면에도 보이려고, 공개 시점에 서버가 집계해 넣어 둔다.
+   *
+   * index 는 (글로벌) 문항 번호. 교사가 그 문항을 「분포 공개」한 순간의 스냅샷이다 —
+   * 학생 화면은 세션 폴링에서 이 값을 읽어 막대그래프를 그린다(별도 폴링 없음). 문항을
+   * 옮기거나 공개를 끄면 서버가 지운다.
+   */
+  quizDist?: { index: number; counts: number[]; answered: number };
   /**
    * 교사가 혼자 걸어보는 리허설 수업.
    *

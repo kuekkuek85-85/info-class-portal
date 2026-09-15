@@ -569,7 +569,9 @@ export default function LessonPage() {
 
   async function pickQuizChoice(choiceIndex: number) {
     if (!quiz) return;
-    const questionIndex = quiz.index;
+    // 전체 배열 기준 번호로 저장한다 — 집계(quiz-stats)가 글로벌 인덱스로 세므로 단계가
+    // 달라도 어긋나지 않는다.
+    const questionIndex = quiz.globalIndex;
     // 이미 고른 문항이면 아무 일도 하지 않는다 (서버에서도 다시 막는다)
     if ((quizAnswers[questionIndex] ?? -1) >= 0) return;
 
@@ -1005,11 +1007,16 @@ export default function LessonPage() {
           </>
         )}
 
-        {viewPhase === "quiz" && quiz && (
+        {/*
+          퀴즈는 이제 여러 단계에 뜰 수 있다(노래 맞히기·감정 추측·AI 감정분석 등).
+          서버가 지금 단계(phase)에 맞는 quiz 를 내려주므로, 학생이 그 단계를 보고 있으면
+          퀴즈를 띄운다. quiz.globalIndex 로 전체 배열에서 문항을 찾는다(집계와 같은 번호).
+        */}
+        {quiz && viewPhase === phase && (
           <QuizView
-            question={session.quizQuestions[quiz.index]}
+            question={session.quizQuestions[quiz.globalIndex]}
             state={quiz}
-            picked={quizAnswers[quiz.index] ?? -1}
+            picked={quizAnswers[quiz.globalIndex] ?? -1}
             onPick={pickQuizChoice}
             saving={quizSaving}
             disabled={closed}

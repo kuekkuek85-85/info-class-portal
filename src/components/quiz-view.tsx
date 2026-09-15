@@ -13,15 +13,23 @@ import { useState } from "react";
  */
 
 export interface QuizState {
+  /** 이 단계 안에서의 위치(3/10 의 3) */
   index: number;
+  /** 이 단계 문항 수(3/10 의 10) */
   total: number;
+  /** 전체 배열 기준 문항 번호 — 답 제출·기록에 쓴다 */
+  globalIndex: number;
   /** 화면에 표시할 퀴즈 이름 (기본 "타임머신") */
   label: string;
   /** 답하는 방식 (기본 "choice"). "text" 면 선지 대신 글칸에 적는다 */
   answerType: "choice" | "text";
   /** 단답형 입력칸 (answerType 이 "text" 일 때만) */
   answerFields: { key: string; label: string; placeholder?: string }[];
+  /** 앞 화면에서 재생하는 음성이 있는 문항인가 (노래·문장) */
+  hasAudio: boolean;
   revealed: boolean;
+  /** 의견형을 「분포 공개」했을 때 우리 반 응답 분포 (아니면 null) */
+  dist: { counts: number[]; answered: number } | null;
   answerIndex: number | null;
   nowText: string;
   stickers: string[];
@@ -79,6 +87,16 @@ export function QuizView({ question, state, picked, onPick, saving, disabled }: 
       */}
       {!state.revealed && state.media && state.media.kind === "image" && (
         <MediaFigure media={state.media} />
+      )}
+
+      {/*
+        선지형(감정 맞히기 등)인데 음성이 있는 문항 — 앞 화면에서 문장/노래를 듣고 고른다.
+        음성 주소는 학생에게 안 보내므로 여기선 안내만 한다.
+      */}
+      {!isText && state.hasAudio && (
+        <div className="block bg-navy text-center text-inverse-ink">
+          <p className="t-subhead">🎧 앞 화면에서 나오는 소리를 듣고 골라 보세요</p>
+        </div>
       )}
 
       {/*
@@ -155,7 +173,40 @@ export function QuizView({ question, state, picked, onPick, saving, disabled }: 
         <p className="t-body-sm text-center">하나를 골라 주세요. 고른 뒤에는 바꿀 수 없어요.</p>
       )}
       {!isText && picked >= 0 && !state.revealed && (
-        <p className="t-body-sm text-center">골랐어요. 다 같이 정답을 볼 때까지 기다려 주세요.</p>
+        <p className="t-body-sm text-center">골랐어요. 다 같이 결과를 볼 때까지 기다려 주세요.</p>
+      )}
+
+      {/*
+        의견형 문항 — 선생님이 「분포 공개」하면 우리 반 응답 분포를 막대로 보여준다.
+        정답이 없으므로 "정답" 강조 없이 분포만 보인다.
+      */}
+      {state.dist && (
+        <div className="block bg-cream flex flex-col gap-2">
+          <p className="t-eyebrow">우리 반 응답 — 모두 {state.dist.answered}명</p>
+          {question.choices.map((choice, i) => {
+            const count = state.dist!.counts[i] ?? 0;
+            const answered = state.dist!.answered;
+            const ratio = answered > 0 ? Math.round((count / answered) * 100) : 0;
+            const mine = picked === i;
+            return (
+              <div key={i} className="flex items-center gap-2">
+                <span className="t-body-sm w-8 shrink-0">
+                  {CHOICE_LABELS[i]}
+                </span>
+                <span className="h-6 flex-1 overflow-hidden rounded-full bg-surface">
+                  <span
+                    className={`block h-full ${mine ? "bg-lime" : "bg-line"}`}
+                    style={{ width: `${ratio}%` }}
+                  />
+                </span>
+                <span className="t-body-sm w-20 shrink-0 text-right">
+                  {count}명 {ratio}%
+                </span>
+              </div>
+            );
+          })}
+          {picked >= 0 && <p className="t-caption">초록색이 내가 고른 것이에요.</p>}
+        </div>
       )}
 
       {/*

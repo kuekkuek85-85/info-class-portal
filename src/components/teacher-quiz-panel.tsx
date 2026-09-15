@@ -32,9 +32,14 @@ interface TeacherQuizPanelProps {
     audioUrl?: string;
     /** 정답 공개 때 학생에게 보이는 정답 텍스트 (교사도 여기서 확인) */
     nowText?: string;
-    /** 의견형 문항(정답 없음) — 「정답 공개」·정답 강조를 숨긴다 */
+    /** 의견형 문항(정답 없음) — 정답 강조 대신 「분포 공개」로 학생에게 분포를 보인다 */
     opinion?: boolean;
   }[];
+  /**
+   * questions 는 지금 단계의 부분집합이라, 각 문항의 전체 배열 번호를 여기서 받는다.
+   * 이전·다음 이동과 집계(quiz-stats, 글로벌 인덱스)를 이 번호로 맞춘다.
+   */
+  globalIndices: number[];
   index: number;
   revealed: boolean;
   /** 의견형 투표 차시는 「정답 공개」를 숨긴다 (정답이 없어 공개가 오해를 준다) */
@@ -47,6 +52,7 @@ interface TeacherQuizPanelProps {
 export function TeacherQuizPanel({
   sessionId,
   questions,
+  globalIndices,
   index,
   revealed,
   hideReveal = false,
@@ -72,10 +78,13 @@ export function TeacherQuizPanel({
   }
 
   if (total === 0) return null;
-  const stat = stats?.[index];
+  // 집계는 글로벌 인덱스로 저장돼 있으므로, 지금 문항의 전체 배열 번호로 찾는다.
+  const stat = stats?.[globalIndices[index]];
   const isText = current?.answerType === "text";
-  // 의견형 문항이거나 퀴즈 전체가 의견형이면 정답 공개·강조를 숨긴다.
-  const noReveal = hideReveal || current?.opinion === true;
+  const isOpinion = current?.opinion === true;
+  // 퀴즈 전체가 의견형(hideReveal)이면 공개 버튼 자체를 숨긴다. 문항별 의견형(opinion)은
+  // 「정답 공개」 대신 「분포 공개」로 바뀌어, 학생에게 응답 분포를 보인다.
+  const noReveal = hideReveal;
 
   return (
     <section className="card flex flex-col gap-4">
@@ -86,35 +95,36 @@ export function TeacherQuizPanel({
         <p className="t-caption">
           {noReveal
             ? "의견형 — 정답 공개 없이 분포만 봅니다"
-            : revealed
-              ? "정답이 공개된 상태입니다"
-              : "학생은 아직 정답을 볼 수 없습니다"}
+            : isOpinion
+              ? revealed
+                ? "학생 화면에 응답 분포가 보이는 중"
+                : "의견형 — 「분포 공개」로 학생에게 분포를 보입니다"
+              : revealed
+                ? "정답이 공개된 상태입니다"
+                : "학생은 아직 정답을 볼 수 없습니다"}
         </p>
       </div>
 
       <div className="rounded-lg bg-surface px-4 py-3">
         <p className="t-body font-semibold">{current?.prompt}</p>
 
+        {/*
+          음성은 여기(교사 화면)에서만 재생한다 — 학생 태블릿엔 주소를 안 보낸다. 노래
+          단답형, 문장 감정 투표 모두 이 재생기로 튼다. 한 번 튼 뒤 학생이 답한다.
+        */}
+        {current?.audioUrl && (
+          // eslint-disable-next-line jsx-a11y/media-has-caption
+          <audio key={current.audioUrl} controls preload="none" className="mt-3 w-full">
+            <source src={current.audioUrl} />
+          </audio>
+        )}
+
         {isText ? (
-          <div className="mt-3 flex flex-col gap-3">
-            {/*
-              노래 음성은 여기(교사 화면)에서만 재생한다. 학생 태블릿엔 주소를 안 보낸다.
-              한 곡 재생 → 학생이 가수·제목을 적음 → 「정답 공개」로 정답을 띄운다.
-            */}
-            {current?.audioUrl ? (
-              // eslint-disable-next-line jsx-a11y/media-has-caption
-              <audio key={current.audioUrl} controls preload="none" className="w-full">
-                <source src={current.audioUrl} />
-              </audio>
-            ) : (
-              <p className="t-caption">이 문항에는 음성이 없습니다.</p>
-            )}
-            {current?.nowText && (
-              <p className="t-body-sm">
-                <span className="font-bold">정답</span> · {current.nowText}
-              </p>
-            )}
-          </div>
+          current?.nowText && (
+            <p className="mt-3 t-body-sm">
+              <span className="font-bold">정답</span> · {current.nowText}
+            </p>
+          )
         ) : (
           <ul className="mt-2 flex flex-col gap-1">
             {current?.choices.map((choice, i) => {
@@ -133,7 +143,7 @@ export function TeacherQuizPanel({
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => onPatch({ quizIndex: index - 1 })}
+          onClick={() => onPatch({ quizIndex: globalIndices[index - 1] })}
           disabled={index === 0}
           className="pill pill-secondary t-body-sm"
         >
@@ -145,12 +155,18 @@ export function TeacherQuizPanel({
             onClick={() => onPatch({ quizRevealed: !revealed })}
             className={`pill t-body-sm ${revealed ? "pill-secondary" : "pill-primary"}`}
           >
-            {revealed ? "정답 숨기기" : "정답 공개"}
+            {isOpinion
+              ? revealed
+                ? "분포 숨기기"
+                : "분포 공개"
+              : revealed
+                ? "정답 숨기기"
+                : "정답 공개"}
           </button>
         )}
         <button
           type="button"
-          onClick={() => onPatch({ quizIndex: index + 1 })}
+          onClick={() => onPatch({ quizIndex: globalIndices[index + 1] })}
           disabled={index >= total - 1}
           className="pill pill-secondary t-body-sm"
         >
@@ -160,7 +176,9 @@ export function TeacherQuizPanel({
 
       {!noReveal && (
         <p className="t-caption">
-          문항을 옮기면 정답 공개는 자동으로 꺼집니다 — 다음 문제가 답부터 보이지 않도록.
+          {isOpinion
+            ? "「분포 공개」를 누르면 지금까지 모인 응답 분포가 학생 화면에도 뜹니다. 문항을 옮기면 꺼집니다."
+            : "문항을 옮기면 정답 공개는 자동으로 꺼집니다 — 다음 문제가 답부터 보이지 않도록."}
         </p>
       )}
 

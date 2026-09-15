@@ -214,12 +214,17 @@ const SONGS: { title: string; artist: string; audio: string }[] = [
   { title: "사랑은 늘 도망가", artist: "임영웅", audio: "/mt5/audio/song10.wav" },
 ];
 
-/** 10곡을 단답형(가수·제목) 문항으로. answerType:"text" + audioUrl + nowText(정답). */
+/**
+ * ① 노래 맞히기(동기유발) — 단답형 10곡. group:"wordquiz" 단계에서 뜬다.
+ * answerType:"text" + audioUrl(교사 화면 재생) + nowText(정답). 학생은 가수·제목을 적고
+ * 교사가 정답 공개하면 스스로 채점한다.
+ */
 const SONG_QUESTIONS: QuizQuestion[] = SONGS.map((song, i) => ({
-  prompt: `[활동2] 🎧 ${i + 1}번째 노래 — AI 목소리로 가사를 들려줄게요. 가수와 제목을 적어 보세요.`,
+  prompt: `[동기유발] 🎧 ${i + 1}번째 노래 — AI 목소리로 가사를 들려줄게요. 가수와 제목을 적어 보세요.`,
   choices: [],
   answerIndex: -1, // 단답형이라 선지 정답이 없다 (정답은 nowText)
   answerType: "text",
+  group: "wordquiz",
   audioUrl: song.audio,
   answerFields: [
     { key: "artist", label: "가수", placeholder: "예) 아이유" },
@@ -230,15 +235,113 @@ const SONG_QUESTIONS: QuizQuestion[] = SONGS.map((song, i) => ({
 }));
 
 /**
- * 활동2 ②③ 감정 추측용 **예시 문장**.
+ * ② 감정 추측 — 듣고 맞히기. group:"grill" 단계. 문장을 AI 목소리(TTS)로 듣고 어떤
+ * 감정인지 고른다(의견형 투표). 정답이 없어 「분포 공개」로 우리 반 분포를 학생 화면에 띄운다.
  *
- * 내용만 들으면 감정이 애매하지만, 억양·상황을 더하면 감정이 뒤집히는 문장을 쓴다.
- * 교사가 TTS 로 (2) 담담하게 한 번, (3) 억양·상황을 담아 한 번 들려준다. 문장은 교사가
- * 바꿔도 된다 — 그때 아래 상수와 quiz[2]·[3] prompt 의 예시 문구만 맞춰 주면 된다.
+ * 음성은 미리 만들어 둔 짧은 문장 클립(public/mt5/audio/sent0N.wav) — 교사 화면에서만 재생.
+ * 문장·선지는 예시다. 같은 문장도 맥락·억양에 따라 다르게 들린다는 것을 분포로 보여준다.
  */
-const EMOTION_SENTENCE = "왜 이제 왔어.";
-/** 감정 선택지 — (2)와 (3)에서 같은 보기를 써야 분포 변화를 비교할 수 있다 */
-const EMOTION_CHOICES = ["기쁨 · 반가움", "슬픔 · 서운함", "화남 · 짜증", "불안 · 걱정"];
+const EMOTION_VOTES: QuizQuestion[] = [
+  {
+    prompt: "[활동2] 🎧 방금 들은 문장 「왜 이제 왔어.」 — 어떤 감정으로 들렸나요?",
+    choices: ["반가움", "서운함", "화남", "걱정"],
+    answerIndex: 0,
+    opinion: true,
+    group: "grill",
+    audioUrl: "/mt5/audio/sent01.wav",
+    nowText:
+      "정답은 없어요. 같은 말도 오래 기다린 반가움일 수도, 서운함일 수도 있어요 —\n" +
+      "맥락과 억양에 따라 다르게 들립니다. 우리 반 분포가 여러 갈래로 갈렸지요?",
+    stickers: [],
+  },
+  {
+    prompt: "[활동2] 🎧 방금 들은 문장 「그래, 너 참 잘났다.」 — 어떤 감정으로 들렸나요?",
+    choices: ["진심 칭찬", "비꼼(빈정거림)", "부러움", "놀림"],
+    answerIndex: 0,
+    opinion: true,
+    group: "grill",
+    audioUrl: "/mt5/audio/sent02.wav",
+    nowText:
+      "정답은 없어요. 글자만 보면 칭찬 같지만, 상황에 따라 비꼼으로도 들려요.\n" +
+      "말의 ‘내용’ 만으로는 감정을 확정하기 어렵다는 걸 확인했어요.",
+    stickers: [],
+  },
+  {
+    prompt: "[활동2] 🎧 방금 들은 문장 「괜찮아. 나 신경 안 써.」 — 어떤 감정으로 들렸나요?",
+    choices: ["정말 괜찮음", "속상함을 숨김", "화가 남", "무관심"],
+    answerIndex: 0,
+    opinion: true,
+    group: "grill",
+    audioUrl: "/mt5/audio/sent03.wav",
+    nowText:
+      "정답은 없어요. ‘괜찮다’ 는 말이 정말 괜찮은 걸 수도, 속상함을 감춘 걸 수도 있어요.\n" +
+      "우리는 말의 내용뿐 아니라 맥락으로 감정을 읽습니다.",
+    stickers: [],
+  },
+];
+
+/**
+ * ③ AI로 감정 분석하기. group:"emotion" 단계. 문장 3개를 주고, 학생이 감정과 근거를
+ * 적는다(단답형 text). 교사가 「정답 공개」를 누르면 참고 답(사람·AI 가 읽는 감정과 근거)이
+ * 학생 화면에도 뜬다 — 자기 답과 비교한다.
+ *
+ * 문장·참고 답은 예시다(교사가 바꿀 수 있다). 텍스트 AI(제미나이)의 감정 분석은 교사가
+ * 공유화면에서 시연하고, 포털은 학생 기록과 참고 답만 담는다(포털에서 Gemini 호출 안 함).
+ */
+const AI_EMOTION_QUESTIONS: QuizQuestion[] = [
+  {
+    prompt:
+      "[활동2] 다음 문장의 감정은 무엇일까요? 그리고 왜 그렇게 생각했는지 ‘근거’ 도 적어 보세요.\n" +
+      "문장: 「왜 이제 왔어.」",
+    choices: [],
+    answerIndex: -1,
+    answerType: "text",
+    group: "emotion",
+    answerFields: [
+      { key: "emotion", label: "감정", placeholder: "예) 서운함" },
+      { key: "reason", label: "근거", placeholder: "예) ‘이제’ 에 오래 기다린 마음이 담겨서" },
+    ],
+    nowText:
+      "참고 답 — 감정: 맥락에 따라 ‘반가움’ 또는 ‘서운함’.\n" +
+      "근거: ‘이제’ 에 오래 기다린 마음이 담겨, 상황을 모르면 서운함·화남으로 읽기 쉽다.\n" +
+      "텍스트 AI 도 글자만 보면 대개 부정 감정으로 판단한다 — 맥락을 아는 사람과 다를 수 있다.",
+    stickers: [],
+  },
+  {
+    prompt:
+      "[활동2] 다음 문장의 감정은 무엇일까요? 그리고 왜 그렇게 생각했는지 ‘근거’ 도 적어 보세요.\n" +
+      "문장: 「그래, 너 참 잘났다.」",
+    choices: [],
+    answerIndex: -1,
+    answerType: "text",
+    group: "emotion",
+    answerFields: [
+      { key: "emotion", label: "감정", placeholder: "예) 비꼼" },
+      { key: "reason", label: "근거", placeholder: "예) 상황상 칭찬이 아니라 빈정거림 같아서" },
+    ],
+    nowText:
+      "참고 답 — 감정: 표면은 칭찬이지만 맥락상 ‘비꼼(빈정거림)’ 인 경우가 많다.\n" +
+      "근거: 다툰 뒤·비꼬는 상황이면 칭찬이 아니다. 텍스트 AI 는 글자만 보면 ‘칭찬(긍정)’ 으로 오해하기 쉽다.",
+    stickers: [],
+  },
+  {
+    prompt:
+      "[활동2] 다음 문장의 감정은 무엇일까요? 그리고 왜 그렇게 생각했는지 ‘근거’ 도 적어 보세요.\n" +
+      "문장: 「괜찮아. 나 신경 안 써.」",
+    choices: [],
+    answerIndex: -1,
+    answerType: "text",
+    group: "emotion",
+    answerFields: [
+      { key: "emotion", label: "감정", placeholder: "예) 속상함" },
+      { key: "reason", label: "근거", placeholder: "예) 말과 달리 속상함을 감춘 것 같아서" },
+    ],
+    nowText:
+      "참고 답 — 감정: 말은 ‘괜찮다’ 지만 속상함·서운함을 감춘 경우가 많다.\n" +
+      "근거: ‘신경 안 쓴다’ 를 굳이 말하는 건 신경이 쓰인다는 뜻일 때가 있다. 사람은 맥락으로, AI 는 글자로 읽는다.",
+    stickers: [],
+  },
+];
 
 /**
  * 활동2 ⑤ Teachable Machine(구글) — 얼굴 표정 이미지 분류.
@@ -246,11 +349,13 @@ const EMOTION_CHOICES = ["기쁨 · 반가움", "슬픔 · 서운함", "화남 �
  * 서버로 올라가지 않는다(프라이버시 안내에 못박음).
  */
 const TEACHABLE_MACHINE_URL = "https://teachablemachine.withgoogle.com/train/image";
+/** 활동2 이미지 AI 체험 — 먼저 얼굴 표정 분석을 바로 해보는 사이트(교사 제공). */
+const FAAN_URL = "https://faan.netlify.app/";
 
 /* ─────────────── 활동3·4 「Canva」 공통 재료 ─────────────── */
 
 /**
- * Canva 학교 팀 초대 주소 — 활동3(감정 캐릭터)·활동4(관계 캘리그래피)가 함께 쓴다.
+ * Canva 학교 팀 초대 주소 — 활동4(관계 캘리그래피)가 쓴다.
  *
  * 분반마다 다른 토큰이라, 저장소가 공개인 만큼 **.env.local 에서만** 읽는다(seed-mt4 와 같은 방식).
  * 세션을 열 때(open-mt5-*.ts) 그 분반 것 하나만 각 문항의 linkUrl 에 박고 linkUrlByGroup 은
@@ -270,47 +375,39 @@ const CANVA_GROUP_LINKS: Record<string, string> = Object.fromEntries(
   Object.entries(CANVA_BY_GROUP).filter(([, url]) => url),
 );
 
-/**
- * 활동3 감정 캐릭터 개수 — 원문의 "n종" 에 대한 현실적 기본값.
- *
- * 40분 블록에서 Canva Magic Media(AI 이미지)는 프롬프트를 쓰고 → 결과를 보고 → 다듬어 다시
- * 뽑는 반복이 필요하다. 감정 하나당 2~3분을 잡으면 3~4개가 현실적이다 — 너무 적으면 감정 폭이
- * 안 나오고, 많으면 시간에 쫓겨 대충 뽑는다. 선생님이 시간·수준에 맞게 이 값과 아래 문항 문구만
- * 바꾸면 된다.
- */
-const EMOTION_ICON_COUNT = "3~4종";
-
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
 
 /**
- * 투표·퀴즈 — 두 활동의 문항이 **하나의 퀴즈 단계**에 활동 순서대로 담긴다.
- * 교사는 quizIndex 로 넘겨 가며 쓰고, prompt 앞의 [활동1]/[활동2] 라벨로 구분한다.
+ * 퀴즈 — 이제 문항이 **여러 단계에 나뉘어** 뜬다(문항별 group). 한 배열에 담되, 각
+ * 문항의 group 이 그 문항이 뜰 단계를 정한다. quizIndex 는 글로벌(전체 배열 기준)로 저장돼
+ * 집계와 어긋나지 않고, 화면 표시·이동만 그 단계 안으로 좁혀진다(quiz.ts 참조).
  *
- * 정답형과 의견형이 **한 퀴즈에 섞여** 있어, 문항별 `opinion` 플래그로 구분한다:
- *  · 의견형(opinion:true) — 토끼/오리·감정 투표. 정답이 없어 「정답 공개」·정답 강조를 숨긴다.
- *  · 정답형(opinion 없음) — 노래 10곡 단답형. 「정답 공개」로 nowText 정답을 띄워 자기 채점.
+ *  · group "quiz"     — [활동1] 토끼/오리 투표 (의견형)
+ *  · group "wordquiz" — [동기유발] 노래 맞히기 10곡 (단답형)
+ *  · group "grill"    — [활동2] 감정 추측: 문장 듣고 감정 맞히기 (의견형 투표 3문항)
+ *  · group "emotion"  — [활동2] AI로 감정 분석: 문장 3개, 감정+근거 적기 (단답형 · 정답 공개)
  *
- * (예전엔 퀴즈 전체 hideReveal:true 로 막았지만, 노래 문항은 정답 공개가 필요해 문항별
- *  opinion 으로 바꿨다 — seed-mt5 머리말 "[남은 갈림]" 이 예고한 방식.)
+ * 정답형(단답 노래·AI 감정분석)은 「정답 공개」로 nowText 를 띄우고, 의견형(토끼오리·감정
+ * 투표)은 「분포 공개」로 응답 분포를 학생 화면에 띄운다(둘 다 문항별로 자동 구분).
  */
 const QUIZ: QuizContent = {
-  // 이 차시는 "타임머신" 이 아니라 "투표" 로 표시한다 (학생·교사·전자칠판 공통).
-  // 노래 문항에도 이 이름이 붙는다 — 필요하면 문항 문구/라벨은 교사가 바꿀 수 있다.
-  label: "투표",
+  // "타임머신" 대신 "퀴즈" 로 표시한다 (학생·교사·전자칠판 공통).
+  label: "퀴즈",
   questions: [
-    // ── [활동1] 토끼/오리 (의견형) ────────────────────────────────
+    // ── [활동1] 토끼/오리 투표 (group "quiz") ─────────────────────
     {
       prompt: "[활동1] 방금 본 그 그림, 여러분에게는 무엇으로 보였나요? 토끼일까요, 오리일까요?",
       choices: ["토끼", "오리"],
       answerIndex: 0, // 형식상 index — 정답 아님
-      opinion: true, // 의견형 — 「정답 공개」·정답 강조 숨김
+      opinion: true, // 의견형 — 「분포 공개」로 분포만 보인다
+      group: "quiz",
       nowText:
         "사실 여기엔 정답이 없어요. 같은 그림인데 누구는 토끼로, 누구는 오리로 봅니다.\n" +
         "보는 사람마다 관점이 다를 수 있다는 것 — 그게 오늘 우리가 확인한 거예요.",
       stickers: [],
-      // 토끼-오리 그림을 투표하는 동안 선지 위에 크게 띄운다(그림 보며 투표). 별도 단계 없음.
+      // 토끼-오리 그림을 투표하는 동안 선지 위에 크게 띄운다(그림 보며 투표).
       media: {
         kind: "image",
         url: RABBIT_DUCK_IMG,
@@ -319,34 +416,12 @@ const QUIZ: QuizContent = {
       },
       mediaWhileVoting: true,
     },
-    // ── [활동2-①] 노래 맞히기 10곡 (단답형 · 정답 공개) ─────────────
+    // ── [동기유발] 노래 맞히기 10곡 (group "wordquiz") ─────────────
     ...SONG_QUESTIONS,
-    // ── [활동2-②] 감정 추측: 내용만 (의견형) ──────────────────────
-    {
-      prompt:
-        `[활동2] 방금 '내용만' 담담하게 들은 문장 「${EMOTION_SENTENCE}」 — 어떤 감정으로 들렸나요?\n` +
-        "※ 아직 억양·상황 없이 말의 내용만 들은 상태예요. 느낀 대로 골라요(정답 없음).",
-      choices: EMOTION_CHOICES,
-      answerIndex: 0, // 형식상 — 정답 없음
-      opinion: true,
-      nowText:
-        "정답은 없어요. 반 친구들의 추측이 여러 갈래로 갈렸을 거예요.\n" +
-        "말의 내용만으로는 감정을 확실히 알기 어렵다는 뜻이에요. 이제 억양과 상황을 더해 볼까요?",
-      stickers: [],
-    },
-    // ── [활동2-③] 감정 재해석: 억양+맥락 (의견형) ─────────────────
-    {
-      prompt:
-        `[활동2] 같은 문장 「${EMOTION_SENTENCE}」 을 이번엔 '억양 + 상황' 까지 담아 다시 들었어요.\n` +
-        "이제는 어떤 감정으로 들리나요? (교사가 상황을 안내해 줍니다 — 예: 다친 친구를 걱정하며 기다렸을 때)",
-      choices: EMOTION_CHOICES,
-      answerIndex: 0, // 형식상 — 정답 없음
-      opinion: true,
-      nowText:
-        "같은 문장인데 감정 분포가 달라졌나요?\n" +
-        "억양과 상황(맥락)이 더해지면 감정을 훨씬 더 잘 읽을 수 있어요 — 사람은 맥락으로 감정을 이해합니다.",
-      stickers: [],
-    },
+    // ── [활동2] 감정 추측: 듣고 맞히기 (group "grill") ─────────────
+    ...EMOTION_VOTES,
+    // ── [활동2] AI로 감정 분석: 감정+근거 (group "emotion") ────────
+    ...AI_EMOTION_QUESTIONS,
   ],
 };
 
@@ -444,12 +519,15 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "culture_pick",
     phase: "mvp",
     /*
-     * 개인 소감. 친구에게 안 나간다. 어느 예시가 인상 깊었는지 자기 말로 꺼내게 한다.
+     * 직접 예시 찾기 — 위 문화 카드처럼, 같은 행동·말이 문화마다 다르게 읽히는 예를
+     * 스스로 찾아 적는다. 개인 기록(친구에게 안 나간다).
      */
-    label: "가장 흥미로웠던 차이 하나와, 왜 그런지 내 생각을 적어 주세요",
+    label: "이처럼 같은 행동이나 언어인데, 다른 나라·문화에서는 다른 뜻으로 쓰이는 예시를 찾아서 적어 보세요",
     hint:
-      "예) 눈을 안 마주치는 게 무례가 아니라 존중일 수도 있다는 게 신기했다.\n" +
-      "이 칸은 나와 선생님만 봐요.",
+      "위 예시들처럼, 같은 행동·말·손짓이 문화에 따라 다르게 읽히는 경우를 찾아 적어요.\n" +
+      "예) 손가락으로 만든 ‘OK(동그라미)’ 표시가 어떤 나라에서는 무례한 뜻이 된다.\n" +
+      "예) 검지로 사람을 가리키는 것이 어떤 문화에서는 매우 무례하게 여겨진다.\n" +
+      "책·인터넷에서 찾아봐도 좋아요. 이 칸은 나와 선생님만 봐요.",
     kind: "long",
     maxLength: 300,
   },
@@ -480,247 +558,80 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 250,
   },
 
-  /* ══════════════ 활동2 「감정 추측하기」 ══════════════
+  /* ══════════════ 활동2-④ 「이미지 AI 체험」 (worksheet) ══════════════
    *
-   * 소리(가사·문장 낭독)는 교사가 외부 TTS 로 공유화면에서 재생한다. 포털은 안내·투표·
-   * 기록만 담는다. 투표는 위 QUIZ(quiz[1]~[3])에 있고, 교사가 각 안내 뒤 퀴즈 단계로
-   * 잠깐 이동해 해당 문항으로 투표를 받는다(파일 머리말의 "완벽히 안 나뉘는 곳" 참조).
+   * 감정 추측(grill·듣고 맞히기)과 AI 감정 분석(emotion·감정+근거)은 이제 각 단계의
+   * 퀴즈로 뜬다(위 QUIZ 의 group 참조). 이 worksheet 단계는 그다음 "이미지 AI 로 표정
+   * 분석" 체험이다: 먼저 faan 사이트에서 얼굴 표정 분석을 바로 해보고 → Teachable Machine
+   * 으로 직접 표정 모델을 만들고 → 만든 모델의 공유 링크를 포털에 제출한다.
+   *
+   * 얼굴 이미지는 두 사이트 모두 브라우저(기기) 안에서만 처리돼 서버로 안 올라간다 —
+   * 프라이버시 안내를 못박는다. 제출하는 것은 '모델 링크'(URL)뿐이라 얼굴 사진이 아니다.
    */
-
-  // ── 활동2 ①②③ 듣고 감정 맞히기 (grill) ──────────────────────
   {
-    key: "_a2_listen_intro",
-    phase: "grill",
-    label: "귀로 감정 읽기 — AI 목소리를 듣고 맞혀 볼게요",
+    key: "_a2_img_intro",
+    phase: "worksheet",
+    label: "이미지 AI 도 감정을 읽을까? — 표정 분석 체험",
     hint:
-      "이제 ‘소리’ 로 감정을 읽어 봅니다. 선생님이 AI 목소리(TTS)로 들려줄 거예요.\n" +
-      "노래·문장이 나올 때마다 [투표] 단계로 가서 해당 문항에 답하거나 투표해요.\n" +
-      "① 노래 10곡 맞히기(가수·제목 적기)  → ② 문장의 감정(내용만)  → ③ 같은 문장의 감정(억양·상황까지)",
+      "지금까지는 ‘글자·소리’ 로 감정을 다뤘어요. 이번엔 ‘표정 사진’ 으로 감정을 읽는\n" +
+      "이미지 AI 를 체험합니다. ① 먼저 표정 분석 사이트를 써 보고 → ② 직접 표정 모델을 만들어\n" +
+      "→ ③ 만든 모델 링크를 아래에 제출해요.\n\n" +
+      "🔒 얼굴 사진은 ‘기기(브라우저) 안에서만’ 쓰여요 — 인터넷에 올라가거나 저장되지 않아요.\n" +
+      "   원하지 않으면 내 얼굴 대신 이모지 그림·인형·사진 속 표정으로 해도 됩니다.",
     kind: "note",
     maxLength: 0,
   },
   {
-    key: "_a2_kpop_note",
-    phase: "grill",
-    label: "① 가사만 듣고 노래 맞히기 (10곡)",
+    key: "_a2_faan_note",
+    phase: "worksheet",
+    // ① faan.netlify.app — 얼굴 표정 분석을 바로 체험. 새 탭 링크.
+    label: "① 먼저 표정 분석 사이트를 체험해요",
     hint:
-      "멜로디 없이 ‘가사(말)’ 만 AI 목소리로 들려줄게요. 무슨 노래일까요? 모두 10곡이에요.\n" +
-      "곡마다 [투표] 단계의 [활동2] 노래 문항에서 가수와 제목을 직접 적어요.\n" +
-      "선생님이 정답을 공개하면 스스로 채점해 봐요 — 멜로디 없이 가사만 듣고도 알 수 있었나요?",
+      "아래 [표정 분석 체험 열기] 를 눌러 새 탭에서 열어요. 웹캠이나 사진 속 얼굴 표정을\n" +
+      "AI 가 어떻게 읽는지(예: 기쁨·슬픔·놀람 등) 직접 확인해 보세요.\n" +
+      "‘사람이 보는 감정’ 과 ‘AI 가 읽는 감정’ 이 같은지 견줘 봅니다.\n\n" +
+      "🔒 얼굴 이미지는 이 기기 안에서만 분석돼요 — 저장·전송되지 않아요.",
     kind: "note",
+    linkUrl: FAAN_URL,
+    linkLabel: "표정 분석 체험 열기 (새 탭)",
     maxLength: 0,
-  },
-  {
-    key: "_a2_words_note",
-    phase: "grill",
-    label: "② 말의 ‘내용’ 만 듣고 감정 맞히기",
-    hint:
-      `이번엔 한 문장을 억양 없이 담담하게 들려줄게요. 예: 「${EMOTION_SENTENCE}」\n` +
-      "말의 내용만 듣고 ‘어떤 감정일까’ 를 [투표] 단계의 [활동2] 감정(내용만) 문항에 골라요.\n" +
-      "정답은 없어요 — 느낀 대로 고르면 됩니다.",
-    kind: "note",
-    maxLength: 0,
-  },
-  {
-    key: "_a2_context_note",
-    phase: "grill",
-    label: "③ 억양과 상황을 더해 다시 듣기",
-    hint:
-      "같은 문장을, 이번엔 억양과 상황(맥락)을 담아 다시 들려줄게요.\n" +
-      "선생님이 상황을 알려 줄 거예요(예: 다친 친구를 걱정하며 오래 기다렸을 때).\n" +
-      "이제 감정이 다르게 들리나요? [투표] 단계의 [활동2] 감정(억양+맥락) 문항에 다시 골라요.",
-    kind: "note",
-    maxLength: 0,
-  },
-  {
-    key: "a2_reinterpret",
-    phase: "grill",
-    /*
-     * 활동2 의 핵심 성찰 — 내용만 vs 맥락 포함. 개인 글, 비공개(galleryEnabled: false).
-     */
-    label: "내용만 들었을 때와 억양·상황까지 들었을 때, 내 감정 추측이 어떻게 달라졌나요?",
-    hint:
-      "예) 처음엔 화난 줄 알았는데, 걱정하며 기다렸다는 걸 아니까 ‘서운함·걱정’ 으로 들렸다.\n" +
-      "이 칸은 나와 선생님만 봐요.",
-    kind: "long",
-    maxLength: 300,
-  },
-
-  // ── 활동2 ④⑤ AI로 감정 분석하기 (emotion) ────────────────────
-  {
-    key: "_a2_ai_intro",
-    phase: "emotion",
-    label: "이번엔 AI 는 감정을 어떻게 읽을까?",
-    hint:
-      "우리는 귀(억양)와 맥락으로 감정을 읽었어요. 텍스트 분석 AI(제미나이)는 ‘글자’ 만 보고\n" +
-      "감정을 분석해요. 먼저 내가 근거와 함께 답해 보고, 그다음 AI 의 분석과 견줘 봅니다.\n" +
-      "(AI 분석은 선생님이 공유화면에서 함께 보여줄 거예요.)",
-    kind: "note",
-    maxLength: 0,
-  },
-  {
-    key: "a2_my_read",
-    phase: "emotion",
-    /*
-     * AI 를 보기 전에 학생이 먼저 근거와 함께 답한다 — 순서가 곧 설계다(먼저 내 판단,
-     * 그다음 AI 와 비교). 개인 글, 비공개. 포털은 Gemini 를 호출하지 않는다(교사 시연).
-     */
-    label: "이 문장의 감정은 무엇일까요? 그리고 왜 그렇게 생각했는지 ‘근거’ 도 적어 주세요",
-    hint:
-      `문장 예: 「${EMOTION_SENTENCE}」 (선생님이 분석할 문장을 알려 줍니다)\n` +
-      "예) 감정: 서운함 / 근거: ‘이제’ 라는 말에 오래 기다린 마음이 담겨서.\n" +
-      "이 칸은 나와 선생님만 봐요.",
-    kind: "long",
-    maxLength: 300,
-  },
-  {
-    key: "_a2_ai_demo_note",
-    phase: "emotion",
-    label: "이제 AI 의 분석을 함께 봐요",
-    hint:
-      "선생님이 같은 문장을 텍스트 분석 AI(제미나이)에 넣어, AI 가 고른 감정과 그 근거를\n" +
-      "공유화면에 보여줄 거예요. 내 답과 무엇이 같고 다른지 살펴보세요.",
-    kind: "note",
-    maxLength: 0,
-  },
-  {
-    key: "a2_compare",
-    phase: "emotion",
-    /*
-     * 자기 답안의 근거 vs AI 답안의 근거 비교 — outline 4번의 핵심. 개인 글, 비공개.
-     */
-    label: "내 감정·근거와 AI 의 감정·근거는 어떻게 같고, 어떻게 달랐나요?",
-    hint:
-      "예) 감정은 둘 다 ‘서운함’ 이었는데, 나는 상황을 떠올렸고 AI 는 단어(‘이제’)를 근거로 들었다.\n" +
-      "예) AI 는 ‘화남’ 이라고 했는데, 나는 상황을 알아서 ‘걱정’ 으로 봤다 — 맥락을 아는 게 달랐다.\n" +
-      "이 칸은 나와 선생님만 봐요.",
-    kind: "long",
-    maxLength: 350,
   },
   {
     key: "_a2_tm_note",
-    phase: "emotion",
-    /*
-     * ⑤ Teachable Machine — 외부 사이트, 새 탭. linkUrl 로 큰 단추가 붙는다.
-     * 얼굴 이미지는 기기 안에서만 처리되고 서버로 안 올라간다 — 프라이버시 안내를 못박는다.
-     */
-    label: "④ 이미지 AI 도 감정을 배울까? — Teachable Machine 체험",
+    phase: "worksheet",
+    // ② Teachable Machine — 직접 표정 모델을 만든다. 새 탭 링크.
+    label: "② 이제 직접 표정 모델을 만들어요 — Teachable Machine",
     hint:
-      "이번엔 ‘표정 사진’ 으로 감정을 배우는 이미지 AI 를 체험해요. 아래 [Teachable Machine 열기]\n" +
-      "를 눌러 새 탭에서 열고, 표정(예: 웃는 얼굴 · 무표정 · 놀란 얼굴)을 몇 장씩 학습시킨 뒤\n" +
-      "새 표정을 잘 알아맞히는지 확인해 보세요.\n\n" +
-      "🔒 내 얼굴 사진은 이 ‘기기(브라우저) 안에서만’ 쓰여요 — 인터넷에 올라가거나 저장되지\n" +
-      "   않아요. 원하지 않으면 내 얼굴 대신 이모지 그림·인형 표정으로 해도 됩니다.",
+      "아래 [Teachable Machine 열기] 를 눌러 새 탭에서 이미지 프로젝트를 만들어요.\n" +
+      "표정(예: 웃는 얼굴 · 무표정 · 놀란 얼굴)을 몇 장씩 학습시킨 뒤, 새 표정을 잘 알아맞히는지\n" +
+      "확인해 보세요.\n\n" +
+      "🔒 학습·분류는 기기 안에서 돌아요 — 얼굴 사진이 인터넷에 올라가지 않아요.",
     kind: "note",
     linkUrl: TEACHABLE_MACHINE_URL,
     linkLabel: "Teachable Machine 열기 (새 탭)",
     maxLength: 0,
   },
   {
+    key: "a2_tm_model_url",
+    phase: "worksheet",
+    /*
+     * ③ 산출물 = 만든 모델의 공유 링크. Teachable Machine 에서 [모델 내보내기(Export)] →
+     * [Upload my model] 로 나온 공유 링크(URL)를 붙인다. 얼굴 사진이 아니라 링크만 제출.
+     */
+    label: "③ 내가 만든 표정 모델 링크를 붙여 주세요",
+    hint:
+      "Teachable Machine 오른쪽 위 [모델 내보내기(Export Model)] → [Upload my model] 을 누르면\n" +
+      "공유 링크(URL)가 나와요. 그 주소를 복사해 여기에 붙여넣어요.\n" +
+      "예) https://teachablemachine.withgoogle.com/models/....  이 칸은 나와 선생님만 봐요.",
+    kind: "text",
+    maxLength: 300,
+  },
+  {
     key: "a2_tm_reflect",
-    phase: "emotion",
+    phase: "worksheet",
     label: "AI 는 표정으로 감정을 잘 맞혔나요? 사람과 다르다고 느낀 점이 있다면 적어 주세요",
     hint:
       "예) 활짝 웃는 건 잘 맞혔는데, 억지웃음과 진짜웃음은 구별 못 했다.\n" +
-      "이 칸은 나와 선생님만 봐요.",
-    kind: "long",
-    maxLength: 300,
-  },
-
-  /* ══════════════ 활동3 「감정 캐릭터 만들기」 (worksheet) ══════════════
-   *
-   * Canva AI 로 나만의 감정 아이콘 캐릭터를 3~4종 만들어, 카톡·인스타·유튜브 같은 SNS
-   * 이모티콘처럼 쓸 수 있음을 체험하는 활동. 앞의 "감정을 알아차리고 표현한다" 흐름을 이어,
-   * 이번엔 감정을 **시각 캐릭터로 표현·창작**한다.
-   *
-   * 산출물은 이 과목 관례대로 **Canva 공유 링크(URL)** 로 남긴다(그림 파일 업로드가 아니라
-   * 링크 기록). 감정 캐릭터는 '그림' 창작이라 초상 프라이버시 부담이 낮지만, 실명·개인정보를
-   * 캐릭터·파일명에 넣지 않도록 가볍게 안내한다. galleryEnabled: false 라 이 링크·성찰 글은
-   * 친구에게 안 나가고 본인·교사만 본다(서버 갤러리 라우트가 막음).
-   */
-  {
-    key: "_a3_intro",
-    phase: "worksheet",
-    label: "이번엔 감정을 ‘캐릭터’ 로 표현해 볼게요",
-    hint:
-      "앞에서 우리는 관점의 차이를 알아차리고(활동1), 소리·맥락으로 감정을 읽었어요(활동2).\n" +
-      "이제 내 감정을 눈에 보이는 ‘캐릭터’ 로 만들어 표현해 봅니다.\n" +
-      `Canva AI 로 나만의 감정 아이콘 캐릭터를 ${EMOTION_ICON_COUNT} 만들 거예요.`,
-    kind: "note",
-    maxLength: 0,
-  },
-  {
-    key: "_a3_canva_login",
-    phase: "worksheet",
-    // Canva 로그인 — 활동4·mt4 와 같은 패턴. 세션 생성 때 그 분반 것만 linkUrl 에 박고
-    // linkUrlByGroup 은 지운다(남의 분반 토큰 유출 방지).
-    label: "① Canva 열기 — 먼저 눌러 학교 계정으로 로그인해 두세요",
-    hint:
-      "아래 [Canva 열기] 를 눌러 새 창에서 열고, 학교 계정으로 로그인해요.\n" +
-      "로그인되면 초대받은 팀에 들어가 있는지 확인하고, 새 디자인을 하나 만들어요.",
-    kind: "note",
-    linkUrl: CANVA_BY_GROUP["mt-tue-1"] || CANVA_FALLBACK,
-    linkUrlByGroup: CANVA_GROUP_LINKS,
-    linkLabel: "Canva 열기 (새 창)",
-    maxLength: 0,
-  },
-  {
-    key: "_a3_howto",
-    phase: "worksheet",
-    label: `② 감정별로 캐릭터를 ${EMOTION_ICON_COUNT} 만들기`,
-    hint:
-      "표현하고 싶은 감정을 3~4가지 골라요. 예) 기쁨 · 슬픔 · 화남 · 설렘\n" +
-      "Canva 의 ‘Magic Media(AI 이미지)’ 에 감정을 담은 캐릭터를 글로 설명해 만들거나,\n" +
-      "그리기·요소로 직접 꾸며도 좋아요.\n" +
-      "예) ‘기쁨을 나타내는 둥근 노란 젤리 캐릭터, 활짝 웃는 얼굴, 심플한 아이콘’\n\n" +
-      "🔒 실명·전화번호 같은 내 개인정보는 캐릭터나 파일 이름에 넣지 않아요.",
-    kind: "note",
-    maxLength: 0,
-  },
-  {
-    key: "a3_emotions",
-    phase: "worksheet",
-    // 개인 계획 메모 — 어떤 감정을 캐릭터로 만들지. 비공개(본인·교사만).
-    label: `내가 캐릭터로 만들 감정 ${EMOTION_ICON_COUNT} 을 적어 보세요`,
-    hint:
-      "예) 기쁨, 슬픔, 화남, 설렘\n" +
-      "이 칸은 나와 선생님만 봐요.",
-    kind: "text",
-    maxLength: 100,
-  },
-  {
-    key: "a3_canva_url",
-    phase: "worksheet",
-    /*
-     * ★ 산출물 기록 = Canva 공유 링크. 이 과목 관례대로 그림 파일이 아니라 URL 로 남긴다.
-     * galleryEnabled: false 라 친구에게 안 나가고 본인·교사만 본다.
-     */
-    label: "③ 내 감정 캐릭터 모음 — Canva 공유 링크를 붙여 주세요",
-    hint:
-      "Canva 오른쪽 위 [공유] → [링크 복사] 로 주소를 받아 여기에 붙여넣어요.\n" +
-      "예) https://www.canva.com/design/....  이 칸은 나와 선생님만 봐요.",
-    kind: "text",
-    maxLength: 300,
-  },
-  {
-    key: "_a3_sns_note",
-    phase: "worksheet",
-    label: "이렇게 쓸 수 있어요 — SNS 이모티콘처럼",
-    hint:
-      "내가 만든 감정 캐릭터는 카카오톡·인스타그램·유튜브 같은 SNS 에서 이모티콘·스티커처럼\n" +
-      "쓸 수 있어요(프로필 그림, 댓글 스티커, 영상 자막 옆 감정 표시 등).\n" +
-      "오늘은 ‘이렇게 쓸 수 있다’ 를 떠올려 보는 것으로 충분해요 — 실제로 올리거나 배포하지\n" +
-      "않아도 됩니다.",
-    kind: "note",
-    maxLength: 0,
-  },
-  {
-    key: "a3_reflect",
-    phase: "worksheet",
-    // 성찰 — 개인 글, 비공개.
-    label: "캐릭터로 표현하기 가장 어려웠던 감정은 무엇이었고, 내 캐릭터가 가장 잘 담아낸 감정은 무엇인가요?",
-    hint:
-      "예) ‘설렘’ 은 기쁨과 비슷해 보여서 다르게 그리기 어려웠고, ‘화남’ 은 빨간 얼굴로 딱 담겼다.\n" +
       "이 칸은 나와 선생님만 봐요.",
     kind: "long",
     maxLength: 300,
@@ -1032,10 +943,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
       "[활동1] 우리는 왜 다르게 생각할까?\n" +
       " ① 착시 영상  ② 토끼일까 오리일까? 투표  ③ 관점 차이 깨닫기\n" +
       " ④ 문화마다 다른 감정 표현  ⑤ 정리 — 다른 건 틀린 게 아니라 다른 것\n\n" +
-      "[활동2] 감정 추측하기\n" +
-      " ① 가사만 듣고 노래 맞히기  ② 말의 내용만 듣고 감정 맞히기\n" +
-      " ③ 억양·상황까지 듣고 다시  ④ 텍스트 AI(제미나이)와 감정 분석 비교\n" +
-      " ⑤ 이미지 AI(Teachable Machine)로 표정 분류 체험",
+      "[활동2] 감정 읽기\n" +
+      " ① 노래 맞히기 (동기유발 — 가사 듣고 가수·제목 적기)\n" +
+      " ② 감정 추측 — 문장을 듣고 어떤 감정인지 맞히기\n" +
+      " ③ AI로 감정 분석 — 문장의 감정·근거 적고 견주기\n" +
+      " ④ 이미지 AI 체험 — 표정 분석 사이트 → Teachable Machine 으로 모델 만들기",
     // 학생 화면엔 영상을 임베드하지 않는다 — 앞 화면(전자칠판)에서 교사가 틀고,
     // 학생은 앞을 본다. 영상은 아래 video 단계(교사 대시보드 '영상 재생')에 둔다.
     url: "",
@@ -1068,37 +980,55 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   /*
    * 이탈 면제. progress 는 착시 영상 임베드(화면 안 재생이라 원래 이탈 아님)라 혹시 몰라,
-   * emotion 은 Teachable Machine 을, worksheet(활동3)·wrapmap(활동4)은 Canva 를 새 탭으로
-   * 열기 때문에 면제한다(활동이라 이탈로 안 센다). wrapheal(활동5)은 외부 창을 안 열지만,
-   * 마무리 활동이라 함께 면제해 둔다.
+   * emotion 은 Teachable Machine·faan 을, wrapmap(활동4)은 Canva 를 새 탭으로 열기 때문에
+   * 면제한다(활동이라 이탈로 안 센다). wrapheal(활동5)은 외부 창을 안 열지만, 마무리 활동이라
+   * 함께 면제해 둔다.
    */
-  focusExempt: ["progress", "emotion", "worksheet", "wrapmap", "wrapheal"],
+  focusExempt: ["progress", "emotion", "wrapmap", "wrapheal"],
 
-  // 교사 버튼 순서: 착시 영상(video)을 토끼/오리(assessment) 앞으로. 안 적은 단계는
-  // LESSON_PHASES 순서로 뒤에 붙는다(대시보드가 처리). 버튼은 각자 phase 를 바로 지정.
-  phaseOrder: ["waiting", "mood", "progress", "video", "quiz"],
+  // 교사 버튼 순서. 퀴즈가 여러 단계에 나뉘어(문항별 group) 뜨므로, 그 단계들도 순서에
+  // 명시한다: 토끼오리(quiz) → 관점(problem·mvp·build) → 노래(wordquiz) → 감정추측(grill)
+  // → AI 감정분석(emotion) → 이미지 AI(worksheet) → 마음일기 → 활동4·5. 안 적은 단계는
+  // LESSON_PHASES 순서로 뒤에 붙는다(대시보드가 처리).
+  phaseOrder: [
+    "waiting",
+    "mood",
+    "progress",
+    "video",
+    "quiz",
+    "problem",
+    "mvp",
+    "build",
+    "wordquiz",
+    "grill",
+    "emotion",
+    "worksheet",
+    "reflection",
+    "wrapmap",
+    "wrapheal",
+  ],
 
   phaseLabels: {
     mood: "마음 체크인",
-    // ── 활동1 ──
+    // ── 활동1 관점 ──
     progress: "오늘 할 일",
     video: "착시 영상 (앞 화면 재생)",
-    quiz: "투표 (활동1·2 문항 모음)",
+    quiz: "토끼? 오리? 투표",
     problem: "관점 차이 깨닫기",
     mvp: "문화마다 다른 감정 표현",
     build: "정리 — 감정 표현과 문화",
-    // ── 활동2 ──
+    // ── 활동2 감정 ──
+    wordquiz: "노래 맞히기 (동기유발)",
     grill: "감정 추측 — 듣고 맞히기",
     emotion: "AI로 감정 분석하기",
-    // ── 활동3 (worksheet 자리) ──
-    worksheet: "감정 캐릭터 만들기 (Canva AI)",
+    worksheet: "이미지 AI 체험 (표정 분석)",
     reflection: "마음일기",
     // ── 활동4·5 (마음일기 뒤 얹는 활동) ──
     wrapmap: "효과적인 의사소통",
     wrapheal: "공감 문장 · 감정 대화",
   },
 
-  // 투표(활동1 토끼오리 + 활동2 가사·감정) — 포털 퀴즈로. 교사가 공유화면에서 집계를 본다.
+  // 퀴즈 — 문항별 group 으로 여러 단계에 나뉘어 뜬다(토끼오리·노래·감정추측·AI 감정분석).
   quiz: QUIZ,
 
   activity: {
@@ -1148,29 +1078,22 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log(`\n활동 ID: ${ACTIVITY_ID} · 차시 번호 ${LESSON_NO} (5회기 대인관계 — 활동1~5, 모듈 단위로 붙임)`);
-  console.log("교사 버튼 순서(고정 단계 위): 대기 → 마음 체크인 →");
-  console.log("  [활동1] 오늘 할 일+착시 영상 → 토끼? 오리? 그림 → (투표) → 관점 차이 → 문화별 감정 표현 → 정리");
-  console.log("  [활동2] 감정 추측 — 듣고 맞히기(grill) → AI로 감정 분석하기(emotion)");
-  console.log("  [활동3] 감정 캐릭터 만들기 · Canva AI (worksheet — 고정 순서상 grill 과 emotion 사이에 낌)");
-  console.log("  → 마음일기");
-  console.log("  [활동4] 효과적인 의사소통 (wrapmap — 마음일기 뒤 얹는 활동)");
-  console.log("  [활동5] 공감 문장 · 감정 대화 (wrapheal — 마음일기 뒤 얹는 활동)");
-  console.log("  → 마침");
-  console.log("\n⚠ 단계 순서는 LESSON_PHASES 로 고정 — 활동3~5 는 붙일 수 있는 빈 단계에 얹었습니다. 활동3(worksheet)은 활동2 의 grill·emotion 사이에 낍니다. 활동4·5(wrapmap·wrapheal)는 마음일기 뒤 '얹는 활동' 자리입니다. 모듈을 재배치해 조합할 때 감안하세요.");
-  console.log("Canva(활동3 감정 캐릭터 · 활동4 관계 캘리그래피): 분반별 초대 토큰은 .env.local(CANVA_INVITE_MT_*)에서만 읽습니다. 세션 열 때 open-mt5-*.ts 가 그 분반 것만 linkUrl 에 박고 linkUrlByGroup 은 지웁니다(남의 분반 토큰 유출 방지). 산출물은 그림 파일이 아니라 공유 링크(URL)로 기록합니다.");
-  console.log("⚠ 활동5 만화 생성: 이 포털엔 ChatGPT/이미지 생성 API 연동이 없습니다 — 학생은 만화 생성 프롬프트만 글로 정리·기록하고, 실제 만화 생성은 교사 시연/외부 도구입니다. 실제 API 연동을 원하면 별도 작업(API 키·비용·새 kind·서버 라우트)이 필요합니다.");
-  console.log("\n리허설: 위 seed 를 재실행(재시드)하면 아직 시작 안 한 세션에 반영됩니다. 리허설 세션을 열어 대기→기분→활동1→활동2 로 눌러 보세요. (리허설 흔적 __rehearsal 은 그대로 두면 됩니다.)");
-  console.log("\n⚠ 투표·퀴즈는 단계가 하나뿐 — 활동1·활동2 문항이 한 [투표] 단계에 모입니다: [0] 토끼오리(의견) · [1~10] 노래 10곡 단답형 · [11] 감정(내용만·의견) · [12] 감정(억양+맥락·의견). 총 13문항.");
-  console.log("   활동2 에서는 grill/emotion 에 있다가 답할 때 [투표] 단계로 잠깐 돌아가 quizIndex 를 맞춰 답을 받고 다시 옵니다. prompt 앞 [활동1]/[활동2] 라벨로 구분하세요.");
-  console.log("   노래 10곡: 교사 화면 퀴즈 패널의 ▶ 음성 재생 → 학생이 가수·제목을 적음 → [정답 공개]로 정답 표시(학생 자기 채점). 답은 서버로 모으지 않습니다.");
-  console.log("   의견형([0]·[11]·[12])은 문항별 opinion:true 라 「정답 공개」 버튼이 자동으로 숨겨집니다 — 분포만 [응답 분포 새로고침]으로 봅니다(오답 표시 안 뜸).");
-  console.log("\n활동2 도구: 노래 가사는 TTS(하이미)로 만든 짧은 스니펫을 교사 화면에서 재생(public/mt5/audio/song01~10.wav). 문장 감정(②③) 낭독은 교사가 외부 TTS 로. Gemini 감정분석은 교사 시연 + 포털엔 비교 기록 칸. Teachable Machine 은 새 탭 링크(얼굴 이미지는 기기 안에서만).");
-  console.log(`\n⚠ 이미지: 토끼-오리 그림 파일이 아직 없습니다 — 교사가 public${RABBIT_DUCK_IMG} 로 넣어야 화면에 뜹니다. (예: 위키미디어 공용 "Kaninchen und Ente")`);
-  console.log(`착시 영상: 안내 화면(progress)에 임베드 (${ILLUSION_VIDEO_WATCH}). 앞 화면 재생을 원하면 교사가 같은 링크를 전자칠판에 열면 됩니다.`);
-  console.log("노래 퀴즈(10곡): SONGS 배열(제목·가수·음성) 순서대로 단답형 문항이 됩니다. 곡을 바꾸려면 SONGS 와 해당 songNN.wav(TTS)를 함께 바꾸세요. 저작권상 가사 전문이 아니라 짧은 스니펫만 음성으로 담고 교사 화면에서만 재생합니다(제목·가수는 사실 정보).");
-  console.log("프라이버시: 서로 구경하기 꺼짐(galleryEnabled: false) — 관점·문화·재해석·AI 비교·표정 소감·마음일기, 그리고 활동3~5(감정 캐릭터 링크·나 전달법·갈등 분석·캘리그래피 링크·공감 문장·감정 대화·만화 프롬프트) 모두 본인·교사만. 투표는 익명 집계 수치. 포털에서 Gemini/외부 API 호출 없음(galleryAnswerKeys 없음 — 열 것이 없음).");
-  console.log("블록타임: 6·7교시 90분 연속 → 세션은 7교시로 하나만 엽니다 (여는 스크립트 open-mt5-*.ts 의 몫, 이번엔 seed 만).");
+  console.log(`\n활동 ID: ${ACTIVITY_ID} · 차시 번호 ${LESSON_NO} (5회기 대인관계 — 활동1·2 + 활동4·5)`);
+  console.log("교사 버튼 순서: 대기 → 마음 체크인 →");
+  console.log("  [활동1 관점] 오늘 할 일 → 착시 영상 → 토끼? 오리? 투표(quiz) → 관점 차이 → 문화별 감정 → 정리");
+  console.log("  [활동2 감정] 노래 맞히기(wordquiz) → 감정 추측 듣고 맞히기(grill) → AI로 감정 분석(emotion) → 이미지 AI 체험(worksheet)");
+  console.log("  → 마음일기 → [활동4] 효과적인 의사소통(wrapmap) → [활동5] 공감 문장·감정 대화(wrapheal) → 마침");
+  console.log("\n★ 퀴즈가 이제 단계마다 뜹니다(문항별 group): 토끼오리→quiz, 노래 10곡→wordquiz, 감정 추측 3문항→grill, AI 감정분석 3문항→emotion.");
+  console.log("   각 단계로 가면 그 단계 문항만 뜨고, 이전·다음·정답공개(또는 분포공개)를 그 안에서 합니다. quizIndex 는 글로벌이라 집계와 안 어긋납니다.");
+  console.log("   노래(wordquiz): 교사 패널 ▶ 재생 → 학생이 가수·제목 적기 → [정답 공개](자기 채점). 답은 서버로 안 모읍니다.");
+  console.log("   감정 추측(grill): 문장 TTS(sent01~03.wav) ▶ 재생 → 학생이 감정 투표 → [분포 공개] 누르면 학생 화면에도 응답 분포가 뜹니다(정답 없음).");
+  console.log("   AI 감정분석(emotion): 문장 3개, 학생이 감정+근거 적기 → [정답 공개]로 참고 답을 학생 화면에 띄웁니다. 텍스트 AI(제미나이) 시연은 교사가 공유화면에서(포털 호출 없음).");
+  console.log("   토끼오리(quiz): [분포 공개]로 우리 반 토끼/오리 분포를 학생 화면에 보입니다.");
+  console.log("\n이미지 AI 체험(worksheet): ① faan.netlify.app 로 표정 분석 체험 → ② Teachable Machine 으로 표정 모델 만들기 → ③ 만든 모델 링크(Export→Upload my model)를 포털에 제출. 얼굴 이미지는 두 사이트 모두 기기 안에서만 처리(제출은 링크뿐).");
+  console.log(`\n⚠ 토끼-오리 그림: public${RABBIT_DUCK_IMG} 필요(있으면 화면에 뜸). 착시 영상: video 단계에서 교사가 앞 화면 재생(${ILLUSION_VIDEO_WATCH}).`);
+  console.log("노래 퀴즈(10곡): SONGS 배열(제목·가수·음성) 순서대로 단답형 문항. 곡을 바꾸려면 SONGS 와 songNN.wav(TTS)를 함께 바꾸세요. 저작권상 가사 전문이 아니라 짧은 스니펫만, 교사 화면 전용 재생.");
+  console.log("프라이버시: 서로 구경하기 꺼짐(galleryEnabled: false) — 서술 칸은 모두 본인·교사만. 투표·분포는 익명 집계 수치(누가 뭘 골랐는지 안 뜸). 포털에서 Gemini/외부 API 호출 없음.");
+  console.log("리허설: 재시드하면 아직 시작 안 한 세션에 반영됩니다. 진행 중(active) 세션은 건너뜁니다.");
   process.exit(0);
 }
 

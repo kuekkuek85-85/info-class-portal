@@ -7,6 +7,7 @@ import {
   getSession,
   invalidateSessionCache,
   listAllSessions,
+  listQuizAnswers,
   listSessionsByDate,
   reserveCode,
   setSessionPhase,
@@ -16,7 +17,14 @@ import {
 } from "@/lib/db";
 import { isDateKey, todayKST } from "@/lib/datetime";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
-import { LESSON_PHASES, type ClassNo, type LessonPhase, type SessionStatus } from "@/lib/types";
+import {
+  LESSON_PHASES,
+  quizAnswersOf,
+  type ClassNo,
+  type ClassSession,
+  type LessonPhase,
+  type SessionStatus,
+} from "@/lib/types";
 
 /**
  * 세션(class_sessions) 관리.
@@ -215,6 +223,18 @@ export async function PATCH(request: Request) {
     if (body.phase) {
       if (!LESSON_PHASES.includes(body.phase)) return fail("invalid_input");
       await setSessionPhase(body.id, body.phase);
+      /*
+       * 퀴즈가 여러 단계에 붙는 차시(문항별 group)에서는, 단계를 옮기면 그 단계의 첫
+       * 문항으로 quizIndex 를 맞춘다. 안 그러면 quizIndex 가 이전 단계 문항을 가리켜
+       * 새 단계에서 퀴즈가 안 뜬다. 공개(revealed)는 끄고 시작한다.
+       */
+      const qs = session.quiz?.questions ?? [];
+      const firstIdx = qs.findIndex((q) => (q.group ?? "quiz") === body.phase);
+      // 실제로 단계가 바뀔 때만 맞춘다 — 같은 단계를 다시 눌렀을 때 1번으로 튀지 않게.
+      if (firstIdx >= 0 && session.phase !== body.phase) {
+        await updateSession(body.id, { quizIndex: firstIdx, quizRevealed: false });
+        invalidateSessionCache(body.id);
+      }
     }
 
     /*
@@ -222,10 +242,11 @@ export async function PATCH(request: Request) {
      * 다음 문항이 정답 공개 상태로 열리면 학생이 문제를 보기 전에 답부터 본다.
      */
     if (typeof body.quizIndex === "number" || typeof body.quizRevealed === "boolean") {
-      const total = session.quiz?.questions.length ?? 0;
+      const questions = session.quiz?.questions ?? [];
+      const total = questions.length;
       if (total === 0) return fail("invalid_input", "이 차시에는 퀴즈가 없습니다.");
 
-      const patch: { quizIndex?: number; quizRevealed?: boolean } = {};
+      const patch: Partial<ClassSession> = {};
 
       if (typeof body.quizIndex === "number") {
         if (!Number.isInteger(body.quizIndex) || body.quizIndex < 0 || body.quizIndex >= total) {
@@ -236,6 +257,26 @@ export async function PATCH(request: Request) {
       }
       if (typeof body.quizRevealed === "boolean") {
         patch.quizRevealed = body.quizRevealed;
+      }
+
+      /*
+       * 의견형 문항을 「분포 공개」하면, 그 순간까지 모인 응답 분포를 집계해 세션에 넣는다.
+       * 학생 화면은 세션 폴링에서 이 값을 읽어 막대그래프를 그린다(별도 폴링 없음).
+       * 집계는 글로벌 인덱스로 저장돼 있어(quiz-stats 와 같은 규칙) 단계와 무관하게 맞다.
+       */
+      const targetIdx = patch.quizIndex ?? session.quizIndex ?? 0;
+      const target = questions[targetIdx];
+      if (patch.quizRevealed === true && target?.opinion === true) {
+        const rows = await listQuizAnswers(body.id);
+        const counts = target.choices.map(() => 0);
+        let answered = 0;
+        for (const row of rows) {
+          const choice = quizAnswersOf(row)[targetIdx];
+          if (choice === undefined || choice < 0 || choice >= counts.length) continue;
+          counts[choice] += 1;
+          answered += 1;
+        }
+        patch.quizDist = { index: targetIdx, counts, answered };
       }
 
       await updateSession(body.id, patch);
