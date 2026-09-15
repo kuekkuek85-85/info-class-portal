@@ -1261,13 +1261,14 @@ export default function LessonPage() {
               hideSubmit={viewPhase !== finalWorkPhase}
               hideSources={session.activity.sourcesEnabled === false}
               /*
-                제목은 차시가 붙인 단계 이름을 따른다.
+                제목은 지금 단계(viewPhase)의 이름을 따른다.
 
-                이 칸을 다른 이름으로 빌려 쓰는 차시가 있다 — 「인간과 인공지능」 3차시는
-                여기에 "2차 살펴보기" 를 얹는다. 기본값 "활동지 쓰기" 를 그대로 두면
-                교사가 넘긴 단계 이름과 화면 제목이 서로 다른 말을 한다.
+                이 활동지 칸은 worksheet 뿐 아니라 wrapheal(공감 문장·감정 대화) 같은
+                단계도 함께 쓴다. worksheet 라벨을 박아 두면 wrapheal 화면에도 "이미지 AI
+                체험" 처럼 엉뚱한 제목이 뜬다 — 그래서 지금 단계의 라벨을 쓴다.
+                (「인간과 인공지능」 3차시가 worksheet 에 얹는 "2차 살펴보기" 도 그대로 나온다.)
               */
-              heading={session.phaseLabels?.worksheet ?? undefined}
+              heading={session.phaseLabels?.[viewPhase] ?? PHASE_LABELS[viewPhase]}
             />
           ) : (
             <Placeholder title="활동지를 준비하고 있어요" description="잠시만 기다려 주세요." />
