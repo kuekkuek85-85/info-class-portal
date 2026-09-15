@@ -1162,6 +1162,14 @@ export interface LessonPlan {
   reflectionPublic: boolean;
   /** 이 차시에서만 쓰는 단계 이름 (4차시 진도 안내 → AI 직업 관상 체험) */
   phaseLabels?: Partial<Record<LessonPhase, string>>;
+  /**
+   * 이 차시에서만 교사 대시보드 단계 버튼의 순서를 바꾼다.
+   *
+   * 버튼은 각자 자기 phase 를 바로 지정하므로 순서는 화면 표시일 뿐이다(동작과 무관).
+   * 여기 적힌 단계가 이 순서로 먼저 오고, 안 적은 단계는 LESSON_PHASES 순서로 뒤에 붙는다.
+   * 마음 톡톡 5회기가 착시 영상(video)을 토끼/오리(assessment) 앞에 두려고 쓴다.
+   */
+  phaseOrder?: LessonPhase[];
   /** 이 차시에서만 이탈을 세지 않을 단계 */
   focusExempt?: LessonPhase[];
   /**
@@ -1313,6 +1321,14 @@ export interface ClassSession {
    * 학생 화면에는 단계 이름이 뜨지 않으므로 교사 화면과 되돌아가기 줄에만 쓴다.
    */
   phaseLabels?: Partial<Record<LessonPhase, string>>;
+  /**
+   * 이 차시에서만 교사 대시보드 단계 버튼의 순서를 바꾼다.
+   *
+   * 버튼은 각자 자기 phase 를 바로 지정하므로 순서는 화면 표시일 뿐이다(동작과 무관).
+   * 여기 적힌 단계가 이 순서로 먼저 오고, 안 적은 단계는 LESSON_PHASES 순서로 뒤에 붙는다.
+   * 마음 톡톡 5회기가 착시 영상(video)을 토끼/오리(assessment) 앞에 두려고 쓴다.
+   */
+  phaseOrder?: LessonPhase[];
 
   /**
    * 이 차시에서만 이탈을 세지 않을 단계. 기본 제외(대기·영상·마침)에 더한다.

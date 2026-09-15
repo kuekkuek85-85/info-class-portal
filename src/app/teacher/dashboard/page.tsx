@@ -52,6 +52,7 @@ interface SessionRow {
   rehearsal?: boolean;
   /** 이 차시에서만 쓰는 단계 이름 (4차시 진도 안내 → AI 직업 관상 체험) */
   phaseLabels?: Partial<Record<LessonPhase, string>>;
+  phaseOrder?: LessonPhase[];
   reflectionQuestions: string[];
   moodCheckEnabled: boolean;
   date: string;
@@ -1080,8 +1081,20 @@ function Dashboard() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {LESSON_PHASES.filter((item) => availablePhase(session, item)).map(
-                (item) => (
+              {/*
+                버튼 순서 — 차시가 phaseOrder 로 바꿀 수 있다. 각 버튼은 자기 phase 를
+                바로 지정하므로 순서는 표시일 뿐(동작 무관). phaseOrder 에 적은 것 먼저,
+                안 적은 단계는 LESSON_PHASES 순서로 뒤에 붙여 하나도 빠지지 않게 한다.
+              */}
+              {(session.phaseOrder && session.phaseOrder.length > 0
+                ? [
+                    ...session.phaseOrder,
+                    ...LESSON_PHASES.filter((p) => !session.phaseOrder!.includes(p)),
+                  ]
+                : LESSON_PHASES
+              )
+                .filter((item) => availablePhase(session, item))
+                .map((item) => (
                   <button
                     key={item}
                     type="button"

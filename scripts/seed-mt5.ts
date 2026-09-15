@@ -1072,6 +1072,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    */
   focusExempt: ["progress", "emotion", "worksheet", "wrapmap", "wrapheal"],
 
+  // 교사 버튼 순서: 착시 영상(video)을 토끼/오리(assessment) 앞으로. 안 적은 단계는
+  // LESSON_PHASES 순서로 뒤에 붙는다(대시보드가 처리). 버튼은 각자 phase 를 바로 지정.
+  phaseOrder: ["waiting", "mood", "progress", "video", "assessment", "quiz"],
+
   phaseLabels: {
     mood: "마음 체크인",
     // ── 활동1 ──
