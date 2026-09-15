@@ -271,6 +271,9 @@ function empty(): PhaseContent {
  * (위 파일 머리말 "투표(퀴즈)" 절 참조).
  */
 const QUIZ: QuizContent = {
+  // 이 회기 투표는 대부분 의견형(토끼/오리·감정)이라 정답 공개가 오해를 준다.
+  // 교사 퀴즈 패널에서 「정답 공개」 버튼을 숨긴다 — 분포만 본다.
+  hideReveal: true,
   questions: [
     // ── quiz[0] · [활동1] 토끼/오리 (의견형 · 공개 안 함) ─────────────
     {

@@ -55,7 +55,10 @@ interface SessionRow {
   reflectionQuestions: string[];
   moodCheckEnabled: boolean;
   date: string;
-  quiz?: { questions: { prompt: string; choices: string[]; answerIndex: number }[] };
+  quiz?: {
+    questions: { prompt: string; choices: string[]; answerIndex: number }[];
+    hideReveal?: boolean;
+  };
   quizIndex?: number;
   quizRevealed?: boolean;
   activity?: {
@@ -1131,6 +1134,7 @@ function Dashboard() {
               questions={session.quiz.questions}
               index={session.quizIndex ?? 0}
               revealed={session.quizRevealed === true}
+              hideReveal={session.quiz.hideReveal === true}
               onPatch={patchSession}
             />
           )}

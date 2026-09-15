@@ -293,6 +293,14 @@ export interface QuizQuestion {
 
 export interface QuizContent {
   questions: QuizQuestion[];
+  /**
+   * 교사 퀴즈 패널에서 「정답 공개」 버튼을 숨긴다.
+   *
+   * 의견형 투표 차시(마음 톡톡 5회기 토끼/오리·감정 등)는 정답이 없어, 공개하면
+   * answerIndex 로 지정된 한쪽이 "정답"으로 표시돼 학생에게 오해를 준다. 그런 차시는
+   * 이 값을 켜 버튼 자체를 숨긴다. 정답이 있는 차시(정보 타임머신 퀴즈)는 그대로 둔다.
+   */
+  hideReveal?: boolean;
 }
 
 // --------------------------------------------- 그리기 활동 (2·3차시 공용)

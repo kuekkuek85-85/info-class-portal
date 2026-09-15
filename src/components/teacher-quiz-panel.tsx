@@ -25,6 +25,8 @@ interface TeacherQuizPanelProps {
   questions: { prompt: string; choices: string[]; answerIndex: number }[];
   index: number;
   revealed: boolean;
+  /** 의견형 투표 차시는 「정답 공개」를 숨긴다 (정답이 없어 공개가 오해를 준다) */
+  hideReveal?: boolean;
   onPatch: (patch: Record<string, unknown>) => Promise<void> | void;
 }
 
@@ -33,6 +35,7 @@ export function TeacherQuizPanel({
   questions,
   index,
   revealed,
+  hideReveal = false,
   onPatch,
 }: TeacherQuizPanelProps) {
   const [stats, setStats] = useState<QuestionStat[] | null>(null);
@@ -63,7 +66,11 @@ export function TeacherQuizPanel({
           타임머신 퀴즈 — {index + 1} / {total}
         </h2>
         <p className="t-caption">
-          {revealed ? "정답이 공개된 상태입니다" : "학생은 아직 정답을 볼 수 없습니다"}
+          {hideReveal
+            ? "의견형 투표 — 정답 공개 없이 분포만 봅니다"
+            : revealed
+              ? "정답이 공개된 상태입니다"
+              : "학생은 아직 정답을 볼 수 없습니다"}
         </p>
       </div>
 
@@ -88,13 +95,15 @@ export function TeacherQuizPanel({
         >
           ← 이전 문항
         </button>
-        <button
-          type="button"
-          onClick={() => onPatch({ quizRevealed: !revealed })}
-          className={`pill t-body-sm ${revealed ? "pill-secondary" : "pill-primary"}`}
-        >
-          {revealed ? "정답 숨기기" : "정답 공개"}
-        </button>
+        {!hideReveal && (
+          <button
+            type="button"
+            onClick={() => onPatch({ quizRevealed: !revealed })}
+            className={`pill t-body-sm ${revealed ? "pill-secondary" : "pill-primary"}`}
+          >
+            {revealed ? "정답 숨기기" : "정답 공개"}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => onPatch({ quizIndex: index + 1 })}
@@ -105,9 +114,11 @@ export function TeacherQuizPanel({
         </button>
       </div>
 
-      <p className="t-caption">
-        문항을 옮기면 정답 공개는 자동으로 꺼집니다 — 다음 문제가 답부터 보이지 않도록.
-      </p>
+      {!hideReveal && (
+        <p className="t-caption">
+          문항을 옮기면 정답 공개는 자동으로 꺼집니다 — 다음 문제가 답부터 보이지 않도록.
+        </p>
+      )}
 
       <div className="flex flex-col gap-3 border-t border-line pt-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
