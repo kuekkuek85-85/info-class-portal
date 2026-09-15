@@ -44,8 +44,8 @@
  *
  *   0–3   대기·기분·출석 (대기 중 지뢰찾기)
  *   3–7   안내 보드(assessment) — 이어가기 취지 + 오늘 할 일
- *   7–38  진단활동 — 지난 시간 멈춘 미로부터 이어서, 미로 3개
- *   38–40 오늘 최종 진도 요약 → 정리
+ *   7–38  진단활동 — 지난 시간 멈춘 미로부터 이어서, 미로 3개 (미로마다 상태·미션 기록)
+ *   38–40 미로별 기록 확인 → 정리
  *
  * 대상 1~4반 중1. 각 반 30번은 테스트 학생(리허설). 숙제/집에 내주는 것 없음. seed 멱등(--force).
  */
@@ -211,34 +211,11 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
 
   /*
-   * 맨 하단 — 오늘 최종 진도 요약(한 번 더). 미로별 기록과 별개로 오늘 마지막에 어느 미로
-   * 몇 미션까지 했는지 한 줄로 남긴다. 다음 진단활동/도우미 선발 참고. 12차와 같은 키.
+   * '오늘 최종 진도 요약(bd_final_*)' 은 제거했다(교사 확정, 12차와 동일) — 미로별 기록
+   * (maze1/2/3_status·mission)과 중복이라 한 번 더 묻지 않는다. 학생별 종료 단계는 미로별
+   * 기록이 그대로 남긴다. (아래 carryOver 는 옛 12차 1반의 bd_final_* 를 계속 읽어 이어가기
+   * 안내를 띄우므로 1반 대비는 유지된다 — 값을 읽을 뿐 이 차시에서 다시 입력받지는 않는다.)
    */
-  {
-    key: "_bd_final_head",
-    phase: "worksheet",
-    label: "오늘 어디까지 했나요? (마지막 요약)",
-    hint: "수업을 마치기 전에, 오늘 최종적으로 어느 미로 몇 번째 미션까지 풀었는지 한 번 더 남겨 주세요.",
-    kind: "note",
-    maxLength: 0,
-  },
-  {
-    key: "bd_final_maze",
-    phase: "worksheet",
-    label: "오늘 마지막으로 푼 미로",
-    hint: "오늘 마지막에 풀고 있던(또는 끝낸) 미로를 골라 주세요.",
-    kind: "choice",
-    choices: ["① 이상한 숲", "② 이상한 티파티", "③ 여왕의 정원"],
-    maxLength: 20,
-  },
-  {
-    key: "bd_final_mission",
-    phase: "worksheet",
-    label: "몇 번째 미션까지 했나요?",
-    hint: "숫자로 적어 주세요 (1~12).",
-    kind: "text",
-    maxLength: 10,
-  },
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
@@ -440,9 +417,9 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (12차와 같은 통 — 12차 미로별 기록/요약을 13차가 이어 읽음. 파이썬/마이크로비트와 분리)`);
-  console.log("단계: 대기(지뢰찾기) → 기분 → 안내(assessment) → 진단활동(worksheet, 미로 3개 한 페이지, 순서 잠금 없음) → 최종 요약 (진도 팝업 없음)");
+  console.log("단계: 대기(지뢰찾기) → 기분 → 안내(assessment) → 진단활동(worksheet, 미로 3개 한 페이지, 순서 잠금 없음) → 정리 (진도 팝업 없음)");
   console.log("미로 ① 2020-1/1 · ② 2020-2/1 · ③ 2020-3/1 (각 12미션). enabledAfterOpen 없음 — 지난 시간 멈춘 미로부터 자유 이어가기.");
-  console.log("미로별 기록: maze1/2/3_status·mission (maze1/2 는 12차와 같은 키라 프리필). 요약: bd_final_maze/mission.");
+  console.log("미로별 기록: maze1/2/3_status·mission (maze1/2 는 12차와 같은 키라 프리필). 최종 요약(bd_final_*)은 중복이라 제거(12차와 동일).");
   console.log("이어가기 배너: carryOver 로 같은 통(block-diagnostic)의 bd_final_*·maze1/2_status 를 활동지 맨 위에 읽기 전용 표시(공유 코드 변경 없음).");
   console.log("freeNavigation: true. 로그인 불필요·새 탭. 점수·자동채점 없음.");
   process.exit(0);
