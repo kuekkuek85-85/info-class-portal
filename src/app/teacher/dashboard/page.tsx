@@ -57,7 +57,14 @@ interface SessionRow {
   moodCheckEnabled: boolean;
   date: string;
   quiz?: {
-    questions: { prompt: string; choices: string[]; answerIndex: number }[];
+    questions: {
+      prompt: string;
+      choices: string[];
+      answerIndex: number;
+      answerType?: "choice" | "text";
+      audioUrl?: string;
+      nowText?: string;
+    }[];
     hideReveal?: boolean;
     label?: string;
   };

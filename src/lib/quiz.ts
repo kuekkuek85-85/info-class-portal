@@ -15,6 +15,10 @@ export interface QuizView {
   total: number;
   /** 화면에 표시할 퀴즈 이름 (기본 "타임머신") */
   label: string;
+  /** 답하는 방식 (기본 "choice"). "text" 면 학생이 글칸에 직접 적는다 */
+  answerType: "choice" | "text";
+  /** 단답형 입력칸 (answerType 이 "text" 일 때만 채워진다). audioUrl 은 절대 안 내려간다 */
+  answerFields: { key: string; label: string; placeholder?: string }[];
   revealed: boolean;
   /** 공개 뒤에만 채워진다 */
   answerIndex: number | null;
@@ -61,13 +65,17 @@ export function quizView(session: ClassSession): QuizView | null {
 
   // 투표 중에도 보여줄 문항(mediaWhileVoting)은 공개 전에도 media 를 내려보낸다.
   const showMedia = revealed || current.mediaWhileVoting === true;
+  // 의견형 문항은 정답이 없다 — 공개돼도 "← 정답" 강조가 뜨지 않도록 answerIndex 를 안 보낸다.
+  const showAnswer = revealed && current.opinion !== true;
 
   return {
     index,
     total,
     label: session.quiz?.label ?? "타임머신",
+    answerType: current.answerType ?? "choice",
+    answerFields: current.answerType === "text" ? (current.answerFields ?? []) : [],
     revealed,
-    answerIndex: revealed ? current.answerIndex : null,
+    answerIndex: showAnswer ? current.answerIndex : null,
     nowText: revealed ? current.nowText : "",
     stickers: revealed ? (current.stickers ?? []) : [],
     media: showMedia ? studentMedia(current.media) : null,

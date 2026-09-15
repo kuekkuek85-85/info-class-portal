@@ -49,6 +49,8 @@ interface SessionRow {
       answerIndex: number;
       nowText: string;
       stickers: string[];
+      answerType?: "choice" | "text";
+      opinion?: boolean;
       media?: { kind: "image" | "video"; url: string; caption: string; credit: string };
     }[];
     label?: string;
@@ -227,7 +229,7 @@ function QuizBoard({ session }: { session: SessionRow }) {
 
       <ul className="flex flex-col gap-3">
         {question.choices.map((choice, i) => {
-          const isAnswer = revealed && i === question.answerIndex;
+          const isAnswer = revealed && question.opinion !== true && i === question.answerIndex;
           return (
             <li
               key={i}
@@ -251,7 +253,9 @@ function QuizBoard({ session }: { session: SessionRow }) {
 
       {revealed && question.nowText && (
         <div className="rounded-2xl bg-cream px-6 py-5">
-          <p className="text-lg font-semibold">그럼 지금은?</p>
+          <p className="text-lg font-semibold">
+            {question.answerType === "text" ? "정답" : "그럼 지금은?"}
+          </p>
           <p className="mt-2 text-2xl leading-snug whitespace-pre-wrap">{question.nowText}</p>
         </div>
       )}

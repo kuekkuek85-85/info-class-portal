@@ -296,6 +296,35 @@ export interface QuizQuestion {
    * 크게 뜬다. 영상(kind: "video")은 이 값과 무관하게 여전히 전자칠판에서만 재생한다.
    */
   mediaWhileVoting?: boolean;
+  /**
+   * 답하는 방식. 안 주면 "choice"(객관식).
+   *
+   * "text" 는 단답형 — 학생이 선지 대신 글칸(answerFields)에 직접 적는다. 마음 톡톡
+   * 5회기 노래 퀴즈처럼 "가수·제목"을 맞히는 문항에 쓴다. 채점은 하지 않는다(자기 채점):
+   * 교사가 정답을 공개하면 nowText 에 적어 둔 정답이 학생 화면에 뜬다.
+   */
+  answerType?: "choice" | "text";
+  /**
+   * 교사 화면에서 재생할 음성 파일 주소 (TTS 등). "text" 문항의 노래 듣기용.
+   *
+   * **학생 태블릿에는 내려보내지 않는다** — 영상(kind:"video")과 같은 이유로, 30명이
+   * 각자 다른 지점을 재생하면 수업이 흩어진다. 재생은 교사 퀴즈 패널에서만 한다.
+   */
+  audioUrl?: string;
+  /**
+   * 단답형(answerType:"text") 입력칸. 예) [{key:"artist",label:"가수"},{key:"title",label:"제목"}]
+   *
+   * 학생이 적은 답은 서버로 보내지 않고 화면에만 남는다(자기 채점). key 는 화면 안에서만 쓴다.
+   */
+  answerFields?: { key: string; label: string; placeholder?: string }[];
+  /**
+   * 의견형 문항 — 정답이 없다. 이 문항에서는 「정답 공개」 버튼과 "← 정답" 강조를 숨긴다.
+   *
+   * 퀴즈 레벨 hideReveal 은 퀴즈 전체를 의견형으로 막는다. opinion 은 문항 하나씩 켠다:
+   * 정답형(노래 단답)과 의견형(토끼/오리·감정 투표)이 한 퀴즈에 섞인 마음 톡톡 5회기가
+   * 이 경우다 — 노래 문항만 정답을 공개하고, 투표 문항은 분포만 본다.
+   */
+  opinion?: boolean;
 }
 
 export interface QuizContent {
