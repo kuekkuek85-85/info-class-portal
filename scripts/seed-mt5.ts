@@ -756,17 +756,6 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "text",
     maxLength: 300,
   },
-  {
-    key: "a4_reflect",
-    phase: "wrapmap",
-    // 성찰 1문항 — 개인 글, 비공개.
-    label: "오늘 배운 의사소통 방법 중, 실제 관계에서 써보고 싶은 것 한 가지를 적어 주세요",
-    hint:
-      "예) 화날 때 ‘너 왜 그래’ 대신 나 전달법으로 “나는 서운했어” 라고 말해보고 싶다.\n" +
-      "이 칸은 나와 선생님만 봐요.",
-    kind: "long",
-    maxLength: 300,
-  },
 
   /* ══════════════ 활동5 「공감 문장 · 감정 대화」 (wrapheal) ══════════════
    *
