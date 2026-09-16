@@ -63,6 +63,7 @@ interface SessionRow {
       answerIndex: number;
       answerType?: "choice" | "text";
       audioUrl?: string;
+      youtubeUrl?: string;
       nowText?: string;
       opinion?: boolean;
       group?: LessonPhase;

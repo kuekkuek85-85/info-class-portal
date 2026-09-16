@@ -30,6 +30,8 @@ interface TeacherQuizPanelProps {
     answerType?: "choice" | "text";
     /** 단답형에서 교사 화면으로 재생할 음성 (TTS). 학생 태블릿엔 안 간다 */
     audioUrl?: string;
+    /** 정답 공개 뒤 교사 패널에 뜨는 유튜브 링크 (노래 원곡 듣기) */
+    youtubeUrl?: string;
     /** 정답 공개 때 학생에게 보이는 정답 텍스트 (교사도 여기서 확인) */
     nowText?: string;
     /** 의견형 문항(정답 없음) — 정답 강조 대신 「분포 공개」로 학생에게 분포를 보인다 */
@@ -120,10 +122,28 @@ export function TeacherQuizPanel({
         )}
 
         {isText ? (
-          current?.nowText && (
-            <p className="mt-3 t-body-sm">
-              <span className="font-bold">정답</span> · {current.nowText}
-            </p>
+          // 정답은 「정답 공개」 전까지 숨긴다 — 미리 보이면 교사가 문제 내기 어렵다(교사 메모).
+          // 공개 뒤엔 정답과 함께 유튜브 링크(원곡 듣기)를 띄운다.
+          revealed ? (
+            <div className="mt-3 flex flex-col gap-2">
+              {current?.nowText && (
+                <p className="t-body-sm">
+                  <span className="font-bold">정답</span> · {current.nowText}
+                </p>
+              )}
+              {current?.youtubeUrl && (
+                <a
+                  href={current.youtubeUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="pill pill-secondary t-body-sm self-start"
+                >
+                  ▶ 유튜브에서 듣기
+                </a>
+              )}
+            </div>
+          ) : (
+            <p className="mt-3 t-caption">정답은 「정답 공개」를 누르면 여기에 표시됩니다.</p>
           )
         ) : (
           <ul className="mt-2 flex flex-col gap-1">

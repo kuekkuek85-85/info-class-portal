@@ -312,6 +312,11 @@ export interface QuizQuestion {
    */
   audioUrl?: string;
   /**
+   * 정답 공개 뒤 교사 패널에 뜨는 유튜브 링크 (노래 원곡 듣기용). 교사 전용 —
+   * 학생 태블릿엔 안 내려간다. 정답을 맞힌 뒤 원곡을 잠깐 틀어 주는 용도.
+   */
+  youtubeUrl?: string;
+  /**
    * 단답형(answerType:"text") 입력칸. 예) [{key:"artist",label:"가수"},{key:"title",label:"제목"}]
    *
    * 학생이 적은 답은 서버로 보내지 않고 화면에만 남는다(자기 채점). key 는 화면 안에서만 쓴다.
