@@ -290,7 +290,15 @@ async function main(): Promise<void> {
     // merge 로는 안 지워져서 FieldValue.delete() 로 명시 삭제한다.
     // progress 도 merge 로는 옛 tabs 가 남아 안 비워진다 — quiz 처럼 아예 지운다.
     await doc.ref.set(
-      { ...PLAN, updatedAt: now, quiz: FieldValue.delete(), progress: FieldValue.delete() },
+      {
+        ...PLAN,
+        updatedAt: now,
+        quiz: FieldValue.delete(),
+        progress: FieldValue.delete(),
+        // 진도 팝업 제거 — 계획에 남아 있으면 새로 만드는 세션이 다시 물려받아 팝업이 뜬다.
+        // merge 로는 안 비워지므로 계획 문서에서도 명시 삭제한다.
+        progressChecks: FieldValue.delete(),
+      },
       { merge: true },
     );
     console.log(`↻ 갱신 — ${PLAN.title} (${doc.id})`);
