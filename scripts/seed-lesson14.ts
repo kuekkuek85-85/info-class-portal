@@ -220,15 +220,10 @@ const WORKSHEET: WorksheetQuestion[] = [
 
   /* ── ③ 파이썬 맛보기: 터틀로 사각형 그리기 ── */
   /*
-   * ★ 인터랙티브 편집기 링크 자리 (선생님이 추후 링크 공유 예정) — 지금은 임의 URL 없음.
-   *
-   * 학생이 브라우저에서 바로 파이썬 터틀을 돌려 보게 하려면(예: trinket.io/python 등),
-   * 아래 note 에 `linkUrl`·`linkLabel` 을 더하면 문항 밑에 새 탭 링크 단추가 뜬다
-   * (구 14차 타자 도우미 링크와 같은 방식). 지금은 코드를 note+code(복사 단추)로 보여주고
-   * 교사가 앞 화면에서 시연 → 학생이 따라 치는 톤이다.
-   * 넣는 법: 선생님이 편집기 링크를 주면 총괄이 이 note 에
-   *   linkUrl: "<선생님이 준 주소>", linkLabel: "파이썬 터틀 편집기 열기 (새 탭)"
-   * 를 채운다. (링크가 붙으면 이 문항이 focusExempt(worksheet)로 이미 덮여 이탈 오탐도 안 난다.)
+   * 실행 편집기 = **OneCompiler 터틀**(https://onecompiler.com/turtle) — 교사 확정. 브라우저에서
+   * 파이썬 터틀 그래픽이 바로 뜬다(설치 불필요, 터틀 창을 브라우저로 스트리밍). 아래 첫 맛보기
+   * note 에 linkUrl 로 붙였다. 학생: [OneCompiler 터틀 열기] 새 탭 → code 복사 단추로 붙여넣고 실행.
+   * 링크가 붙어도 이 문항은 focusExempt(worksheet)라 새 탭 이탈 오탐이 안 난다.
    */
   {
     key: "_pi_taste_square",
@@ -241,9 +236,13 @@ const WORKSHEET: WorksheetQuestion[] = [
       "· t.forward(100) — 앞으로 100만큼 가면서 선을 그어요.\n" +
       "· t.right(90) — 오른쪽으로 90도 돌아요.\n" +
       "· for i in range(4): — 아래 줄을 4번 되풀이해요(그래서 네 변이 그려져 사각형!).\n\n" +
-      "복사 단추로 코드를 복사해 편집기에 붙여 넣고 실행해 보세요. 사각형이 그려지면 성공!",
+      "아래 [OneCompiler 터틀 열기] 로 편집기를 새 탭에서 열고(그대로 두면 다음 예제도 거기서 해요),\n" +
+      "복사 단추로 코드를 복사해 붙여 넣은 뒤 실행해 보세요. 사각형이 그려지면 성공!",
     kind: "note",
     code: CODE_SQUARE,
+    // 파이썬 터틀을 브라우저에서 바로 실행 — OneCompiler 터틀 모드(설치 불필요, 그래픽 스트리밍).
+    linkUrl: "https://onecompiler.com/turtle",
+    linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
     maxLength: 0,
   },
 
@@ -452,7 +451,7 @@ async function main(): Promise<void> {
   console.log("실제 진행: 안내 → 개론 note ①②(블록/텍스트·추상화 흐름) → 개념 퀴즈(교사 진행) → 터틀 맛보기 따라 치기 → 성찰 (freeNavigation)");
   console.log(`개념 퀴즈: ${QUIZ.questions.length}문항 (정답 있는 지식 퀴즈, 블록/텍스트·추상화 순서). session.quiz — 대시보드 응답 분포로 확인.`);
   console.log("파이썬 맛보기: 터틀 예제 2개(사각형 그리기 for 반복 · 앞으로 가기+색·모양). code 필드로 제시(등폭 readonly, 복사 단추). 14·15차 모두 터틀로 일관.");
-  console.log("★ 인터랙티브 편집기 링크는 자리(주석 placeholder)만 — 선생님이 링크 주면 총괄이 _pi_taste_square note 에 linkUrl/linkLabel 채움.");
+  console.log("파이썬 터틀 실행: OneCompiler 터틀(https://onecompiler.com/turtle) — _pi_taste_square note 에 새 탭 링크로 붙음. 코드 복사→붙여넣기→실행.");
   console.log("성찰 2문항(블록/텍스트 차이 · 만들어 보고 싶은 것). 진도 팝업 없음. galleryEnabled: false.");
   process.exit(0);
 }

@@ -211,23 +211,18 @@ const WORKSHEET: WorksheetQuestion[] = [
 
   /* ── ④ 첫 기능 구현 — 주인공 좌우 이동 (터틀 예제) ── */
   /*
-   * ★ 인터랙티브 편집기 링크 자리 (선생님이 추후 링크 공유 예정) — 지금은 임의 URL 없음.
-   *
-   * 학생이 브라우저에서 바로 파이썬 터틀을 돌려 보게 하려면(예: trinket.io/python 등),
-   * 아래 note 에 `linkUrl`·`linkLabel` 을 더하면 문항 밑에 새 탭 링크 단추가 뜬다
-   * (14차 맛보기 note 와 같은 방식). 지금은 코드를 note+code(복사 단추)로 보여주고 교사가
-   * 앞 화면에서 시연 → 학생이 따라 치는 톤이다.
-   * 넣는 법: 선생님이 편집기 링크를 주면 총괄이 이 note 에
-   *   linkUrl: "<선생님이 준 주소>", linkLabel: "파이썬 터틀 편집기 열기 (새 탭)"
-   * 를 채운다. (링크가 붙어도 이 문항이 focusExempt(worksheet)로 덮여 이탈 오탐이 안 난다.)
+   * 실행 편집기 = **OneCompiler 터틀**(https://onecompiler.com/turtle) — 교사 확정, 14차와 동일.
+   * 브라우저에서 파이썬 터틀 그래픽이 바로 뜬다(설치 불필요). 아래 note 에 linkUrl 로 붙였다.
+   * 링크가 붙어도 이 문항은 focusExempt(worksheet)라 새 탭 이탈 오탐이 안 난다.
    */
   {
     key: "_dg_feature_move",
     phase: "worksheet",
     label: "④ 첫 기능 만들기 — 주인공 좌우 이동",
     hint:
-      "설계한 ①번(주인공 좌우 이동)을 오늘 만들어 봐요. 아래 코드를 선생님과 함께 한 줄씩 읽고,\n" +
-      "그대로 따라 쳐서 실행합니다. 네모 주인공이 뜨고, **방향키(← →)로 좌우로 움직이면 성공!**\n\n" +
+      "설계한 ①번(주인공 좌우 이동)을 오늘 만들어 봐요. 아래 [OneCompiler 터틀 열기] 로 편집기를\n" +
+      "새 탭에서 열고, 코드를 복사해 붙여넣어 실행합니다. 네모 주인공이 뜨고, **방향키(← →)로\n" +
+      "좌우로 움직이면 성공!**\n\n" +
       "· player.goto(0, -200) — 주인공을 화면 아래 가운데에 놓아요.\n" +
       "· go_left / go_right — 방향키를 누르면 x 좌표를 20씩 줄이거나 늘려요(왼쪽/오른쪽).\n" +
       "· onkeypress(go_left, \"Left\") — 왼쪽 방향키에 그 동작을 연결해요.\n\n" +
@@ -235,6 +230,9 @@ const WORKSHEET: WorksheetQuestion[] = [
       "폭이 달라져요. 다음 시간엔 여기에 '똥 떨어뜨리기(②)' 를 붙입니다.",
     kind: "note",
     code: CODE_PLAYER_MOVE,
+    // 파이썬 터틀을 브라우저에서 바로 실행 — OneCompiler 터틀 모드(14차와 같은 편집기).
+    linkUrl: "https://onecompiler.com/turtle",
+    linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
     maxLength: 0,
   },
 ];
@@ -423,7 +421,7 @@ async function main(): Promise<void> {
   console.log("실제 진행: 안내 → 좌표 note → 게임 분석(rows) → 게임 설계(순서 list) → 첫 기능 주인공 좌우 이동(터틀 코드) → 성찰 (freeNavigation)");
   console.log("분석 칸(dg_components, rows): 필요한 것(구성요소) / 하는 일 (maxRows 6). 설계 칸(dg_build_order, list): 만들 순서 4~6칸.");
   console.log("첫 기능: 주인공 좌우 이동 — 터틀 onkeypress(Left/Right)로 x 좌표 ±20. code 필드로 제시(등폭 readonly, 복사 단추). 14·15차 모두 터틀로 일관.");
-  console.log("★ 인터랙티브 편집기 링크는 자리(주석 placeholder)만 — 선생님이 링크 주면 총괄이 _dg_feature_move note 에 linkUrl/linkLabel 채움.");
+  console.log("파이썬 터틀 실행: OneCompiler 터틀(https://onecompiler.com/turtle) — _dg_feature_move note 에 새 탭 링크로 붙음. 14차와 같은 편집기.");
   console.log("성찰 2문항(뜯어본 소감 · 다음에 붙이고 싶은 기능). 진도 팝업 없음. quiz 없음. galleryEnabled: false.");
   process.exit(0);
 }
