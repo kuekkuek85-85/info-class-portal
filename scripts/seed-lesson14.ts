@@ -300,7 +300,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         note: "활동지가 위에서 아래로 이어져요. 순서대로 내려오면 됩니다.",
         rows: [
           { label: "1", value: "파이썬 타자 도우미 (5분 워밍업, 점수 없음)" },
-          { label: "2", value: "피지컬 컴퓨팅 개념 읽기 (센서 → 처리 → 액추에이터)" },
+          { label: "2", value: "피지컬 컴퓨팅 개념 읽기 (센서 → 마이크로프로세서 → 액추에이터)" },
           { label: "3", value: "개념 확인 퀴즈 (선생님과 함께)" },
           { label: "4", value: "실생활 장치 구상하기 (센서+액추에이터 조합)" },
           { label: "마지막", value: "성찰 한두 줄" },
