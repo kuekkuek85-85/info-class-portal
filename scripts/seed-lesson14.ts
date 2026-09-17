@@ -122,6 +122,30 @@ t.forward(150)
 
 turtle.done()`;
 
+/**
+ * 맛보기 ③ 화려한 그림 — 기본 명령어(color·forward·left)를 반복하면 이런 그림도 나온다.
+ * 선생님 제공 예제. 오늘 배운 기본 명령어가 반복으로 어떻게 커지는지 "와!" 하는 showcase.
+ */
+const CODE_SPIRAL = `import turtle
+
+screen = turtle.Screen()
+screen.title("Turtle Sample")
+screen.bgcolor("white")
+
+pen = turtle.Turtle()
+pen.speed(0)
+
+colors = ["red", "orange", "yellow", "green", "blue", "purple"]
+for i in range(120):
+    pen.color(colors[i % len(colors)])
+    pen.forward(i * 2)
+    pen.left(59)
+
+turtle.done()`;
+
+/** 터틀 명령어 공식 문서(한국어) — 더 많은 명령어를 찾아볼 때 */
+const TURTLE_DOCS_URL = "https://docs.python.org/ko/3/library/turtle.html";
+
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
@@ -228,13 +252,14 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "_pi_taste_square",
     phase: "worksheet",
-    label: "③ 파이썬 맛보기 — 터틀로 그림 그리기",
+    label: "③ 파이썬 맛보기 — 기본 명령어로 그림 그리기",
     hint:
       "이제 파이썬을 살짝 만져 봐요. '터틀' 은 거북이가 기어가며 선을 그리는 파이썬 도구예요.\n" +
-      "아래 코드를 선생님과 함께 한 줄씩 읽고, 그대로 따라 쳐서 실행해 봅니다.\n\n" +
+      "오늘은 터틀의 **기본 명령어** 몇 개만 써 봅니다 — 앞으로 가기 · 좌우로 방향 틀기 · 색 바꾸기.\n" +
+      "아래 코드를 선생님과 함께 한 줄씩 읽고, 그대로 따라 쳐서 실행해 봐요.\n\n" +
       "· turtle.Turtle() — 그림을 그릴 거북이를 하나 만들어요.\n" +
       "· t.forward(100) — 앞으로 100만큼 가면서 선을 그어요.\n" +
-      "· t.right(90) — 오른쪽으로 90도 돌아요.\n" +
+      "· t.right(90) — 오른쪽으로 90도 돌아요. (t.left(90) 이면 왼쪽으로)\n" +
       "· for i in range(4): — 아래 줄을 4번 되풀이해요(그래서 네 변이 그려져 사각형!).\n\n" +
       "아래 [OneCompiler 터틀 열기] 로 편집기를 새 탭에서 열고(그대로 두면 다음 예제도 거기서 해요),\n" +
       "복사 단추로 코드를 복사해 붙여 넣은 뒤 실행해 보세요. 사각형이 그려지면 성공!",
@@ -258,9 +283,43 @@ const WORKSHEET: WorksheetQuestion[] = [
       "· t.forward(150) 의 숫자를 크게/작게 바꿔 보기\n" +
       "· t.left(120) 의 각도를 90 · 60 등으로 바꿔 보기\n\n" +
       "바꾼 뒤 다시 실행해서 거북이가 어떻게 달라지는지 확인해 보세요.\n" +
-      "다음 시간부터는 이 파이썬으로 **익숙한 똥피하기 게임을 직접 만들기 시작**합니다!",
+      "이렇게 **forward · left/right · color** 같은 기본 명령어 몇 개면 여러 그림을 그릴 수 있어요.",
     kind: "note",
     code: CODE_MOVE,
+    maxLength: 0,
+  },
+
+  /* ── ⑤ 도전(showcase): 기본 명령어를 반복하면 이런 그림도! (선생님 제공 스파이럴) ── */
+  {
+    key: "_pi_taste_spiral",
+    phase: "worksheet",
+    label: "⑤ 이런 그림도 돼요! — 기본 명령어 + 반복의 힘",
+    hint:
+      "방금 쓴 기본 명령어(color · forward · left)를 **여러 번 되풀이**하면 이렇게 화려한 그림도\n" +
+      "나와요. 아래 코드를 복사해 실행해 보세요 — 무지개 소용돌이가 그려집니다.\n\n" +
+      "· colors = [...] — 여섯 가지 색을 순서대로 준비해요.\n" +
+      "· for i in range(120): — 아래 세 줄을 120번 되풀이해요.\n" +
+      "· pen.forward(i * 2) — 돌 때마다 조금씩 더 길게 그어서 점점 커져요.\n" +
+      "· pen.left(59) — 매번 59도씩 틀어서 소용돌이가 돼요.\n\n" +
+      "숫자(59 · 120 · i * 2)를 바꾸면 모양이 완전히 달라져요. 바꿔 보며 놀아 봐요.\n" +
+      "다음 시간부터는 이 파이썬으로 **익숙한 똥피하기 게임을 직접 만들기 시작**합니다!",
+    kind: "note",
+    code: CODE_SPIRAL,
+    maxLength: 0,
+  },
+
+  /* ── ⑥ 더 찾아보기: 터틀 명령어 공식 문서 (선생님 제공 링크) ── */
+  {
+    key: "_pi_turtle_docs",
+    phase: "worksheet",
+    label: "⑥ 명령어를 더 알고 싶다면 — 터틀 사전(공식 문서)",
+    hint:
+      "터틀에는 오늘 쓴 것 말고도 명령어가 많아요(원 그리기 circle, 펜 올리기 penup 등).\n" +
+      "더 해 보고 싶으면 아래 '터틀 공식 문서(한국어)' 에서 명령어를 찾아볼 수 있어요.\n" +
+      "지금 다 볼 필요는 없어요 — 필요할 때 사전처럼 열어 보면 됩니다.",
+    kind: "note",
+    linkUrl: TURTLE_DOCS_URL,
+    linkLabel: "터틀 공식 문서 열기 (새 탭)",
     maxLength: 0,
   },
 ];
