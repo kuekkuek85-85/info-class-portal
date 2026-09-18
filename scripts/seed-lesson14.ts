@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 14차시 차시 계획 등록 — 「프로그래밍 언어 개론 + 파이썬 맛보기」.
  *
  *   node --env-file=.env.local scripts/seed-lesson14.ts
@@ -146,6 +146,9 @@ turtle.done()`;
 /** 터틀 명령어 공식 문서(한국어) — 더 많은 명령어를 찾아볼 때 */
 const TURTLE_DOCS_URL = "https://docs.python.org/ko/3/library/turtle.html";
 
+/** 파이썬 타자 도우미 — 점수 연동 없이 하이퍼링크 워밍업 (매시간 5분, 기분·안내 앞) */
+const TYPING_URL = "https://python-typing-helper.vercel.app";
+
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
@@ -163,7 +166,7 @@ const QUIZ: QuizContent = {
   questions: [
     {
       prompt: "엔트리처럼 블록을 끼워 맞춰 프로그램을 만드는 것을 무엇이라고 할까요?",
-      choices: ["블록 코딩", "텍스트 코딩", "종이접기"],
+      choices: ["블록 코딩", "텍스트 코딩", "바이브 코딩"],
       answerIndex: 0,
       nowText:
         "블록을 끼워 맞추는 것이 '블록 코딩'이에요(엔트리·스크래치). 글자를 직접 쓰는 것은 '텍스트 코딩'이고요.",
@@ -171,28 +174,15 @@ const QUIZ: QuizContent = {
     },
     {
       prompt: "파이썬처럼 글자를 직접 써서 프로그램을 만드는 것은 무엇일까요?",
-      choices: ["블록 코딩", "텍스트 코딩", "그림 그리기"],
+      choices: ["블록 코딩", "텍스트 코딩", "바이브 코딩"],
       answerIndex: 1,
       nowText:
         "글자를 써서 만드는 것이 '텍스트 코딩'이에요. 우리는 이제부터 텍스트 코딩, 그중에서도 '파이썬'을 씁니다.",
       stickers: [],
     },
     {
-      prompt:
-        "프로그래밍 언어를 '사람이 쓰기 쉬운(사람 말에 가까운)' 순서로 놓으면 맞는 것은?",
-      choices: [
-        "기계어(0과 1) → 어셈블리 → 파이썬 → 자연어로 시키기",
-        "파이썬 → 자연어 → 기계어",
-        "자연어 → 파이썬 → 기계어(0과 1)",
-      ],
-      answerIndex: 0,
-      nowText:
-        "기계어(0·1)는 컴퓨터 쪽 말이라 사람에겐 어려워요. 파이썬쯤 오면 사람 말에 가까워지고, 자연어로 시키는 '바이브코딩'이 제일 사람 말에 가까워요.",
-      stickers: [],
-    },
-    {
       prompt: "다음 중 '사람 말에 가장 가까운(쓰기 가장 쉬운)' 것은 무엇일까요?",
-      choices: ["기계어 (0과 1)", "파이썬", "자연어로 시키기 (바이브코딩·AI)"],
+      choices: ["기계어 (0과 1)", "파이썬", "자연어"],
       answerIndex: 2,
       nowText:
         "자연어로 '이렇게 만들어 줘'라고 말로 시키는 바이브코딩이 사람 말에 가장 가까워요. 우리 수업도 파이썬을 거쳐 나중에 여기까지 가 봅니다.",
@@ -207,6 +197,21 @@ const QUIZ: QuizContent = {
 // 입력칸은 두지 않는다(모두 note) — 오늘은 읽고·따라 치고·성찰만 남긴다.
 // ─────────────────────────────────────────────────────────────
 const WORKSHEET: WorksheetQuestion[] = [
+  /* ── 파이썬 타자 도우미 (5분 워밍업) — 별도 단계(wordquiz), 기분·안내 앞. 매시간 루틴 ── */
+  {
+    key: "_pi_typing",
+    phase: "wordquiz",
+    label: "파이썬 타자 도우미 — 5분 워밍업",
+    hint:
+      "수업을 시작하기 전에, 파이썬 타자에 손을 풀어요. 아래 단추로 새 탭에서 열려요.\n" +
+      "· 딱 5분만 해 봅니다. 점수를 매기지 않아요 — 편하게 쳐 보면 됩니다.\n" +
+      "· 다 하고 이 화면으로 돌아오세요.",
+    kind: "note",
+    linkUrl: TYPING_URL,
+    linkLabel: "파이썬 타자 도우미 열기 (새 탭)",
+    maxLength: 0,
+  },
+
   /* ── ① 개론: 프로그래밍 언어란 (블록 코딩 vs 텍스트 코딩) ── */
   {
     key: "_pi_langs",
@@ -214,11 +219,11 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "① 프로그래밍 언어가 뭐예요?",
     hint:
       "'프로그래밍 언어' 는 컴퓨터에게 일을 시키는 말이에요. 크게 두 가지가 있어요:\n\n" +
-      "  · 블록 코딩 — 엔트리·스크래치처럼 **블록을 끼워 맞춰** 만들어요. 글자를 안 써도 돼서 쉬워요.\n" +
-      "  · 텍스트 코딩 — **글자를 직접 써서** 만들어요. 파이썬·자바 같은 게 여기에 속해요.\n\n" +
-      "우리는 이제부터 **텍스트 코딩, 그리고 그중에서도 '파이썬'** 을 씁니다.\n" +
-      "파이썬은 텍스트 코딩 언어 중에서도 사람 말에 가깝고 읽기 쉬워서, 처음 배우기에 좋아요.\n" +
-      "그리고 이 수업의 마지막엔 **바이브코딩**(자연어로, 말로 시키기)까지 가 봅니다.",
+      "  · 블록 코딩 — 엔트리·스크래치처럼 블록을 끼워 맞춰 만들어요. 글자를 안 써도 돼서 쉬워요.\n" +
+      "  · 텍스트 코딩 — 글자를 직접 써서 만들어요. 파이썬·자바 같은 게 여기에 속해요.\n\n" +
+      "우리는 이제부터 텍스트 코딩, 그리고 그중에서도 '파이썬' 을 씁니다.\n" +
+      "파이썬은 인공지능(AI)과 찰떡궁합이고, 요즘 가장 많이 쓰이는 대세 언어예요.\n" +
+      "그리고 이 수업의 마지막엔 바이브코딩(자연어로, 말로 시키기)까지 가 봅니다.",
     kind: "note",
     maxLength: 0,
   },
@@ -229,14 +234,14 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "worksheet",
     label: "② 언어는 점점 '사람 말'에 가까워져요",
     hint:
-      "프로그래밍 언어는 시간이 지나며 점점 **사람이 쓰기 쉬워졌어요.** 순서로 보면:\n\n" +
+      "프로그래밍 언어는 시간이 지나며 점점 사람이 쓰기 쉬워졌어요. 순서로 보면:\n\n" +
       "  기계어(0과 1) → 어셈블리 → 고급 언어(파이썬) → … → 자연어(바이브코딩·AI)\n\n" +
       "  · 기계어 — 0과 1로만 된 컴퓨터 쪽 말. 사람이 읽기 아주 어려워요.\n" +
       "  · 어셈블리 — 기계어보다 조금 사람 말에 가깝지만 여전히 어려워요.\n" +
       "  · 고급 언어(파이썬) — 사람 말과 꽤 비슷해서 읽고 쓰기 쉬워요. ← 우리가 쓸 것!\n" +
       "  · 자연어(바이브코딩) — 그냥 우리말로 '이렇게 만들어 줘' 라고 AI에게 시켜요.\n\n" +
-      "이렇게 **사람 말에 가까워지는 정도**를 '추상화가 높아진다' 고 해요.\n" +
-      "추상화가 높아진다 = 컴퓨터 사정은 몰라도 되고, **사람이 쓰기 쉬워진다** 는 뜻이에요.\n" +
+      "이렇게 사람 말에 가까워지는 정도를 '추상화가 높아진다' 고 해요.\n" +
+      "추상화가 높아진다 = 컴퓨터 사정은 몰라도 되고, 사람이 쓰기 쉬워진다 는 뜻이에요.\n" +
       "다 읽었으면 선생님이 여는 '개념 퀴즈' 로 같이 확인해 봐요.",
     kind: "note",
     maxLength: 0,
@@ -251,11 +256,11 @@ const WORKSHEET: WorksheetQuestion[] = [
    */
   {
     key: "_pi_taste_square",
-    phase: "worksheet",
-    label: "③ 파이썬 맛보기 — 기본 명령어로 그림 그리기",
+    phase: "build",
+    label: "① 기본 명령어로 그림 그리기",
     hint:
       "이제 파이썬을 살짝 만져 봐요. '터틀' 은 거북이가 기어가며 선을 그리는 파이썬 도구예요.\n" +
-      "오늘은 터틀의 **기본 명령어** 몇 개만 써 봅니다 — 앞으로 가기 · 좌우로 방향 틀기 · 색 바꾸기.\n" +
+      "오늘은 터틀의 기본 명령어 몇 개만 써 봅니다 — 앞으로 가기 · 좌우로 방향 틀기 · 색 바꾸기.\n" +
       "아래 코드를 선생님과 함께 한 줄씩 읽고, 그대로 따라 쳐서 실행해 봐요.\n\n" +
       "· turtle.Turtle() — 그림을 그릴 거북이를 하나 만들어요.\n" +
       "· t.forward(100) — 앞으로 100만큼 가면서 선을 그어요.\n" +
@@ -274,16 +279,16 @@ const WORKSHEET: WorksheetQuestion[] = [
   /* ── ④ 파이썬 맛보기: 앞으로 가기·색·모양 바꾸기 ── */
   {
     key: "_pi_taste_move",
-    phase: "worksheet",
-    label: "④ 한 줄씩 바꿔 보기 — 색·모양·방향",
+    phase: "build",
+    label: "② 한 줄씩 바꿔 보기 — 색·모양·방향",
     hint:
-      "이번엔 거북이를 움직이고 꾸며 봐요. 아래 코드를 따라 친 뒤, **한 군데씩 바꿔** 보면\n" +
+      "이번엔 거북이를 움직이고 꾸며 봐요. 아래 코드를 따라 친 뒤, 한 군데씩 바꿔 보면\n" +
       "무엇이 달라지는지 눈으로 알 수 있어요.\n\n" +
       "· t.color(\"blue\") 의 blue 를 red · green 등으로 바꿔 보기\n" +
       "· t.forward(150) 의 숫자를 크게/작게 바꿔 보기\n" +
       "· t.left(120) 의 각도를 90 · 60 등으로 바꿔 보기\n\n" +
       "바꾼 뒤 다시 실행해서 거북이가 어떻게 달라지는지 확인해 보세요.\n" +
-      "이렇게 **forward · left/right · color** 같은 기본 명령어 몇 개면 여러 그림을 그릴 수 있어요.",
+      "이렇게 forward · left/right · color 같은 기본 명령어 몇 개면 여러 그림을 그릴 수 있어요.",
     kind: "note",
     code: CODE_MOVE,
     maxLength: 0,
@@ -292,17 +297,17 @@ const WORKSHEET: WorksheetQuestion[] = [
   /* ── ⑤ 도전(showcase): 기본 명령어를 반복하면 이런 그림도! (선생님 제공 스파이럴) ── */
   {
     key: "_pi_taste_spiral",
-    phase: "worksheet",
-    label: "⑤ 이런 그림도 돼요! — 기본 명령어 + 반복의 힘",
+    phase: "build",
+    label: "③ 이런 그림도 돼요! — 기본 명령어 + 반복의 힘",
     hint:
-      "방금 쓴 기본 명령어(color · forward · left)를 **여러 번 되풀이**하면 이렇게 화려한 그림도\n" +
+      "방금 쓴 기본 명령어(color · forward · left)를 여러 번 되풀이하면 이렇게 화려한 그림도\n" +
       "나와요. 아래 코드를 복사해 실행해 보세요 — 무지개 소용돌이가 그려집니다.\n\n" +
       "· colors = [...] — 여섯 가지 색을 순서대로 준비해요.\n" +
       "· for i in range(120): — 아래 세 줄을 120번 되풀이해요.\n" +
       "· pen.forward(i * 2) — 돌 때마다 조금씩 더 길게 그어서 점점 커져요.\n" +
       "· pen.left(59) — 매번 59도씩 틀어서 소용돌이가 돼요.\n\n" +
       "숫자(59 · 120 · i * 2)를 바꾸면 모양이 완전히 달라져요. 바꿔 보며 놀아 봐요.\n" +
-      "다음 시간부터는 이 파이썬으로 **익숙한 똥피하기 게임을 직접 만들기 시작**합니다!",
+      "다음 시간부터는 이 파이썬으로 익숙한 똥피하기 게임을 직접 만들기 시작합니다!",
     kind: "note",
     code: CODE_SPIRAL,
     maxLength: 0,
@@ -311,8 +316,8 @@ const WORKSHEET: WorksheetQuestion[] = [
   /* ── ⑥ 더 찾아보기: 터틀 명령어 공식 문서 (선생님 제공 링크) ── */
   {
     key: "_pi_turtle_docs",
-    phase: "worksheet",
-    label: "⑥ 명령어를 더 알고 싶다면 — 터틀 사전(공식 문서)",
+    phase: "build",
+    label: "④ 명령어를 더 알고 싶다면 — 터틀 사전(공식 문서)",
     hint:
       "터틀에는 오늘 쓴 것 말고도 명령어가 많아요(원 그리기 circle, 펜 올리기 penup 등).\n" +
       "더 해 보고 싶으면 아래 '터틀 공식 문서(한국어)' 에서 명령어를 찾아볼 수 있어요.\n" +
@@ -359,7 +364,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
           "오늘은 그 첫날 — 언어가 뭔지 감을 잡고, 파이썬 터틀로 그림을 그려 봐요. 어렵지 않아요.",
         rows: [
           { label: "한 줄로", value: "블록 코딩(엔트리) 말고, 이제 텍스트 코딩(파이썬)을 씁니다" },
-          { label: "왜 파이썬?", value: "사람 말에 가깝고 읽기 쉬워서 처음 배우기 좋아요" },
+          { label: "왜 파이썬?", value: "인공지능과 찰떡궁합이고 요즘 대세 언어입니다" },
           { label: "오늘 할 일", value: "개론 읽기 → 개념 퀴즈 → 파이썬 터틀 맛보기 → 성찰" },
           { label: "채점은", value: "점수·자동채점 없어요. 따라 쳐 보고 감만 잡으면 됩니다" },
         ],
@@ -371,7 +376,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         label: "앞으로 뭐 할까",
         subtitle: "익숙한 똥피하기를 파이썬으로 직접 만든다!",
         note:
-          "대기 화면에서 하던 그 똥피하기 게임 있죠? 다음 시간부터 그걸 **파이썬으로 직접**\n" +
+          "대기 화면에서 하던 그 똥피하기 게임 있죠? 다음 시간부터 그걸 파이썬으로 직접\n" +
           "만들기 시작해요. 기능을 하나씩 붙여 가며 나만의 게임으로 완성해 봐요.",
         rows: [
           { label: "오늘", value: "프로그래밍 언어 개론 + 파이썬(터틀) 맛보기" },
@@ -403,11 +408,21 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 옮기는 것을 이탈로 세지 않는다 (구 14차 타자 링크 단계를 focusExempt 로 둔 것과 같은 이유).
    * 지금은 링크 자리(주석 placeholder)만 있고 실제 linkUrl 은 선생님이 주면 총괄이 채운다.
    */
-  focusExempt: ["worksheet"],
+  // 타자(wordquiz)·파이썬 맛보기(build)가 새 탭(편집기·타자)이라 창 이동을 이탈로 안 센다.
+  focusExempt: ["wordquiz", "build"],
+  /*
+   * 교사 버튼 순서. 개론(worksheet)과 파이썬 맛보기(build)를 별도 단계로 쪼갰다:
+   *   대기 → [파이썬 타자](wordquiz) → 기분 → 안내(assessment) → 프로그래밍 언어 개론(worksheet)
+   *   → 개념 퀴즈(quiz) → 파이썬 맛보기(build) → 성찰(reflection)
+   * 개론을 읽고 → 퀴즈로 확인 → 그다음 터틀 맛보기 순서. freeNavigation 으로 자유 이동도 가능.
+   */
+  phaseOrder: ["waiting", "wordquiz", "mood", "assessment", "worksheet", "quiz", "build", "reflection"],
   phaseLabels: {
+    wordquiz: "파이썬 타자 도우미",
     assessment: "안내",
+    worksheet: "프로그래밍 언어 개론",
     quiz: "개념 퀴즈",
-    worksheet: "개론·파이썬 맛보기",
+    build: "파이썬 맛보기 (터틀)",
   },
   /*
    * 되돌아가기 켬 — 학생이 안내·퀴즈·활동지 사이를 스스로 오갈 수 있다. 교사는 개론 note 를
@@ -421,10 +436,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     places: [],
     year: 2036,
     worksheetIntro: {
-      heading: "프로그래밍 언어 개론 + 파이썬 맛보기",
+      heading: "프로그래밍 언어 개론",
       body:
-        "위에서부터 순서대로 해요. 프로그래밍 언어가 뭔지 읽고, 개념 퀴즈로 확인한 뒤,\n" +
-        "파이썬 터틀 예제를 따라 쳐서 그림을 그려 봅니다.",
+        "프로그래밍 언어가 뭔지 두 가지만 읽어 봐요(블록/텍스트 코딩 · 사람 말에 가까워지는 흐름).\n" +
+        "다 읽으면 선생님이 여는 '개념 퀴즈' 로 확인하고, 그다음 '파이썬 맛보기' 단계로 넘어갑니다.",
     },
     worksheet: WORKSHEET,
     // 서로 구경하기·출처 칸은 이 차시에서 쓰지 않는다
@@ -493,6 +508,8 @@ async function main(): Promise<void> {
           reflectionPublic: PLAN.reflectionPublic,
           focusExempt: PLAN.focusExempt,
           phaseLabels: PLAN.phaseLabels,
+          // 타자 도우미를 기분 앞에 두는 단계 순서 — 세션에도 실어야 live 반에 반영된다.
+          phaseOrder: PLAN.phaseOrder,
           freeNavigation: PLAN.freeNavigation,
           activity: PLAN.activity,
         },
@@ -506,8 +523,9 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (개론/맛보기 통 — 게임 제작 통 python-dodge-game·실습 통 physical-computing 과 분리)`);
-  console.log("단계: 대기(똥피하기) → 기분 → 안내(assessment) → 개념 퀴즈(quiz) → 활동지(worksheet: 개론·파이썬 맛보기) → 성찰");
-  console.log("실제 진행: 안내 → 개론 note ①②(블록/텍스트·추상화 흐름) → 개념 퀴즈(교사 진행) → 터틀 맛보기 따라 치기 → 성찰 (freeNavigation)");
+  console.log("단계: 대기(똥피하기) → [파이썬 타자](wordquiz) → 기분 → 안내(assessment) → 프로그래밍 언어 개론(worksheet) → 개념 퀴즈(quiz) → 파이썬 맛보기(build) → 성찰");
+  console.log("실제 진행: 파이썬 타자 5분(기분·안내 앞) → 기분 → 안내 → 개론 note ①②(블록/텍스트·추상화 흐름) → 개념 퀴즈(교사 진행) → 터틀 맛보기 따라 치기 → 성찰 (freeNavigation)");
+  console.log(`파이썬 타자 도우미(별도 단계, 기분·안내 앞 · 매시간 5분): ${TYPING_URL} (새 탭, 점수 없음). wordquiz focusExempt.`);
   console.log(`개념 퀴즈: ${QUIZ.questions.length}문항 (정답 있는 지식 퀴즈, 블록/텍스트·추상화 순서). session.quiz — 대시보드 응답 분포로 확인.`);
   console.log("파이썬 맛보기: 터틀 예제 2개(사각형 그리기 for 반복 · 앞으로 가기+색·모양). code 필드로 제시(등폭 readonly, 복사 단추). 14·15차 모두 터틀로 일관.");
   console.log("파이썬 터틀 실행: OneCompiler 터틀(https://onecompiler.com/turtle) — _pi_taste_square note 에 새 탭 링크로 붙음. 코드 복사→붙여넣기→실행.");
