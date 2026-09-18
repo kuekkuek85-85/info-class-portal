@@ -938,11 +938,27 @@ export default function LessonPage() {
         )}
 
         {viewPhase === "waiting" &&
-          (session.game.url ? (
+          /*
+            대기 화면 순서 = 기분 체크 먼저, 그다음 게임(교사 확정 표준).
+            들어오자마자 오늘 기분을 남기고, 제출하면 저절로 대기 게임으로 빠진다.
+            moodSaved 는 서버에서 오므로 새로고침해도 이미 한 학생은 게임을 바로 본다.
+          */
+          (session.moodCheckEnabled && !moodSaved ? (
+            <MoodPicker
+              value={mood}
+              reason={moodReason}
+              onChange={setMood}
+              onReasonChange={setMoodReason}
+              onSubmit={submitMood}
+              saving={moodSaving}
+              saved={moodSaved}
+              disabled={closed}
+            />
+          ) : session.game.url ? (
             /*
-              먼저 온 학생이 5분을 기다리기도 한다 (태블릿 부팅, 주소 오타).
-              그 시간에 게임을 띄운다. 수업이 시작되면 화면이 저절로 넘어가므로
-              학생이 게임을 끄고 나올 필요가 없다.
+              기분 체크를 마쳤거나 안 쓰는 차시 — 먼저 온 학생이 5분을 기다리기도 한다
+              (태블릿 부팅, 주소 오타). 그 시간에 게임을 띄운다. 수업이 시작되면 화면이
+              저절로 넘어가므로 학생이 게임을 끄고 나올 필요가 없다.
             */
             <section className="flex flex-col gap-4">
               <div className="block bg-lime">
