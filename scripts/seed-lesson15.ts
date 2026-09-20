@@ -188,6 +188,25 @@ function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
 
+/*
+ * 예제별 코드 제출 칸 — 각 찍어보기 카드 바로 뒤에 하나씩 둔다. kind long 이라 여러 줄 입력·
+ * 자동 저장(1.5초)·붙여넣기 허용(noPaste 안 켬). 예제마다 key/label 을 구분해 답이 따로 저장된다.
+ * 안내문은 평문(마크다운 서식 문자 없음). exampleName 은 위 카드 이름([무대] 등)을 가리킨다.
+ */
+function submitField(key: string, label: string, exampleName: string): WorksheetQuestion {
+  return {
+    key,
+    phase: "worksheet",
+    label,
+    hint:
+      `위 [${exampleName}] 예제를 복사해 OneCompiler 에서 미션대로 바꿔 보고 주석도 단 뒤,\n` +
+      "그 예제의 최종 코드를 여기에 붙여넣어 제출하세요.\n" +
+      "붙여넣기(Ctrl+V) 가 되고, 쓰는 동안 자동으로 저장돼요.",
+    kind: "long",
+    maxLength: 2000,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────
 // 활동지 —
 //   · 파이썬 타자 연습(phase: wordquiz, 별도 단계) : 외부 앱 새 탭 링크
@@ -258,6 +277,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_STAGE,
     maxLength: 0,
   },
+  submitField("poke_submit_stage", "② 무대 — 코드 제출", "무대"),
 
   /* ── ③ 거북이 만들기·꾸미기 — Turtle·shape·color (색을 여러 형태로) ── */
   {
@@ -285,6 +305,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     linkLabel: "색상 코드 변환기 (참고, 새 탭)",
     maxLength: 0,
   },
+  submitField("poke_submit_turtle", "③ 거북이/색 — 코드 제출", "거북이 만들기·꾸미기"),
 
   /* ── ④ 펜 상태 — penup · pendown ── */
   {
@@ -304,6 +325,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_PEN,
     maxLength: 0,
   },
+  submitField("poke_submit_pen", "④ 펜 상태 — 코드 제출", "펜 상태"),
 
   /* ── ⑤ 좌표 이동 — goto · setx (좌표를 여러 개) ── */
   {
@@ -323,6 +345,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_GOTO,
     maxLength: 0,
   },
+  submitField("poke_submit_goto", "⑤ 좌표 이동 — 코드 제출", "좌표 이동"),
 
   /* ── ⑥ 상대 이동·회전 — forward · left · right (거리·각도를 여러 개) ── */
   {
@@ -343,30 +366,13 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_MOVE,
     maxLength: 0,
   },
+  submitField("poke_submit_move", "⑥ 상대 이동·회전 — 코드 제출", "상대 이동·회전"),
 
-  /* ── ⑦ 코드 제출하기 — 실험한 최종 코드를 붙여넣어 제출 (long, 자동 저장) ── */
-  /*
-   * 위 찍어보기 code 항목들(복사하기)로 가져간 코드를 학생이 바꿔 보고 주석 단 최종본을 붙여넣어
-   * 낸다. long kind 라 여러 줄 입력·자동 저장(1.5초)·붙여넣기 허용(noPaste 안 켬). 이 차시에서
-   * 유일하게 저장되는 활동지 답이다(그 외는 모두 note/code).
-   */
-  {
-    key: "poke_submit",
-    phase: "worksheet",
-    label: "⑦ 코드 제출하기 — 내가 실험한 최종 코드",
-    hint:
-      "복사하기로 가져간 코드를 OneCompiler 에서 이것저것 바꿔 보고 주석도 달아 본 뒤,\n" +
-      "가장 마음에 드는 최종 코드를 아래 칸에 붙여넣어 제출하세요.\n" +
-      "붙여넣기(Ctrl+V) 가 됩니다. 쓰는 동안 자동으로 저장돼요.",
-    kind: "long",
-    maxLength: 4000,
-  },
-
-  /* ── ⑧ 게임과 연결 — 오늘 함수가 완성 게임 어디에 쓰이나 ── */
+  /* ── ⑦ 게임과 연결 — 오늘 함수가 완성 게임 어디에 쓰이나 ── */
   {
     key: "_poke_game_link",
     phase: "worksheet",
-    label: "⑧ 오늘 익힌 함수가 게임의 어디에 쓰일까?",
+    label: "⑦ 오늘 익힌 함수가 게임의 어디에 쓰일까?",
     hint:
       "오늘 쳐 본 함수들이 완성된 똥피하기 게임에서 어디에 쓰이는지 짚어 봐요:\n\n" +
       "· screen.Screen() · setup · bgcolor · title  →  ① 무대(게임 화면) 만들기\n" +
@@ -418,7 +424,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         rows: [
           { label: "한 줄로", value: "게임에 쓸 터틀 함수를 직접 쳐 보고 값을 바꿔 실험해요" },
           { label: "먼저", value: "파이썬 타자 연습으로 손 풀기(새 탭)" },
-          { label: "오늘 할 일", value: "OneCompiler 에서 함수 찍어보기 → 값 바꿔 관찰 → 최종 코드 제출 → 게임과 연결" },
+          { label: "오늘 할 일", value: "OneCompiler 에서 함수 찍어보기 → 값 바꿔 관찰 → 예제마다 코드 제출 → 게임과 연결" },
           { label: "채점은", value: "점수·자동채점 없어요. 쳐 보고 바꿔 보며 감만 잡으면 됩니다" },
         ],
         highlights: [
@@ -427,20 +433,21 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
       },
       {
         label: "오늘 순서",
-        subtitle: "타자 연습 → 함수 찍어보기 → 코드 제출 → 게임과 연결",
-        note: "타자 연습을 한 뒤, 안내를 보고, 활동지가 위에서 아래로 이어져요. 순서대로 내려오면 됩니다.",
+        subtitle: "타자 연습 → 함수 찍어보기(예제마다 코드 제출) → 게임과 연결",
+        note:
+          "타자 연습을 한 뒤, 안내를 보고, 활동지가 위에서 아래로 이어져요. 함수 카드마다 바로 아래에\n" +
+          "그 예제 코드를 붙여넣어 제출하는 칸이 있어요. 순서대로 내려오면 됩니다.",
         rows: [
           { label: "1", value: "파이썬 타자 연습(별도 단계, 새 탭)" },
-          { label: "2", value: "무대 만들기 — screen(배경색·크기·제목)" },
-          { label: "3", value: "거북이 만들기·꾸미기 — Turtle · shape · color" },
-          { label: "4", value: "펜 상태 — penup · pendown" },
-          { label: "5", value: "좌표 이동 — goto · setx" },
-          { label: "6", value: "상대 이동·회전 — forward · left · right" },
-          { label: "7", value: "코드 제출하기 — 실험한 최종 코드 붙여넣기" },
+          { label: "2", value: "무대 만들기 — screen → 무대 코드 제출" },
+          { label: "3", value: "거북이 만들기·꾸미기 — shape · color → 거북이 코드 제출" },
+          { label: "4", value: "펜 상태 — penup · pendown → 펜 코드 제출" },
+          { label: "5", value: "좌표 이동 — goto · setx → 좌표 코드 제출" },
+          { label: "6", value: "상대 이동·회전 — forward · left · right → 이동 코드 제출" },
           { label: "마지막", value: "게임과 연결 + 성찰" },
         ],
         highlights: [
-          "함수 하나마다 값을 여러 개 바꿔 넣어 봐요 — 그게 오늘의 실험이에요.",
+          "함수 하나마다 값을 여러 개 바꿔 넣어 보고, 그 예제 코드를 바로 아래 칸에 제출해요.",
         ],
       },
     ],
@@ -488,8 +495,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     worksheetIntro: {
       heading: "터틀 함수 찍어보기 — 똥피하기 게임 준비",
       body:
-        "위에서부터 순서대로 해요. 터틀 함수를 하나씩 직접 쳐 보며 값을 바꿔 실험하고, 실험한\n" +
-        "최종 코드를 제출한 뒤, 그 함수들이 완성 게임 어디에 쓰이는지 짚어 봅니다.",
+        "위에서부터 순서대로 해요. 터틀 함수를 하나씩 직접 쳐 보며 값을 바꿔 실험하고, 예제마다\n" +
+        "바로 아래 칸에 그 코드를 제출한 뒤, 그 함수들이 완성 게임 어디에 쓰이는지 짚어 봅니다.",
     },
     worksheet: WORKSHEET,
     // 서로 구경하기·출처 칸은 이 차시에서 쓰지 않는다
@@ -579,7 +586,7 @@ async function main(): Promise<void> {
   console.log(`파이썬 타자: 별도 단계(wordquiz)에 외부 앱 새 탭 링크만 (${TYPING_APP_URL}). 시드 안에 타자게임 안 만듦. wordquiz focusExempt.`);
   console.log(`파이썬 터틀 실행: OneCompiler 터틀(${ONECOMPILER_TURTLE_URL}) — _poke_intro note 에 새 탭 링크. 함수 카드마다 code 필드로 예제(등폭 readonly, 복사 단추).`);
   console.log("찍어보기 카드 5개: 무대(screen) · 거북이(shape·color, 색을 이름/#코드/튜플로) · 펜(penup·pendown) · 좌표(goto·setx) · 이동(forward·left·right). 함수마다 여러 값 실험.");
-  console.log("코드 제출하기(poke_submit, long): 실험한 최종 코드를 붙여넣어 제출(자동 저장·붙여넣기 허용). 이 차시 유일한 저장 활동지 답. 성찰 2문항.");
+  console.log("코드 제출하기: 예제(②~⑥)마다 바로 아래에 제출 칸(poke_submit_stage/turtle/pen/goto/move, long) — 자동 저장·붙여넣기 허용. 이 차시 저장 활동지 답. 성찰 2문항.");
   console.log("화면 텍스트 평문(마크다운 서식 문자 없음, code 필드 파이썬만 예외). quiz 없음. galleryEnabled: false.");
   console.log("⚠ open-info-*.ts 로 새 세션을 열 때 그 스크립트가 phaseOrder 를 복사해야 대시보드 순서가 반영됩니다(snapshotOf 에도 추가함 — db.ts).");
   process.exit(0);
