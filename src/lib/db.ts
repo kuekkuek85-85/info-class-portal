@@ -668,6 +668,13 @@ export function snapshotOf(plan: LessonPlan, groupKey?: string) {
      */
     phaseLabels: plan.phaseLabels ?? {},
     focusExempt: plan.focusExempt ?? [],
+    /*
+     * 교사 버튼 순서도 계획이 정한다 (types.ts 의 phaseOrder). 위 phaseLabels·focusExempt 와
+     * 같은 이유로 여기 빠뜨리면 화면·open-info 로 만든 세션에만 조용히 안 실려, 대시보드가
+     * LESSON_PHASES 기본 순서로 돌아간다 — 14·15차의 파이썬 타자 단계 순서와 기분 중복 제거가
+     * 그 세션에서만 사라진다. 없으면 undefined 라 안 실린다(ignoreUndefinedProperties, 기존 차시 무영향).
+     */
+    phaseOrder: plan.phaseOrder,
     // 진도 체크 팝업 설정 — 없으면 안 실린다(ignoreUndefinedProperties). 화면에서 팝업 없음
     progressChecks: plan.progressChecks,
     /*
