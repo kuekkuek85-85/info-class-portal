@@ -132,6 +132,7 @@ screen.mainloop()`;
 
 /** 펜 상태 — 펜을 내리면 선이 그려지고, 올리면(penup) 선 없이 이동만 한다 */
 const CODE_PEN = `import turtle
+import time  # 한 동작씩 천천히 보여주기 위해
 
 screen = turtle.Screen()
 screen.setup(600, 600)
@@ -139,8 +140,10 @@ screen.setup(600, 600)
 # 미션: 펜을 올렸을 때와 내렸을 때 선이 그려지는지 안 그려지는지 관찰하세요
 player = turtle.Turtle()
 player.forward(100)     # pen is down -> it draws a line
+time.sleep(1)
 player.penup()          # lift the pen up
 player.forward(100)     # now it moves with NO line
+time.sleep(1)
 player.pendown()        # put the pen back down
 player.forward(100)     # it draws again
 
@@ -148,19 +151,25 @@ screen.mainloop()`;
 
 /** 좌표 이동 — goto 는 (x, y) 자리로, setx 는 x(좌우)만 바꿔 옮긴다 */
 const CODE_GOTO = `import turtle
+import time  # 한 동작씩 천천히 보여주기 위해
 
 screen = turtle.Screen()
 screen.setup(600, 600)
 
-# 미션: goto 로 중앙 하단 (0, -250) 에 보내보고, player.setx(100) 을 한 줄 더 넣어 좌우로도 옮겨보세요
+# 미션: goto 로 여러 자리에 보내보고, setx 로 좌우로도 옮겨보세요 (값을 바꿔가며)
 player = turtle.Turtle()
 player.penup()
 player.goto(0, -250)    # x=0 (center), y=-250 (bottom)
+time.sleep(1)
+player.setx(100)        # move right (x only)
+time.sleep(1)
+player.setx(-100)       # move left (x only)
 
 screen.mainloop()`;
 
 /** 상대 이동·회전 — forward 는 보는 방향으로, left/right 는 방향을 튼다 */
 const CODE_MOVE = `import turtle
+import time  # 한 동작씩 천천히 보여주기 위해
 
 screen = turtle.Screen()
 screen.setup(600, 600)
@@ -168,7 +177,9 @@ screen.setup(600, 600)
 # 미션: forward 거리와 left/right 각도를 바꿔 네모나 삼각형 같은 도형을 그려보세요
 player = turtle.Turtle()
 player.forward(100)     # go forward 100
+time.sleep(1)
 player.left(90)         # turn left 90 degrees
+time.sleep(1)
 player.forward(100)
 
 screen.mainloop()`;
