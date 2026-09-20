@@ -18,7 +18,7 @@ import { getMood } from "@/lib/mood";
 import { TEACHER_AUTHOR_ID } from "@/lib/types";
 import type { ClassNo, ClassSession, MoodEntry, Student } from "@/lib/types";
 
-import { COURSES, courseKeyFromText, courseOf, type CourseKey } from "./courses";
+import { COURSES, courseKeyFromText, courseOf, groupKeyFromText, type CourseKey } from "./courses";
 import type { Pseudonymizer } from "./pseudonymize";
 import { COLLECTION_META } from "./schema";
 
@@ -223,11 +223,19 @@ async function studentEmotions(args: Record<string, unknown>, ctx: ToolContext):
 
 async function classEmotions(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult> {
   const classNo = num(args.class);
-  const group = str(args.group);
+  // group 은 분반 열쇠(mt-thu-1) 또는 이름("목요일 1기")로 올 수 있다 — 이름이면 열쇠로 푼다.
+  const group = groupKeyFromText(str(args.group)) ?? str(args.group);
 
   let roster: Student[];
   let courseKey: CourseKey;
   if (group) {
+    if (!/^(mt|hai|heart)-(tue|thu)-[12]$/.test(group)) {
+      return {
+        result: {
+          오류: `분반을 못 알아봤어요('${group}'). group 에 열쇠를 넣으세요 — 디지털 마음 톡톡: mt-tue-1(화요일1기)·mt-thu-1(목요일1기)·mt-tue-2·mt-thu-2, 인간과 인공지능: hai-tue-1·hai-thu-1·hai-tue-2·hai-thu-2.`,
+        },
+      };
+    }
     roster = await listRoster({ classNo: 1 as ClassNo, groupKey: group });
     courseKey = courseOf({ groupKey: group }).key;
   } else if (classNo !== undefined && classNo >= 1 && classNo <= 4) {
@@ -237,7 +245,7 @@ async function classEmotions(args: Record<string, unknown>, ctx: ToolContext): P
     return { result: { 오류: "반(class 1~4) 또는 분반(group)을 알려주세요." } };
   }
   roster = roster.filter((s) => !s.temporary);
-  if (roster.length === 0) return { result: { 학생: [], 안내: "그 반에 학생이 없어요." } };
+  if (roster.length === 0) return { result: { 학생: [], 안내: "그 분반의 명단·감정 기록이 없어요." } };
 
   const moods = await listMoodEntriesByStudents(roster.map((s) => s.studentId));
   const byStudent = new Map<string, MoodEntry[]>();
@@ -292,7 +300,7 @@ async function classEmotions(args: Record<string, unknown>, ctx: ToolContext): P
 
 async function topFeedback(args: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult> {
   const classNo = num(args.class);
-  const group = str(args.group);
+  const group = groupKeyFromText(str(args.group)) ?? str(args.group);
 
   let roster: Student[];
   let courseKey: CourseKey;
@@ -661,12 +669,16 @@ export const TOOL_DECLARATIONS = [
   {
     name: "classEmotions",
     description:
-      "한 반(또는 분반) 전체의 감정 기록을 한 번에 가져온다. '어느 반에서 감정적으로 눈여겨볼 학생' 처럼 반 단위로 감정을 살필 때 반드시 이 도구를 쓴다 — 학생을 하나씩 studentEmotions 로 돌지 마라. 학생마다 최근 기분·부정 기분 수·미확인 수가 온다.",
+      "한 반(또는 분반) 전체의 감정 기록을 한 번에 가져온다. '어느 반/분반에서 감정적으로 눈여겨볼 학생' 처럼 반·분반 단위로 감정을 살필 때 반드시 이 도구를 쓴다 — 학생을 하나씩 studentEmotions 로 돌지 마라. 학생마다 최근 기분·부정 기분 수·미확인 수가 온다.",
     parameters: {
       type: "OBJECT",
       properties: {
         class: { type: "INTEGER", description: "반 번호(1~4). 정보 정규수업." },
-        group: { type: "STRING", description: "분반 열쇠(hai-tue-1 등). 선택과목일 때." },
+        group: {
+          type: "STRING",
+          description:
+            "분반. 선택과목일 때. 열쇠(mt-thu-1 등) 또는 이름('목요일 1기', '디지털 마음 톡톡 목요일 1기')을 그대로 넣어도 된다.",
+        },
       },
     },
   },
@@ -678,7 +690,10 @@ export const TOOL_DECLARATIONS = [
       type: "OBJECT",
       properties: {
         class: { type: "INTEGER", description: "반 번호(1~4). 정보 정규수업." },
-        group: { type: "STRING", description: "분반 열쇠(hai-tue-1 등). 선택과목일 때." },
+        group: {
+          type: "STRING",
+          description: "분반. 열쇠(hai-tue-1 등) 또는 이름('목요일 1기')을 그대로 넣어도 된다.",
+        },
         limit: { type: "INTEGER", description: "상위 몇 개(기본 5, 최대 20)" },
       },
     },

@@ -40,6 +40,30 @@ export function courseOf(input: { activityId?: string; groupKey?: string; lesson
   return COURSES["informatics"];
 }
 
+/**
+ * 분반 이름("목요일 1기")·자유서술("디지털 마음 톡톡 목요일 1기")을 분반 열쇠(mt-thu-1)로 바꾼다.
+ *
+ * 조교가 "목요일 1기 눈여겨볼 학생" 처럼 물을 때, classEmotions·topFeedback 이 이 함수로
+ * 이름을 열쇠로 풀어 준다. 이미 열쇠 꼴이면 그대로 돌려준다. 못 풀면 null.
+ *
+ * 열쇠 규칙: `{과목접두어}-{요일}-{기수}` (예: mt-thu-1 = 마음톡톡·목요일·1기).
+ */
+export function groupKeyFromText(text: string): string | null {
+  const t = text.trim();
+  if (!t) return null;
+  if (/^(mt|hai|heart)-(tue|thu)-[12]$/.test(t)) return t; // 이미 열쇠
+
+  let prefix = "";
+  if (/마음|톡톡|감정/.test(t)) prefix = "mt";
+  else if (/인공지능|진로|hai/i.test(t)) prefix = "hai";
+  else if (/로봇|하트|동아리|heart/i.test(t)) prefix = "heart";
+
+  const day = /목/.test(t) ? "thu" : /화/.test(t) ? "tue" : "";
+  const num = /2\s*기/.test(t) ? "2" : /1\s*기/.test(t) ? "1" : "";
+  if (prefix && day && num) return `${prefix}-${day}-${num}`;
+  return null;
+}
+
 /** 과목 이름(또는 키)으로 CourseKey 를 찾는다. 챗봇이 "인간과 인공지능" 같은 말로 물을 때. */
 export function courseKeyFromText(text: string): CourseKey | null {
   const t = text.trim().toLowerCase();

@@ -53,12 +53,28 @@ export async function GET(request: Request) {
         feedbacks.map((row) => row.authorId).filter((id) => id !== TEACHER_AUTHOR_ID),
       );
 
+      /*
+       * 산출물을 **이 세션(회기)의 것으로만** 좁힌다.
+       *
+       * 마음 톡톡은 회기가 활동 통(activityId)을 이어 쓴다(예: 2·3회기 모두 mt-2026-2).
+       * 그래서 산출물 문서 하나에 여러 회기의 답·그림이 누적된다. 그대로 보이면 2회기를
+       * 열었는데 3회기의 힐링 스페이스 답·그림까지 뜬다. 그 세션 활동지 문항 키로 답을
+       * 거르고, 그리기 장소가 없는 회기(그림 안 그린 회기)는 그림(strokes)을 감춘다.
+       */
+      const worksheet = session.activity?.worksheet ?? [];
+      // 활동지 문항 키 + 앱 링크(build_url)만 남긴다. build_url 은 문항 키가 아니라 별도 저장이라
+      // 함께 넣어야 '만든 앱' 링크가 유지된다.
+      const allowKeys = [...worksheet.map((q) => q.key), "build_url"];
+      const hasDrawing = (session.activity?.places?.length ?? 0) > 0;
+      const fullCard = toCard(artifact, displayName(names.get(artifact.studentId)), allowKeys);
+      const card = hasDrawing ? fullCard : { ...fullCard, strokes: [], texts: [] };
+
       return ok({
-        card: toCard(artifact, displayName(names.get(artifact.studentId))),
+        card,
         studentId: artifact.studentId,
         status: artifact.status,
         hidden: artifact.hidden,
-        worksheet: session.activity?.worksheet ?? [],
+        worksheet,
         /*
          * 수행평가 차시인가 (제출 칸이 있는가).
          *
@@ -66,7 +82,7 @@ export async function GET(request: Request) {
          * 이라, 갤러리를 끈 차시에서는 교사가 써 넣어도 학생 화면에 나올 곳이 없다.
          * 대신 제출 칸이 읽는 통로(artifact.teacherFeedback)로 보낸다.
          */
-        hasSubmit: (session.activity?.worksheet ?? []).some(
+        hasSubmit: worksheet.some(
           // 제출 칸이든 선생님 말 칸이든, 학생 화면에 artifact.teacherFeedback 을
           // 그리는 자리가 있으면 한 칸짜리 서식으로 받는다
           (q) => q.kind === "submit" || q.kind === "teacher_note",
@@ -95,6 +111,8 @@ export async function GET(request: Request) {
     // 목록 — 획은 빼고 제목만. 28편치 좌표를 목록에 실을 이유가 없다.
     const rows = await listArtifacts(activityId, session.classNo);
     const names = await studentNameMap(rows.map((row) => row.studentId));
+    // 그림 안 그린 회기(그리기 장소 없음)는, 통을 이어 쓴 다른 회기의 그림 수를 세지 않는다.
+    const listHasDrawing = (session.activity?.places?.length ?? 0) > 0;
 
     return ok({
       activity: true,
@@ -105,7 +123,7 @@ export async function GET(request: Request) {
         year: row.year,
         status: row.status,
         hidden: row.hidden,
-        strokeCount: row.strokes?.length ?? 0,
+        strokeCount: listHasDrawing ? (row.strokes?.length ?? 0) : 0,
         updatedAt: row.updatedAt,
       })),
       stats: {
