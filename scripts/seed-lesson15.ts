@@ -264,6 +264,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "worksheet",
     label: "② 무대 만들기 — screen",
     hint:
+      "핵심 키워드: Screen() 창 만들기, setup() 크기, bgcolor() 배경색\n\n" +
       "'무대' 는 게임이 펼쳐지는 화면이에요. 아래 코드를 직접 쳐서 실행해 보고, 값을 하나씩 바꿔\n" +
       "다시 실행해 봐요.\n\n" +
       "· screen.bgcolor(\"lightyellow\") — 배경색. 이렇게도 넣어 봐요:\n" +
@@ -285,6 +286,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "worksheet",
     label: "③ 거북이 만들기·꾸미기 — shape · color",
     hint:
+      "핵심 키워드: Turtle() 거북이 만들기, shape() 모양, color() 색\n\n" +
       "거북이(주인공)를 하나 만들고 꾸며 봐요. 값을 바꿔 가며 실행해 보세요.\n\n" +
       "· player.shape(\"square\") — 모양. 이렇게도:\n" +
       "    \"circle\"  →  \"turtle\"  →  \"arrow\"  →  \"triangle\"  →  \"classic\"\n" +
@@ -313,6 +315,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "worksheet",
     label: "④ 펜 상태 — penup · pendown",
     hint:
+      "핵심 키워드: penup() 펜 올리기(선 안 그림), pendown() 펜 내리기(선 그림)\n\n" +
       "'펜' 을 내리면 움직일 때 선이 그려지고, 올리면(penup) 선 없이 이동만 해요. 실행해서 어디에\n" +
       "선이 생기고 안 생기는지 봐요.\n\n" +
       "· player.penup() — 펜 올리기(선 안 그림)\n" +
@@ -333,6 +336,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "worksheet",
     label: "⑤ 좌표 이동 — goto · setx",
     hint:
+      "핵심 키워드: goto() 좌표로 이동, setx() x만 바꾸기 (가운데가 0,0)\n\n" +
       "goto 는 '정해진 자리(x, y)' 로 한 번에 보내요. 화면 한가운데가 (0, 0) 이에요.\n\n" +
       "· player.goto(0, -250) — 이렇게도 넣어 봐요:\n" +
       "    (100, 100)  →  (-200, 0)  →  (0, 0)  →  (250, 250)  →  (-150, -150)\n" +
@@ -353,6 +357,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "worksheet",
     label: "⑥ 상대 이동·회전 — forward · left · right",
     hint:
+      "핵심 키워드: forward() 앞으로, left()/right() 왼쪽·오른쪽 회전\n\n" +
       "forward 는 '지금 보고 있는 방향으로' 앞으로 가고, left/right 는 방향을 틀어요(도, degree).\n\n" +
       "· player.forward(100) — 거리를 이렇게도:\n" +
       "    50  →  150  →  200  →  30\n" +
