@@ -184,6 +184,54 @@ player.forward(100)
 
 screen.mainloop()`;
 
+/* ──────────────────────────────────────────────────────────────
+ * ⑦ '게임과 연결' 표(다이어그램).
+ *
+ * 함수→쓰임 매핑을 글로 나열하면 눈에 안 들어온다(교사 지적). 두 칸짜리 표를 SVG 로 그려
+ * imageUrl 로 카드에 얹는다(worksheet-view 는 imageUrl 을 w-full 읽기용 img 로 그린다).
+ * data:image/svg+xml + encodeURIComponent 로 담아 한글·#색코드·→ 가 안전하게 실린다.
+ * ────────────────────────────────────────────────────────────── */
+const GAME_LINK_ROWS: { fn: string[]; use: string }[] = [
+  { fn: ["turtle.Screen()", "setup·bgcolor·title"], use: "게임 화면(무대) 만들기" },
+  { fn: ["turtle.Turtle()", "shape · color"], use: "주인공·똥 모양과 색" },
+  { fn: ["penup()"], use: "선 없이 미끄러지기" },
+  { fn: ["goto(0, -250)", "setx"], use: "시작 위치·좌우 이동" },
+  { fn: ["forward · left · right"], use: "방향 바꾸기 (그림·연습)" },
+  { fn: ["time.sleep(초)"], use: "움직임 속도 조절" },
+];
+
+const GAME_LINK_ROW_SVG = GAME_LINK_ROWS.map((r, i) => {
+  const y = 90 + i * 56;
+  const c = y + 28;
+  const fill = i % 2 ? "#f8fafc" : "#ffffff";
+  const left =
+    r.fn.length === 2
+      ? `<text x="147" y="${c - 6}" text-anchor="middle" font-size="14" font-family="ui-monospace, monospace" fill="#0f172a">${r.fn[0]}</text>` +
+        `<text x="147" y="${c + 14}" text-anchor="middle" font-size="14" font-family="ui-monospace, monospace" fill="#0f172a">${r.fn[1]}</text>`
+      : `<text x="147" y="${c + 5}" text-anchor="middle" font-size="14" font-family="ui-monospace, monospace" fill="#0f172a">${r.fn[0]}</text>`;
+  return (
+    `<rect x="12" y="${y}" width="270" height="56" fill="${fill}" stroke="#e5e7eb"/>` +
+    `<rect x="318" y="${y}" width="270" height="56" fill="${fill}" stroke="#e5e7eb"/>` +
+    `<text x="300" y="${c + 7}" text-anchor="middle" font-size="20" fill="#9ca3af">→</text>` +
+    left +
+    `<text x="453" y="${c + 5}" text-anchor="middle" font-size="15" fill="#0f172a">${r.use}</text>`
+  );
+}).join("");
+
+const GAME_LINK_SVG =
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 440" ` +
+  `font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">` +
+  `<rect x="0" y="0" width="600" height="440" fill="#ffffff"/>` +
+  `<text x="300" y="28" text-anchor="middle" font-size="19" font-weight="700" fill="#111827">오늘 익힌 함수 → 게임에서 하는 일</text>` +
+  `<rect x="12" y="44" width="270" height="40" rx="6" fill="#fde68a" stroke="#f59e0b"/>` +
+  `<text x="147" y="70" text-anchor="middle" font-size="16" font-weight="700" fill="#92400e">오늘 배운 함수</text>` +
+  `<rect x="318" y="44" width="270" height="40" rx="6" fill="#bfdbfe" stroke="#3b82f6"/>` +
+  `<text x="453" y="70" text-anchor="middle" font-size="16" font-weight="700" fill="#1e40af">게임에서 하는 일</text>` +
+  GAME_LINK_ROW_SVG +
+  `</svg>`;
+
+const GAME_LINK_DIAGRAM = `data:image/svg+xml,${encodeURIComponent(GAME_LINK_SVG)}`;
+
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
@@ -373,21 +421,23 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   submitField("poke_submit_move", "⑥ 상대 이동·회전 — 코드 제출", "상대 이동·회전"),
 
-  /* ── ⑦ 게임과 연결 — 오늘 함수가 완성 게임 어디에 쓰이나 ── */
+  /* ── ⑦ 게임과 연결 — 오늘 함수가 완성 게임 어디에 쓰이나 (표/다이어그램) ── */
+  /*
+   * 매핑을 글로 나열하면 눈에 안 들어온다(교사 지적). 두 칸짜리 표(SVG)를 imageUrl 로 얹고,
+   * hint 는 표를 읽는 법 + 다음 시간 예고만 짧게 둔다.
+   */
   {
     key: "_poke_game_link",
     phase: "worksheet",
     label: "⑦ 오늘 익힌 함수가 게임의 어디에 쓰일까?",
     hint:
-      "오늘 쳐 본 함수들이 완성된 똥피하기 게임에서 어디에 쓰이는지 짚어 봐요:\n\n" +
-      "· screen.Screen() · setup · bgcolor · title  →  ① 무대(게임 화면) 만들기\n" +
-      "· turtle.Turtle() · shape · color  →  ② 주인공(square · green) 과 똥(circle · brown) 만들기\n" +
-      "· penup()  →  주인공·똥이 선을 안 남기고 미끄러지게\n" +
-      "· goto(0, -250) · setx  →  주인공 시작 위치 + 좌우 이동\n" +
-      "· forward · left · right  →  방향을 다루는 명령(그림·연습에 유용)\n\n" +
+      "오늘 쳐 본 함수들이 완성된 똥피하기 게임에서 어디에 쓰이는지 아래 표로 봐요.\n" +
+      "왼쪽이 오늘 배운 함수, 오른쪽이 게임에서 그 함수가 하는 일이에요.\n\n" +
       "오늘은 함수를 '하나씩 쳐 보고 값을 바꿔 보는' 날이었어요. 다음 시간부터 이 함수들을 합쳐서\n" +
       "주인공 움직이기 → 똥 떨어뜨리기 → 부딪힘 → 점수 순으로 게임을 만들어 갑니다!",
     kind: "note",
+    imageUrl: GAME_LINK_DIAGRAM,
+    imageAlt: "오늘 익힌 터틀 함수와 게임에서 하는 일을 짝지은 표",
     maxLength: 0,
   },
 ];
