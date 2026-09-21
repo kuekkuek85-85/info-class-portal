@@ -442,15 +442,18 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   ],
 
   /*
-   * 대기 게임을 비운다 (교사 확정 — 이 차시 대기는 아케이드 게임 대신 '최종 피드백 확인').
+   * 대기 단계를 쓰지 않는다 (교사 확정 — 기분 체크 뒤 곧바로 첫 활동으로).
    *
-   * 대기 화면(lesson/page.tsx viewPhase==="waiting")은 기분 체크를 먼저 띄우고, 그다음
-   * game.url 이 있으면 그 iframe 을, 없으면 중립 안내(placeholder)를 그린다. 학생별
-   * 5차 피드백(echo·[앱 감상]→[내 앱])은 활동지·감상 화면에서만 렌더되고 대기 화면에는
-   * 못 싣는다(CSP frame-src 'self' https: 라 data URI 카드도 불가). 그래서 아케이드 게임을
-   * 제거해 대기를 조용히 두고, '5차 최종 피드백 확인'은 수업이 시작되는 즉시(대기→최종
-   * 피드백 반영 단계) 첫 활동으로 오게 배치했다 — build 칸 맨 앞의 로그인 → echo(내 앱
-   * 소개·5차에 고친 것) → [앱 감상]→[내 앱](5차 동료 코멘트 재확인) 순서가 그것이다.
+   * 세션 시작 단계를 'mood' 로 연다(open-hai6-*). 그러면 학생은 대기(waiting) 화면
+   * (게임/placeholder)에 머물지 않고, 로그인 후 기분 체크(mood 단계: MoodPicker) → 곧바로
+   * build(최종 피드백 반영)로 넘어간다. game 은 대기 화면에서만 쓰이므로 비워 둔다 —
+   * 어차피 대기 단계를 지나지 않아 렌더될 자리가 없다.
+   *
+   * ※ 구조 제약: 대시보드 단계 버튼에서 '대기(waiting)' 를 **완전히 없앨 수는 없다**.
+   *   availablePhase(waiting) 가 기본 true 로 돌아오고, phaseOrder 에 안 적은 단계는
+   *   제거가 아니라 뒤에 붙기 때문이다(dashboard/page.tsx). 그래서 아래 phaseOrder 로
+   *   실제 흐름(mood→build→…)을 앞세우고 waiting 을 맨 뒤로 밀어 두었다. 시작 단계를
+   *   mood 로 여는 것과 합쳐, 학생 화면에는 대기 단계가 나타나지 않는다.
    */
   game: empty(),
   gameExplainer: empty(),
@@ -496,9 +499,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 단계 이름.
    *
    * build → grill → emotion 순서는 types.ts 의 LESSON_PHASES 가 정한 차례 그대로다
-   * (4차시와 같은 배치). 세 단계에 발표 준비 세 갈래를 얹는다. phaseOrder 는 쓰지 않는다 —
-   * 자연 순서가 이미 맞아서 순서를 바꿀 이유가 없다. gallery(받은 피드백)는 활동지 문항이
-   * 없고 [앱 감상] 탭으로만 열리므로 단계 버튼 이름만 참고로 둔다.
+   * (4차시와 같은 배치). 세 단계에 발표 준비 세 갈래를 얹는다. gallery(받은 피드백)는
+   * 활동지 문항이 없고 [앱 감상] 탭으로만 열리므로 단계 버튼 이름만 참고로 둔다.
    */
   phaseLabels: {
     progress: "오늘 할 일",
@@ -508,6 +510,18 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     emotion: "대본 쓰고 리허설",
     reflection: "회고",
   },
+
+  /*
+   * 단계 버튼 순서 (교사 확정 — 대기 단계를 흐름에서 뺀다).
+   *
+   * 대시보드는 [...phaseOrder, ...LESSON_PHASES 중 안 적은 것] 을 availablePhase 로 걸러
+   * 버튼을 만든다. 그래서 여기 적은 실제 흐름(mood→build→grill→gallery→emotion→reflection
+   * →done)이 앞에 오고, 여기 없는 waiting 은 맨 뒤로 밀린다. waiting 은 availablePhase 가
+   * 기본 true 라 버튼 자체를 없앨 수는 없지만(코드 변경 없이는 구조 고정), 세션을 mood 로
+   * 열어(open-hai6-*) 학생은 대기 화면을 지나지 않는다. phaseOrder 는 snapshotOf·open 스크립트
+   * 양쪽으로 세션에 실린다.
+   */
+  phaseOrder: ["mood", "build", "grill", "gallery", "emotion", "reflection", "done"],
 
   activity: {
     activityId: ACTIVITY_ID,
@@ -632,8 +646,10 @@ async function main(): Promise<void> {
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (2~5차시와 같음 — 지난 앱·답·받은 피드백이 그대로 열립니다)`);
   console.log(`차시 번호 ${LESSON_NO} (정보과와 안 겹치게)`);
-  console.log("단계: 대기(기분 체크만·게임 없음) → 오늘 할 일 → ①최종 피드백 반영(build) → ②발표 기준·자료(grill) → ③대본 쓰고 리허설(emotion) → 회고");
-  console.log("  ※ 대기 게임을 비웠습니다(game: empty). 기분 체크 뒤 대기 화면은 중립 안내만. 5차 최종 피드백 확인은 수업 시작 즉시 build 첫 활동으로: 로그인 → echo(내 앱·5차 수정) → [앱 감상]→[내 앱](5차 코멘트).");
+  console.log("단계: 기분 체크(mood) → ①최종 피드백 반영(build) → ②발표 기준·자료(grill) → 받은 피드백([앱 감상] 탭) → ③대본 쓰고 리허설(emotion) → 회고");
+  console.log("  ※ 대기(waiting) 단계를 흐름에서 뺐습니다. 세션을 mood 로 열어(open-hai6-*) 학생은 대기 화면(게임/placeholder)을 지나지 않고 기분 체크 뒤 곧바로 build 로 갑니다.");
+  console.log("  ※ phaseOrder=[mood,build,grill,gallery,emotion,reflection,done] — 대시보드 버튼을 이 순서로. waiting 은 availablePhase 기본 true 라 버튼 자체는 못 없애고 맨 뒤로 밀립니다(코드 변경 없이는 구조 고정). game 은 비움(대기 미사용).");
+  console.log("  ※ 5차 최종 피드백 확인은 build 첫 활동으로: 로그인 → echo(내 앱·5차 수정) → [앱 감상]→[내 앱](5차 코멘트).");
   console.log("  ※ 실제 발표는 6차가 아니라 7·8차 (한 차시 10~11명씩, 1인 약 2~3분). 6차는 준비만.");
   console.log("  ※ 5차 동료 검토 코멘트는 [앱 감상] 탭 → [내 앱] 에서 다시 읽힙니다 (galleryEnabled·같은 활동 ID). 앱 소개·5차 수정은 echo 로 이어받습니다.");
   console.log("  ※ grill 앞부분에 발표 필수 요소 체크리스트 + 동료평가·교사평가 기준을 note 로 배치(자료·대본 앞). 배점·시간은 교사 조정 가능 톤. 7·8차 평가 폼 재사용 가능.");

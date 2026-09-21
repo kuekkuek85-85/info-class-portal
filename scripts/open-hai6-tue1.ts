@@ -122,7 +122,13 @@ async function main(): Promise<void> {
     period: PERIOD,
     code,
     status: "scheduled",
-    phase: "waiting",
+    /*
+     * 시작 단계를 'mood' 로 연다 (교사 확정 — 대기 단계를 흐름에서 뺀다).
+     * 학생은 대기(waiting) 화면(게임/placeholder)을 지나지 않고, 로그인 → 기분 체크 →
+     * 곧바로 build(최종 피드백 반영)로 넘어간다. moodCheckEnabled 가 true 라 mood 단계가
+     * MoodPicker 를 띄운다.
+     */
+    phase: "mood",
     rehearsal: false,
     teacherNote: "",
     startedAt: null,
@@ -138,7 +144,8 @@ async function main(): Promise<void> {
     reflectionQuestions: p.reflectionQuestions,
     reflectionPublic: p.reflectionPublic,
     phaseLabels: p.phaseLabels ?? {},
-    // phaseOrder 는 6차 계획에 없다(자연 순서 build→grill→emotion 이 이미 맞음). 있으면 함께 실어 나른다
+    // 단계 버튼 순서. 6차 계획은 phaseOrder 로 대기를 흐름에서 뺀다 — 세션에 함께 실어 나른다
+    // (snapshotOf 도 같은 값을 싣는다; 여기서도 실어 화면·open 세션이 같은 순서가 되게)
     ...(p.phaseOrder ? { phaseOrder: p.phaseOrder } : {}),
     focusExempt: p.focusExempt ?? [],
     freeNavigation: p.freeNavigation ?? false,
@@ -167,7 +174,8 @@ async function main(): Promise<void> {
       ` ${act?.peerCount ?? 2}편` +
       ` · ${act?.galleryAssignedOnly ? "배정만 노출(자유 선택 없음)" : "전체 + 자유 선택"}`,
   );
-  console.log(`  대기 게임  ${(back.game as { url?: string })?.url ? "있음" : "없음(기분 체크만)"}`);
+  console.log(`  시작 단계  ${back.phase}${back.phase === "mood" ? " (대기 단계 건너뜀 — 기분 체크부터)" : ""}`);
+  console.log(`  단계 순서(phaseOrder)  ${Array.isArray(back.phaseOrder) ? (back.phaseOrder as string[]).join(" → ") : "없음(LESSON_PHASES 기본)"}`);
   process.exit(0);
 }
 
