@@ -539,30 +539,18 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * build(최종 피드백 반영)로 넘어간다. game 은 대기 화면에서만 쓰이므로 비워 둔다 —
    * 어차피 대기 단계를 지나지 않아 렌더될 자리가 없다.
    *
-   * ※ 구조 제약: 대시보드 단계 버튼에서 '대기(waiting)' 를 **완전히 없앨 수는 없다**.
-   *   availablePhase(waiting) 가 기본 true 로 돌아오고, phaseOrder 에 안 적은 단계는
-   *   제거가 아니라 뒤에 붙기 때문이다(dashboard/page.tsx). 그래서 아래 phaseOrder 로
-   *   실제 흐름(mood→build→…)을 앞세우고 waiting 을 맨 뒤로 밀어 두었다. 시작 단계를
-   *   mood 로 여는 것과 합쳐, 학생 화면에는 대기 단계가 나타나지 않는다.
+   * ※ 대기(waiting) 단추도 대시보드에서 없앤다. availablePhase(dashboard/page.tsx)가
+   *   "phaseOrder 를 명시했는데 waiting 이 없으면 대기 단추를 만들지 않는다"로 바뀌어,
+   *   아래 phaseOrder(waiting 없음)면 대기 단추가 뒤에 붙지 않는다. 시작 단계를 mood 로
+   *   여는 것과 합쳐, 교사 대시보드에도 학생 화면에도 대기 단계가 나타나지 않는다.
    */
   game: empty(),
   gameExplainer: empty(),
 
-  progress: {
-    heading: "오늘 할 일 (40분)",
-    body:
-      "지난 시간까지 각자 앱을 만들고, 내 눈 → AI → 선생님 → 친구 순으로 고쳐 왔어요.\n" +
-      "오늘은 그 앱을 남 앞에서 발표할 준비를 합니다. 실제 발표는 다음 시간(7·8차)에 해요.\n\n" +
-      "먼저 오늘 기분을 남기고, 화면이 넘어가면 맨 위 [캔바 열기] 를 누르세요.\n" +
-      "제일 먼저 지금까지 받은 세 가지 피드백(AI·선생님·친구)을 한자리에서 다시 읽습니다.\n\n" +
-      "① 최종 피드백 반영 — AI·선생님·친구 피드백을 다시 보고, 앱을 마지막으로 확정\n" +
-      "② 발표 기준·자료 만들기 — 꼭 들어갈 여섯 가지와 평가 기준을 보고, 캔바로 슬라이드 만들기\n" +
-      "③ 대본 쓰고 리허설 — 발표 대본을 쓰고, 소리 내어 연습\n" +
-      "④ 회고 — 짧게\n\n" +
-      "다음 시간에는 한 시간에 10~11명씩 나눠 발표해요. 한 사람당 약 2~3분입니다.\n" +
-      "오늘 발표 평가 기준도 미리 볼 수 있어요 — 그 기준대로 준비하면 됩니다.",
-    url: "",
-  },
+  // '오늘 할 일'(progress) 단계는 두지 않는다 (교사 확정 — 뒤에 붙는 안내 단추를 뺀다).
+  // 오늘 흐름 안내는 mood 뒤 첫 활동(build)과 grill 의 note 로 충분하다. 비워 두면
+  // availablePhase(progress)=hasContent 가 false 라 대시보드에 progress 단추가 안 생긴다.
+  progress: empty(),
   assessment: empty(),
   video: empty(),
 
@@ -593,7 +581,6 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 활동지 문항이 없고 [앱 감상] 탭으로만 열리므로 단계 버튼 이름만 참고로 둔다.
    */
   phaseLabels: {
-    progress: "오늘 할 일",
     build: "최종 피드백 반영 (AI·선생님·친구)",
     grill: "발표 기준·자료 만들기",
     gallery: "받은 피드백 보기",
@@ -602,14 +589,13 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   },
 
   /*
-   * 단계 버튼 순서 (교사 확정 — 대기 단계를 흐름에서 뺀다).
+   * 단계 버튼 순서 (교사 확정 — 대기·오늘할일 단계를 흐름에서 뺀다).
    *
    * 대시보드는 [...phaseOrder, ...LESSON_PHASES 중 안 적은 것] 을 availablePhase 로 걸러
-   * 버튼을 만든다. 그래서 여기 적은 실제 흐름(mood→build→grill→gallery→emotion→reflection
-   * →done)이 앞에 오고, 여기 없는 waiting 은 맨 뒤로 밀린다. waiting 은 availablePhase 가
-   * 기본 true 라 버튼 자체를 없앨 수는 없지만(코드 변경 없이는 구조 고정), 세션을 mood 로
-   * 열어(open-hai6-*) 학생은 대기 화면을 지나지 않는다. phaseOrder 는 snapshotOf·open 스크립트
-   * 양쪽으로 세션에 실린다.
+   * 버튼을 만든다. 여기 적은 실제 흐름(mood→build→grill→gallery→emotion→reflection→done)만
+   * 단추로 뜬다. waiting 은 여기 없고 availablePhase 가 "phaseOrder 에 waiting 없으면 숨김"
+   * 으로 바뀌어 안 뜬다. progress(오늘 할 일)·assessment 는 내용을 비워(empty) hasContent
+   * 가 false 라 역시 안 뜬다. phaseOrder 는 snapshotOf·open 스크립트 양쪽으로 세션에 실린다.
    */
   phaseOrder: ["mood", "build", "grill", "gallery", "emotion", "reflection", "done"],
 
@@ -737,8 +723,8 @@ async function main(): Promise<void> {
   console.log(`\n활동 ID: ${ACTIVITY_ID} (2~5차시와 같음 — 지난 앱·답·받은 피드백이 그대로 열립니다)`);
   console.log(`차시 번호 ${LESSON_NO} (정보과와 안 겹치게)`);
   console.log("단계: 기분 체크(mood) → ①최종 피드백 반영(build) → ②발표 기준·자료(grill) → 받은 피드백([앱 감상] 탭) → ③대본 쓰고 리허설(emotion) → 회고");
-  console.log("  ※ 대기(waiting) 단계를 흐름에서 뺐습니다. 세션을 mood 로 열어(open-hai6-*) 학생은 대기 화면(게임/placeholder)을 지나지 않고 기분 체크 뒤 곧바로 build 로 갑니다.");
-  console.log("  ※ phaseOrder=[mood,build,grill,gallery,emotion,reflection,done] — 대시보드 버튼을 이 순서로. waiting 은 availablePhase 기본 true 라 버튼 자체는 못 없애고 맨 뒤로 밀립니다(코드 변경 없이는 구조 고정). game 은 비움(대기 미사용).");
+  console.log("  ※ 대기(waiting)·오늘할일(progress) 단계를 흐름·대시보드 단추에서 뺐습니다. 세션을 mood 로 열어(open-hai6-*) 학생은 대기 화면을 지나지 않고 기분 체크 뒤 곧바로 build 로 갑니다.");
+  console.log("  ※ phaseOrder=[mood,build,grill,gallery,emotion,reflection,done] — 대시보드 버튼을 이 순서로. waiting 은 availablePhase 가 'phaseOrder 에 waiting 없으면 숨김'으로 바뀌어 안 뜨고, progress·assessment 는 내용 비움(empty)이라 안 뜹니다. game 도 비움(대기 미사용).");
   console.log("  ※ build 에서 세 피드백을 한자리에 노출: (1)AI = artifact.answers[\"ai_review\"](3차 저장)을 ai_review 문항으로 재현, (2)선생님 = teacherFeedback.note 를 teacher_note 로, (3)친구 = 피드백 문서(활동ID__학번)를 [앱 감상]→[내 앱] 으로. 각 블록에 라벨.");
   console.log("  ※ AI 피드백은 3차 ai_review 저장값이 있는 학생만 바로 떠 있음(없으면 지금 새로 받기 버튼). 재실행 시 지금 앱으로 새 질문을 받고 저장값을 덮어씀(이름·학번 미전송).");
   console.log("  ※ 실제 발표는 6차가 아니라 7·8차 (한 차시 10~11명씩, 1인 약 2~3분). 6차는 준비만. 개인(1인) 프로젝트 — '모둠' 문구는 '친구'로 정리.");
