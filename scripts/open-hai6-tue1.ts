@@ -124,9 +124,9 @@ async function main(): Promise<void> {
     status: "scheduled",
     /*
      * 시작 단계를 'mood' 로 연다 (교사 확정 — 대기 단계를 흐름에서 뺀다).
-     * 학생은 대기(waiting) 화면(게임/placeholder)을 지나지 않고, 로그인 → 기분 체크 →
-     * 곧바로 build(최종 피드백 반영)로 넘어간다. moodCheckEnabled 가 true 라 mood 단계가
-     * MoodPicker 를 띄운다.
+     * 학생은 대기(waiting) 화면(게임/placeholder)을 지나지 않고, 기분 체크 →
+     * 곧바로 grill(발표 자료 만들기: 캔바 로그인부터)로 넘어간다. moodCheckEnabled 가 true 라
+     * mood 단계가 MoodPicker 를 띄운다.
      */
     phase: "mood",
     rehearsal: false,

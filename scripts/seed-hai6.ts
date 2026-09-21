@@ -8,10 +8,9 @@
  * 5차시까지 각자 앱을 하나씩 만들고, 내 눈 → AI → 선생님 → 친구(동료 검토) 순으로
  * 고쳐 왔다. 6차시는 그 앱을 **남 앞에서 발표할 준비**를 한다.
  *
- *   ① 발표 자료 만들기 — 캔바 로그인 → 앱 소개·링크·개선점 확정 → 발표 필수 요소·평가
- *      기준 확인 → 캔바로 발표 슬라이드 제작.
- *   ② 받은 피드백 보기 — [앱 감상] 에서 친구가 남긴 피드백을 참고로 훑는다.
- *   ③ 대본 쓰고 리허설 — 발표 대본을 쓰고, 혼자 조용히 읽어 보며 연습한다.
+ *   ① 발표 자료 만들기 — 캔바 로그인 → 앱 소개·링크·개선점 확정 → 지금까지 받은 피드백
+ *      참고 표 → 발표 필수 요소·평가 기준 확인 → 캔바로 발표 슬라이드 제작.
+ *   ② 대본 쓰고 리허설 — 발표 대본을 쓰고, 혼자 조용히 읽어 보며 연습한다.
  *
  * 오늘 목표는 **구현이 아니라 발표 준비**다. 피드백은 참고만 하고 앱을 크게 고치지 않는다 —
  * 못 반영한 것은 발표의 '앞으로 개선할 점' 으로 말하면 된다.
@@ -21,14 +20,17 @@
  * 발표한다" 를 넣어 학생이 실제 발표를 대비하게 한다. 1인 발표 시간(약 2~3분)과 발표 필수
  * 요소·평가 기준은 안내(note)로 미리 보여 준다 — 숫자·배점은 교사가 조정할 수 있다는 톤.
  *
- * ## 받은 피드백은 [앱 감상] 한 곳에서만 본다 ('최종 피드백 반영' 단계는 없앴다)
+ * ## 받은 피드백은 grill 안 참고 표로 본다 ('받은 피드백 보기'·'최종 피드백 반영' 단계는 없앴다)
  *
  * 이 앱은 개인(1인) 발표 프로젝트다. AI·교사·동료 3차에 걸쳐 받은 피드백은 3~5차에서 이미
- * 봤다. 6차에 이를 다시 한자리에 모으던 '최종 피드백 반영'(build) 단계는 [앱 감상](gallery)
- * 단계와 중복이라 없앴다(교사 확정). 친구 피드백만 [앱 감상] 탭 → [내 앱] 에서 참고로 훑고
- * (활동 ID 가 2~5차와 같아 5차 코멘트가 그대로 열린다), AI·교사 피드백은 6차에서 다시
- * 노출하지 않는다. 발표 준비에 필요한 앱 소개·링크·개선점은 발표 자료 만들기(grill) 맨 앞에서
- * 확정한다. 서로 구경하기 설정(배정·노출 칸·피드백 문구)은 5차와 똑같이 둔다(익명·성찰 비노출 유지).
+ * 봤다. 6차에 이를 다시 한자리에 모으던 '최종 피드백 반영'(build) 단계는 없앴고, 이번에는
+ * '받은 피드백 보기'([앱 감상]/gallery) 단계도 없앴다(교사 확정 — [앱 감상] 탭이 발표 준비
+ * 흐름을 끊었다). 대신 지금까지 받은 피드백 셋(🤖 AI · 🧑‍🏫 선생님 · 🧑‍🤝‍🧑 친구)을 발표 자료
+ * 만들기(grill) 안에 **읽기 전용 참고 표**(received_feedback 문항)로 한자리에 편다. 데이터는
+ * /api/student/received-feedback 에서 **본인 것만** 온다 — AI 는 내 answers["ai_review"],
+ * 선생님은 내 teacherFeedback, 친구는 내 작품에 달린 동료 피드백(작성자 신원은 안 실림).
+ * 활동 ID 가 2~5차와 같아 그때 받은 것이 그대로 열린다. 앱 소개·링크·개선점은 grill 맨 앞에서
+ * 확정한다. 서로 구경하기(gallery)는 꺼서 [앱 감상] 탭·단추를 닫는다(privacy — 남의 담벼락 비노출).
  *
  * ## 캔바 초대 주소 — .env.local 에서만 읽는다
  *
@@ -98,11 +100,11 @@ const WORKSHEET: WorksheetQuestion[] = [
   /*
    * ── ① 발표 준비 시작 — 캔바 로그인 · 앱 확정 (grill 칸) ─────────
    *
-   * '최종 피드백 반영'(build) 단계는 없앴다 — 받은 피드백 다시보기가 아래 [앱 감상](gallery)
-   * 단계와 중복이라(교사 확정). 대신 발표 준비에 꼭 필요한 것 — 캔바 로그인 · 확정 앱 소개 ·
-   * 최종 앱 링크 · 개선점 한 줄 — 을 발표 자료 만들기(grill) 맨 앞으로 옮겨 둔다. 로그인을
-   * 제일 위에 둔다(3~5차와 같은 이유 — 제일 오래 걸리는 일을 먼저). 오늘 목표는 구현이 아니라
-   * 발표 준비다. AI·선생님 피드백은 3~5차에서 이미 봤고, 친구 피드백은 [앱 감상] 단계에서 본다.
+   * '최종 피드백 반영'(build)·'받은 피드백 보기'([앱 감상]/gallery) 단계는 없앴다(교사 확정).
+   * 발표 준비에 꼭 필요한 것 — 캔바 로그인 · 확정 앱 소개 · 최종 앱 링크 · 개선점 한 줄 — 을
+   * 발표 자료 만들기(grill) 맨 앞으로 옮겨 둔다. 로그인을 제일 위에 둔다(3~5차와 같은 이유 —
+   * 제일 오래 걸리는 일을 먼저). 오늘 목표는 구현이 아니라 발표 준비다. 그다음 지금까지 받은
+   * 피드백 셋(AI·선생님·친구)을 grill 안 참고 표(_l6_received)로 한자리에서 훑고 자료를 만든다.
    */
   {
     key: "_l6_login",
@@ -172,6 +174,28 @@ const WORKSHEET: WorksheetQuestion[] = [
       "예) (반영) 첫 화면에 앱 이름과 한 줄 설명을 넣었어요 / (앞으로) 알림 기능을 더 넣고 싶어요",
     kind: "long",
     maxLength: 200,
+  },
+  {
+    key: "_l6_received",
+    phase: "grill",
+    /*
+     * 지금까지 받은 피드백 셋(AI·선생님·친구)을 한 표로 참고용으로 편다.
+     *
+     * '받은 피드백 보기'(gallery) 단계를 없애고(교사 확정 — [앱 감상] 탭이 발표 준비 흐름을
+     * 끊었다), 그 자리를 여기로 옮겼다. 로그인·앱 확정(①②③) 다음, 발표 필수 요소·슬라이드
+     * 만들기(④~⑥) 앞에 두어 **피드백을 보고 자료를 만들게** 한다. 읽기 전용 — 데이터는
+     * /api/student/received-feedback 에서 **본인 것만** 온다(친구 신원 비노출, received-feedback-panel).
+     * 오늘 목표는 고치는 게 아니라 참고다.
+     */
+    label: "지금까지 받은 피드백 (참고) — 🤖 AI · 🧑‍🏫 선생님 · 🧑‍🤝‍🧑 친구",
+    hint:
+      "3~5차에 걸쳐 받은 피드백을 한자리에 모았어요. 아래 표를 참고해 발표 자료와 대본을 준비하세요.\n" +
+      "오늘은 이걸 다시 고치는 시간이 아니라 참고하는 시간이에요 — 지금 바로 반영할 수 있는 건 위\n" +
+      "③ 개선점 칸에 적고, 못 한 건 발표의 ‘앞으로 개선할 점’ 으로 말하면 됩니다.\n" +
+      "· 내가 받은 것만 보여요. 친구가 누구인지는 나오지 않아요.\n" +
+      "· 아직 받은 게 없으면 비어 있을 수 있어요 — 괜찮아요.",
+    kind: "received_feedback",
+    maxLength: 0,
   },
 
   /*
@@ -446,40 +470,43 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   /*
    * 만들기·검토 단계에서 캔바로 나가는 것은 활동 자체라 이탈로 세지 않는다.
-   * 발표 슬라이드도 캔바로 만들고, 받은 피드백도 [앱 감상] 으로 연다 — gallery 도 면제에 넣는다.
+   * 발표 슬라이드도 캔바로 만든다. 받은 피드백은 이제 grill 안 표(received_feedback)로 보므로
+   * [앱 감상](gallery) 단계는 없앴다 — 면제 목록에서도 gallery 를 뺀다.
    */
-  focusExempt: ["grill", "emotion", "worksheet", "gallery"],
+  focusExempt: ["grill", "emotion", "worksheet"],
 
-  // 오늘도 캔바·받은 피드백을 여러 번 드나든다. 앞뒤 칸으로 오갈 수 있어야 한다
+  // 오늘도 캔바를 여러 번 드나든다. 앞뒤 칸으로 오갈 수 있어야 한다
   freeNavigation: true,
 
   /*
    * 단계 이름.
    *
    * grill → emotion 순서는 types.ts 의 LESSON_PHASES 가 정한 차례 그대로다. grill 에 발표 준비
-   * 대부분(로그인·앱 확정·필수 요소·평가 기준·슬라이드)을, emotion 에 대본·리허설을 얹는다.
-   * gallery(받은 피드백)는 활동지 문항이 없고 [앱 감상] 탭으로만 열리므로 단계 버튼 이름만
-   * 참고로 둔다. build(최종 피드백 반영)는 gallery 와 중복이라 없앴다.
+   * 대부분(로그인·앱 확정·받은 피드백 참고 표·필수 요소·평가 기준·슬라이드)을, emotion 에
+   * 대본·리허설을 얹는다. gallery(받은 피드백 보기) 단계는 없앴다 — 받은 피드백은 이제 grill 안
+   * 표(received_feedback 문항)로 보고, build(최종 피드백 반영)도 앞서 없앴다.
    */
   phaseLabels: {
     grill: "발표 자료 만들기",
-    gallery: "받은 피드백 보기",
     emotion: "대본 쓰고 리허설",
     reflection: "회고",
   },
 
   /*
-   * 단계 버튼 순서 (교사 확정 — 대기·오늘할일·최종피드백반영 단계를 흐름에서 뺀다).
+   * 단계 버튼 순서 (교사 확정 — 대기·오늘할일·최종피드백반영·받은피드백보기 단계를 흐름에서 뺀다).
    *
    * 대시보드는 [...phaseOrder, ...LESSON_PHASES 중 안 적은 것] 을 availablePhase 로 걸러
-   * 버튼을 만든다. 여기 적은 실제 흐름(mood→grill→gallery→emotion→reflection→done)만 단추로
-   * 뜬다. build(최종 피드백 반영)는 [앱 감상](gallery)과 중복이라 없앴다 — 그 단계의 필수 항목
-   * (로그인·앱 소개·앱 링크·개선점)은 grill 로 옮겨, build 에 남은 문항이 없어 단추가 안 뜬다.
+   * 버튼을 만든다. 여기 적은 실제 흐름(mood→grill→emotion→reflection→done)만 단추로 뜬다.
+   * gallery(받은 피드백 보기)는 없앴다 — 받은 피드백을 grill 안 표(received_feedback)로 옮겼고,
+   * gallery 단추는 phaseOrder 에서 빼는 것만으로는 안 사라진다(availablePhase 가 galleryEnabled
+   * 로 판단해 뒤에 붙는다). 그래서 아래 activity.galleryEnabled 를 false 로 두어 교사 대시보드·
+   * 학생 [앱 감상] 탭 양쪽에서 닫는다. build(최종 피드백 반영)는 앞서 없앴다 — 필수 항목
+   * (로그인·앱 소개·앱 링크·개선점)은 grill 로 옮겨 build 에 남은 문항이 없어 단추가 안 뜬다.
    * waiting 은 여기 없고 availablePhase 가 "phaseOrder 에 waiting 없으면 숨김"으로 바뀌어 안
    * 뜬다. progress(오늘 할 일)·assessment 는 내용을 비워(empty) 안 뜬다. phaseOrder 는
    * snapshotOf·open 스크립트 양쪽으로 세션에 실린다.
    */
-  phaseOrder: ["mood", "grill", "gallery", "emotion", "reflection", "done"],
+  phaseOrder: ["mood", "grill", "emotion", "reflection", "done"],
 
   activity: {
     activityId: ACTIVITY_ID,
@@ -492,14 +519,19 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     sourcesEnabled: false,
 
     /*
-     * 서로 구경하기를 켠 채로 둔다 (5차와 같음).
+     * 서로 구경하기(gallery)를 끈다 — [앱 감상] 단계를 없앤다 (교사 확정).
      *
-     * 오늘은 새로 검토하는 시간이 아니지만, 5차에 받은 동료 검토 코멘트를 [앱 감상] 탭 →
-     * [내 앱] 에서 다시 읽게 하려면 이 값이 true 여야 한다(gallery 라우트의 received).
-     * 같은 활동 ID 라 5차 코멘트가 그대로 남아 있다. 설정은 5차와 똑같이 두어 privacy 를
-     * 유지한다 — 배정 3편만 노출, 앱 소개 칸만 열기, 좋은 점·개선점 두 칸.
+     * 받은 동료 피드백은 이제 [앱 감상] 탭이 아니라 grill 안의 참고 표(received_feedback 문항 →
+     * /api/student/received-feedback)로 본다. 그 조회는 **내 작품에 달린 피드백만** 읽고 남의
+     * 작품 목록을 열지 않으므로 galleryEnabled 에 기대지 않는다. 5차와 같은 활동 ID 라 그때
+     * 받은 코멘트가 그대로 표에 열린다.
+     *
+     * false 로 두는 것이 privacy 상 더 안전하고(남의 작품 담벼락이 아예 안 열린다), 동시에
+     * 교사 대시보드의 [앱 감상] 단추와 학생 [앱 감상] 탭을 함께 닫는다(availablePhase·canShare 가
+     * 이 값을 본다). 아래 peerAssign·galleryAnswerKeys 등 서로구경 설정은 gallery 를 끄면
+     * 작동하지 않지만, 5차 privacy 설정을 기록으로 남겨 둔다(다시 켤 일이 있으면 그대로 쓴다).
      */
-    galleryEnabled: true,
+    galleryEnabled: false,
     peerAssign: "random",
     peerCount: 3,
     galleryAssignedOnly: true,
@@ -509,8 +541,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     worksheetTabLabel: "발표 준비",
 
     /*
-     * 친구에게 보여줄 답 칸(privacy — 5차와 같다). 앱 주소 + 앱 소개·기획 칸만 연다.
-     * 성찰·회고·대본 칸은 목록에 없어 안 나간다. 익명 유지(galleryShowNames 안 켠다).
+     * 친구에게 보여줄 답 칸(privacy — 5차와 같다). gallery 를 끈 오늘은 쓰이지 않지만,
+     * 앱 주소 + 앱 소개·기획 칸만 여는 범위를 기록으로 남긴다. 성찰·회고·대본은 목록 밖이다.
      */
     galleryAnswerKeys: [
       "problem_who",
@@ -529,8 +561,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     },
 
     /*
-     * 친구 앱에 남기는 두 칸의 문구(5차와 같음). 오늘은 주로 [내 앱] 을 읽지만, [친구 앱] 을
-     * 참고로 보다 한마디 남길 수도 있어 문구를 그대로 둔다 — 폼 필드 자체는 코드라 안 건드린다.
+     * 친구 앱에 남기는 두 칸의 문구(5차와 같음). gallery 를 끈 오늘은 안 쓰이지만, 5차 검토에서
+     * 쌓인 좋은 점·개선점 두 칸이 grill 참고 표(친구 줄)에 그대로 열리므로 라벨을 남겨 둔다.
      */
     feedbackPrompts: {
       found: {
@@ -604,17 +636,17 @@ async function main(): Promise<void> {
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (2~5차시와 같음 — 지난 앱·답·받은 피드백이 그대로 열립니다)`);
   console.log(`차시 번호 ${LESSON_NO} (정보과와 안 겹치게)`);
-  console.log("단계: 기분 체크(mood) → 발표 자료 만들기(grill: ①캔바로그인 ②앱소개 ③개선점 ④필수요소 ⑤평가기준 ⑥슬라이드) → 받은 피드백([앱 감상] 탭) → ⑦⑧대본·리허설(emotion) → 회고");
-  console.log("  ※ 대기(waiting)·오늘할일(progress)·최종피드백반영(build) 단계를 흐름·대시보드 단추에서 뺐습니다. build 는 [앱 감상](gallery)과 중복이라 제거 — 필수 항목(로그인·앱소개·앱링크·개선점)은 grill 맨 앞으로 옮김. 세션을 mood 로 열어 학생은 대기 화면 없이 기분 체크 뒤 곧바로 발표 준비로 갑니다.");
-  console.log("  ※ phaseOrder=[mood,grill,gallery,emotion,reflection,done]. waiting 은 'phaseOrder 에 waiting 없으면 숨김'으로 안 뜨고, progress·assessment·build 는 문항/내용이 없어 안 뜹니다. game 도 비움.");
-  console.log("  ※ 받은 피드백은 [앱 감상](gallery) 단계에서 친구 피드백을 본다. AI·선생님 피드백은 3~5차에서 이미 봤으므로 6차에서는 다시 노출하지 않는다(오늘 목표=발표 준비).");
+  console.log("단계: 기분 체크(mood) → 발표 자료 만들기(grill: ①캔바로그인 ②앱소개 ③개선점 · 받은 피드백 참고 표 · ④필수요소 ⑤평가기준 ⑥슬라이드) → ⑦⑧대본·리허설(emotion) → 회고");
+  console.log("  ※ 대기(waiting)·오늘할일(progress)·최종피드백반영(build)·받은피드백보기(gallery) 단계를 흐름·대시보드 단추에서 뺐습니다. 받은 피드백은 grill 안 참고 표(received_feedback 문항)로 옮김 — build 는 앞서 제거, gallery 는 이번에 제거. 세션을 mood 로 열어 학생은 대기 화면 없이 기분 체크 뒤 곧바로 발표 준비로 갑니다.");
+  console.log("  ※ phaseOrder=[mood,grill,emotion,reflection,done]. gallery 단추는 phaseOrder 에서 빼는 것만으로는 안 사라져(availablePhase 가 galleryEnabled 로 판단), activity.galleryEnabled=false 로 두어 교사 대시보드·학생 [앱 감상] 탭을 함께 닫음. waiting·progress·assessment·build 는 문항/내용이 없어 안 뜸. game 도 비움.");
+  console.log("  ※ 지금까지 받은 피드백(🤖 AI · 🧑‍🏫 선생님 · 🧑‍🤝‍🧑 친구)을 grill 안 읽기 전용 참고 표(received_feedback)로 한자리에 편다. 데이터는 /api/student/received-feedback — 본인 것만, 친구 신원 비노출. 오늘 목표는 고치는 게 아니라 참고.");
   console.log("  ※ 실제 발표는 6차가 아니라 7·8차 (한 차시 10~11명씩, 1인 약 2~3분). 6차는 준비만. 개인(1인) 프로젝트 — '모둠' 문구는 '친구'로 정리.");
   console.log("  ※ grill 앞부분: 발표 필수 요소 체크리스트 + 평가 기준. 동료평가는 '작품(앱)' 정량 2개(유용성·완성도)만, 전달력·전체 인상은 교사평가 루브릭으로. 배점·시간 교사 조정 가능.");
   console.log("  ※ 오늘 목표는 구현이 아니라 발표 준비 — 피드백은 참고, 크게 안 고쳐도 됨. 못 반영한 것은 발표의 '앞으로 개선할 점'(fix6)으로. 리허설은 혼자 조용히(입속말) 읽어 보는 톤.");
   console.log(`  ※ 발표자료 만들기(_l6_slides_intro)에 캔바 발표 템플릿 링크(새 탭) 연결: ${CANVA_SLIDE_TEMPLATE_URL} — 분반 공용 공개 단축링크(linkUrl, linkUrlByGroup 아님). 로그인 링크와 별개.`);
   console.log("  ※ 대본은 필수 요소 순서(도입-문제-해결-기능-시연-개선-마무리) 틀을 prefill, long 이라 자동 저장.");
-  console.log("  ※ 새 키: fix6(최종 수정)·final_pitch(확정 소개)·slides_url(발표자료 링크)·script(대본)·rehearsal_done(리허설 체크). build_url 은 그대로 앱 링크.");
-  console.log("서로 구경하기를 켰습니다 (galleryEnabled: true, 5차와 같은 privacy 설정).");
+  console.log("  ※ 새 키: fix6(최종 수정)·final_pitch(확정 소개)·slides_url(발표자료 링크)·script(대본)·rehearsal_done(리허설 체크)·_l6_received(받은 피드백 참고 표). build_url 은 그대로 앱 링크.");
+  console.log("서로 구경하기(gallery)를 껐습니다 (galleryEnabled: false) — [앱 감상] 단계 제거. 받은 피드백은 grill 안 참고 표로 봅니다.");
   process.exit(0);
 }
 
