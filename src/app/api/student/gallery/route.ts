@@ -303,7 +303,13 @@ export async function GET() {
       works,
       mine: mine
         ? {
-            ...toCard(mine, "내 작품"),
+            /*
+             * 내 작품 카드도 **공유 범위(allowKeys)로 좁힌다.** 감상은 캘리그래피만 여는데
+             * 내 카드에 나 전달법·갈등 분석 같은 다른 활동 답까지 뜨면, 감상 화면이 활동지
+             * 전체로 번진다(교사 지적). allowKeys 를 안 정한 차시는 전부 보이던 그대로.
+             * CardNews 는 답이 빈 문항을 건너뛰므로, 좁히면 그 문항은 아예 안 나온다.
+             */
+            ...toCard(mine, "내 작품", allowKeys),
             status: mine.status,
             counts: byArtifact.get(mine.id)?.counts ?? {},
           }
