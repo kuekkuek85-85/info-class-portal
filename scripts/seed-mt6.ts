@@ -527,10 +527,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   progress: {
     heading: "오늘 할 일 — 효과적인 의사소통과 공감",
     body:
-      "[활동4] 효과적인 의사소통\n" +
+      "효과적인 의사소통\n" +
       " ① 언어·비언어·목소리 톤  ② 나 전달법(I-message)  ③ 갈등 상황 분석\n" +
       " ④ 관계 캘리그래피 — Canva 로 덕목 표현하기\n\n" +
-      "[활동5] 공감 문장·감정 대화\n" +
+      "공감 문장·감정 대화\n" +
       " ① 공감 문장 만들기  ② 감정 말풍선 채우기  ③ 감정 대화 이어가기\n" +
       " ④ 만화 생성 프롬프트 정리 — 실제 생성은 선생님 시연/외부 도구",
     url: "",
@@ -564,8 +564,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   phaseLabels: {
     mood: "마음 체크인",
     progress: "오늘 할 일",
-    wrapmap: "활동4 · 효과적인 의사소통",
-    wrapheal: "활동5 · 공감 문장·감정 대화",
+    wrapmap: "효과적인 의사소통",
+    wrapheal: "공감 문장·감정 대화",
     grill: "감정 위로 챗봇",
     reflection: "마음일기",
   },
