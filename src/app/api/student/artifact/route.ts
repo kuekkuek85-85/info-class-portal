@@ -185,7 +185,20 @@ export async function POST(request: Request) {
 
     if (body.answers && typeof body.answers === "object") {
       const allowed = new Map((activity.worksheet ?? []).map((q) => [q.key, q]));
+      /*
+       * 서버가 직접 쓰는 AI 칸은 클라이언트 자동저장 경로에서 통째로 뺀다. 이 값들은 전용
+       * 라우트(comfort-bot·emotion·ai-feedback)가 answers[key] 에 큰 JSON 으로 통째로 쓴다.
+       *  ① maxLength 가 0 이라 아래에서 500자로 잘리면 대화·결과 JSON 이 깨진다 —
+       *     감정 위로/감정 대화 챗봇의 멀티턴 대화가 둘째 턴에서 리셋되던 원인이 이것이다.
+       *  ② 병합 저장(merge)에 클라이언트의 옛 값을 실으면, 그 사이 라우트가 새로 쓴 턴을 덮어쓴다.
+       * 그래서 쓰기 맵에서 아예 지운다 — merge 저장이 서버의 현재 값을 그대로 보존한다.
+       */
+      const serverOwned = (kind?: string) =>
+        kind === "comfort_bot" || kind === "emotion_lens" || kind === "ai_feedback";
       const answers: Record<string, string> = { ...(artifact.answers ?? {}) };
+      for (const q of activity.worksheet ?? []) {
+        if (serverOwned(q.kind)) delete answers[q.key];
+      }
       for (const [key, value] of Object.entries(body.answers)) {
         // confirmLock 동반 키(<질문키>__locked): 활동지 문항 목록엔 없지만, 이 값이
         // 저장돼야 새로고침 뒤에도 「확정」 잠금이 유지된다(worksheet-view 의 locked 판정).
@@ -198,6 +211,8 @@ export async function POST(request: Request) {
         const question = allowed.get(key);
         // 활동지에 없는 키는 버린다 — 문서에 임의의 필드가 쌓이는 것을 막는다
         if (!question || question.kind === "traits") continue;
+        // 서버가 직접 쓰는 AI 칸은 클라이언트가 못 덮는다 (위 설명 — 잘림·덮어쓰기 방지)
+        if (serverOwned(question.kind)) continue;
         // 주소 칸(build_url·song_url 등, URL_ANSWER_KEYS)은 스킴이 빠지면 눌러도 안 열린다 —
         // 저장할 때 https:// 를 채운다
         const cleaned = URL_ANSWER_KEYS.has(key) ? normalizeUrl(String(value ?? "")) : String(value ?? "");

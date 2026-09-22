@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { AiReviewPanel } from "@/components/ai-review-panel";
+import { AiFeedbackPanel } from "@/components/ai-feedback-panel";
 import { ComfortBotPanel } from "@/components/comfort-bot-panel";
 import { EmotionLensPanel } from "@/components/emotion-lens-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
@@ -935,6 +936,19 @@ export function WorksheetView({
               disabled={disabled}
               notice={question.botNotice}
             />
+          ) : question.kind === "ai_feedback" ? (
+            /*
+              나 전달법·공감 문장·갈등 분석에 AI 가 따뜻한 피드백을 준다. 형식이 잘 갖춰졌으면
+              "잘했어요", 부족하면 어느 부분을 어떻게 고칠지 힌트 — 채점이 아니다. 서버가 앞 칸
+              답을 모아 보내고(학번·이름 제외), 위기 신호는 Gemini 앞에서 막는다
+              (ai-feedback-panel · /api/student/ai-feedback).
+            */
+            <AiFeedbackPanel
+              questionKey={question.key}
+              raw={value.answers[question.key] ?? ""}
+              onResult={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
           ) : question.kind === "emotion_quiz" ? (
             <EmotionQuiz
               question={question}
@@ -1025,9 +1039,26 @@ export function WorksheetView({
               const lockKey = `${question.key}__locked`;
               const locked =
                 question.confirmLock === true && (value.answers[lockKey] ?? "") === "1";
+              /*
+                보기를 다른 문항의 답에 따라 바꾸는 문항(choicesBySource)이면, 그 소스 칸의 답
+                (고른 상황 라벨)으로 보기를 고른다. 소스를 아직 안 골랐으면 보기 대신 안내만 뜬다
+                (마음 톡톡 6회기 갈등 입장 고르기).
+              */
+              const dyn = question.choicesBySource;
+              const dynSource = dyn ? (value.answers[dyn.sourceKey] ?? "").trim() : "";
+              const effectiveChoices = dyn
+                ? dynSource
+                  ? dyn.optionsByMatch[dynSource] ?? []
+                  : []
+                : question.choices ?? [];
               return (
                 <div className="flex flex-col gap-2" id={`ws-${question.key}`}>
-                  {(question.choices ?? []).map((choice) => {
+                  {dyn && !dynSource && (
+                    <p className="t-note">
+                      먼저 위에서 상황을 하나 골라 주세요. 그러면 그 상황의 입장이 여기에 나와요.
+                    </p>
+                  )}
+                  {effectiveChoices.map((choice) => {
                     const on = chosen === choice;
                     // 잠기면 고른 것만 남기고 나머지 보기는 감춘다
                     if (locked && !on) return null;

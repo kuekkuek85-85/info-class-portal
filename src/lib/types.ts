@@ -594,6 +594,15 @@ export interface WorksheetQuestion {
      * 있어요" 를 명확히 띄운다(투명성). 위기 신호는 Gemini 앞에서 멈추고 교사에게 알린다.
      */
     | "comfort_bot"
+    /**
+     * ai_feedback — 학생이 쓴 답에 AI(Gemini)가 따뜻한 피드백을 준다 (마음 톡톡 6회기 나 전달법·갈등).
+     * 버튼을 누르면 feedbackFields 로 지정한 앞 칸의 답을 모아 Gemini 에 보내고, 형식이 잘 갖춰졌으면
+     * "잘했어요", 부족하면 어느 부분을 어떻게 고칠지 격려하는 힌트를 받아 온다 — 채점·점수가 아니다.
+     * feedbackVariant 로 프롬프트를 고른다("imessage"=나 전달법 3요소 · "conflict"=입장·감정·원하는 것 구분).
+     * 학번·이름은 보내지 않는다 — 학생 서술만 넘어가고, 위기 신호는 Gemini 앞에서 멈춘다
+     * (ai-feedback-panel · /api/student/ai-feedback · ai-feedback.ts).
+     */
+    | "ai_feedback"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
@@ -841,6 +850,24 @@ export interface WorksheetQuestion {
    */
   botNotice?: string;
   /**
+   * comfort_bot 프리셋. "comfort"(기본)=학생이 고른 상황·설계로 만든 감정 위로 챗봇(6회기 grill).
+   * "empathy_dialogue"=감정 대화 연습 봇(6회기 wrapheal ②) — 상황 선택·설계 없이, 봇이 감정 상황을
+   * 꺼내고 학생이 배운 공감(상황 되짚기+감정 알아주기)으로 응답을 이어 간다. 시스템 프롬프트가 다르다.
+   * empathy_dialogue 는 situationSourceKey·situations·designKeys 가 필요 없다(고정 프롬프트).
+   */
+  botPreset?: "comfort" | "empathy_dialogue";
+  /**
+   * ai_feedback 이 AI 에게 보낼, 학생이 쓴 답 칸들. 순서대로 라벨을 붙여 함께 보낸다
+   * (ai_review 의 reviewFields · comfort_bot 의 designKeys 와 같은 방식). 학번·이름은 안 보낸다.
+   */
+  feedbackFields?: { key: string; label: string }[];
+  /**
+   * ai_feedback 프롬프트 종류. "imessage"=나 전달법 3요소(상황·감정·바람) 점검,
+   * "empathy"=공감 문장 2요소(상황 되짚기·감정 알아주기) 점검,
+   * "conflict"=갈등 상황의 입장·감정·원하는 것이 잘 구분됐는지 점검. 안 주면 imessage.
+   */
+  feedbackVariant?: "imessage" | "empathy" | "conflict";
+  /**
    * submit 이 판정할 칸들. 없으면 article-check 의 ARTICLE_RULES 기본값을 쓴다.
    *
    * `minSentences` 는 **문장 수** 최소치다. 글자 수가 아닌 이유는, 교사가 교실에서
@@ -897,6 +924,13 @@ export interface WorksheetQuestion {
    * 끝나고 할 말이 서로 다르다.
    */
   quizDoneMessage?: string;
+  /**
+   * choice 의 보기를 다른 choice 문항의 답에 따라 바꾼다 (마음 톡톡 6회기 갈등 입장 고르기).
+   * sourceKey 칸의 답(고른 상황 라벨)에 맞는 보기 배열을 optionsByMatch 에서 찾아 choices 대신 쓴다.
+   * 소스를 아직 안 골랐으면 보기 대신 안내만 뜬다. optionsByMatch 의 키는 sourceKey 칸의 choices
+   * 문구와 정확히 같아야 한다(시드에서 한 곳에 정의해 어긋나지 않게 한다).
+   */
+  choicesBySource?: { sourceKey: string; optionsByMatch: Record<string, string[]> };
   /**
    * choice 의 보기.
    *

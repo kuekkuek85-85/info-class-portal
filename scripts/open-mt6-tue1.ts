@@ -100,10 +100,11 @@ function planContent(
       ...plan.activity,
       worksheet: kept,
       /*
-       * 서로의 마음 읽기를 막는다 — 의사소통·공감·감정 대화 글은 친구에게 안 나간다.
-       * 서버 갤러리 라우트가 이 값을 보고 응답 자체를 막는다(gallery/route.ts).
+       * 서로 감상하기 — 캘리그래피 이미지 한 칸만 나간다. galleryEnabled(true)·galleryAnswerKeys
+       * (['a4_calli_image'])는 계획(seed-mt6)에서 그대로 온다(...plan.activity). 여기서 억지로
+       * 바꾸지 않는다 — 대신 아래 report 가 galleryAnswerKeys 를 찍어, 이미지 키 한 칸만 열렸고
+       * 감정·서술 키(a4_virtue·나 전달법·갈등·a5_*·cb_*)가 섞이지 않았는지 재오픈마다 확인한다.
        */
-      galleryEnabled: false,
     },
   };
 }
@@ -150,7 +151,14 @@ async function main(): Promise<void> {
       .doc(id)
       .set({ lessonPlanId: planDoc.id, ...content }, { merge: true });
     console.log(`↻ 이미 열려 있던 수업(코드 ${s.code}, ${s.status})의 내용을 갈아 끼웠습니다`);
-    report(id, s.code, kept, canvaLink);
+    report(
+      id,
+      s.code,
+      kept,
+      canvaLink,
+      plan.activity?.galleryEnabled === true,
+      plan.activity?.galleryAnswerKeys ?? [],
+    );
     process.exit(0);
   }
 
@@ -202,7 +210,14 @@ async function main(): Promise<void> {
   });
 
   console.log(`✓ ${GROUP_LABEL} ${PERIOD}교시 수업을 만들었습니다 (대기 상태)`);
-  report(id, code, kept, canvaLink);
+  report(
+    id,
+    code,
+    kept,
+    canvaLink,
+    plan.activity?.galleryEnabled === true,
+    plan.activity?.galleryAnswerKeys ?? [],
+  );
   process.exit(0);
 }
 
@@ -211,13 +226,17 @@ function report(
   code: string,
   kept: WorksheetQuestion[],
   canvaLink: string,
+  galleryEnabled: boolean,
+  galleryKeys: string[],
 ): void {
   console.log(`   ${id}`);
   console.log(`   수업 코드 ${code}\n`);
 
-  console.log("교사 버튼 순서: 대기 → 마음 체크인 → 오늘 할 일 →");
-  console.log("  [활동4] 언어·비언어·톤 → 나 전달법 → 갈등 분석 → 관계 캘리그래피(Canva)");
-  console.log("  [활동5] 공감 문장 → 감정 말풍선 → 감정 대화 이어가기 → 만화 생성 프롬프트 정리 → 마음일기\n");
+  console.log("교사 버튼 순서: 대기 → 오늘 할 일 →");
+  console.log("  말이 마음을 잇는다(wrapmap) → 갈등 상황 분석하기(problem) → 관계 캘리그래피(mvp) →");
+  console.log("  캘리그래피 감상(gallery) → 공감 문장·감정 대화(wrapheal) → 감정 위로 챗봇(grill) → 마음일기(reflection)\n");
+  console.log("  ※ 나 전달법·공감 문장·갈등 분석 = AI 피드백 버튼 · 감정 대화 이어가기·감정 위로 챗봇 = 임베드 챗봇");
+  console.log("  ※ phaseOrder 에 mood 없음(대기 화면 기분 체크로 대신) — 마음일기 뒤 '마음 체크인' 단추 안 뜸\n");
 
   console.log(`활동지 문항 ${kept.length}개 · 퀴즈 없음.`);
 
@@ -227,7 +246,23 @@ function report(
   const which = process.env.CANVA_INVITE_MT_TUE_1 ? "화요일 1기 전용" : "⚠ 기본 주소 (화요일 1기 전용 토큰 없음)";
   console.log(`캔바 초대 주소: ${shown}  [${which}]`);
   console.log(`남의 분반 토큰 실림: ${JSON.stringify(kept).includes("linkUrlByGroup") ? "예 ← 문제" : "아니오"}`);
-  console.log("서로의 마음 읽기: 끔(galleryEnabled: false) · 친구에게 나가는 칸: 없음");
+
+  /*
+   * 프라이버시 재검 — 서로 감상은 캘리그래피 이미지 한 칸만 열려야 한다. galleryAnswerKeys 가
+   * 정확히 ['a4_calli_image'] 인지 확인하고, 감정·서술 키(a4_virtue·나 전달법·갈등·a5_*·cb_*)가
+   * 하나라도 섞였으면 크게 경고한다. 갤러리가 켜졌는데 목록이 비면 전부 노출이라 그것도 경고.
+   */
+  const ALLOWED = ["a4_calli_image"];
+  const leaked = galleryKeys.filter((k) => !ALLOWED.includes(k));
+  console.log(`서로 감상(gallery): ${galleryEnabled ? "켬" : "끔"}`);
+  console.log(`  친구에게 나가는 칸(galleryAnswerKeys): [${galleryKeys.join(", ")}]`);
+  if (galleryEnabled && galleryKeys.length === 0) {
+    console.log("  ⚠⚠ 위험: 갤러리가 켜졌는데 galleryAnswerKeys 가 비어 모든 답이 노출됩니다!");
+  } else if (leaked.length > 0) {
+    console.log(`  ⚠⚠ 위험: 캘리그래피 이미지 외 키가 섞였습니다 → [${leaked.join(", ")}]`);
+  } else {
+    console.log("  ✓ 캘리그래피 이미지(a4_calli_image) 한 칸만 열림 — 감정·서술·대화 키는 안 나감.");
+  }
 }
 
 main().catch((error: unknown) => {

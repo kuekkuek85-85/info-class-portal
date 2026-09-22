@@ -2,10 +2,12 @@ import { deviceKey, fail, guard, ok, rateLimit, readJson } from "@/lib/api";
 import {
   comfortIntro,
   comfortReply,
+  type BotPreset,
   type ComfortDesignField,
   type ComfortTranscript,
 } from "@/lib/comfort-bot";
 import {
+  ensureArtifact,
   flagCareAlert,
   getArtifact,
   getSession,
@@ -19,16 +21,19 @@ import { readStudentSession } from "@/lib/session";
 import type { WorksheetQuestion } from "@/lib/types";
 
 /**
- * 감정 위로 챗봇 — 학생이 설계한 챗봇과 대화한다 (comfort_bot 문항).
+ * 임베드 감정 대화 챗봇 — comfort_bot 문항 두 가지 프리셋을 함께 처리한다.
  *
- * ## 프라이버시·안전 (이 과목의 1순위)
+ *  · comfort (기본)         — 학생이 고른 갈등 상황·설계로 만든 감정 위로 챗봇 (6회기 grill)
+ *  · empathy_dialogue       — 감정 대화 연습 봇 (6회기 wrapheal ②). 상황 선택·설계 없이, 봇이
+ *                             감정 상황을 꺼내고 학생이 배운 공감으로 응답을 이어 간다.
  *
- * - 학번·이름은 Gemini 로 보내지 않는다. 상황 전문·학생 설계·대화 텍스트만 넘어간다.
- * - **위기 신호는 Gemini 앞에서 멈춘다.** checkCrisis 에 걸리면 호출하지 않고, 교사에게
- *   신호만 보낸다(flagCareAlert — 무엇을 썼는지는 빼고 학번·시각만). 학생에겐 어른·상담에
- *   가닿자는 안내를 띄운다. 그 안내와 학생의 말은 transcript 에 남아 교사가 후속 대응한다.
- * - 대화 transcript 는 학생 activity 아티팩트(answers[key])에 저장되고, 교사가 대시보드에서
- *   열람한다. 학생 화면에는 "이 대화는 선생님이 볼 수 있어요" 를 명확히 띄운다(투명성).
+ * ## 프라이버시·안전 (이 과목의 1순위) — 두 프리셋 공통
+ *
+ * - 학번·이름은 Gemini 로 보내지 않는다. 상황 전문(comfort)·학생 설계·대화 텍스트만 넘어간다.
+ * - **위기 신호는 Gemini 앞에서 멈춘다.** checkCrisis 에 걸리면 호출하지 않고, 교사에게 신호만
+ *   보낸다(flagCareAlert — 무엇을 썼는지는 빼고). 학생에겐 어른·상담에 가닿자는 안내를 띄운다.
+ * - 대화 transcript 는 학생 activity 아티팩트(answers[key])에 저장되고 교사가 열람한다.
+ *   학생 화면에는 "이 대화는 선생님이 볼 수 있어요" 를 항상 띄운다(투명성).
  *
  * 요청: { key, message?, reset? }
  *  · reset:true      — 대화를 처음부터 다시 (자기소개부터)
@@ -78,28 +83,50 @@ export async function POST(request: Request) {
     );
     if (!question) return fail("not_found");
 
+    const preset: BotPreset =
+      question.botPreset === "empathy_dialogue" ? "empathy_dialogue" : "comfort";
+    const isEmpathy = preset === "empathy_dialogue";
+
     const activityId = activityIdFor(session);
     if (!activityId) return fail("not_found");
-    const artifact = await getArtifact(activityId, me.studentId);
+
+    /*
+     * 감정 대화 연습 봇(empathy_dialogue)은 앞에 고를 상황·설계 칸이 없다 — 학생이 바로 들어와
+     * 대화를 시작할 수 있어야 하므로 아티팩트가 없으면 만든다. 감정 위로 챗봇(comfort)은 앞 칸
+     * (상황 고르기·챗봇 설계)을 반드시 거쳐 아티팩트가 이미 있으므로 getArtifact 로 확인만 한다.
+     */
+    const artifact = isEmpathy
+      ? await ensureArtifact({
+          activityId,
+          studentId: me.studentId,
+          classNo: session.classNo,
+          year: session.activity?.year ?? new Date().getFullYear(),
+        })
+      : await getArtifact(activityId, me.studentId);
     if (!artifact) {
       return fail("not_found", "먼저 앞 칸에서 상황을 고르고 챗봇을 설계해 주세요.");
     }
 
     /*
-     * 상황 전문을 서버에서 고른다. 학생이 고른 보기(situationSourceKey 칸의 답)와
-     * situations[].match 를 견줘 하나만. 클라이언트가 보낸 텍스트는 쓰지 않는다 — 활동지를
-     * 거치지 않은 아무 상황이나 이 경로로 흘려보낼 수 없게 (emotion route 와 같은 원칙).
+     * comfort 프리셋만 상황 전문·학생 설계를 앞 칸에서 읽어 온다. 상황 전문은 서버에서 고른다
+     * (학생이 고른 보기와 situations[].match 를 견줘 하나만) — 클라이언트가 보낸 텍스트는 쓰지
+     * 않는다. empathy_dialogue 는 상황·설계가 없다(고정 시스템 프롬프트).
      */
-    const pickedLabel = (artifact.answers?.[question.situationSourceKey ?? ""] ?? "").trim();
-    const situation = (question.situations ?? []).find((s) => s.match === pickedLabel);
-    if (!situation) {
-      return fail("invalid_input", "먼저 위에서 상황을 하나 골라 주세요.");
+    let situationText = "";
+    let situationLabel = "";
+    let design: ComfortDesignField[] = [];
+    if (!isEmpathy) {
+      const pickedLabel = (artifact.answers?.[question.situationSourceKey ?? ""] ?? "").trim();
+      const situation = (question.situations ?? []).find((s) => s.match === pickedLabel);
+      if (!situation) {
+        return fail("invalid_input", "먼저 위에서 상황을 하나 골라 주세요.");
+      }
+      situationText = situation.text;
+      situationLabel = situation.match;
+      design = (question.designKeys ?? [])
+        .map((d) => ({ label: d.label, value: (artifact.answers?.[d.key] ?? "").trim() }))
+        .filter((d) => d.value);
     }
-
-    // 학생이 설계한 챗봇 성격을 앞 칸에서 읽어 온다 (없는 칸·빈 칸은 빠진다).
-    const design: ComfortDesignField[] = (question.designKeys ?? [])
-      .map((d) => ({ label: d.label, value: (artifact.answers?.[d.key] ?? "").trim() }))
-      .filter((d) => d.value);
 
     const existing = parseTranscript(artifact.answers?.[key]);
 
@@ -108,6 +135,8 @@ export async function POST(request: Request) {
         answers: { ...artifact!.answers, [key]: JSON.stringify(transcript) },
       });
     }
+
+    const feature = isEmpathy ? "empathy_dialogue" : "comfort_bot";
 
     /* ── 열기: 이미 대화가 있으면 그대로 돌려준다 (Gemini 호출 없음) ── */
     const wantsSend = typeof body?.message === "string" && body.message.trim().length > 0;
@@ -127,12 +156,14 @@ export async function POST(request: Request) {
         return fail("too_many_attempts", "이 태블릿에서 너무 많이 눌렀어요. 선생님께 알려 주세요.");
       }
 
-      const intro = await comfortIntro({ situationText: situation.text, design });
+      const intro = await comfortIntro({ preset, situationText, design });
       const first =
         intro ??
-        "안녕하세요, 저는 당신의 이야기를 들어주는 위로 챗봇이에요. 무슨 일이 있었는지 편하게 말해 줄래요?";
+        (isEmpathy
+          ? "안녕하세요, 저는 당신과 감정 이야기를 나눌 친구예요. 오늘 저는 발표를 망친 것 같아 조금 속상했어요. 이런 제 마음, 어떻게 알아줄 수 있을까요?"
+          : "안녕하세요, 저는 당신의 이야기를 들어주는 위로 챗봇이에요. 무슨 일이 있었는지 편하게 말해 줄래요?");
       const transcript: ComfortTranscript = {
-        situation: situation.match,
+        situation: situationLabel,
         design,
         messages: [{ role: "bot", text: first, at: Date.now() }],
         updatedAt: Date.now(),
@@ -142,7 +173,7 @@ export async function POST(request: Request) {
         studentId: me.studentId,
         sessionId: session.id,
         lessonNo: session.lessonNo,
-        feature: "comfort_bot",
+        feature,
       }).catch(() => undefined);
       return ok({ transcript });
     }
@@ -160,13 +191,13 @@ export async function POST(request: Request) {
       await logAiCall({
         studentId: me.studentId,
         lessonNo: session.lessonNo,
-        feature: "comfort_bot_blocked",
+        feature: `${feature}_blocked`,
       }).catch(() => undefined);
       await flagCareAlert(session.id, me.studentId).catch(() => undefined);
 
       const now = Date.now();
       const transcript: ComfortTranscript = {
-        situation: existing.situation || situation.match,
+        situation: existing.situation || situationLabel,
         design: existing.design.length ? existing.design : design,
         messages: [
           ...existing.messages,
@@ -187,7 +218,8 @@ export async function POST(request: Request) {
     }
 
     const reply = await comfortReply({
-      situationText: situation.text,
+      preset,
+      situationText,
       design,
       history: existing.messages.slice(-HISTORY_LIMIT),
       userText: text,
@@ -198,7 +230,7 @@ export async function POST(request: Request) {
 
     const now = Date.now();
     const transcript: ComfortTranscript = {
-      situation: existing.situation || situation.match,
+      situation: existing.situation || situationLabel,
       design: existing.design.length ? existing.design : design,
       messages: [
         ...existing.messages,
@@ -212,7 +244,7 @@ export async function POST(request: Request) {
       studentId: me.studentId,
       sessionId: session.id,
       lessonNo: session.lessonNo,
-      feature: "comfort_bot",
+      feature,
     }).catch(() => undefined);
 
     return ok({ transcript });
