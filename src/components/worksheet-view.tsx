@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { AiReviewPanel } from "@/components/ai-review-panel";
+import { ComfortBotPanel } from "@/components/comfort-bot-panel";
 import { EmotionLensPanel } from "@/components/emotion-lens-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
 import { ImageField } from "@/components/image-field";
@@ -920,6 +921,19 @@ export function WorksheetView({
               raw={value.answers[question.key] ?? ""}
               onResult={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}
+            />
+          ) : question.kind === "comfort_bot" ? (
+            /*
+              감정 위로 챗봇 — 학생이 설계한 챗봇과 대화한다. 대화는 저장되고 교사가 열람하며,
+              화면에 "이 대화는 선생님이 볼 수 있어요" 를 항상 띄운다(투명성). 서버가 위기 신호를
+              Gemini 앞에서 거른다 (comfort-bot-panel · /api/student/comfort-bot).
+            */
+            <ComfortBotPanel
+              questionKey={question.key}
+              raw={value.answers[question.key] ?? ""}
+              onResult={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+              notice={question.botNotice}
             />
           ) : question.kind === "emotion_quiz" ? (
             <EmotionQuiz

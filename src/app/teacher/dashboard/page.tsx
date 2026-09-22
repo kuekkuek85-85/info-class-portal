@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
+import { ComfortBotReviewPanel } from "@/components/comfort-bot-review-panel";
 import { TeacherArtifactPanel } from "@/components/teacher-artifact-panel";
 import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
 import { TeacherReviewPanel } from "@/components/teacher-review-panel";
@@ -1211,6 +1212,15 @@ function Dashboard() {
             (LESSON_PHASES.indexOf(session.phase) >= LESSON_PHASES.indexOf("problem") ||
               (session.activity.worksheet ?? []).some((q) => q.kind === "submit")) && (
               <TeacherArtifactPanel sessionId={session.id} onFeedbackSent={reload} />
+            )}
+
+          {/*
+            감정 위로 챗봇 대화 열람 — 그 문항이 있는 세션에서만 뜬다(투명성: 학생도 교사가
+            본다는 것을 안다). 자체적으로 읽어 오므로 폴링 비용은 교사가 펼칠 때만 든다.
+          */}
+          {session.activity &&
+            (session.activity.worksheet ?? []).some((q) => q.kind === "comfort_bot") && (
+              <ComfortBotReviewPanel sessionId={session.id} />
             )}
 
           {/*

@@ -585,6 +585,15 @@ export interface WorksheetQuestion {
      * 이야기를 본다(수행평가 공정성). 입력칸이 아니라 표시라 답을 저장하지 않는다.
      */
     | "case_story"
+    /**
+     * comfort_bot — 감정 위로 챗봇 (대인관계). 학생이 갈등 상황 하나를 골라
+     * (situationSourceKey → situations 의 전문) 그 상황을 학습한 챗봇을 직접 설계하고
+     * (designKeys 로 페르소나·말투·물어볼 것·위로/조언 방식을 앞 칸에서 읽어 온다), 자기
+     * 챗봇과 대화한다. 대화 transcript 는 answers[key] 에 JSON 으로 저장되고 교사가 열람한다
+     * (comfort-bot-panel · /api/student/comfort-bot). 학생 화면에 "이 대화는 선생님이 볼 수
+     * 있어요" 를 명확히 띄운다(투명성). 위기 신호는 Gemini 앞에서 멈추고 교사에게 알린다.
+     */
+    | "comfort_bot"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
@@ -808,6 +817,29 @@ export interface WorksheetQuestion {
    * 있으면 지문 위에 그림을 함께 띄운다. 없으면 지문만 — 없어도 동작에 지장 없다.
    */
   stories?: { match: string; text: string; image?: string }[];
+  /**
+   * comfort_bot 이 챗봇 맥락으로 쓸 상황 전문들. `match` 는 situationSourceKey 칸의 값
+   * (고른 보기 문구)과 **정확히 같아야** 한다 — 시드에서 choices 와 한 배열로 만들어 어긋나지
+   * 않게 한다. `text` 는 서버에서만 시스템 프롬프트에 들어가고 학생 화면에는 note 로 따로 보인다.
+   */
+  situations?: { match: string; text: string }[];
+  /**
+   * comfort_bot 이 챗봇 맥락으로 쓸, 학생이 고른 상황 choice 문항의 key. 그 칸의 답(고른 보기
+   * 문구)과 situations[].match 를 견줘 상황 전문 하나를 서버가 고른다 (case_story 의
+   * storySourceKey 와 같은 방식).
+   */
+  situationSourceKey?: string;
+  /**
+   * comfort_bot 이 챗봇 시스템 프롬프트를 짤 때 읽어 올 **학생의 설계 칸들**. 앞 단계에서 쓴
+   * 페르소나·말투·물어볼 것·위로/조언 방식 문항의 key 와 라벨을 준다(ai_review 의 reviewFields
+   * 와 같은 방식). 서버가 그 답을 모아 챗봇의 성격으로 심는다.
+   */
+  designKeys?: { key: string; label: string }[];
+  /**
+   * comfort_bot 화면에 띄울 "이 대화는 선생님이 볼 수 있어요" 안내 문구. 안 주면 기본 문구가
+   * 나온다. 투명성 안내라 이 값이 없어도 컴포넌트가 기본 문구를 반드시 보인다.
+   */
+  botNotice?: string;
   /**
    * submit 이 판정할 칸들. 없으면 article-check 의 ARTICLE_RULES 기본값을 쓴다.
    *
