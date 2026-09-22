@@ -501,7 +501,7 @@ const WORKSHEET: WorksheetQuestion[] = [
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   lessonNo: LESSON_NO,
-  title: "디지털 마음 톡톡 6회기 — 효과적인 의사소통과 공감 (대인관계 · 활동4+활동5)",
+  title: "디지털 마음 톡톡 6회기 — 효과적인 의사소통과 공감 (대인관계)",
 
   // 매 회기 첫 화면 루틴
   moodCheckEnabled: true,
@@ -557,9 +557,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    */
   focusExempt: ["wrapmap", "wrapheal"],
 
-  // 교사 버튼 순서. 대기 → 마음 체크인 → 오늘 할 일 → 활동4(wrapmap) → 활동5(wrapheal)
-  // → 감정 위로 챗봇(grill) → 마음일기. grill 은 mt6 에서 이 챗봇 활동에만 쓰는 빈 단계다.
-  phaseOrder: ["waiting", "mood", "progress", "wrapmap", "wrapheal", "grill", "reflection"],
+  // 교사 버튼 순서. 대기 → 오늘 할 일 → 효과적인 의사소통(wrapmap) → 공감 문장·감정 대화
+  // (wrapheal) → 감정 위로 챗봇(grill) → 마음일기. grill 은 mt6 에서 이 챗봇 활동에만 쓰는 빈 단계다.
+  // mood(마음 체크인)는 phaseOrder 에서 뺀다 — 기분은 대기 화면에서 먼저 받으므로 별도 단계가
+  // 중복이다(availablePhase 가 "phaseOrder 에 mood 없으면 단추 숨김"). moodCheckEnabled 는 켜 둔다.
+  phaseOrder: ["waiting", "progress", "wrapmap", "wrapheal", "grill", "reflection"],
 
   phaseLabels: {
     mood: "마음 체크인",
