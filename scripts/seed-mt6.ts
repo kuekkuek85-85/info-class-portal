@@ -358,9 +358,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "mvp",
     // 덕목을 고른 이유(개인 성찰). 친구에게 안 나간다 — galleryAnswerKeys 에 없다(이미지 한 칸만 공유).
     label: "내가 고른 덕목과, 그것이 관계에서 중요하다고 생각한 이유를 한두 줄로",
-    hint:
-      "예) 경청 — 잘 들어주는 것만으로도 상대가 존중받는다고 느끼니까.\n" +
-      "이 칸은 나와 선생님만 봐요.",
+    hint: "예) 경청 — 잘 들어주는 것만으로도 상대가 존중받는다고 느끼니까.",
     kind: "long",
     maxLength: 200,
   },
