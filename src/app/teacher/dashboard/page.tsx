@@ -1605,6 +1605,16 @@ function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
   if (phase === "progress") return hasContent(session.progress);
   if (phase === "assessment") return hasContent(session.assessment);
   if (phase === "video") return hasContent(session.video);
+  /*
+   * 대기(waiting)는 기본으로 늘 열려 있다. 다만 차시가 phaseOrder 를 명시하면서 waiting 을
+   * 뺐다면 — 대기 없이 기분(mood)부터 여는 차시(진로탐색 6차 등) — 그 뜻을 존중해 버튼을
+   * 만들지 않는다. phaseOrder 를 안 쓰거나 waiting 을 넣은 차시(정보 14·15·마음톡톡 5 등)는
+   * 그대로 열린다. phaseOrder 에 안 적은 단계는 뒤에 붙는데, 그렇게 붙은 대기 단추만 지운다.
+   */
+  if (phase === "waiting") {
+    if (session.phaseOrder?.length && !session.phaseOrder.includes("waiting")) return false;
+    return true;
+  }
   return true;
 }
 

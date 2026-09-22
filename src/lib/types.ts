@@ -520,6 +520,11 @@ export interface WorksheetQuestion {
    *             질문 2개로 돌려받는다 (reviewFields). AI는 평가·칭찬 없이 질문만 한다.
    * teacher_note — 선생님이 남긴 말을 띄운다. 도착할 때까지만 물어보고 멈춘다.
    *             제출 절차 없이 교사 검토 라운드를 두는 차시가 쓴다 (teacher-note-panel).
+   * received_feedback — 지금까지 **내가 받은** 피드백 셋(🤖 AI · 🧑‍🏫 선생님 · 🧑‍🤝‍🧑 친구)을
+   *             한 표로 읽기 전용으로 모아 보여준다 (received-feedback-panel). 데이터는
+   *             내 활동지 하나에서만 온다 — AI 는 answers["ai_review"], 선생님은
+   *             teacherFeedback, 친구는 내 작품에 달린 동료 피드백. **본인 것만** 오고
+   *             친구 신원은 안 드러난다. 발표 준비 차시(6차)가 자료를 만들며 참고하게 쓴다.
    * emotion_lens — 앞 칸에 쓴 경험 글(lensSourceKey)을 AI에게 보내고, 감정 추측
    *             2개와 공감 한 줄을 돌려받는다. 맞히는 것이 목적이 아니라 **학생이
    *             그 추측과 자기 마음을 견줘 보게** 하는 것이 목적이다.
@@ -542,6 +547,7 @@ export interface WorksheetQuestion {
     | "rows"
     | "ai_review"
     | "teacher_note"
+    | "received_feedback"
     | "emotion_lens"
     | "emotion_quiz"
     | "mood_recheck"

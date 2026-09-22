@@ -9,6 +9,7 @@ import { ImageField } from "@/components/image-field";
 import { ListField } from "@/components/list-field";
 import { RowsField } from "@/components/rows-field";
 import { MoodRecheck } from "@/components/mood-recheck";
+import { ReceivedFeedbackPanel } from "@/components/received-feedback-panel";
 import { DiagnosticQuiz } from "@/components/diagnostic-quiz";
 import { MaskingField } from "@/components/masking-field";
 import { ScamSim } from "@/components/scam-sim";
@@ -906,6 +907,13 @@ export function WorksheetView({
               화면이 직접 조회해서 그린다 (teacher-note-panel).
             */
             <TeacherNotePanel />
+          ) : question.kind === "received_feedback" ? (
+            /*
+              지금까지 받은 피드백 셋(AI·선생님·친구)을 읽기 전용 표로 모아 보여준다.
+              답이 아니라 참고용이라 answers 에 안 담는다 — 화면이 직접 조회해 그린다
+              (received-feedback-panel). 본인 것만 오고, 친구 신원은 안 나온다.
+            */
+            <ReceivedFeedbackPanel />
           ) : question.kind === "emotion_lens" ? (
             <EmotionLensPanel
               questionKey={question.key}
