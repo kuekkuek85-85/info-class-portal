@@ -412,20 +412,22 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
       },
       {
         label: "오늘 순서",
-        subtitle: "타자 연습 → 빈칸 채우기(예제마다 제출) → 성찰",
+        subtitle: "타자 연습 → 지난 시간에 이어 빈칸 채우기(주제별 제출) → 성찰",
         note:
-          "타자 연습을 한 뒤, 안내를 보고, 활동지가 위에서 아래로 이어져요. 예제마다 바로 아래에\n" +
-          "완성한 코드를 붙여넣어 제출하는 칸이 있어요.",
+          "타자 연습을 한 뒤, 지난 시간(15차)에 하던 데에 이어서 해요. 반마다 시작하는 주제가\n" +
+          "달라요 — 선생님이 '오늘은 □부터' 라고 알려줄 거예요. 그 주제 단계부터 아래로 이어서,\n" +
+          "예제마다 ★★★ 빈칸을 채워 완성한 코드를 바로 아래 칸에 제출하면 됩니다.",
         rows: [
-          { label: "1", value: "파이썬 타자 연습(별도 단계, 새 탭)" },
-          { label: "2", value: "무대 만들기 — screen → 완성한 코드 제출" },
-          { label: "3", value: "거북이 만들기·꾸미기 — shape · color → 제출" },
-          { label: "4", value: "펜 상태 — penup · pendown → 제출" },
-          { label: "5", value: "좌표 이동 — goto · setx → 제출" },
-          { label: "6", value: "상대 이동·회전 — forward · left · right → 제출" },
+          { label: "먼저", value: "파이썬 타자 연습(별도 단계, 새 탭)" },
+          { label: "무대", value: "screen — 지난 시간에 한 주제(복습용)" },
+          { label: "거북이", value: "shape · color → 완성한 코드 제출" },
+          { label: "펜", value: "penup · pendown → 제출" },
+          { label: "좌표", value: "goto · setx → 제출" },
+          { label: "이동", value: "forward · left · right → 제출" },
           { label: "마지막", value: "성찰 한두 줄" },
         ],
         highlights: [
+          "우리 반이 어디부터 할지는 선생님이 알려줘요 — 그 주제 단계 버튼부터 시작해요.",
           "예제 하나를 다 채우면 바로 아래 칸에 그 코드를 붙여넣어 제출해요.",
         ],
       },
