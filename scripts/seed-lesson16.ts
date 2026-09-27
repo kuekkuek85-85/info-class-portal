@@ -191,10 +191,15 @@ function empty(): PhaseContent {
  * 여러 줄 입력·자동 저장(1.5초)·붙여넣기 허용. 예제마다 key/label 을 구분해 답이 따로 저장된다.
  * 안내문은 평문. exampleName 은 위 카드 이름([무대] 등)을 가리킨다.
  */
-function submitField(key: string, label: string, exampleName: string): WorksheetQuestion {
+function submitField(
+  key: string,
+  label: string,
+  exampleName: string,
+  phase: WorksheetQuestion["phase"] = "worksheet",
+): WorksheetQuestion {
   return {
     key,
-    phase: "worksheet",
+    phase,
     label,
     hint:
       `위 [${exampleName}] 참고 코드를 보고 OneCompiler 에 직접 한 줄 한 줄 쳐서 완성한 뒤,\n` +
@@ -208,8 +213,9 @@ function submitField(key: string, label: string, exampleName: string): Worksheet
 // ─────────────────────────────────────────────────────────────
 // 활동지 —
 //   · 파이썬 타자 연습(phase: wordquiz, 별도 단계) : 외부 앱 새 탭 링크
-//   · 직접 타이핑(phase: worksheet) : 안내 → 예제 5개(무대·거북이·펜·좌표·이동),
-//       각 예제 = 참고 코드(복사 말고 직접 치기) + 직접 친 코드 제출(long)
+//   · 직접 타이핑 : 주제별 단계로 쪼갬 — 무대(worksheet)·거북이(problem)·펜(mvp)·좌표(build)·
+//       이동(grill). 각 단계 = 참고 코드(복사 말고 직접 치기, noCopy) + 직접 친 코드 제출(long).
+//       phaseLabels 로 "직접 타이핑 - □" 이름을 붙인다(STEP_PHASES 슬롯 재사용).
 // 핵심 키워드·미션 주석·time.sleep 은 15차 것을 그대로 둔다(참고용). 화면 텍스트는 평문.
 // ─────────────────────────────────────────────────────────────
 const WORKSHEET: WorksheetQuestion[] = [
@@ -232,7 +238,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "_typing_intro",
     phase: "worksheet",
-    label: "① 직접 타이핑 — 보고 익힌 코드를 손으로 쳐봐요",
+    label: "직접 타이핑 — 보고 익힌 코드를 손으로 쳐봐요",
     hint:
       "지난 시간엔 코드를 복사해 값을 바꿔 봤죠? 이제 보고 익힌 코드를 직접 손으로 쳐보며\n" +
       "한 줄 한 줄 이해해요. 아래 [OneCompiler 터틀 열기] 로 편집기를 새 탭에서 열고(그대로 두면\n" +
@@ -250,7 +256,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "_typing_stage",
     phase: "worksheet",
-    label: "② 무대 만들기 — screen",
+    label: "무대 만들기 — screen",
     hint:
       "핵심 키워드: Screen() 창 만들기, setup() 크기, bgcolor() 배경색\n\n" +
       "아래 참고 코드를 복사하지 말고 직접 한 줄씩 쳐서 실행해 보고, 값을 하나씩 바꿔 다시\n" +
@@ -267,13 +273,13 @@ const WORKSHEET: WorksheetQuestion[] = [
     noCopy: true, // 직접 타이핑 차시 — 복사 단추 숨김
     maxLength: 0,
   },
-  submitField("typing_submit_stage", "② 무대 — 직접 친 코드 제출", "무대"),
+  submitField("typing_submit_stage", "무대 — 직접 친 코드 제출", "무대"),
 
   /* ── ③ 거북이 만들기·꾸미기 — shape · color (직접 타이핑) ── */
   {
     key: "_typing_turtle",
-    phase: "worksheet",
-    label: "③ 거북이 만들기·꾸미기 — shape · color",
+    phase: "problem",
+    label: "거북이 만들기·꾸미기 — shape · color",
     hint:
       "핵심 키워드: Turtle() 거북이 만들기, shape() 모양, color() 색\n\n" +
       "아래 참고 코드를 복사하지 말고 직접 한 줄씩 쳐서 실행하고, 값을 바꿔 가며 확인해요.\n\n" +
@@ -297,13 +303,13 @@ const WORKSHEET: WorksheetQuestion[] = [
     linkLabel: "색상 코드 변환기 (참고, 새 탭)",
     maxLength: 0,
   },
-  submitField("typing_submit_turtle", "③ 거북이/색 — 직접 친 코드 제출", "거북이 만들기·꾸미기"),
+  submitField("typing_submit_turtle", "거북이/색 — 직접 친 코드 제출", "거북이 만들기·꾸미기", "problem"),
 
   /* ── ④ 펜 상태 — penup · pendown (직접 타이핑) ── */
   {
     key: "_typing_pen",
-    phase: "worksheet",
-    label: "④ 펜 상태 — penup · pendown",
+    phase: "mvp",
+    label: "펜 상태 — penup · pendown",
     hint:
       "핵심 키워드: penup() 펜 올리기(선 안 그림), pendown() 펜 내리기(선 그림)\n\n" +
       "아래 참고 코드를 복사하지 말고 직접 한 줄씩 쳐서 실행하고, 어디에 선이 생기고 안 생기는지\n" +
@@ -319,13 +325,13 @@ const WORKSHEET: WorksheetQuestion[] = [
     noCopy: true, // 직접 타이핑 차시 — 복사 단추 숨김
     maxLength: 0,
   },
-  submitField("typing_submit_pen", "④ 펜 상태 — 직접 친 코드 제출", "펜 상태"),
+  submitField("typing_submit_pen", "펜 상태 — 직접 친 코드 제출", "펜 상태", "mvp"),
 
   /* ── ⑤ 좌표 이동 — goto · setx (직접 타이핑) ── */
   {
     key: "_typing_goto",
-    phase: "worksheet",
-    label: "⑤ 좌표 이동 — goto · setx",
+    phase: "build",
+    label: "좌표 이동 — goto · setx",
     hint:
       "핵심 키워드: goto() 좌표로 이동, setx() x만 바꾸기 (가운데가 0,0)\n\n" +
       "아래 참고 코드를 복사하지 말고 직접 한 줄씩 쳐서 실행해요. goto 는 '정해진 자리(x, y)' 로\n" +
@@ -341,13 +347,13 @@ const WORKSHEET: WorksheetQuestion[] = [
     noCopy: true, // 직접 타이핑 차시 — 복사 단추 숨김
     maxLength: 0,
   },
-  submitField("typing_submit_goto", "⑤ 좌표 이동 — 직접 친 코드 제출", "좌표 이동"),
+  submitField("typing_submit_goto", "좌표 이동 — 직접 친 코드 제출", "좌표 이동", "build"),
 
   /* ── ⑥ 상대 이동·회전 — forward · left · right (직접 타이핑) ── */
   {
     key: "_typing_move",
-    phase: "worksheet",
-    label: "⑥ 상대 이동·회전 — forward · left · right",
+    phase: "grill",
+    label: "상대 이동·회전 — forward · left · right",
     hint:
       "핵심 키워드: forward() 앞으로, left()/right() 왼쪽·오른쪽 회전\n\n" +
       "아래 참고 코드를 복사하지 말고 직접 한 줄씩 쳐서 실행해요. forward 는 '지금 보고 있는\n" +
@@ -365,7 +371,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     noCopy: true, // 직접 타이핑 차시 — 복사 단추 숨김
     maxLength: 0,
   },
-  submitField("typing_submit_move", "⑥ 상대 이동·회전 — 직접 친 코드 제출", "상대 이동·회전"),
+  submitField("typing_submit_move", "상대 이동·회전 — 직접 친 코드 제출", "상대 이동·회전", "grill"),
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
@@ -448,17 +454,28 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 타자 연습(wordquiz)·직접 타이핑(worksheet) 두 단계가 새 탭(외부 앱·OneCompiler)을 열어,
    * 창을 옮기는 것을 이탈로 세지 않는다 (15차와 같은 이유).
    */
-  focusExempt: ["wordquiz", "worksheet"],
+  // 직접 타이핑 단계들 모두 OneCompiler(새 탭)를 오가므로 focusExempt 에 넣는다(이탈 오탐 방지).
+  focusExempt: ["wordquiz", "worksheet", "problem", "mvp", "build", "grill"],
   /*
    * 교사 버튼 순서. 기분(mood)은 대기 앞에서 한 번만 하므로 여기 넣지 않는다(대기·안내 사이
    * 중복 방지). moodCheckEnabled 로 뜨는 기분 버튼은 목록 맨 뒤 재확인용이다.
-   *   대기 → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 직접 타이핑(worksheet) → 성찰
+   *
+   * 직접 타이핑을 **주제별 단계로 쪼갠다**(교사 확정) — 무대·거북이·펜·좌표·이동을 각각 다른
+   * phase(worksheet·problem·mvp·build·grill)에 담고 phaseLabels 로 "직접 타이핑 - □" 이름을
+   * 붙인다. STEP_PHASES 슬롯을 빌려 쓰는 것뿐이고, 화면엔 이름만 보인다(정보과 다른 차시·선택
+   * 과목과 안 겹침, 각 phase 에 문항이 실제로 들어 있어 버튼이 뜬다).
+   *   대기 → 타자 연습(wordquiz) → 안내(assessment) → 직접 타이핑 무대(worksheet) → 거북이(problem)
+   *     → 펜(mvp) → 좌표(build) → 이동(grill) → 성찰
    */
-  phaseOrder: ["waiting", "wordquiz", "assessment", "worksheet", "reflection"],
+  phaseOrder: ["waiting", "wordquiz", "assessment", "worksheet", "problem", "mvp", "build", "grill", "reflection"],
   phaseLabels: {
     wordquiz: "파이썬 타자 연습",
     assessment: "안내",
-    worksheet: "직접 타이핑",
+    worksheet: "직접 타이핑 - 무대",
+    problem: "직접 타이핑 - 거북이",
+    mvp: "직접 타이핑 - 펜",
+    build: "직접 타이핑 - 좌표",
+    grill: "직접 타이핑 - 이동",
   },
   /*
    * 되돌아가기 켬 — 학생이 안내·활동지 사이를 스스로 오갈 수 있다. 교사는 타자 연습 → 안내 →
@@ -560,7 +577,8 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (직접 타이핑 통 — 15차 python-intro·17차부터 python-dodge-game 과 분리)`);
-  console.log("단계 흐름(phaseOrder): 대기(지뢰찾기) → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 직접 타이핑(worksheet) → 성찰");
+  console.log("단계 흐름(phaseOrder): 대기(지뢰찾기) → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 직접 타이핑 무대(worksheet) → 거북이(problem) → 펜(mvp) → 좌표(build) → 이동(grill) → 성찰");
+  console.log("직접 타이핑은 주제별 단계로 쪼갬 — '직접 타이핑 - 무대/거북이/펜/좌표/이동'. 각 단계 = 참고 코드(noCopy) + 직접 친 코드 제출.");
   console.log("기분: moodCheckEnabled 켬(대기 앞 1회). phaseOrder 에 mood 없음 → 대기·안내 사이 중복 없음(기분 버튼은 목록 맨 뒤 재확인용).");
   console.log(`파이썬 타자: 별도 단계(wordquiz)에 외부 앱 새 탭 링크 (${TYPING_APP_URL}). 대기 게임: 지뢰찾기 (${MINESWEEPER_URL}).`);
   console.log(`직접 타이핑: 예제 5개(무대·거북이/색·펜·좌표·이동). 각 예제=참고 코드(복사 말고 직접 치기, 핵심키워드·미션주석·time.sleep 유지) + 직접 친 코드 제출(long, 자동저장·붙여넣기).`);
