@@ -109,11 +109,10 @@ const COLOR_PICKER_URL = "https://youtil.kr/tools/art/color";
 /** 무대 만들기 — screen 을 만들고 제목·배경색·크기를 정한다 */
 const CODE_STAGE = `import turtle
 
-# 미션: 배경색(bgcolor)과 창 제목(title)을 다른 값으로 바꿔보세요
 screen = turtle.Screen()
-screen.title("My Game")
-screen.bgcolor("lightyellow")
-screen.setup(600, 600)
+screen.title("★★★")        # 값: 창 제목(영어)
+screen.★★★("lightyellow")  # 함수: 배경색 (bgcolor)
+screen.setup(★★★, ★★★)     # 값: 가로, 세로
 
 screen.mainloop()`;
 
@@ -123,64 +122,59 @@ const CODE_TURTLE = `import turtle
 screen = turtle.Screen()
 screen.setup(600, 600)
 
-# 미션: 주인공처럼 square + green 으로, 또 똥처럼 circle + brown 으로도 바꿔보세요
 player = turtle.Turtle()
-player.shape("square")
-player.color("green")
+player.shape("★★★")   # 값: 모양 (square/circle/turtle …)
+player.★★★("green")   # 함수: 색 (color)
 
 screen.mainloop()`;
 
 /** 펜 상태 — 펜을 내리면 선이 그려지고, 올리면(penup) 선 없이 이동만 한다 */
 const CODE_PEN = `import turtle
-import time  # 한 동작씩 천천히 보여주기 위해
+import time
 
 screen = turtle.Screen()
 screen.setup(600, 600)
 
-# 미션: 펜을 올렸을 때와 내렸을 때 선이 그려지는지 안 그려지는지 관찰하세요
 player = turtle.Turtle()
-player.forward(100)     # pen is down -> it draws a line
+player.forward(★★★)   # 값: 거리
 time.sleep(1)
-player.penup()          # lift the pen up
-player.forward(100)     # now it moves with NO line
+player.★★★()          # 함수: 펜 올리기 (penup)
+player.forward(★★★)   # 값: 거리
 time.sleep(1)
-player.pendown()        # put the pen back down
-player.forward(100)     # it draws again
+player.pendown()
+player.forward(★★★)   # 값: 거리
 
 screen.mainloop()`;
 
 /** 좌표 이동 — goto 는 (x, y) 자리로, setx 는 x(좌우)만 바꿔 옮긴다 */
 const CODE_GOTO = `import turtle
-import time  # 한 동작씩 천천히 보여주기 위해
+import time
 
 screen = turtle.Screen()
 screen.setup(600, 600)
 
-# 미션: goto 로 여러 자리에 보내보고, setx 로 좌우로도 옮겨보세요 (값을 바꿔가며)
 player = turtle.Turtle()
 player.penup()
-player.goto(0, -250)    # x=0 (center), y=-250 (bottom)
+player.goto(★★★, ★★★)  # 값: x, y
 time.sleep(1)
-player.setx(100)        # move right (x only)
+player.★★★(100)        # 함수: x만 이동 (setx)
 time.sleep(1)
-player.setx(-100)       # move left (x only)
+player.setx(★★★)       # 값: x
 
 screen.mainloop()`;
 
 /** 상대 이동·회전 — forward 는 보는 방향으로, left/right 는 방향을 튼다 */
 const CODE_MOVE = `import turtle
-import time  # 한 동작씩 천천히 보여주기 위해
+import time
 
 screen = turtle.Screen()
 screen.setup(600, 600)
 
-# 미션: forward 거리와 left/right 각도를 바꿔 네모나 삼각형 같은 도형을 그려보세요
 player = turtle.Turtle()
-player.forward(100)     # go forward 100
-time.sleep(1)
-player.left(90)         # turn left 90 degrees
-time.sleep(1)
-player.forward(100)
+player.forward(★★★)   # 값: 거리
+time.sleep(0.5)
+player.left(★★★)      # 값: 각도
+player.forward(★★★)   # 값: 거리
 
 screen.mainloop()`;
 
@@ -247,7 +241,7 @@ function submitField(key: string, label: string, exampleName: string): Worksheet
     phase: "worksheet",
     label,
     hint:
-      `위 [${exampleName}] 예제를 복사해 OneCompiler 에서 미션대로 바꿔 보고 주석도 단 뒤,\n` +
+      `위 [${exampleName}] 예제를 복사 버튼으로 가져와 ★★★ 부분만 채워 완성하고 실행해 본 뒤,\n` +
       "그 예제의 최종 코드를 여기에 붙여넣어 제출하세요.\n" +
       "붙여넣기(Ctrl+V) 가 되고, 쓰는 동안 자동으로 저장돼요.",
     kind: "long",
@@ -294,11 +288,12 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "worksheet",
     label: "① 찍어보기 — 직접 쳐 보고, 값을 바꿔 실험해요",
     hint:
-      "이제 파이썬 '터틀' 함수를 직접 쳐 보며 익혀요(찍어보기). 아래 [OneCompiler 터틀 열기] 로\n" +
-      "편집기를 새 탭에서 열고(그대로 두면 계속 거기서 해요), 아래 칸들의 코드를 직접 한 줄씩\n" +
-      "따라 쳐서 실행해 봐요.\n\n" +
-      "그리고 색·좌표·거리·각도 같은 값을 여러 가지로 바꿔 다시 실행해서, 무엇이 달라지는지\n" +
-      "눈으로 확인하는 게 오늘의 핵심이에요. 같은 함수라도 넣는 값에 따라 결과가 달라져요.\n\n" +
+      "이제 파이썬 '터틀' 함수를 익혀요(찍어보기). 아래 [OneCompiler 터틀 열기] 로 편집기를\n" +
+      "새 탭에서 열고(그대로 두면 계속 거기서 해요), 아래 칸의 코드를 복사 버튼으로 가져온 뒤\n" +
+      "★★★ 부분만 직접 쳐서 채워 완성하고 실행해 봐요. ★★★는 대부분 값(색·크기·좌표·각도)이고,\n" +
+      "한 곳은 함수 이름이에요(주석을 보고 채워요).\n\n" +
+      "채운 뒤엔 색·좌표·거리·각도 값을 여러 가지로 바꿔 다시 실행해서, 무엇이 달라지는지 눈으로\n" +
+      "확인하는 게 오늘의 핵심이에요. 같은 함수라도 넣는 값에 따라 결과가 달라져요.\n\n" +
       "화면에 적는 글자(제목 등)는 영어로 써요 — 온라인 편집기에서 한글은 깨져 보여요.",
     kind: "note",
     linkUrl: ONECOMPILER_TURTLE_URL,
@@ -313,8 +308,9 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "② 무대 만들기 — screen",
     hint:
       "핵심 키워드: Screen() 창 만들기, setup() 크기, bgcolor() 배경색\n\n" +
-      "'무대' 는 게임이 펼쳐지는 화면이에요. 아래 코드를 직접 쳐서 실행해 보고, 값을 하나씩 바꿔\n" +
-      "다시 실행해 봐요.\n\n" +
+      "'무대' 는 게임이 펼쳐지는 화면이에요. 아래 코드를 복사 버튼으로 가져온 뒤 ★★★만 채워\n" +
+      "완성하고 실행해 봐요(★★★는 대부분 값, 한 곳은 함수 이름 — 주석 참고). 그다음 값을 하나씩\n" +
+      "바꿔 다시 실행해 봐요.\n\n" +
       "· screen.bgcolor(\"lightyellow\") — 배경색. 이렇게도 넣어 봐요:\n" +
       "    \"lightblue\"  →  \"pink\"  →  \"black\"  →  \"white\"\n" +
       "· screen.setup(600, 600) — 창 크기(가로, 세로). 이렇게도:\n" +
@@ -335,7 +331,8 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "③ 거북이 만들기·꾸미기 — shape · color",
     hint:
       "핵심 키워드: Turtle() 거북이 만들기, shape() 모양, color() 색\n\n" +
-      "거북이(주인공)를 하나 만들고 꾸며 봐요. 값을 바꿔 가며 실행해 보세요.\n\n" +
+      "거북이(주인공)를 하나 만들고 꾸며 봐요. 아래 코드를 복사해 ★★★만 채워 완성한 뒤(★★★는\n" +
+      "값·함수 이름 — 주석 참고), 값을 바꿔 가며 실행해 보세요.\n\n" +
       "· player.shape(\"square\") — 모양. 이렇게도:\n" +
       "    \"circle\"  →  \"turtle\"  →  \"arrow\"  →  \"triangle\"  →  \"classic\"\n" +
       "· player.color(\"green\") — 색(색 이름). 이렇게도:\n" +
@@ -364,8 +361,9 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "④ 펜 상태 — penup · pendown",
     hint:
       "핵심 키워드: penup() 펜 올리기(선 안 그림), pendown() 펜 내리기(선 그림)\n\n" +
-      "'펜' 을 내리면 움직일 때 선이 그려지고, 올리면(penup) 선 없이 이동만 해요. 실행해서 어디에\n" +
-      "선이 생기고 안 생기는지 봐요.\n\n" +
+      "'펜' 을 내리면 움직일 때 선이 그려지고, 올리면(penup) 선 없이 이동만 해요. 아래 코드를\n" +
+      "복사해 ★★★만 채워 완성한 뒤(★★★는 값·함수 이름 — 주석 참고) 실행해서, 어디에 선이\n" +
+      "생기고 안 생기는지 봐요.\n\n" +
       "· player.penup() — 펜 올리기(선 안 그림)\n" +
       "· player.pendown() — 펜 내리기(선 그림)\n\n" +
       "이렇게 바꿔 봐요:\n" +
@@ -385,7 +383,8 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "⑤ 좌표 이동 — goto · setx",
     hint:
       "핵심 키워드: goto() 좌표로 이동, setx() x만 바꾸기 (가운데가 0,0)\n\n" +
-      "goto 는 '정해진 자리(x, y)' 로 한 번에 보내요. 화면 한가운데가 (0, 0) 이에요.\n\n" +
+      "goto 는 '정해진 자리(x, y)' 로 한 번에 보내요. 화면 한가운데가 (0, 0) 이에요. 아래 코드를\n" +
+      "복사해 ★★★만 채워 완성한 뒤(★★★는 값·함수 이름 — 주석 참고) 실행해요.\n\n" +
       "· player.goto(0, -250) — 이렇게도 넣어 봐요:\n" +
       "    (100, 100)  →  (-200, 0)  →  (0, 0)  →  (250, 250)  →  (-150, -150)\n" +
       "· player.setx(100) — x(좌우)만 바꿔요(위아래 y 는 그대로). 이렇게도:\n" +
@@ -406,7 +405,8 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "⑥ 상대 이동·회전 — forward · left · right",
     hint:
       "핵심 키워드: forward() 앞으로, left()/right() 왼쪽·오른쪽 회전\n\n" +
-      "forward 는 '지금 보고 있는 방향으로' 앞으로 가고, left/right 는 방향을 틀어요(도, degree).\n\n" +
+      "forward 는 '지금 보고 있는 방향으로' 앞으로 가고, left/right 는 방향을 틀어요(도, degree).\n" +
+      "아래 코드를 복사해 ★★★만 채워 완성한 뒤(여기 ★★★는 모두 값 — 거리·각도) 실행해요.\n\n" +
       "· player.forward(100) — 거리를 이렇게도:\n" +
       "    50  →  150  →  200  →  30\n" +
       "· player.left(90) — 각도를 이렇게도:\n" +
