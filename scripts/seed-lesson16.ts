@@ -208,9 +208,10 @@ function submitField(
 // ─────────────────────────────────────────────────────────────
 // 활동지 —
 //   · 파이썬 타자 연습(phase: wordquiz, 별도 단계) : 외부 앱 새 탭 링크
-//   · 빈칸 채우기 : 주제별 단계로 쪼갬 — 무대(worksheet)·거북이(problem)·펜(mvp)·좌표(build)·
-//       이동(grill). 각 단계 = ★★★ 빈칸 코드(복사 허용) + 완성한 코드 제출(long).
-//       phaseLabels 로 "빈칸 채우기 - □" 이름을 붙인다(STEP_PHASES 슬롯 재사용).
+//   · 빈칸 채우기 : 주제별 단계로 쪼갬 — 무대(problem)·거북이(mvp)·펜(build)·좌표(grill)·
+//       이동(wrapmap). 각 단계 = ★★★ 빈칸 코드(복사 허용) + 완성한 코드 제출(long).
+//       STEP_PHASE 슬롯을 써서 phaseLabels "빈칸 채우기 - □" 가 곧 단계 제목이 되게 한다
+//       ('worksheet' 단계는 공용 머리말을 제목으로 띄워 안 씀).
 // 핵심 키워드·time.sleep 은 15차 것을 그대로 둔다(참고용). 화면 텍스트는 평문.
 // ─────────────────────────────────────────────────────────────
 const WORKSHEET: WorksheetQuestion[] = [
@@ -232,7 +233,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   /* ── ① 직접 타이핑 안내 + OneCompiler 링크 ── */
   {
     key: "_typing_intro",
-    phase: "worksheet",
+    phase: "problem",
     label: "빈칸 채우기 — 코드를 가져와 ★★★만 채워 완성해요",
     hint:
       "지난 시간에 이어, 이번엔 예제 코드를 복사해 와서 ★★★ 빈칸만 직접 채워 완성해요.\n" +
@@ -251,7 +252,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   /* ── ② 무대 만들기 — screen (직접 타이핑) ── */
   {
     key: "_typing_stage",
-    phase: "worksheet",
+    phase: "problem",
     label: "무대 만들기 — screen",
     hint:
       "핵심 키워드: Screen() 창 만들기, setup() 크기, bgcolor() 배경색\n\n" +
@@ -268,12 +269,12 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_STAGE,
     maxLength: 0,
   },
-  submitField("typing_submit_stage", "무대 — 완성한 코드 제출", "무대"),
+  submitField("typing_submit_stage", "무대 — 완성한 코드 제출", "무대", "problem"),
 
   /* ── ③ 거북이 만들기·꾸미기 — shape · color (직접 타이핑) ── */
   {
     key: "_typing_turtle",
-    phase: "problem",
+    phase: "mvp",
     label: "거북이 만들기·꾸미기 — shape · color",
     hint:
       "핵심 키워드: Turtle() 거북이 만들기, shape() 모양, color() 색\n\n" +
@@ -298,12 +299,12 @@ const WORKSHEET: WorksheetQuestion[] = [
     linkLabel: "색상 코드 변환기 (참고, 새 탭)",
     maxLength: 0,
   },
-  submitField("typing_submit_turtle", "거북이/색 — 완성한 코드 제출", "거북이 만들기·꾸미기", "problem"),
+  submitField("typing_submit_turtle", "거북이/색 — 완성한 코드 제출", "거북이 만들기·꾸미기", "mvp"),
 
   /* ── ④ 펜 상태 — penup · pendown (직접 타이핑) ── */
   {
     key: "_typing_pen",
-    phase: "mvp",
+    phase: "build",
     label: "펜 상태 — penup · pendown",
     hint:
       "핵심 키워드: penup() 펜 올리기(선 안 그림), pendown() 펜 내리기(선 그림)\n\n" +
@@ -319,12 +320,12 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_PEN,
     maxLength: 0,
   },
-  submitField("typing_submit_pen", "펜 상태 — 완성한 코드 제출", "펜 상태", "mvp"),
+  submitField("typing_submit_pen", "펜 상태 — 완성한 코드 제출", "펜 상태", "build"),
 
   /* ── ⑤ 좌표 이동 — goto · setx (직접 타이핑) ── */
   {
     key: "_typing_goto",
-    phase: "build",
+    phase: "grill",
     label: "좌표 이동 — goto · setx",
     hint:
       "핵심 키워드: goto() 좌표로 이동, setx() x만 바꾸기 (가운데가 0,0)\n\n" +
@@ -340,12 +341,12 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_GOTO,
     maxLength: 0,
   },
-  submitField("typing_submit_goto", "좌표 이동 — 완성한 코드 제출", "좌표 이동", "build"),
+  submitField("typing_submit_goto", "좌표 이동 — 완성한 코드 제출", "좌표 이동", "grill"),
 
   /* ── ⑥ 상대 이동·회전 — forward · left · right (직접 타이핑) ── */
   {
     key: "_typing_move",
-    phase: "grill",
+    phase: "wrapmap",
     label: "상대 이동·회전 — forward · left · right",
     hint:
       "핵심 키워드: forward() 앞으로, left()/right() 왼쪽·오른쪽 회전\n\n" +
@@ -363,7 +364,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_MOVE,
     maxLength: 0,
   },
-  submitField("typing_submit_move", "상대 이동·회전 — 완성한 코드 제출", "상대 이동·회전", "grill"),
+  submitField("typing_submit_move", "상대 이동·회전 — 완성한 코드 제출", "상대 이동·회전", "wrapmap"),
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
@@ -450,27 +451,28 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 창을 옮기는 것을 이탈로 세지 않는다 (15차와 같은 이유).
    */
   // 직접 타이핑 단계들 모두 OneCompiler(새 탭)를 오가므로 focusExempt 에 넣는다(이탈 오탐 방지).
-  focusExempt: ["wordquiz", "worksheet", "problem", "mvp", "build", "grill"],
+  focusExempt: ["wordquiz", "problem", "mvp", "build", "grill", "wrapmap"],
   /*
    * 교사 버튼 순서. 기분(mood)은 대기 앞에서 한 번만 하므로 여기 넣지 않는다(대기·안내 사이
    * 중복 방지). moodCheckEnabled 로 뜨는 기분 버튼은 목록 맨 뒤 재확인용이다.
    *
-   * 직접 타이핑을 **주제별 단계로 쪼갠다**(교사 확정) — 무대·거북이·펜·좌표·이동을 각각 다른
-   * phase(worksheet·problem·mvp·build·grill)에 담고 phaseLabels 로 "직접 타이핑 - □" 이름을
-   * 붙인다. STEP_PHASES 슬롯을 빌려 쓰는 것뿐이고, 화면엔 이름만 보인다(정보과 다른 차시·선택
-   * 과목과 안 겹침, 각 phase 에 문항이 실제로 들어 있어 버튼이 뜬다).
-   *   대기 → 타자 연습(wordquiz) → 안내(assessment) → 직접 타이핑 무대(worksheet) → 거북이(problem)
-   *     → 펜(mvp) → 좌표(build) → 이동(grill) → 성찰
+   * 빈칸 채우기를 **주제별 단계로 쪼갠다**(교사 확정) — 무대·거북이·펜·좌표·이동을 각각 다른
+   * STEP_PHASE(problem·mvp·build·grill·wrapmap)에 담고 phaseLabels 로 "빈칸 채우기 - □" 이름을
+   * 붙인다. 'worksheet' 단계는 안 쓴다 — 그 단계는 활동지 공용 머리말(worksheetIntro)을 제목으로
+   * 띄워 단계 제목이 phaseLabel 로 안 나오기 때문(STEP_PHASE 는 phaseLabel 이 곧 단계 제목).
+   * LESSON_PHASES 순서(problem<mvp<build<grill<wrapmap)라 제출 단추는 마지막 이동(wrapmap)에 뜬다.
+   *   대기 → 타자 연습(wordquiz) → 안내(assessment) → 무대(problem) → 거북이(mvp) → 펜(build)
+   *     → 좌표(grill) → 이동(wrapmap) → 성찰
    */
-  phaseOrder: ["waiting", "wordquiz", "assessment", "worksheet", "problem", "mvp", "build", "grill", "reflection"],
+  phaseOrder: ["waiting", "wordquiz", "assessment", "problem", "mvp", "build", "grill", "wrapmap", "reflection"],
   phaseLabels: {
     wordquiz: "파이썬 타자 연습",
     assessment: "안내",
-    worksheet: "빈칸 채우기 - 무대",
-    problem: "빈칸 채우기 - 거북이",
-    mvp: "빈칸 채우기 - 펜",
-    build: "빈칸 채우기 - 좌표",
-    grill: "빈칸 채우기 - 이동",
+    problem: "빈칸 채우기 - 무대",
+    mvp: "빈칸 채우기 - 거북이",
+    build: "빈칸 채우기 - 펜",
+    grill: "빈칸 채우기 - 좌표",
+    wrapmap: "빈칸 채우기 - 이동",
   },
   /*
    * 되돌아가기 켬 — 학생이 안내·활동지 사이를 스스로 오갈 수 있다. 교사는 타자 연습 → 안내 →
@@ -572,7 +574,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (직접 타이핑 통 — 15차 python-intro·17차부터 python-dodge-game 과 분리)`);
-  console.log("단계 흐름(phaseOrder): 대기(지뢰찾기) → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 빈칸 채우기 무대(worksheet) → 거북이(problem) → 펜(mvp) → 좌표(build) → 이동(grill) → 성찰");
+  console.log("단계 흐름(phaseOrder): 대기(지뢰찾기) → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 무대(problem) → 거북이(mvp) → 펜(build) → 좌표(grill) → 이동(wrapmap) → 성찰. 각 단계 제목=phaseLabels '빈칸 채우기 - □'.");
   console.log("빈칸 채우기는 주제별 단계로 쪼갬 — '빈칸 채우기 - 무대/거북이/펜/좌표/이동'. 각 단계 = ★★★ 빈칸 코드(복사 허용) + 완성한 코드 제출.");
   console.log("기분: moodCheckEnabled 켬(대기 앞 1회). phaseOrder 에 mood 없음 → 대기·안내 사이 중복 없음(기분 버튼은 목록 맨 뒤 재확인용).");
   console.log(`파이썬 타자: 별도 단계(wordquiz)에 외부 앱 새 탭 링크 (${TYPING_APP_URL}). 대기 게임: 지뢰찾기 (${MINESWEEPER_URL}).`);

@@ -210,7 +210,7 @@ function submitField(
 // ─────────────────────────────────────────────────────────────
 // 활동지 —
 //   · 파이썬 타자 연습(phase: wordquiz, 별도 단계) : 외부 앱 새 탭 링크
-//   · 빈칸 채우기 : 주제별 단계로 쪼갬 — 무대(worksheet)·거북이(problem) 두 주제만.
+//   · 빈칸 채우기 : 주제별 단계로 쪼갬 — 무대(problem)·거북이(mvp) 두 주제만.
 //       각 주제 = 안내/참고 코드(★★★ 빈칸) + 완성한 코드 제출(long, 자동 저장). 거북이 단계
 //       끝에 '게임과 연결' 표. 펜·좌표·이동은 16차에 이어서 한다(15차에서 제거).
 // 카드마다 hint 에 "이렇게도 넣어 봐요" 로 여러 매개변수를 제시해 바꿔 보게 한다.
@@ -244,7 +244,7 @@ const WORKSHEET: WorksheetQuestion[] = [
    */
   {
     key: "_poke_intro",
-    phase: "worksheet",
+    phase: "problem",
     label: "빈칸 채우기 — 코드를 가져와 ★★★만 직접 채워요",
     hint:
       "이제 파이썬 '터틀' 함수를 빈칸 채우기로 익혀요. 아래 [OneCompiler 터틀 열기] 로 편집기를\n" +
@@ -263,7 +263,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   /* ── ② 무대 만들기 — screen (bgcolor·setup·title) ── */
   {
     key: "_poke_stage",
-    phase: "worksheet",
+    phase: "problem",
     label: "무대 만들기 — screen",
     hint:
       "핵심 키워드: Screen() 창 만들기, setup() 크기, bgcolor() 배경색\n\n" +
@@ -281,12 +281,12 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_STAGE,
     maxLength: 0,
   },
-  submitField("poke_submit_stage", "무대 — 코드 제출", "무대"),
+  submitField("poke_submit_stage", "무대 — 코드 제출", "무대", "problem"),
 
   /* ── ③ 거북이 만들기·꾸미기 — Turtle·shape·color (색을 여러 형태로) ── */
   {
     key: "_poke_turtle",
-    phase: "problem",
+    phase: "mvp",
     label: "거북이 만들기·꾸미기 — shape · color",
     hint:
       "핵심 키워드: Turtle() 거북이 만들기, shape() 모양, color() 색\n\n" +
@@ -311,7 +311,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     linkLabel: "색상 코드 변환기 (참고, 새 탭)",
     maxLength: 0,
   },
-  submitField("poke_submit_turtle", "거북이/색 — 코드 제출", "거북이 만들기·꾸미기", "problem"),
+  submitField("poke_submit_turtle", "거북이/색 — 코드 제출", "거북이 만들기·꾸미기", "mvp"),
 
   /* ── 게임과 연결 — 오늘 함수가 완성 게임 어디에 쓰이나 (표/다이어그램) ── */
   /*
@@ -320,7 +320,7 @@ const WORKSHEET: WorksheetQuestion[] = [
    */
   {
     key: "_poke_game_link",
-    phase: "problem",
+    phase: "mvp",
     label: "오늘 익힌 함수가 게임의 어디에 쓰일까?",
     hint:
       "오늘 쳐 본 함수들이 완성된 똥피하기 게임에서 어디에 쓰이는지 아래 표로 봐요.\n" +
@@ -415,22 +415,26 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 타자 연습(wordquiz)·빈칸 채우기 두 단계(worksheet=무대, problem=거북이)가 새 탭
    * (외부 앱·OneCompiler)을 열어, 창을 옮기는 것을 이탈로 세지 않는다.
    */
-  focusExempt: ["wordquiz", "worksheet", "problem"],
+  focusExempt: ["wordquiz", "problem", "mvp"],
   /*
    * 교사 버튼 순서. 기분(mood)은 대기 앞에서 한 번만 하므로 여기 넣지 않는다.
    *
    * 빈칸 채우기를 **주제별 단계로 쪼갠다**(16차와 동일 방식): 15차는 무대·거북이 두 주제만 하고,
    * 펜·좌표·이동은 16차에 이어서 한다(교사 확정). 무대=worksheet, 거북이=problem 슬롯을 빌려
    * phaseLabels 로 "빈칸 채우기 - □" 이름을 붙인다(게임과 연결 표는 거북이 단계 끝에 붙는다).
-   *   대기 → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 빈칸 채우기 무대(worksheet)
-   *     → 빈칸 채우기 거북이(problem) → 성찰
+   *   대기 → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 빈칸 채우기 무대(problem)
+   *     → 빈칸 채우기 거북이(mvp) → 성찰
+   * ※ 무대·거북이 둘 다 STEP_PHASE(problem·mvp)에 둔다 — 'worksheet' 단계는 활동지 공용
+   *   머리말(worksheetIntro)을 제목으로 띄워 단계 제목이 phaseLabel 로 안 나온다. STEP_PHASE 는
+   *   phaseLabel("빈칸 채우기 - □")이 곧 단계 제목이 된다. 순서상 problem<mvp 라 제출 단추는
+   *   마지막인 거북이(mvp)에 뜬다(finalWorkPhase).
    */
-  phaseOrder: ["waiting", "wordquiz", "assessment", "worksheet", "problem", "reflection"],
+  phaseOrder: ["waiting", "wordquiz", "assessment", "problem", "mvp", "reflection"],
   phaseLabels: {
     wordquiz: "파이썬 타자 연습",
     assessment: "안내",
-    worksheet: "빈칸 채우기 - 무대",
-    problem: "빈칸 채우기 - 거북이",
+    problem: "빈칸 채우기 - 무대",
+    mvp: "빈칸 채우기 - 거북이",
   },
   /*
    * 되돌아가기 켬 — 학생이 안내·활동지 사이를 스스로 오갈 수 있다. 교사는 타자 연습 → 안내 →
@@ -532,7 +536,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (입문/맛보기 통 — 14차와 공유. 게임 제작 통 python-dodge-game 은 16차부터)`);
-  console.log("단계 흐름(phaseOrder): 대기(똥피하기) → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 빈칸 채우기 무대(worksheet) → 거북이(problem) → 성찰");
+  console.log("단계 흐름(phaseOrder): 대기(똥피하기) → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 빈칸 채우기 무대(problem) → 거북이(mvp) → 성찰");
   console.log("기분: moodCheckEnabled 켬(대기 앞에서 한 번). phaseOrder 에 mood 없음 → 대기·안내 사이 기분 중복 제거(기분 버튼은 목록 맨 뒤 재확인용).");
   console.log(`파이썬 타자: 별도 단계(wordquiz)에 외부 앱 새 탭 링크만 (${TYPING_APP_URL}). 시드 안에 타자게임 안 만듦. wordquiz focusExempt.`);
   console.log(`파이썬 터틀 실행: OneCompiler 터틀(${ONECOMPILER_TURTLE_URL}) — _poke_intro note 에 새 탭 링크. 함수 카드마다 code 필드로 예제(등폭 readonly, 복사 단추).`);
