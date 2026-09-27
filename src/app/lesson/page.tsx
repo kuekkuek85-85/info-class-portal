@@ -50,6 +50,8 @@ export interface ActivityInfo {
    * 감정을 쓰는 차시는 false — 마음 이야기는 친구에게 보이지 않는다.
    */
   galleryEnabled?: boolean;
+  /** 친구에게 보여줄 답 칸(감상 노출 범위). 감상 단계의 활동지 탭 범위도 이걸로 좁힌다 */
+  galleryAnswerKeys?: string[];
   /** 그림 제목의 틀. 비면 "○○년의 △△" (artifact-title.ts) */
   artifactTitle?: string;
   /** 활동지를 그리기 앞에 두는가. 안 오면 그리기가 앞 (지금까지의 차시) */
@@ -766,12 +768,31 @@ export default function LessonPage() {
    * 활동지와 다른 활동이라, worksheet 문항을 그대로 띄우면 앞에서 끝낸 것이
    * 다시 나온다 (마음 톡톡 3회기의 「나의 감정 쓰기」가 그랬다).
    */
+  /*
+   * 감상(gallery) 단계의 '활동지 쓰기' 탭에는, 감상 대상(galleryAnswerKeys 로 공유하는 답)을
+   * 만든 **그 활동의 문항만** 띄운다. 감상을 한 활동에만 좁게 건 차시(마음 톡톡 6회기 — 캘리그래피
+   * 이미지 한 칸만 감상)에서 활동지 탭에 모든 활동이 다 뜨던 것을 그 활동 하나로 좁힌다.
+   * 공유 키가 여러 단계에 걸친 차시(인간과 인공지능 5차 등)는 galleryScopePhase 가 없어 지금까지처럼
+   * 전체를 훑는다 — 영향 없음.
+   */
+  const galleryScopePhase = (() => {
+    const keys = session.activity?.galleryAnswerKeys;
+    if (!keys || keys.length === 0) return undefined;
+    const items = session.activity?.worksheet ?? [];
+    const phases = new Set(
+      keys.map((k) => (items.find((q) => q.key === k)?.phase ?? "worksheet") as LessonPhase),
+    );
+    return phases.size === 1 ? ([...phases][0] as LessonPhase) : undefined;
+  })();
+
   const plainWorksheetQuestions =
     viewPhase === "wrapheal" && questionsFor("wrapheal").length > 0
       ? questionsFor("wrapheal")
-      : questionsFor("worksheet").length > 0
-        ? questionsFor("worksheet")
-        : (session.activity?.worksheet ?? []);
+      : viewPhase === "gallery" && galleryScopePhase && questionsFor(galleryScopePhase).length > 0
+        ? questionsFor(galleryScopePhase)
+        : questionsFor("worksheet").length > 0
+          ? questionsFor("worksheet")
+          : (session.activity?.worksheet ?? []);
 
   /**
    * 되돌아갈 수 있는 단계 목록 — 교사가 있는 곳까지, 그리고 이 차시에 실제로 쓰는 것만.

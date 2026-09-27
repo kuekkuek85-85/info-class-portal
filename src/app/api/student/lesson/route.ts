@@ -160,6 +160,9 @@ export async function GET() {
                 반 전체에 걸린다 — 빠뜨렸을 때 조용히 열리는 쪽이라 특히 위험하다.
               */
               galleryEnabled: session.activity.galleryEnabled ?? true,
+              // 감상 노출 범위. 감상 단계의 활동지 탭도 이 키가 가리키는 활동으로 좁힌다
+              // (한 단계에만 걸렸을 때). 안 실으면 화면 쪽에서 좁히지 못한다.
+              galleryAnswerKeys: session.activity.galleryAnswerKeys ?? [],
               galleryNoun: session.activity.galleryNoun ?? "",
               // 왼쪽 활동지 탭 이름. 안 실으면 화면이 기본값 "활동지 쓰기" 로 물러난다
               worksheetTabLabel: session.activity.worksheetTabLabel ?? "",

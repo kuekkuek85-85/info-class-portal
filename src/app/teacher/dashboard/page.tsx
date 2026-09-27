@@ -1553,7 +1553,17 @@ function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
   const quizIn = (item: LessonPhase) =>
     (session.quiz?.questions ?? []).filter((q) => (q.group ?? "quiz") === item).length;
 
-  if (phase === "mood") return session.moodCheckEnabled;
+  /*
+   * 기분(mood) 단추. 기본은 moodCheckEnabled 로 판단하지만, 대기 화면에서 기분을 먼저
+   * 받는 표준(로그인 → 기분 → 대기 게임)에서는 '마음 체크인' 을 별도 단계로 또 둘 이유가
+   * 없다. 그래서 차시가 phaseOrder 를 명시하면서 mood 를 뺐으면(마음 톡톡 6회기 등) 단추를
+   * 만들지 않는다 — moodCheckEnabled 는 대기 화면 기분 체크용으로 그대로 켜 둔다. mood 를
+   * phaseOrder 에 넣은 차시(정보 14·마음톡톡 5 등)는 그 자리에서 그대로 뜬다.
+   */
+  if (phase === "mood") {
+    if (session.phaseOrder?.length && !session.phaseOrder.includes("mood")) return false;
+    return session.moodCheckEnabled;
+  }
   if (phase === "quiz") return quizIn("quiz") > 0;
   /*
    * 활동이 있어도 그리기가 없는 차시가 있다 (4차시 직업 조사는 글만 쓴다).

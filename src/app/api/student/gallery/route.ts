@@ -277,11 +277,22 @@ export async function GET() {
      * 자기 자리만 찾으면 앞뒤가 누구인지 다 따라온다 (inViewingOrder 참조).
      * 배정(assigned)은 학번 순 위에서 계산해 둔 뒤라 차례를 바꿔도 그대로 붙어 간다.
      */
+    /*
+     * 감상을 한 활동에만 좁게 건 차시(galleryAnswerKeys)에서는, **그 칸을 아직 안 낸 학생은
+     * 카드로 안 보인다.** 캘리그래피 감상에서 이미지를 안 낸 학생이 빈 카드로 뜨던 것을 막는다
+     * (교사 지적). allowKeys 를 안 쓴 차시(그림 갤러리 등)는 그대로 — strokes 로만 낸 작품이
+     * 빠지지 않는다. 배정만 노출하는 차시(assignedOnly)는 배정 순환 커버가 깨지지 않게 건드리지 않는다.
+     */
+    const hasShared = (row: (typeof visible)[number]) =>
+      !allowKeys || allowKeys.some((k) => (row.answers?.[k] ?? "").trim() !== "");
+
     const works = inViewingOrder(
       visible
         .filter((row) => row.studentId !== me.studentId)
         // 배정만 노출하는 차시면 여기서 배정 외를 통째로 뺀다 (응답에 아예 안 실린다)
         .filter((row) => !assignedOnly || assignedIds.has(row.id))
+        // 좁힌 감상(allowKeys)에서 공유 칸을 안 낸 학생은 카드로 안 보인다(배정노출 차시는 예외)
+        .filter((row) => assignedOnly || hasShared(row))
         .map((row) => ({
           // 정해진 답 칸만 싣는다 — 감정 낱말은 열고 경험 글은 닫는다.
           // 실명 세션이면 author 에 이름을 채우고(익명 세션은 "" 그대로), 답 칸 범위는 그대로다.
@@ -303,7 +314,13 @@ export async function GET() {
       works,
       mine: mine
         ? {
-            ...toCard(mine, "내 작품"),
+            /*
+             * 내 작품 카드도 **공유 범위(allowKeys)로 좁힌다.** 감상은 캘리그래피만 여는데
+             * 내 카드에 나 전달법·갈등 분석 같은 다른 활동 답까지 뜨면, 감상 화면이 활동지
+             * 전체로 번진다(교사 지적). allowKeys 를 안 정한 차시는 전부 보이던 그대로.
+             * CardNews 는 답이 빈 문항을 건너뛰므로, 좁히면 그 문항은 아예 안 나온다.
+             */
+            ...toCard(mine, "내 작품", allowKeys),
             status: mine.status,
             counts: byArtifact.get(mine.id)?.counts ?? {},
           }

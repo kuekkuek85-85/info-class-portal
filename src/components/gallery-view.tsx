@@ -320,19 +320,37 @@ export function GalleryView({ disabled, noun = "작품" }: { disabled?: boolean;
                             />
                           ) : (
                             <div className="flex min-h-32 flex-col gap-1.5 rounded bg-white p-3">
-                              {summaryOf(work, data.facets ?? [], data.sharedKeys ?? [], data.sharedLabels ?? {}).map((row, i) => (
-                                <p key={row.label || i} className="t-body-sm">
-                                  {/*
-                                    이름표를 반드시 붙인다. 값만 늘어놓으면
-                                    "데이터 분석가 / 교사 / 번역가" 가 되어, 어느 것이 AI 가
-                                    추천한 것이고 어느 것이 사라질 직업인지 알 수가 없다.
-                                  */}
-                                  {row.label && (
-                                    <span className="font-semibold">{row.label} · </span>
-                                  )}
-                                  {row.values.join(", ")}
-                                </p>
-                              ))}
+                              {summaryOf(work, data.facets ?? [], data.sharedKeys ?? [], data.sharedLabels ?? {}).map((row, i) => {
+                                /*
+                                  이미지 답(캘리그래피 등)은 데이터 URL 이라, 글자로 찍으면 base64
+                                  수만 자가 카드에 쏟아진다. 그럴 땐 사진으로 그린다 (card-news 와 같은 처리).
+                                */
+                                const first = row.values[0] ?? "";
+                                if (first.startsWith("data:image")) {
+                                  return (
+                                    /* eslint-disable-next-line @next/next/no-img-element */
+                                    <img
+                                      key={row.label || i}
+                                      src={first}
+                                      alt={row.label || "작품"}
+                                      className="h-auto w-full rounded bg-white"
+                                    />
+                                  );
+                                }
+                                return (
+                                  <p key={row.label || i} className="t-body-sm">
+                                    {/*
+                                      이름표를 반드시 붙인다. 값만 늘어놓으면
+                                      "데이터 분석가 / 교사 / 번역가" 가 되어, 어느 것이 AI 가
+                                      추천한 것이고 어느 것이 사라질 직업인지 알 수가 없다.
+                                    */}
+                                    {row.label && (
+                                      <span className="font-semibold">{row.label} · </span>
+                                    )}
+                                    {row.values.join(", ")}
+                                  </p>
+                                );
+                              })}
                             </div>
                           )}
                           <div className="flex flex-col gap-1">
