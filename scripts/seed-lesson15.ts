@@ -128,58 +128,11 @@ player.★★★("green")   # 함수: 색 (color)
 
 screen.mainloop()`;
 
-/** 펜 상태 — 펜을 내리면 선이 그려지고, 올리면(penup) 선 없이 이동만 한다 */
-const CODE_PEN = `import turtle
-import time
-
-screen = turtle.Screen()
-screen.setup(600, 600)
-
-player = turtle.Turtle()
-player.forward(★★★)   # 값: 거리
-time.sleep(1)
-player.★★★()          # 함수: 펜 올리기 (penup)
-player.forward(★★★)   # 값: 거리
-time.sleep(1)
-player.pendown()
-player.forward(★★★)   # 값: 거리
-
-screen.mainloop()`;
-
-/** 좌표 이동 — goto 는 (x, y) 자리로, setx 는 x(좌우)만 바꿔 옮긴다 */
-const CODE_GOTO = `import turtle
-import time
-
-screen = turtle.Screen()
-screen.setup(600, 600)
-
-player = turtle.Turtle()
-player.penup()
-player.goto(★★★, ★★★)  # 값: x, y
-time.sleep(1)
-player.★★★(100)        # 함수: x만 이동 (setx)
-time.sleep(1)
-player.setx(★★★)       # 값: x
-
-screen.mainloop()`;
-
-/** 상대 이동·회전 — forward 는 보는 방향으로, left/right 는 방향을 튼다 */
-const CODE_MOVE = `import turtle
-import time
-
-screen = turtle.Screen()
-screen.setup(600, 600)
-
-player = turtle.Turtle()
-player.forward(★★★)   # 값: 거리
-time.sleep(0.5)
-player.left(★★★)      # 값: 각도
-player.forward(★★★)   # 값: 거리
-
-screen.mainloop()`;
+// 펜·좌표·이동(CODE_PEN·CODE_GOTO·CODE_MOVE) 예제는 16차(seed-lesson16.ts)로 옮겼다.
+// 15차는 무대·거북이 두 주제만 한다(교사 확정 — 나머지는 16차에서 이어서).
 
 /* ──────────────────────────────────────────────────────────────
- * ⑦ '게임과 연결' 표(다이어그램).
+ * '게임과 연결' 표(다이어그램).
  *
  * 함수→쓰임 매핑을 글로 나열하면 눈에 안 들어온다(교사 지적). 두 칸짜리 표를 SVG 로 그려
  * imageUrl 로 카드에 얹는다(worksheet-view 는 imageUrl 을 w-full 읽기용 img 로 그린다).
@@ -235,10 +188,15 @@ function empty(): PhaseContent {
  * 자동 저장(1.5초)·붙여넣기 허용(noPaste 안 켬). 예제마다 key/label 을 구분해 답이 따로 저장된다.
  * 안내문은 평문(마크다운 서식 문자 없음). exampleName 은 위 카드 이름([무대] 등)을 가리킨다.
  */
-function submitField(key: string, label: string, exampleName: string): WorksheetQuestion {
+function submitField(
+  key: string,
+  label: string,
+  exampleName: string,
+  phase: WorksheetQuestion["phase"] = "worksheet",
+): WorksheetQuestion {
   return {
     key,
-    phase: "worksheet",
+    phase,
     label,
     hint:
       `위 [${exampleName}] 예제를 복사 버튼으로 가져와 ★★★ 부분만 채워 완성하고 실행해 본 뒤,\n` +
@@ -252,9 +210,10 @@ function submitField(key: string, label: string, exampleName: string): Worksheet
 // ─────────────────────────────────────────────────────────────
 // 활동지 —
 //   · 파이썬 타자 연습(phase: wordquiz, 별도 단계) : 외부 앱 새 탭 링크
-//   · 함수 찍어보기(phase: worksheet) : 안내 → 함수 카드 5개(무대·거북이·펜·좌표·이동)
-//       → 코드 제출하기(long, 자동 저장) → 게임과 연결 note
-// 함수마다 hint 에 "이렇게도 넣어 봐요" 로 여러 매개변수를 제시해 차례로 실험하게 한다.
+//   · 빈칸 채우기 : 주제별 단계로 쪼갬 — 무대(worksheet)·거북이(problem) 두 주제만.
+//       각 주제 = 안내/참고 코드(★★★ 빈칸) + 완성한 코드 제출(long, 자동 저장). 거북이 단계
+//       끝에 '게임과 연결' 표. 펜·좌표·이동은 16차에 이어서 한다(15차에서 제거).
+// 카드마다 hint 에 "이렇게도 넣어 봐요" 로 여러 매개변수를 제시해 바꿔 보게 한다.
 // 화면 텍스트는 평문 — 마크다운 서식 문자를 쓰지 않는다(code 필드의 파이썬만 예외).
 // ─────────────────────────────────────────────────────────────
 const WORKSHEET: WorksheetQuestion[] = [
@@ -305,7 +264,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "_poke_stage",
     phase: "worksheet",
-    label: "② 무대 만들기 — screen",
+    label: "무대 만들기 — screen",
     hint:
       "핵심 키워드: Screen() 창 만들기, setup() 크기, bgcolor() 배경색\n\n" +
       "'무대' 는 게임이 펼쳐지는 화면이에요. 아래 코드를 복사 버튼으로 가져온 뒤 ★★★만 채워\n" +
@@ -322,13 +281,13 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_STAGE,
     maxLength: 0,
   },
-  submitField("poke_submit_stage", "② 무대 — 코드 제출", "무대"),
+  submitField("poke_submit_stage", "무대 — 코드 제출", "무대"),
 
   /* ── ③ 거북이 만들기·꾸미기 — Turtle·shape·color (색을 여러 형태로) ── */
   {
     key: "_poke_turtle",
-    phase: "worksheet",
-    label: "③ 거북이 만들기·꾸미기 — shape · color",
+    phase: "problem",
+    label: "거북이 만들기·꾸미기 — shape · color",
     hint:
       "핵심 키워드: Turtle() 거북이 만들기, shape() 모양, color() 색\n\n" +
       "거북이(주인공)를 하나 만들고 꾸며 봐요. 아래 코드를 복사해 ★★★만 채워 완성한 뒤(★★★는\n" +
@@ -352,84 +311,17 @@ const WORKSHEET: WorksheetQuestion[] = [
     linkLabel: "색상 코드 변환기 (참고, 새 탭)",
     maxLength: 0,
   },
-  submitField("poke_submit_turtle", "③ 거북이/색 — 코드 제출", "거북이 만들기·꾸미기"),
+  submitField("poke_submit_turtle", "거북이/색 — 코드 제출", "거북이 만들기·꾸미기", "problem"),
 
-  /* ── ④ 펜 상태 — penup · pendown ── */
-  {
-    key: "_poke_pen",
-    phase: "worksheet",
-    label: "④ 펜 상태 — penup · pendown",
-    hint:
-      "핵심 키워드: penup() 펜 올리기(선 안 그림), pendown() 펜 내리기(선 그림)\n\n" +
-      "'펜' 을 내리면 움직일 때 선이 그려지고, 올리면(penup) 선 없이 이동만 해요. 아래 코드를\n" +
-      "복사해 ★★★만 채워 완성한 뒤(★★★는 값·함수 이름 — 주석 참고) 실행해서, 어디에 선이\n" +
-      "생기고 안 생기는지 봐요.\n\n" +
-      "· player.penup() — 펜 올리기(선 안 그림)\n" +
-      "· player.pendown() — 펜 내리기(선 그림)\n\n" +
-      "이렇게 바꿔 봐요:\n" +
-      "· penup() 줄을 지우면 어떻게 될까요? (계속 선이 그려져요)\n" +
-      "· forward(100) 의 100 을 50 · 200 으로 바꿔서 선 길이도 바꿔 봐요.\n\n" +
-      "완성 게임은 주인공과 똥에 penup() 을 써서 선을 안 남기고 미끄러지게 해요.",
-    kind: "note",
-    code: CODE_PEN,
-    maxLength: 0,
-  },
-  submitField("poke_submit_pen", "④ 펜 상태 — 코드 제출", "펜 상태"),
-
-  /* ── ⑤ 좌표 이동 — goto · setx (좌표를 여러 개) ── */
-  {
-    key: "_poke_goto",
-    phase: "worksheet",
-    label: "⑤ 좌표 이동 — goto · setx",
-    hint:
-      "핵심 키워드: goto() 좌표로 이동, setx() x만 바꾸기 (가운데가 0,0)\n\n" +
-      "goto 는 '정해진 자리(x, y)' 로 한 번에 보내요. 화면 한가운데가 (0, 0) 이에요. 아래 코드를\n" +
-      "복사해 ★★★만 채워 완성한 뒤(★★★는 값·함수 이름 — 주석 참고) 실행해요.\n\n" +
-      "· player.goto(0, -250) — 이렇게도 넣어 봐요:\n" +
-      "    (100, 100)  →  (-200, 0)  →  (0, 0)  →  (250, 250)  →  (-150, -150)\n" +
-      "· player.setx(100) — x(좌우)만 바꿔요(위아래 y 는 그대로). 이렇게도:\n" +
-      "    setx(-100)  →  setx(0)  →  setx(250)\n\n" +
-      "x 는 오른쪽으로 갈수록 커지고, y 는 위로 갈수록 커져요. 넣은 좌표에 거북이가 어디로 가는지\n" +
-      "잘 봐요.\n\n" +
-      "완성 게임에서 주인공은 goto(0, -250) 로 아래 가운데에서 시작하고, 좌우로 움직일 때 setx 를 써요.",
-    kind: "note",
-    code: CODE_GOTO,
-    maxLength: 0,
-  },
-  submitField("poke_submit_goto", "⑤ 좌표 이동 — 코드 제출", "좌표 이동"),
-
-  /* ── ⑥ 상대 이동·회전 — forward · left · right (거리·각도를 여러 개) ── */
-  {
-    key: "_poke_move",
-    phase: "worksheet",
-    label: "⑥ 상대 이동·회전 — forward · left · right",
-    hint:
-      "핵심 키워드: forward() 앞으로, left()/right() 왼쪽·오른쪽 회전\n\n" +
-      "forward 는 '지금 보고 있는 방향으로' 앞으로 가고, left/right 는 방향을 틀어요(도, degree).\n" +
-      "아래 코드를 복사해 ★★★만 채워 완성한 뒤(여기 ★★★는 모두 값 — 거리·각도) 실행해요.\n\n" +
-      "· player.forward(100) — 거리를 이렇게도:\n" +
-      "    50  →  150  →  200  →  30\n" +
-      "· player.left(90) — 각도를 이렇게도:\n" +
-      "    45  →  120  →  30  →  60\n" +
-      "· player.right(90) — 반대로 틀어요. 이렇게도:\n" +
-      "    45  →  120  →  30\n\n" +
-      "forward 와 right/left 를 번갈아 여러 번 하면 네모·삼각형 같은 그림도 그려져요. 각도를 바꾸면\n" +
-      "그림이 완전히 달라져요 — 바꿔 보며 놀아 봐요.",
-    kind: "note",
-    code: CODE_MOVE,
-    maxLength: 0,
-  },
-  submitField("poke_submit_move", "⑥ 상대 이동·회전 — 코드 제출", "상대 이동·회전"),
-
-  /* ── ⑦ 게임과 연결 — 오늘 함수가 완성 게임 어디에 쓰이나 (표/다이어그램) ── */
+  /* ── 게임과 연결 — 오늘 함수가 완성 게임 어디에 쓰이나 (표/다이어그램) ── */
   /*
    * 매핑을 글로 나열하면 눈에 안 들어온다(교사 지적). 두 칸짜리 표(SVG)를 imageUrl 로 얹고,
    * hint 는 표를 읽는 법 + 다음 시간 예고만 짧게 둔다.
    */
   {
     key: "_poke_game_link",
-    phase: "worksheet",
-    label: "⑦ 오늘 익힌 함수가 게임의 어디에 쓰일까?",
+    phase: "problem",
+    label: "오늘 익힌 함수가 게임의 어디에 쓰일까?",
     hint:
       "오늘 쳐 본 함수들이 완성된 똥피하기 게임에서 어디에 쓰이는지 아래 표로 봐요.\n" +
       "왼쪽이 오늘 배운 함수, 오른쪽이 게임에서 그 함수가 하는 일이에요.\n\n" +
@@ -502,7 +394,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
           { label: "마지막", value: "게임과 연결 + 성찰" },
         ],
         highlights: [
-          "오늘은 무대·거북이까지가 목표예요. 빠른 친구는 아래 펜·좌표·이동도 이어서 해봐도 좋아요.",
+          "오늘은 무대·거북이 두 주제예요. 펜·좌표·이동은 다음 시간(16차)에 이어서 해요.",
         ],
       },
     ],
@@ -520,21 +412,25 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   reflectionPublic: false,
 
   /*
-   * 타자 연습(wordquiz)·함수 찍어보기(worksheet) 두 단계가 새 탭(외부 앱·OneCompiler)을 열어,
-   * 창을 옮기는 것을 이탈로 세지 않는다 (14차 wordquiz·build 를 focusExempt 로 둔 것과 같은 이유).
+   * 타자 연습(wordquiz)·빈칸 채우기 두 단계(worksheet=무대, problem=거북이)가 새 탭
+   * (외부 앱·OneCompiler)을 열어, 창을 옮기는 것을 이탈로 세지 않는다.
    */
-  focusExempt: ["wordquiz", "worksheet"],
+  focusExempt: ["wordquiz", "worksheet", "problem"],
   /*
-   * 교사 버튼 순서. 기분(mood)은 대기 앞에서 한 번만 하므로 여기 넣지 않는다 — 넣으면 대기와
-   * 안내 사이에 기분이 또 떠 중복이 된다. moodCheckEnabled 로 뜨는 기분 버튼은 목록 맨 뒤에
-   * 붙는 재확인용이다(대기·안내 사이에는 안 뜬다).
-   *   대기 → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 함수 찍어보기(worksheet) → 성찰
+   * 교사 버튼 순서. 기분(mood)은 대기 앞에서 한 번만 하므로 여기 넣지 않는다.
+   *
+   * 빈칸 채우기를 **주제별 단계로 쪼갠다**(16차와 동일 방식): 15차는 무대·거북이 두 주제만 하고,
+   * 펜·좌표·이동은 16차에 이어서 한다(교사 확정). 무대=worksheet, 거북이=problem 슬롯을 빌려
+   * phaseLabels 로 "빈칸 채우기 - □" 이름을 붙인다(게임과 연결 표는 거북이 단계 끝에 붙는다).
+   *   대기 → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 빈칸 채우기 무대(worksheet)
+   *     → 빈칸 채우기 거북이(problem) → 성찰
    */
-  phaseOrder: ["waiting", "wordquiz", "assessment", "worksheet", "reflection"],
+  phaseOrder: ["waiting", "wordquiz", "assessment", "worksheet", "problem", "reflection"],
   phaseLabels: {
     wordquiz: "파이썬 타자 연습",
     assessment: "안내",
-    worksheet: "함수 찍어보기",
+    worksheet: "빈칸 채우기 - 무대",
+    problem: "빈칸 채우기 - 거북이",
   },
   /*
    * 되돌아가기 켬 — 학생이 안내·활동지 사이를 스스로 오갈 수 있다. 교사는 타자 연습 → 안내 →
@@ -636,11 +532,11 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (입문/맛보기 통 — 14차와 공유. 게임 제작 통 python-dodge-game 은 16차부터)`);
-  console.log("단계 흐름(phaseOrder): 대기(똥피하기) → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 함수 찍어보기(worksheet) → 성찰");
+  console.log("단계 흐름(phaseOrder): 대기(똥피하기) → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 빈칸 채우기 무대(worksheet) → 거북이(problem) → 성찰");
   console.log("기분: moodCheckEnabled 켬(대기 앞에서 한 번). phaseOrder 에 mood 없음 → 대기·안내 사이 기분 중복 제거(기분 버튼은 목록 맨 뒤 재확인용).");
   console.log(`파이썬 타자: 별도 단계(wordquiz)에 외부 앱 새 탭 링크만 (${TYPING_APP_URL}). 시드 안에 타자게임 안 만듦. wordquiz focusExempt.`);
   console.log(`파이썬 터틀 실행: OneCompiler 터틀(${ONECOMPILER_TURTLE_URL}) — _poke_intro note 에 새 탭 링크. 함수 카드마다 code 필드로 예제(등폭 readonly, 복사 단추).`);
-  console.log("찍어보기 카드 5개: 무대(screen) · 거북이(shape·color, 색을 이름/#코드/튜플로) · 펜(penup·pendown) · 좌표(goto·setx) · 이동(forward·left·right). 함수마다 여러 값 실험.");
+  console.log("빈칸 채우기 2주제(각 별도 단계): 무대(screen) · 거북이(shape·color). ★★★ 빈칸 채워 완성·제출. 펜·좌표·이동은 16차로 이관(15차에서 제거).");
   console.log("코드 제출하기: 예제(②~⑥)마다 바로 아래에 제출 칸(poke_submit_stage/turtle/pen/goto/move, long) — 자동 저장·붙여넣기 허용. 이 차시 저장 활동지 답. 성찰 2문항.");
   console.log("화면 텍스트 평문(마크다운 서식 문자 없음, code 필드 파이썬만 예외). quiz 없음. galleryEnabled: false.");
   console.log("⚠ open-info-*.ts 로 새 세션을 열 때 그 스크립트가 phaseOrder 를 복사해야 대시보드 순서가 반영됩니다(snapshotOf 에도 추가함 — db.ts).");
