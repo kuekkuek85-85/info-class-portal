@@ -33,7 +33,7 @@
  * 포털 단계 순서(LESSON_PHASES)는 assessment(안내) → worksheet(활동지)로 흐르고, 실제
  * 진행은 교사가 단추로 몬다(freeNavigation). 교사 뼈대 순서:
  *
- *   0–3   대기(똥피하기) · 기분 · 출석
+ *   0–3   대기(끝없는 계단) · 기분 · 출석
  *   3–8   안내 보드(assessment) — 오늘: 분석 → 설계 → 첫 기능
  *   8–13  좌표 개념 note (화면은 x·y, 주인공은 (x,y))
  *   13–23 게임 분석 — 필요한 구성요소와 하는 일 적기(rows)
@@ -150,8 +150,9 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "worksheet",
     label: "② 게임을 뜯어보기 — 무엇이 필요할까?",
     hint:
-      "똥피하기 게임을 만들려면 무엇무엇이 필요한지 '구성요소' 로 뜯어봐요. 대기 화면에서\n" +
-      "해 본 게임을 떠올리면 쉬워요. 예를 들면:\n\n" +
+      "똥피하기 게임을 만들려면 무엇무엇이 필요한지 '구성요소' 로 뜯어봐요. 지난 시간까지\n" +
+      "여러 번 해 본 똥피하기를 떠올리면 쉬워요(아래 [똥피하기 다시 해보기] 로 다시 해 봐도 돼요).\n" +
+      "예를 들면:\n\n" +
       "  · 주인공(플레이어) — 좌우로 움직여 똥을 피한다\n" +
       "  · 똥(장애물) — 위에서 아래로 떨어진다\n" +
       "  · 좌표(위치) — 주인공·똥이 화면 어디에 있는지 (x, y)\n" +
@@ -160,6 +161,8 @@ const WORKSHEET: WorksheetQuestion[] = [
       "아래 표에 '이 게임에 필요한 것' 과 '그게 하는 일' 을 나눠 적어 봐요. 위 예시를 참고해\n" +
       "내 말로 적으면 됩니다.",
     kind: "note",
+    linkUrl: "https://dodge-poop-game.vercel.app/",
+    linkLabel: "똥피하기 다시 해보기 (새 탭)",
     maxLength: 0,
   },
   {
@@ -241,13 +244,15 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   title: "똥피하기 게임 — 분석·설계 + 첫 기능",
   moodCheckEnabled: true,
 
+  // 대기 게임 — 16차부터 '끝없는 계단'(새 게임). 단, 오늘 분석 대상은 똥피하기라, 아래
+  // 게임 분석 카드에 똥피하기 다시하기 링크를 따로 붙인다(대기 게임과 별개).
   game: {
-    heading: "기다리는 동안 — 똥피하기",
+    heading: "기다리는 동안 — 끝없는 계단",
     body:
       "수업이 시작되길 기다리는 동안 잠깐 쉬어요.\n" +
-      "위에서 떨어지는 똥을 좌우로 움직여 피하면 돼요.\n" +
-      "오늘은 이 게임을 뜯어보고, 직접 만들기 시작합니다! 수업이 시작되면 닫습니다.",
-    url: "https://dodge-poop-game.vercel.app/",
+      "끝없이 이어지는 계단을 리듬 맞춰 올라가 봐요.\n" +
+      "수업이 시작되면 이 화면은 저절로 넘어가요.",
+    url: "https://endless-stairs-game.vercel.app/",
   },
   gameExplainer: empty(),
 
@@ -415,7 +420,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (게임 제작 아크 공용 통 — 이후 구현 차시가 이어 씀. 입문/맛보기 통 python-intro·직접 타이핑 통 python-typing 과 분리)`);
-  console.log("단계: 대기(똥피하기) → 기분 → 안내(assessment) → 활동지(worksheet: 좌표·분석·설계·첫 기능) → 성찰");
+  console.log("단계: 대기(끝없는 계단) → 기분 → 안내(assessment) → 활동지(worksheet: 좌표·분석·설계·첫 기능) → 성찰. 게임 분석 카드에 똥피하기 다시하기 링크.");
   console.log("실제 진행: 안내 → 좌표 note → 게임 분석(rows) → 게임 설계(순서 list) → 첫 기능 주인공 좌우 이동(터틀 코드) → 성찰 (freeNavigation)");
   console.log("분석 칸(dg_components, rows): 필요한 것(구성요소) / 하는 일 (maxRows 6). 설계 칸(dg_build_order, list): 만들 순서 4~6칸.");
   console.log("첫 기능: 주인공 좌우 이동 — 터틀 onkeypress(Left/Right)로 x 좌표 ±20. code 필드로 제시(등폭 readonly, 복사 단추). 14·15·16·17차 모두 터틀로 일관.");
