@@ -245,9 +245,9 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "_poke_intro",
     phase: "worksheet",
-    label: "① 찍어보기 — 직접 쳐 보고, 값을 바꿔 실험해요",
+    label: "빈칸 채우기 — 코드를 가져와 ★★★만 직접 채워요",
     hint:
-      "이제 파이썬 '터틀' 함수를 익혀요(찍어보기). 아래 [OneCompiler 터틀 열기] 로 편집기를\n" +
+      "이제 파이썬 '터틀' 함수를 빈칸 채우기로 익혀요. 아래 [OneCompiler 터틀 열기] 로 편집기를\n" +
       "새 탭에서 열고(그대로 두면 계속 거기서 해요), 아래 칸의 코드를 복사 버튼으로 가져온 뒤\n" +
       "★★★ 부분만 직접 쳐서 채워 완성하고 실행해 봐요. ★★★는 대부분 값(색·크기·좌표·각도)이고,\n" +
       "한 곳은 함수 이름이에요(주석을 보고 채워요).\n\n" +
@@ -336,7 +336,7 @@ const WORKSHEET: WorksheetQuestion[] = [
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   lessonNo: LESSON_NO,
-  title: "터틀 함수 찍어보기 — 똥피하기 게임 준비",
+  title: "터틀 함수 빈칸 채우기 — 똥피하기 게임 준비",
   // 대기 화면 앞에서 하는 기분 체크(로그인 → 기분 → 대기 게임). 단계 버튼(phaseOrder)에는 mood 를
   // 넣지 않는다 — 넣으면 대기와 안내 사이에 기분이 또 떠 중복이 된다.
   moodCheckEnabled: true,
@@ -444,9 +444,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     places: [],
     year: 2036,
     worksheetIntro: {
-      heading: "터틀 함수 찍어보기 — 똥피하기 게임 준비",
+      heading: "터틀 함수 빈칸 채우기 — 똥피하기 게임 준비",
       body:
-        "위에서부터 순서대로 해요. 터틀 함수를 하나씩 직접 쳐 보며 값을 바꿔 실험하고, 예제마다\n" +
+        "위에서부터 순서대로 해요. 예제 코드를 복사해 와서 ★★★ 빈칸만 직접 채워 완성하고, 예제마다\n" +
         "바로 아래 칸에 그 코드를 제출한 뒤, 그 함수들이 완성 게임 어디에 쓰이는지 짚어 봅니다.",
     },
     worksheet: WORKSHEET,
