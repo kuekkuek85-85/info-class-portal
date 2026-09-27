@@ -98,7 +98,8 @@ const ONECOMPILER_TURTLE_URL = "https://onecompiler.com/turtle";
 const COLOR_PICKER_URL = "https://youtil.kr/tools/art/color";
 
 /** 대기 게임 — 정보 수업 관례대로 지뢰찾기. */
-const MINESWEEPER_URL = "https://mine-sweeper-game-seven.vercel.app/home";
+// 대기 게임 — 16차부터는 '끝없는 계단'(새 게임). 15차까지는 똥피하기였다.
+const STAIRS_URL = "https://endless-stairs-game.vercel.app/";
 
 /* ──────────────────────────────────────────────────────────────
  * 예제 코드(★★★ 빈칸) — 15차와 같은 다섯 예제에 ★★★ 빈칸을 넣었다. 핵심 키워드·time.sleep 과
@@ -376,12 +377,12 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   moodCheckEnabled: true,
 
   game: {
-    heading: "기다리는 동안 — 지뢰찾기",
+    heading: "기다리는 동안 — 끝없는 계단",
     body:
       "수업이 시작되길 기다리는 동안 잠깐 쉬어요.\n" +
-      "숫자를 단서로 지뢰가 없는 칸을 찾아 열면 돼요.\n" +
+      "끝없이 이어지는 계단을 리듬 맞춰 올라가 봐요.\n" +
       "수업이 시작되면 이 화면은 저절로 넘어가요.",
-    url: MINESWEEPER_URL,
+    url: STAIRS_URL,
   },
   gameExplainer: empty(),
 
@@ -578,7 +579,7 @@ async function main(): Promise<void> {
   console.log("단계 흐름(phaseOrder): 대기(지뢰찾기) → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 무대(problem) → 거북이(mvp) → 펜(build) → 좌표(grill) → 이동(wrapmap) → 성찰. 각 단계 제목=phaseLabels '빈칸 채우기 - □'.");
   console.log("빈칸 채우기는 주제별 단계로 쪼갬 — '빈칸 채우기 - 무대/거북이/펜/좌표/이동'. 각 단계 = ★★★ 빈칸 코드(복사 허용) + 완성한 코드 제출.");
   console.log("기분: moodCheckEnabled 켬(대기 앞 1회). phaseOrder 에 mood 없음 → 대기·안내 사이 중복 없음(기분 버튼은 목록 맨 뒤 재확인용).");
-  console.log(`파이썬 타자: 별도 단계(wordquiz)에 외부 앱 새 탭 링크 (${TYPING_APP_URL}). 대기 게임: 지뢰찾기 (${MINESWEEPER_URL}).`);
+  console.log(`파이썬 타자: 별도 단계(wordquiz)에 외부 앱 새 탭 링크 (${TYPING_APP_URL}). 대기 게임: 끝없는 계단 (${STAIRS_URL}) — 16차부터.`);
   console.log(`빈칸 채우기: 예제 5개(무대·거북이/색·펜·좌표·이동). 각 예제=★★★ 빈칸 코드(복사 허용, 핵심키워드·time.sleep 유지) + 완성한 코드 제출(long, 자동저장·붙여넣기).`);
   console.log(`OneCompiler 터틀(${ONECOMPILER_TURTLE_URL})·색상 변환기(${COLOR_PICKER_URL}) 링크. 화면 텍스트 평문(마크다운 없음). quiz 없음. galleryEnabled: false.`);
   console.log("⚠ open-info-*.ts 로 새 세션을 열 때 그 스크립트가 phaseOrder 를 복사해야 대시보드 순서가 반영됩니다(snapshotOf 에도 phaseOrder 있음 — db.ts).");
