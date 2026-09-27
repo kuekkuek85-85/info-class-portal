@@ -31,11 +31,14 @@
  * 추가해 뒀고, 시드도 예약 세션에 직접 써 넣는다. 교사가 open-info-*.ts 로 새 세션을 열 때는
  * 그 스크립트가 phaseOrder 를 복사해야 한다(현 open-info 템플릿엔 없음 — 아래 콘솔·보고 참조).
  *
- * ## 활동 통(activityId) — 직접 타이핑 통(python-typing), 15·17차와 분리
+ * ## 활동 통(activityId) — 15차와 같은 통(python-intro)을 이어 쓴다
  *
- * 학생이 직접 친 코드(예제별 제출)를 남기는 통이라, 15차 입문/맛보기 통(python-intro, note 위주)·
- * 17차부터의 게임 제작 통(python-dodge-game)과 물리적으로 다른 문서로 둔다. 마이크로비트~햄스터
- * 실습 통(physical-computing)·디지털 윤리 통(digital-ethics)과도 안 섞인다.
+ * 16차는 15차(터틀 빈칸 채우기)의 '이어서'라, **같은 통(python-intro)**을 쓴다. 무대·거북이를
+ * 15차에 제출한 학생은 그 코드가 16차의 같은 키(poke_submit_stage·poke_submit_turtle) 필드에
+ * 학생별로 그대로 뜬다(별도 프리필 없이 같은 아티팩트라 자동). 펜·좌표·이동은 15차에 없어 빈
+ * 칸 — 16차에서 새로 채운다. 17차 게임 제작 통(python-dodge-game)·실습 통(physical-computing)·
+ * 디지털 윤리 통(digital-ethics)과는 여전히 다른 문서라 안 섞인다. (원래 python-typing 으로
+ * 분리했다가 진도 이어보기를 위해 합침 — 교사 확정.)
  *
  * ## 화면 텍스트는 평문이다 (마크다운 안 됨)
  *
@@ -79,12 +82,11 @@ const LESSON_NO = 16;
 /** 9~11차시와 같은 규칙 — 아무도 안 들어온 수업에만 반영한다. --force 로 덮어쓸 수 있다 */
 const FORCE = process.argv.includes("--force");
 
-/**
- * 직접 타이핑 통. 학생이 직접 친 코드(예제별 제출)를 남긴다 — 15차 입문/맛보기 통
- * (python-intro, note 위주)·17차부터의 게임 제작 통(python-dodge-game)·실습 통
- * (physical-computing)·디지털 윤리 통(digital-ethics)과 물리적으로 다른 문서라 안 섞인다.
- */
-const ACTIVITY_ID = "python-typing";
+// ★ 15차와 같은 통(python-intro)을 쓴다. 16차는 15차의 '이어서'라, 무대·거북이를 15차에 이미
+// 제출한 학생은 그 코드가 16차 같은 키(poke_submit_stage·poke_submit_turtle) 필드에 그대로
+// 뜬다(학생별). 펜·좌표·이동은 15차에 없어 빈 칸 — 16차에서 새로 채운다. (원래 python-typing
+// 으로 분리했다가, 15차 진도 이어보기를 위해 통을 합침 — 교사 확정.)
+const ACTIVITY_ID = "python-intro";
 
 /** 파이썬 타자/낱말 연습 — 교사가 만든 외부 앱(15차와 동일). 새 탭 링크만 건다. */
 const TYPING_APP_URL = "https://python-typing-helper.vercel.app";
@@ -269,7 +271,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_STAGE,
     maxLength: 0,
   },
-  submitField("typing_submit_stage", "무대 — 완성한 코드 제출", "무대", "problem"),
+  submitField("poke_submit_stage", "무대 — 완성한 코드 제출", "무대", "problem"),
 
   /* ── ③ 거북이 만들기·꾸미기 — shape · color (직접 타이핑) ── */
   {
@@ -299,7 +301,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     linkLabel: "색상 코드 변환기 (참고, 새 탭)",
     maxLength: 0,
   },
-  submitField("typing_submit_turtle", "거북이/색 — 완성한 코드 제출", "거북이 만들기·꾸미기", "mvp"),
+  submitField("poke_submit_turtle", "거북이/색 — 완성한 코드 제출", "거북이 만들기·꾸미기", "mvp"),
 
   /* ── ④ 펜 상태 — penup · pendown (직접 타이핑) ── */
   {
@@ -320,7 +322,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_PEN,
     maxLength: 0,
   },
-  submitField("typing_submit_pen", "펜 상태 — 완성한 코드 제출", "펜 상태", "build"),
+  submitField("poke_submit_pen", "펜 상태 — 완성한 코드 제출", "펜 상태", "build"),
 
   /* ── ⑤ 좌표 이동 — goto · setx (직접 타이핑) ── */
   {
@@ -341,7 +343,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_GOTO,
     maxLength: 0,
   },
-  submitField("typing_submit_goto", "좌표 이동 — 완성한 코드 제출", "좌표 이동", "grill"),
+  submitField("poke_submit_goto", "좌표 이동 — 완성한 코드 제출", "좌표 이동", "grill"),
 
   /* ── ⑥ 상대 이동·회전 — forward · left · right (직접 타이핑) ── */
   {
@@ -364,7 +366,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_MOVE,
     maxLength: 0,
   },
-  submitField("typing_submit_move", "상대 이동·회전 — 완성한 코드 제출", "상대 이동·회전", "wrapmap"),
+  submitField("poke_submit_move", "상대 이동·회전 — 완성한 코드 제출", "상대 이동·회전", "wrapmap"),
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
@@ -573,7 +575,7 @@ async function main(): Promise<void> {
     console.log(`＋ 등록 — ${PLAN.title} (${ref.id})`);
   }
 
-  console.log(`\n활동 ID: ${ACTIVITY_ID} (직접 타이핑 통 — 15차 python-intro·17차부터 python-dodge-game 과 분리)`);
+  console.log(`\n활동 ID: ${ACTIVITY_ID} (★ 15차와 같은 통 — 무대·거북이는 15차 제출(poke_submit_stage·turtle)이 16차 같은 필드에 학생별로 그대로 뜸. 펜·좌표·이동은 새로 채움. 17차 python-dodge-game 과는 분리)`);
   console.log("단계 흐름(phaseOrder): 대기(지뢰찾기) → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 무대(problem) → 거북이(mvp) → 펜(build) → 좌표(grill) → 이동(wrapmap) → 성찰. 각 단계 제목=phaseLabels '빈칸 채우기 - □'.");
   console.log("빈칸 채우기는 주제별 단계로 쪼갬 — '빈칸 채우기 - 무대/거북이/펜/좌표/이동'. 각 단계 = ★★★ 빈칸 코드(복사 허용) + 완성한 코드 제출.");
   console.log("기분: moodCheckEnabled 켬(대기 앞 1회). phaseOrder 에 mood 없음 → 대기·안내 사이 중복 없음(기분 버튼은 목록 맨 뒤 재확인용).");
