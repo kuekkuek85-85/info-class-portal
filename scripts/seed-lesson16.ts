@@ -264,6 +264,7 @@ const WORKSHEET: WorksheetQuestion[] = [
       "바꿀 때마다 실행해서 화면이 어떻게 달라지는지 눈으로 확인해요.",
     kind: "note",
     code: CODE_STAGE,
+    noCopy: true, // 직접 타이핑 차시 — 복사 단추 숨김
     maxLength: 0,
   },
   submitField("typing_submit_stage", "② 무대 — 직접 친 코드 제출", "무대"),
@@ -290,6 +291,7 @@ const WORKSHEET: WorksheetQuestion[] = [
       "완성 게임에서 주인공은 square 에 green, 똥은 circle 에 brown 이에요.",
     kind: "note",
     code: CODE_TURTLE,
+    noCopy: true, // 직접 타이핑 차시 — 복사 단추 숨김
     // 색 코드(#RRGGBB)를 찾아볼 수 있는 참고 링크 — 코드 아래 단추로 뜬다(새 탭). worksheet focusExempt.
     linkUrl: COLOR_PICKER_URL,
     linkLabel: "색상 코드 변환기 (참고, 새 탭)",
@@ -314,6 +316,7 @@ const WORKSHEET: WorksheetQuestion[] = [
       "완성 게임은 주인공과 똥에 penup() 을 써서 선을 안 남기고 미끄러지게 해요.",
     kind: "note",
     code: CODE_PEN,
+    noCopy: true, // 직접 타이핑 차시 — 복사 단추 숨김
     maxLength: 0,
   },
   submitField("typing_submit_pen", "④ 펜 상태 — 직접 친 코드 제출", "펜 상태"),
@@ -335,6 +338,7 @@ const WORKSHEET: WorksheetQuestion[] = [
       "완성 게임에서 주인공은 goto(0, -250) 로 아래 가운데에서 시작하고, 좌우로 움직일 때 setx 를 써요.",
     kind: "note",
     code: CODE_GOTO,
+    noCopy: true, // 직접 타이핑 차시 — 복사 단추 숨김
     maxLength: 0,
   },
   submitField("typing_submit_goto", "⑤ 좌표 이동 — 직접 친 코드 제출", "좌표 이동"),
@@ -358,6 +362,7 @@ const WORKSHEET: WorksheetQuestion[] = [
       "그림이 완전히 달라져요 — 바꿔 보며 놀아 봐요.",
     kind: "note",
     code: CODE_MOVE,
+    noCopy: true, // 직접 타이핑 차시 — 복사 단추 숨김
     maxLength: 0,
   },
   submitField("typing_submit_move", "⑥ 상대 이동·회전 — 직접 친 코드 제출", "상대 이동·회전"),

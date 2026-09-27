@@ -646,19 +646,25 @@ export function WorksheetView({
                 onFocus={(event) => event.currentTarget.select()}
                 className="field font-mono text-sm"
               />
-              <button
-                type="button"
-                onClick={() =>
-                  void copy(`${question.key}__code`, question.code ?? "", `ws-code-${question.key}`)
-                }
-                className="pill pill-secondary t-body-sm self-start"
-              >
-                {copied === `${question.key}__code`
-                  ? "복사됐어요"
-                  : copied === `${question.key}__code__manual`
-                    ? "골라 뒀어요 — Ctrl+C"
-                    : "코드 복사하기"}
-              </button>
+              {/*
+                직접 타이핑 차시(noCopy)는 복사 단추를 숨긴다 — 참고 코드는 읽기용으로 보이되
+                학생이 복사 대신 손으로 친다. noCopy 가 없거나 false 면 지금 그대로 단추가 뜬다.
+              */}
+              {!question.noCopy && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void copy(`${question.key}__code`, question.code ?? "", `ws-code-${question.key}`)
+                  }
+                  className="pill pill-secondary t-body-sm self-start"
+                >
+                  {copied === `${question.key}__code`
+                    ? "복사됐어요"
+                    : copied === `${question.key}__code__manual`
+                      ? "골라 뒀어요 — Ctrl+C"
+                      : "코드 복사하기"}
+                </button>
+              )}
             </div>
           )}
 
