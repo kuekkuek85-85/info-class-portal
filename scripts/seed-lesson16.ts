@@ -1,47 +1,48 @@
 /**
- * 16차시 차시 계획 등록 — 「똥피하기 게임 — 분석·설계 + 첫 기능(주인공 좌우 이동)」.
+ * 16차시 차시 계획 등록 — 「터틀 함수 직접 타이핑 — 한 줄 한 줄 이해하기」.
  *
  *   node --env-file=.env.local scripts/seed-lesson16.ts
  *   node --env-file=.env.local scripts/seed-lesson16.ts --force   (이미 학생이 들어온 수업도 덮어씀)
  *
- * ## 이 자리(LESSON_NO 16)는 아크에 「함수 찍어보기」가 끼어들며 한 칸 뒤로 밀렸다
+ * ## 이 자리(LESSON_NO 16)는 15차 다지기(consolidation) 수업으로 새로 지었다
  *
- * 원래 이 수업(똥피하기 분석·설계 + 첫 기능)은 15차였다. 그런데 개론+맛보기(14) 다음에
- * **완성 게임에 쓰인 터틀 함수를 직접 쳐 보는 「함수 찍어보기」 수업**(15, seed-lesson15.ts)이
- * 새로 들어오면서, 분석·설계+구현은 한 칸 밀려 16차가 됐다. 내용은 그대로다.
+ * 15차(터틀 함수 찍어보기)에서 복사·붙여넣기로 값을 바꿔 익힌 다섯 예제를, 이번엔 학생이
+ * OneCompiler 에 직접 한 줄 한 줄 타이핑하고 교사가 한 줄씩 설명하며 이해하는 시간이다.
+ * 15차에서 '복붙 위주라 한 줄 한 줄 설명을 못다 한' 것을 여기서 채운다.
  *
- * 아크: **개론+맛보기(14) → 터틀 함수 찍어보기(15, seed-lesson15.ts) → 똥피하기 분석·설계+
- *   첫 기능(16, 이 파일) → 기능을 하나씩 붙이는 구현 차시들(≈이후 6차시, 같은 python-dodge-game
- *   통을 이어 씀) → 피지컬 컴퓨팅 개념(122) → 마이크로비트(123) → 바이브 코딩 → 햄스터**.
+ * 아크: 개론+맛보기(14) → 터틀 함수 찍어보기(15, seed-lesson15.ts) → 터틀 함수 직접 타이핑
+ *   (16, 이 파일) → 똥피하기 분석·설계+첫 기능(17, seed-lesson17.ts) → 구현 차시들
+ *   (python-dodge-game 통) → 피지컬 컴퓨팅 개념(122) → 마이크로비트(123) → 바이브 코딩 → 햄스터.
  *
- * ## 이 시간의 목적 — "만들기 전에 뜯어보고, 순서를 정한다"
+ * 이 수업이 끼면서, 원래 16차였던 분석·설계+첫 기능은 한 칸 밀려 17차가 됐다(seed-lesson17.ts).
  *
- * 코드부터 치지 않는다. 먼저 익숙한 게임을 **구성요소로 뜯어**(도메인 분석) 무엇이 필요한지
- * 보고, **어떤 순서로 붙일지**(설계) 정한다. 좌표(화면은 x·y, 주인공은 (x,y) 위치) 개념을
- * 쉬운 note 로 먼저 잡은 뒤, 오늘의 첫 기능 **주인공 좌우 이동**만 터틀로 만들어 성공을 맛본다.
- * 나머지 기능(똥 떨어뜨리기·충돌·점수)은 다음 차시들에서 하나씩 붙인다.
+ * ## 단계 흐름 — 15차 관례를 그대로(파이썬 타자 wordquiz 단계 + phaseOrder)
  *
- * ## 활동 통(activityId) — 게임 제작 아크 공용 통
+ * 기분 체크는 대기 화면 앞에서 한 번만 한다(로그인 → 기분 → 대기 게임). phaseOrder 에 mood 를
+ * 넣지 않아 대기·안내 사이 기분 중복을 막는다(moodCheckEnabled 는 켜 둠). 흐름:
  *
- * `python-dodge-game` 를 판다. **이후 구현 차시들이 같은 통을 이어 쓴다** — 분석·설계·코드
- * 기록이 한 문서에 쌓여 이어지게. 게임 제작의 실질적 첫 기록이 여기서 시작한다. 14차·15차
- * 입문/맛보기 통(python-intro)·마이크로비트~햄스터 실습 통(physical-computing)·디지털 윤리 통
- * (digital-ethics)과 물리적으로 다른 문서라 안 섞인다.
+ *   대기(지뢰찾기) → 파이썬 타자 연습(wordquiz, 외부 앱 새 탭) → 안내(assessment)
+ *     → 직접 타이핑(worksheet: 예제마다 참고 코드 + 직접 타이핑 + 제출) → 성찰(reflection)
  *
- * ## 단계 배치와 실제 진행 순서
+ * 타이핑 차시라 워밍업으로 파이썬 타자 연습이 잘 맞는다(15차와 같은 외부 앱). 대기 게임은 정보
+ * 수업 관례대로 지뢰찾기.
  *
- * 포털 단계 순서(LESSON_PHASES)는 assessment(안내) → worksheet(활동지)로 흐르고, 실제
- * 진행은 교사가 단추로 몬다(freeNavigation). 교사 뼈대 순서:
+ * ⚠ phaseOrder 는 세션 문서에 실려야 대시보드가 읽는다. snapshotOf(db.ts)에 phaseOrder 를
+ * 추가해 뒀고, 시드도 예약 세션에 직접 써 넣는다. 교사가 open-info-*.ts 로 새 세션을 열 때는
+ * 그 스크립트가 phaseOrder 를 복사해야 한다(현 open-info 템플릿엔 없음 — 아래 콘솔·보고 참조).
  *
- *   0–3   대기(똥피하기) · 기분 · 출석
- *   3–8   안내 보드(assessment) — 오늘: 분석 → 설계 → 첫 기능
- *   8–13  좌표 개념 note (화면은 x·y, 주인공은 (x,y))
- *   13–23 게임 분석 — 필요한 구성요소와 하는 일 적기(rows)
- *   23–30 게임 설계 — 만들 순서 정하기(note + 순서 적기 list)
- *   30–38 첫 기능 구현 — 주인공 좌우 이동(터틀 예제 따라 치기)
- *   38–40 성찰 → 정리
+ * ## 활동 통(activityId) — 직접 타이핑 통(python-typing), 15·17차와 분리
  *
- * 점수·자동채점은 없다. 진도 팝업(progressChecks)은 없다.
+ * 학생이 직접 친 코드(예제별 제출)를 남기는 통이라, 15차 입문/맛보기 통(python-intro, note 위주)·
+ * 17차부터의 게임 제작 통(python-dodge-game)과 물리적으로 다른 문서로 둔다. 마이크로비트~햄스터
+ * 실습 통(physical-computing)·디지털 윤리 통(digital-ethics)과도 안 섞인다.
+ *
+ * ## 화면 텍스트는 평문이다 (마크다운 안 됨)
+ *
+ * label·hint·안내문은 whitespace-pre-line 평문으로 그려진다. 굵게·백틱·줄머리 # 같은 마크다운
+ * 서식은 리터럴로 보이므로 쓰지 않는다. 강조는 따옴표·[대괄호]·콜론으로. code 필드의 파이썬
+ * 코드(#주석 포함)는 그대로 둔다. code 필드는 UI 상 '코드 복사하기' 단추가 늘 함께 뜨지만, 이
+ * 차시는 안내문으로 '복사하지 말고 직접 쳐보세요' 를 못 박는다.
  *
  * 대상 1~4반 중1. 각 반 30번은 테스트 학생(리허설). 숙제/집에 내주는 것 없음. seed 멱등(--force).
  */
@@ -79,42 +80,105 @@ const LESSON_NO = 16;
 const FORCE = process.argv.includes("--force");
 
 /**
- * **게임 제작 아크 공용 통.** 똥피하기 분석·설계·구현 차시들이 한 문서에 이어 쓴다 — 코드·설계
- * 기록이 쌓이게. 14차·15차 입문/맛보기 통(python-intro)·마이크로비트~햄스터 실습 통
+ * 직접 타이핑 통. 학생이 직접 친 코드(예제별 제출)를 남긴다 — 15차 입문/맛보기 통
+ * (python-intro, note 위주)·17차부터의 게임 제작 통(python-dodge-game)·실습 통
  * (physical-computing)·디지털 윤리 통(digital-ethics)과 물리적으로 다른 문서라 안 섞인다.
  */
-const ACTIVITY_ID = "python-dodge-game";
+const ACTIVITY_ID = "python-typing";
+
+/** 파이썬 타자/낱말 연습 — 교사가 만든 외부 앱(15차와 동일). 새 탭 링크만 건다. */
+const TYPING_APP_URL = "https://python-typing-helper.vercel.app";
+
+/** 파이썬 터틀 실행 편집기 — OneCompiler 터틀 모드(설치 불필요, 14·15·17차와 동일). */
+const ONECOMPILER_TURTLE_URL = "https://onecompiler.com/turtle";
+
+/** 색상 코드(#RRGGBB) 참고용 변환기 — 색 예제에서 원하는 색 코드를 찾아본다(15차와 동일). */
+const COLOR_PICKER_URL = "https://youtil.kr/tools/art/color";
+
+/** 대기 게임 — 정보 수업 관례대로 지뢰찾기. */
+const MINESWEEPER_URL = "https://mine-sweeper-game-seven.vercel.app/home";
 
 /* ──────────────────────────────────────────────────────────────
- * 첫 기능 예제 코드 — 주인공 좌우 이동. code 필드로 준다(등폭 readonly, 들여쓰기 보존 + 복사).
- * 14·15차와 같은 **터틀**로 일관한다. 방향키(Left/Right)로 주인공의 x 좌표를 바꿔 움직인다 —
- * 좌표 개념 note 와 바로 이어진다(왼쪽 = x 줄이기, 오른쪽 = x 늘리기).
+ * 참고 코드(읽기용) — 15차와 같은 다섯 예제. 핵심 키워드·미션 주석(#)·time.sleep 을 그대로 둔다.
+ * 이번엔 '복사하지 말고 직접 한 줄씩 쳐보는' 참고용이다. 화면에 적는 글자는 영어(온라인 터틀
+ * 서버에서 한글 write 가 깨진다 — 한글은 # 주석에만). code 필드라 등폭 readonly·들여쓰기 보존.
  * ────────────────────────────────────────────────────────────── */
-const CODE_PLAYER_MOVE = `import turtle
+
+/** 무대 만들기 — screen 을 만들고 제목·배경색·크기를 정한다 */
+const CODE_STAGE = `import turtle
+
+# 미션: 배경색(bgcolor)과 창 제목(title)을 다른 값으로 바꿔보세요
+screen = turtle.Screen()
+screen.title("My Game")
+screen.bgcolor("lightyellow")
+screen.setup(600, 600)
+
+screen.mainloop()`;
+
+/** 거북이 만들기·꾸미기 — Turtle 을 하나 만들고 모양·색을 정한다 */
+const CODE_TURTLE = `import turtle
 
 screen = turtle.Screen()
-screen.setup(400, 500)          # 게임 화면 크기(가로 400, 세로 500)
+screen.setup(600, 600)
 
-# 주인공 만들기
+# 미션: 주인공처럼 square + green 으로, 또 똥처럼 circle + brown 으로도 바꿔보세요
 player = turtle.Turtle()
-player.shape("square")          # 네모 모양
-player.penup()                  # 선을 안 그리고 이동만
-player.goto(0, -200)            # 화면 아래쪽 가운데 (x=0, y=-200)
+player.shape("square")
+player.color("green")
 
-# 왼쪽으로 — x 좌표를 20만큼 줄인다
-def go_left():
-    x = player.xcor()           # 지금 x 좌표를 읽어서
-    player.setx(x - 20)         # 20만큼 왼쪽으로
+screen.mainloop()`;
 
-# 오른쪽으로 — x 좌표를 20만큼 늘린다
-def go_right():
-    x = player.xcor()
-    player.setx(x + 20)         # 20만큼 오른쪽으로
+/** 펜 상태 — 펜을 내리면 선이 그려지고, 올리면(penup) 선 없이 이동만 한다 */
+const CODE_PEN = `import turtle
+import time  # 한 동작씩 천천히 보여주기 위해
 
-# 방향키를 누르면 위 함수가 실행되게 연결
-screen.listen()
-screen.onkeypress(go_left, "Left")
-screen.onkeypress(go_right, "Right")
+screen = turtle.Screen()
+screen.setup(600, 600)
+
+# 미션: 펜을 올렸을 때와 내렸을 때 선이 그려지는지 안 그려지는지 관찰하세요
+player = turtle.Turtle()
+player.forward(100)     # pen is down -> it draws a line
+time.sleep(1)
+player.penup()          # lift the pen up
+player.forward(100)     # now it moves with NO line
+time.sleep(1)
+player.pendown()        # put the pen back down
+player.forward(100)     # it draws again
+
+screen.mainloop()`;
+
+/** 좌표 이동 — goto 는 (x, y) 자리로, setx 는 x(좌우)만 바꿔 옮긴다 */
+const CODE_GOTO = `import turtle
+import time  # 한 동작씩 천천히 보여주기 위해
+
+screen = turtle.Screen()
+screen.setup(600, 600)
+
+# 미션: goto 로 여러 자리에 보내보고, setx 로 좌우로도 옮겨보세요 (값을 바꿔가며)
+player = turtle.Turtle()
+player.penup()
+player.goto(0, -250)    # x=0 (center), y=-250 (bottom)
+time.sleep(1)
+player.setx(100)        # move right (x only)
+time.sleep(1)
+player.setx(-100)       # move left (x only)
+
+screen.mainloop()`;
+
+/** 상대 이동·회전 — forward 는 보는 방향으로, left/right 는 방향을 튼다 */
+const CODE_MOVE = `import turtle
+import time  # 한 동작씩 천천히 보여주기 위해
+
+screen = turtle.Screen()
+screen.setup(600, 600)
+
+# 미션: forward 거리와 left/right 각도를 바꿔 네모나 삼각형 같은 도형을 그려보세요
+player = turtle.Turtle()
+player.forward(100)     # go forward 100
+time.sleep(1)
+player.left(90)         # turn left 90 degrees
+time.sleep(1)
+player.forward(100)
 
 screen.mainloop()`;
 
@@ -122,132 +186,196 @@ function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
 
+/*
+ * 예제별 '직접 친 코드' 제출 칸 — 각 참고 코드 카드 바로 뒤에 하나씩 둔다. kind long 이라
+ * 여러 줄 입력·자동 저장(1.5초)·붙여넣기 허용. 예제마다 key/label 을 구분해 답이 따로 저장된다.
+ * 안내문은 평문. exampleName 은 위 카드 이름([무대] 등)을 가리킨다.
+ */
+function submitField(key: string, label: string, exampleName: string): WorksheetQuestion {
+  return {
+    key,
+    phase: "worksheet",
+    label,
+    hint:
+      `위 [${exampleName}] 참고 코드를 보고 OneCompiler 에 직접 한 줄 한 줄 쳐서 완성한 뒤,\n` +
+      "그 코드를 여기에 붙여넣어 제출하세요.\n" +
+      "붙여넣기(Ctrl+V) 가 되고, 쓰는 동안 자동으로 저장돼요.",
+    kind: "long",
+    maxLength: 2000,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────
-// 활동지 — 좌표 note → 게임 분석(rows) → 게임 설계(note + 순서 list) → 첫 기능(터틀 코드).
-// 한 worksheet 단계에 위→아래로 흐른다. 오늘 남기는 기록: 분석 표 · 만들 순서.
+// 활동지 —
+//   · 파이썬 타자 연습(phase: wordquiz, 별도 단계) : 외부 앱 새 탭 링크
+//   · 직접 타이핑(phase: worksheet) : 안내 → 예제 5개(무대·거북이·펜·좌표·이동),
+//       각 예제 = 참고 코드(복사 말고 직접 치기) + 직접 친 코드 제출(long)
+// 핵심 키워드·미션 주석·time.sleep 은 15차 것을 그대로 둔다(참고용). 화면 텍스트는 평문.
 // ─────────────────────────────────────────────────────────────
 const WORKSHEET: WorksheetQuestion[] = [
-  /* ── ① 좌표 개념 note (화면은 x·y, 주인공은 (x,y) 위치) ── */
+  /* ── 파이썬 타자 연습 (별도 단계 wordquiz, 안내 앞) — 외부 앱 새 탭 링크만 (15차와 동일) ── */
   {
-    key: "_dg_coord",
-    phase: "worksheet",
-    label: "① 화면은 좌표로 되어 있어요 (x · y)",
+    key: "_typing_typing",
+    phase: "wordquiz",
+    label: "파이썬 타자 연습 — 5분 워밍업",
     hint:
-      "게임을 만들려면 '어디에 있는지' 를 숫자로 말할 수 있어야 해요. 그게 **좌표** 예요.\n\n" +
-      "  · x — 좌우 위치. 오른쪽으로 갈수록 커지고, 왼쪽으로 갈수록 작아져요.\n" +
-      "  · y — 위아래 위치. 위로 갈수록 커지고, 아래로 갈수록 작아져요.\n\n" +
-      "화면 한가운데가 (0, 0) 이에요. 주인공이 (0, -200) 에 있다면 '가로는 가운데, 세로는 아래쪽'\n" +
-      "이라는 뜻이에요.\n\n" +
-      "그래서 주인공을 **왼쪽으로** 옮기려면 x 를 줄이고(-20), **오른쪽으로** 옮기려면 x 를\n" +
-      "늘리면(+20) 돼요. 오늘 첫 기능이 바로 이거예요.",
+      "오늘은 직접 타이핑하는 날이라, 먼저 파이썬 낱말에 손을 풀어요.\n" +
+      "아래 단추로 새 탭에서 열려요. 딱 5분만, 점수는 없으니 편하게 쳐 봐요.\n" +
+      "다 하고 이 화면으로 돌아오세요.",
     kind: "note",
+    linkUrl: TYPING_APP_URL,
+    linkLabel: "파이썬 타자 연습 열기 (새 탭)",
     maxLength: 0,
   },
 
-  /* ── ② 게임 분석 (도메인 분석): 필요한 구성요소와 하는 일 ── */
+  /* ── ① 직접 타이핑 안내 + OneCompiler 링크 ── */
   {
-    key: "_dg_analyze_intro",
+    key: "_typing_intro",
     phase: "worksheet",
-    label: "② 게임을 뜯어보기 — 무엇이 필요할까?",
+    label: "① 직접 타이핑 — 보고 익힌 코드를 손으로 쳐봐요",
     hint:
-      "똥피하기 게임을 만들려면 무엇무엇이 필요한지 '구성요소' 로 뜯어봐요. 대기 화면에서\n" +
-      "해 본 게임을 떠올리면 쉬워요. 예를 들면:\n\n" +
-      "  · 주인공(플레이어) — 좌우로 움직여 똥을 피한다\n" +
-      "  · 똥(장애물) — 위에서 아래로 떨어진다\n" +
-      "  · 좌표(위치) — 주인공·똥이 화면 어디에 있는지 (x, y)\n" +
-      "  · 충돌(부딪힘) — 똥이 주인공에게 닿았는지\n" +
-      "  · 점수 — 피한 만큼 올라간다 / 화면 경계 — 주인공이 밖으로 못 나가게\n\n" +
-      "아래 표에 '이 게임에 필요한 것' 과 '그게 하는 일' 을 나눠 적어 봐요. 위 예시를 참고해\n" +
-      "내 말로 적으면 됩니다.",
+      "지난 시간엔 코드를 복사해 값을 바꿔 봤죠? 이제 보고 익힌 코드를 직접 손으로 쳐보며\n" +
+      "한 줄 한 줄 이해해요. 아래 [OneCompiler 터틀 열기] 로 편집기를 새 탭에서 열고(그대로 두면\n" +
+      "계속 거기서 해요), 각 예제의 참고 코드를 복사하지 말고 직접 한 줄씩 쳐서 실행해요.\n\n" +
+      "한 줄 칠 때마다 그 줄이 무엇을 하는지 선생님과 함께 이야기하며 갑니다. 다 친 예제는\n" +
+      "바로 아래 제출 칸에 붙여넣어 내요.\n\n" +
+      "화면에 적는 글자(제목 등)는 영어로 써요 — 온라인 편집기에서 한글은 깨져 보여요.",
     kind: "note",
-    maxLength: 0,
-  },
-  {
-    key: "dg_components",
-    phase: "worksheet",
-    label: "게임 구성요소 분석",
-    hint:
-      "왼쪽 칸엔 필요한 것(구성요소) 이름을, 오른쪽 칸엔 그게 게임에서 하는 일을 한 줄로 적어요. " +
-      "[+ 줄 추가] 로 늘릴 수 있어요.",
-    kind: "rows",
-    rowColumns: [
-      { key: "part", label: "필요한 것 (구성요소)", placeholder: "예) 주인공" },
-      { key: "role", label: "하는 일", placeholder: "예) 좌우로 움직여 똥을 피한다" },
-    ],
-    maxRows: 6,
-    // JSON 배열로 한 칸에 담긴다 (rows-field). 여섯 줄 × 두 칸이라 넉넉히 잡아도 2,000 안쪽
-    maxLength: 2000,
-  },
-
-  /* ── ③ 게임 설계 (만들 순서 정하기) ── */
-  {
-    key: "_dg_design_intro",
-    phase: "worksheet",
-    label: "③ 만들 순서를 정하기 — 한 번에 다 만들지 않아요",
-    hint:
-      "게임은 한 번에 통째로 만들지 않아요. 쉬운 것부터 **하나씩** 붙여 갑니다. 보통 이 순서예요:\n\n" +
-      "  ① 주인공 그리기 + 좌우로 움직이기   ← 오늘 여기까지!\n" +
-      "  ② 똥을 위에서 아래로 떨어뜨리기\n" +
-      "  ③ 똥이 주인공에 닿았는지 확인하기(충돌 처리)\n" +
-      "  ④ 점수 세기 · 게임 끝내기\n\n" +
-      "이렇게 순서를 정해 두면, 한 기능이 될 때마다 게임이 조금씩 완성돼요. 아래 칸에 '내가\n" +
-      "생각한 만들 순서' 를 적어 봐요. 위 순서를 그대로 써도 되고, 내 생각대로 바꿔도 좋아요.",
-    kind: "note",
-    maxLength: 0,
-  },
-  {
-    key: "dg_build_order",
-    phase: "worksheet",
-    label: "내가 만들 순서",
-    hint: "한 칸에 기능 하나씩, 만들 순서대로 적어 봐요. [+ 칸 추가] 로 늘릴 수 있어요.",
-    kind: "list",
-    minItems: 4,
-    maxItems: 6,
-    itemPlaceholder: "예) 1. 주인공을 그리고 좌우로 움직이게 하기",
-    // 문자열 배열을 JSON 으로 한 칸에 담는다(list-field). 여섯 칸이라 넉넉히 잡아도 1,500 안쪽
-    maxLength: 1500,
-  },
-
-  /* ── ④ 첫 기능 구현 — 주인공 좌우 이동 (터틀 예제) ── */
-  /*
-   * 실행 편집기 = **OneCompiler 터틀**(https://onecompiler.com/turtle) — 교사 확정, 14·15차와 동일.
-   * 브라우저에서 파이썬 터틀 그래픽이 바로 뜬다(설치 불필요). 아래 note 에 linkUrl 로 붙였다.
-   * 링크가 붙어도 이 문항은 focusExempt(worksheet)라 새 탭 이탈 오탐이 안 난다.
-   */
-  {
-    key: "_dg_feature_move",
-    phase: "worksheet",
-    label: "④ 첫 기능 만들기 — 주인공 좌우 이동",
-    hint:
-      "설계한 ①번(주인공 좌우 이동)을 오늘 만들어 봐요. 아래 [OneCompiler 터틀 열기] 로 편집기를\n" +
-      "새 탭에서 열고, 코드를 복사해 붙여넣어 실행합니다. 네모 주인공이 뜨고, **방향키(← →)로\n" +
-      "좌우로 움직이면 성공!**\n\n" +
-      "· player.goto(0, -200) — 주인공을 화면 아래 가운데에 놓아요.\n" +
-      "· go_left / go_right — 방향키를 누르면 x 좌표를 20씩 줄이거나 늘려요(왼쪽/오른쪽).\n" +
-      "· onkeypress(go_left, \"Left\") — 왼쪽 방향키에 그 동작을 연결해요.\n\n" +
-      "성공했으면 한 군데 바꿔 봐요: setx(x - 20) 의 20 을 크게(40)/작게(10) 바꾸면 움직이는\n" +
-      "폭이 달라져요. 다음 시간엔 여기에 '똥 떨어뜨리기(②)' 를 붙입니다.",
-    kind: "note",
-    code: CODE_PLAYER_MOVE,
-    // 파이썬 터틀을 브라우저에서 바로 실행 — OneCompiler 터틀 모드(14·15차와 같은 편집기).
-    linkUrl: "https://onecompiler.com/turtle",
+    linkUrl: ONECOMPILER_TURTLE_URL,
     linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
     maxLength: 0,
   },
+
+  /* ── ② 무대 만들기 — screen (직접 타이핑) ── */
+  {
+    key: "_typing_stage",
+    phase: "worksheet",
+    label: "② 무대 만들기 — screen",
+    hint:
+      "핵심 키워드: Screen() 창 만들기, setup() 크기, bgcolor() 배경색\n\n" +
+      "아래 참고 코드를 복사하지 말고 직접 한 줄씩 쳐서 실행해 보고, 값을 하나씩 바꿔 다시\n" +
+      "실행해 봐요.\n\n" +
+      "· screen.bgcolor(\"lightyellow\") — 배경색. 이렇게도 넣어 봐요:\n" +
+      "    \"lightblue\"  →  \"pink\"  →  \"black\"  →  \"white\"\n" +
+      "· screen.setup(600, 600) — 창 크기(가로, 세로). 이렇게도:\n" +
+      "    (400, 400)  →  (800, 300)  →  (300, 700)\n" +
+      "· screen.title(\"My Game\") — 창 제목(영어로). 이렇게도:\n" +
+      "    \"Turtle\"  →  \"Dodge\"  →  \"Hello\"\n\n" +
+      "바꿀 때마다 실행해서 화면이 어떻게 달라지는지 눈으로 확인해요.",
+    kind: "note",
+    code: CODE_STAGE,
+    maxLength: 0,
+  },
+  submitField("typing_submit_stage", "② 무대 — 직접 친 코드 제출", "무대"),
+
+  /* ── ③ 거북이 만들기·꾸미기 — shape · color (직접 타이핑) ── */
+  {
+    key: "_typing_turtle",
+    phase: "worksheet",
+    label: "③ 거북이 만들기·꾸미기 — shape · color",
+    hint:
+      "핵심 키워드: Turtle() 거북이 만들기, shape() 모양, color() 색\n\n" +
+      "아래 참고 코드를 복사하지 말고 직접 한 줄씩 쳐서 실행하고, 값을 바꿔 가며 확인해요.\n\n" +
+      "· player.shape(\"square\") — 모양. 이렇게도:\n" +
+      "    \"circle\"  →  \"turtle\"  →  \"arrow\"  →  \"triangle\"  →  \"classic\"\n" +
+      "· player.color(\"green\") — 색(색 이름). 이렇게도:\n" +
+      "    \"red\"  →  \"blue\"  →  \"orange\"  →  \"purple\"\n" +
+      "  색을 코드로도 넣어 봐요(맨 앞에 우물정 기호 붙은 여섯 자리):\n" +
+      "    \"#FF0000\"(빨강)  →  \"#00AAFF\"(하늘)  →  \"#00CC66\"(초록)\n" +
+      "  원하는 색의 코드가 궁금하면 아래 [색상 코드 변환기] 를 새 탭에서 열어 찾아봐요.\n\n" +
+      "숫자(빨강·초록·파랑, 0~255)로도 넣을 수 있어요 — 먼저 이 한 줄을 맨 위에 추가해요:\n" +
+      "    screen.colormode(255)\n" +
+      "  그러면 이렇게도 돼요:\n" +
+      "    player.color((255, 0, 0))  →  (0, 128, 255)  →  (0, 200, 0)\n\n" +
+      "완성 게임에서 주인공은 square 에 green, 똥은 circle 에 brown 이에요.",
+    kind: "note",
+    code: CODE_TURTLE,
+    // 색 코드(#RRGGBB)를 찾아볼 수 있는 참고 링크 — 코드 아래 단추로 뜬다(새 탭). worksheet focusExempt.
+    linkUrl: COLOR_PICKER_URL,
+    linkLabel: "색상 코드 변환기 (참고, 새 탭)",
+    maxLength: 0,
+  },
+  submitField("typing_submit_turtle", "③ 거북이/색 — 직접 친 코드 제출", "거북이 만들기·꾸미기"),
+
+  /* ── ④ 펜 상태 — penup · pendown (직접 타이핑) ── */
+  {
+    key: "_typing_pen",
+    phase: "worksheet",
+    label: "④ 펜 상태 — penup · pendown",
+    hint:
+      "핵심 키워드: penup() 펜 올리기(선 안 그림), pendown() 펜 내리기(선 그림)\n\n" +
+      "아래 참고 코드를 복사하지 말고 직접 한 줄씩 쳐서 실행하고, 어디에 선이 생기고 안 생기는지\n" +
+      "봐요. (time.sleep(1) 덕분에 한 동작씩 천천히 보여요.)\n\n" +
+      "· player.penup() — 펜 올리기(선 안 그림)\n" +
+      "· player.pendown() — 펜 내리기(선 그림)\n\n" +
+      "이렇게 바꿔 봐요:\n" +
+      "· penup() 줄을 지우면 어떻게 될까요? (계속 선이 그려져요)\n" +
+      "· forward(100) 의 100 을 50 · 200 으로 바꿔서 선 길이도 바꿔 봐요.\n\n" +
+      "완성 게임은 주인공과 똥에 penup() 을 써서 선을 안 남기고 미끄러지게 해요.",
+    kind: "note",
+    code: CODE_PEN,
+    maxLength: 0,
+  },
+  submitField("typing_submit_pen", "④ 펜 상태 — 직접 친 코드 제출", "펜 상태"),
+
+  /* ── ⑤ 좌표 이동 — goto · setx (직접 타이핑) ── */
+  {
+    key: "_typing_goto",
+    phase: "worksheet",
+    label: "⑤ 좌표 이동 — goto · setx",
+    hint:
+      "핵심 키워드: goto() 좌표로 이동, setx() x만 바꾸기 (가운데가 0,0)\n\n" +
+      "아래 참고 코드를 복사하지 말고 직접 한 줄씩 쳐서 실행해요. goto 는 '정해진 자리(x, y)' 로\n" +
+      "한 번에 보내요. 화면 한가운데가 (0, 0) 이에요.\n\n" +
+      "· player.goto(0, -250) — 이렇게도 넣어 봐요:\n" +
+      "    (100, 100)  →  (-200, 0)  →  (0, 0)  →  (250, 250)  →  (-150, -150)\n" +
+      "· player.setx(100) — x(좌우)만 바꿔요(위아래 y 는 그대로). 이렇게도:\n" +
+      "    setx(-100)  →  setx(0)  →  setx(250)\n\n" +
+      "x 는 오른쪽으로 갈수록 커지고, y 는 위로 갈수록 커져요.\n\n" +
+      "완성 게임에서 주인공은 goto(0, -250) 로 아래 가운데에서 시작하고, 좌우로 움직일 때 setx 를 써요.",
+    kind: "note",
+    code: CODE_GOTO,
+    maxLength: 0,
+  },
+  submitField("typing_submit_goto", "⑤ 좌표 이동 — 직접 친 코드 제출", "좌표 이동"),
+
+  /* ── ⑥ 상대 이동·회전 — forward · left · right (직접 타이핑) ── */
+  {
+    key: "_typing_move",
+    phase: "worksheet",
+    label: "⑥ 상대 이동·회전 — forward · left · right",
+    hint:
+      "핵심 키워드: forward() 앞으로, left()/right() 왼쪽·오른쪽 회전\n\n" +
+      "아래 참고 코드를 복사하지 말고 직접 한 줄씩 쳐서 실행해요. forward 는 '지금 보고 있는\n" +
+      "방향으로' 앞으로 가고, left/right 는 방향을 틀어요(도, degree).\n\n" +
+      "· player.forward(100) — 거리를 이렇게도:\n" +
+      "    50  →  150  →  200  →  30\n" +
+      "· player.left(90) — 각도를 이렇게도:\n" +
+      "    45  →  120  →  30  →  60\n" +
+      "· player.right(90) — 반대로 틀어요. 이렇게도:\n" +
+      "    45  →  120  →  30\n\n" +
+      "forward 와 right/left 를 번갈아 여러 번 하면 네모·삼각형 같은 그림도 그려져요. 각도를 바꾸면\n" +
+      "그림이 완전히 달라져요 — 바꿔 보며 놀아 봐요.",
+    kind: "note",
+    code: CODE_MOVE,
+    maxLength: 0,
+  },
+  submitField("typing_submit_move", "⑥ 상대 이동·회전 — 직접 친 코드 제출", "상대 이동·회전"),
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   lessonNo: LESSON_NO,
-  title: "똥피하기 게임 — 분석·설계 + 첫 기능",
+  title: "터틀 함수 직접 타이핑 — 한 줄 한 줄",
+  // 대기 화면 앞에서 하는 기분 체크. phaseOrder 에는 mood 를 넣지 않는다(대기·안내 사이 중복 방지).
   moodCheckEnabled: true,
 
   game: {
-    heading: "기다리는 동안 — 똥피하기",
+    heading: "기다리는 동안 — 지뢰찾기",
     body:
       "수업이 시작되길 기다리는 동안 잠깐 쉬어요.\n" +
-      "위에서 떨어지는 똥을 좌우로 움직여 피하면 돼요.\n" +
-      "오늘은 이 게임을 뜯어보고, 직접 만들기 시작합니다! 수업이 시작되면 닫습니다.",
-    url: "https://dodge-poop-game.vercel.app/",
+      "숫자를 단서로 지뢰가 없는 칸을 찾아 열면 돼요.\n" +
+      "수업이 시작되면 이 화면은 저절로 넘어가요.",
+    url: MINESWEEPER_URL,
   },
   gameExplainer: empty(),
 
@@ -255,43 +383,46 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   progress: empty(),
 
   /*
-   * 안내 보드 — 오늘 순서(분석 → 설계 → 첫 기능). 활동 중 되돌아와 볼 수 있다.
+   * 안내 보드 — 오늘 순서(타자 연습 → 직접 타이핑 → 제출). 활동 중 되돌아와 볼 수 있다.
    */
   assessment: {
-    heading: "오늘 할 일 — 똥피하기를 뜯어보고, 만들기 시작",
+    heading: "오늘 할 일 — 보고 익힌 코드를 직접 타이핑",
     body: "",
     url: "",
     tabs: [
       {
         label: "오늘은 이런 날",
-        subtitle: "만들기 전에 뜯어보고, 순서를 정해요",
+        subtitle: "복사하지 말고, 직접 손으로 한 줄 한 줄 쳐봐요",
         note:
-          "지난 두 시간에 파이썬을 맛보고, 게임에 쓸 터틀 함수를 직접 쳐 봤죠? 오늘부터 그 함수들을\n" +
-          "합쳐 **익숙한 똥피하기 게임**을 직접 만들기 시작해요. 오늘은 게임을 뜯어보고(분석), 만들\n" +
-          "순서를 정하고(설계), 첫 기능 하나(주인공 좌우 이동)까지 만듭니다.",
+          "지난 시간엔 코드를 복사해 값을 바꿔 보며 익혔죠? 오늘은 같은 다섯 예제를 이번엔 직접\n" +
+          "손으로 쳐보며 한 줄 한 줄 무슨 뜻인지 이해해요. 한 줄 칠 때마다 선생님과 함께 짚어 봅니다.",
         rows: [
-          { label: "분석", value: "게임을 구성요소로 뜯어보기 — 무엇이 필요한가" },
-          { label: "설계", value: "기능을 어떤 순서로 붙일지 정하기" },
-          { label: "첫 기능", value: "주인공을 그리고 방향키로 좌우로 움직이기" },
-          { label: "채점은", value: "점수·자동채점 없어요. 뜯어보고 따라 만들면 됩니다" },
+          { label: "한 줄로", value: "보고 익힌 코드를 복사 말고 직접 타이핑하며 이해해요" },
+          { label: "먼저", value: "파이썬 타자 연습으로 손 풀기(새 탭)" },
+          { label: "오늘 할 일", value: "예제마다 직접 타이핑 → 값 바꿔 관찰 → 직접 친 코드 제출" },
+          { label: "채점은", value: "점수·자동채점 없어요. 직접 쳐 보고 이해하면 됩니다" },
         ],
         highlights: [
-          "코드부터 치지 않아요. 뜯어보고 순서를 정하는 것도 '만들기' 의 중요한 부분이에요.",
+          "복사 단추가 보여도 누르지 말고, 한 줄 한 줄 직접 쳐보는 게 오늘의 핵심이에요.",
         ],
       },
       {
         label: "오늘 순서",
-        subtitle: "좌표 → 분석 → 설계 → 첫 기능",
-        note: "활동지가 위에서 아래로 이어져요. 순서대로 내려오면 됩니다.",
+        subtitle: "타자 연습 → 직접 타이핑(예제마다 제출) → 성찰",
+        note:
+          "타자 연습을 한 뒤, 안내를 보고, 활동지가 위에서 아래로 이어져요. 예제마다 바로 아래에\n" +
+          "직접 친 코드를 붙여넣어 제출하는 칸이 있어요.",
         rows: [
-          { label: "1", value: "화면 좌표(x·y) 알기 — 어디에 있는지 숫자로 말하기" },
-          { label: "2", value: "게임 분석 — 필요한 구성요소와 하는 일 적기" },
-          { label: "3", value: "게임 설계 — 만들 순서 정하기" },
-          { label: "4", value: "첫 기능 — 주인공 좌우 이동(터틀 코드 따라 치기)" },
+          { label: "1", value: "파이썬 타자 연습(별도 단계, 새 탭)" },
+          { label: "2", value: "무대 만들기 — screen → 직접 친 코드 제출" },
+          { label: "3", value: "거북이 만들기·꾸미기 — shape · color → 제출" },
+          { label: "4", value: "펜 상태 — penup · pendown → 제출" },
+          { label: "5", value: "좌표 이동 — goto · setx → 제출" },
+          { label: "6", value: "상대 이동·회전 — forward · left · right → 제출" },
           { label: "마지막", value: "성찰 한두 줄" },
         ],
         highlights: [
-          "오늘은 ①번 기능(좌우 이동)까지만 만들어요. 나머지는 다음 시간부터 하나씩 붙여요.",
+          "예제 하나를 다 치면 바로 아래 칸에 그 코드를 붙여넣어 제출해요.",
         ],
       },
     ],
@@ -300,39 +431,46 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   video: empty(),
 
   /*
-   * 성찰 — 게임을 뜯어본 소감 / 다음에 붙이고 싶은 기능. 개인적이라 비공개.
+   * 성찰 — 직접 쳐보니 새로 이해된 것 / 헷갈렸던 줄. 개인적이라 비공개.
    */
   reflectionQuestions: [
-    "익숙한 게임을 구성요소로 뜯어보니 어땠나요? 새로 알게 된 점을 한 줄로 적어 봅시다.",
-    "다음 시간에 붙이고 싶은 기능이 있다면 무엇인가요? (똥 떨어뜨리기·충돌·점수 등)",
+    "직접 한 줄 한 줄 쳐보니, 복사할 때는 몰랐다가 새로 이해된 줄이 있었나요? 한 줄로 적어 봅시다.",
+    "가장 헷갈렸던(또는 오타가 자주 났던) 줄은 무엇이었나요? 어떻게 해결했는지도 적어 봐요.",
   ],
   reflectionPublic: false,
 
   /*
-   * 첫 기능 예제에 편집기 링크(외부 새 탭)가 붙어, worksheet 단계에서 창을 옮기는 것을
-   * 이탈로 세지 않는다 (14·15차 링크 단계를 focusExempt 로 둔 것과 같은 이유).
+   * 타자 연습(wordquiz)·직접 타이핑(worksheet) 두 단계가 새 탭(외부 앱·OneCompiler)을 열어,
+   * 창을 옮기는 것을 이탈로 세지 않는다 (15차와 같은 이유).
    */
-  focusExempt: ["worksheet"],
+  focusExempt: ["wordquiz", "worksheet"],
+  /*
+   * 교사 버튼 순서. 기분(mood)은 대기 앞에서 한 번만 하므로 여기 넣지 않는다(대기·안내 사이
+   * 중복 방지). moodCheckEnabled 로 뜨는 기분 버튼은 목록 맨 뒤 재확인용이다.
+   *   대기 → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 직접 타이핑(worksheet) → 성찰
+   */
+  phaseOrder: ["waiting", "wordquiz", "assessment", "worksheet", "reflection"],
   phaseLabels: {
+    wordquiz: "파이썬 타자 연습",
     assessment: "안내",
-    worksheet: "분석·설계·첫 기능",
+    worksheet: "직접 타이핑",
   },
   /*
-   * 되돌아가기 켬 — 학생이 안내·활동지 사이를 스스로 오갈 수 있다. 교사는 좌표 → 분석 →
-   * 설계 → 첫 기능 순으로 단추로 몬다.
+   * 되돌아가기 켬 — 학생이 안내·활동지 사이를 스스로 오갈 수 있다. 교사는 타자 연습 → 안내 →
+   * 예제(무대·거북이·펜·좌표·이동)를 한 줄씩 설명하며 몬다.
    */
   freeNavigation: true,
 
   activity: {
     activityId: ACTIVITY_ID,
-    // 그리는 차시가 아니다 — 비우면 글만/기록만 하는 활동으로 잡는다
+    // 그리는 차시가 아니다 — 비우면 글만/기록만 하는 활동으로 잡는다(저장 입력은 코드 제출·성찰)
     places: [],
     year: 2036,
     worksheetIntro: {
-      heading: "똥피하기 게임 — 뜯어보고, 순서 정하고, 첫 기능 만들기",
+      heading: "터틀 함수 직접 타이핑 — 한 줄 한 줄",
       body:
-        "위에서부터 순서대로 해요. 좌표를 알고, 게임을 구성요소로 뜯어본 뒤, 만들 순서를 정하고,\n" +
-        "첫 기능(주인공 좌우 이동)을 터틀로 만들어 봅니다.",
+        "위에서부터 순서대로 해요. 예제마다 참고 코드를 복사하지 말고 직접 한 줄씩 쳐서 실행하고,\n" +
+        "무슨 뜻인지 이해한 뒤, 직접 친 코드를 바로 아래 칸에 제출합니다.",
     },
     worksheet: WORKSHEET,
     // 서로 구경하기·출처 칸은 이 차시에서 쓰지 않는다
@@ -348,8 +486,8 @@ async function main(): Promise<void> {
   if (!existing.empty) {
     const doc = existing.docs[0];
     /*
-     * lessonNo 16 은 아크에 「찍어보기」가 끼며 새로 생긴 슬롯이라 예전 점유자가 없다. 그래도
-     * 다시 돌릴 때 옛 필드가 섞이지 않도록 progress·progressChecks·quiz 를 명시 삭제해 둔다
+     * lessonNo 16 은 예전에 「똥피하기 분석·설계」 계획이 있던 자리다(seed-lesson17.ts 로 옮김).
+     * merge 로는 그때의 필드가 남아 섞일 수 있어 progress·progressChecks·quiz 를 명시 삭제한다
      * (이 차시엔 셋 다 없다).
      */
     await doc.ref.set(
@@ -401,6 +539,8 @@ async function main(): Promise<void> {
           reflectionQuestions: PLAN.reflectionQuestions,
           reflectionPublic: PLAN.reflectionPublic,
           focusExempt: PLAN.focusExempt,
+          // phaseOrder 를 세션에도 써 넣어야 대시보드 버튼 순서가 바뀐다(없으면 LESSON_PHASES 기본).
+          phaseOrder: PLAN.phaseOrder,
           phaseLabels: PLAN.phaseLabels,
           freeNavigation: PLAN.freeNavigation,
           activity: PLAN.activity,
@@ -414,13 +554,13 @@ async function main(): Promise<void> {
     console.log(`＋ 등록 — ${PLAN.title} (${ref.id})`);
   }
 
-  console.log(`\n활동 ID: ${ACTIVITY_ID} (게임 제작 아크 공용 통 — 이후 구현 차시가 이어 씀. 입문/맛보기 통 python-intro·실습 통 physical-computing 과 분리)`);
-  console.log("단계: 대기(똥피하기) → 기분 → 안내(assessment) → 활동지(worksheet: 좌표·분석·설계·첫 기능) → 성찰");
-  console.log("실제 진행: 안내 → 좌표 note → 게임 분석(rows) → 게임 설계(순서 list) → 첫 기능 주인공 좌우 이동(터틀 코드) → 성찰 (freeNavigation)");
-  console.log("분석 칸(dg_components, rows): 필요한 것(구성요소) / 하는 일 (maxRows 6). 설계 칸(dg_build_order, list): 만들 순서 4~6칸.");
-  console.log("첫 기능: 주인공 좌우 이동 — 터틀 onkeypress(Left/Right)로 x 좌표 ±20. code 필드로 제시(등폭 readonly, 복사 단추). 14·15·16차 모두 터틀로 일관.");
-  console.log("파이썬 터틀 실행: OneCompiler 터틀(https://onecompiler.com/turtle) — _dg_feature_move note 에 새 탭 링크로 붙음. 14·15차와 같은 편집기.");
-  console.log("성찰 2문항(뜯어본 소감 · 다음에 붙이고 싶은 기능). 진도 팝업 없음. quiz 없음. galleryEnabled: false.");
+  console.log(`\n활동 ID: ${ACTIVITY_ID} (직접 타이핑 통 — 15차 python-intro·17차부터 python-dodge-game 과 분리)`);
+  console.log("단계 흐름(phaseOrder): 대기(지뢰찾기) → 파이썬 타자 연습(wordquiz) → 안내(assessment) → 직접 타이핑(worksheet) → 성찰");
+  console.log("기분: moodCheckEnabled 켬(대기 앞 1회). phaseOrder 에 mood 없음 → 대기·안내 사이 중복 없음(기분 버튼은 목록 맨 뒤 재확인용).");
+  console.log(`파이썬 타자: 별도 단계(wordquiz)에 외부 앱 새 탭 링크 (${TYPING_APP_URL}). 대기 게임: 지뢰찾기 (${MINESWEEPER_URL}).`);
+  console.log(`직접 타이핑: 예제 5개(무대·거북이/색·펜·좌표·이동). 각 예제=참고 코드(복사 말고 직접 치기, 핵심키워드·미션주석·time.sleep 유지) + 직접 친 코드 제출(long, 자동저장·붙여넣기).`);
+  console.log(`OneCompiler 터틀(${ONECOMPILER_TURTLE_URL})·색상 변환기(${COLOR_PICKER_URL}) 링크. 화면 텍스트 평문(마크다운 없음). quiz 없음. galleryEnabled: false.`);
+  console.log("⚠ open-info-*.ts 로 새 세션을 열 때 그 스크립트가 phaseOrder 를 복사해야 대시보드 순서가 반영됩니다(snapshotOf 에도 phaseOrder 있음 — db.ts).");
   process.exit(0);
 }
 
