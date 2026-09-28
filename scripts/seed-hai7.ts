@@ -86,6 +86,121 @@ function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
 
+/* ──────────────────────────────────────────────────────────────
+ * 평가 기준을 글로 나열하면 눈에 안 들어와(교사 지적), 동료·교사 기준을 표(SVG)로 그려
+ * imageUrl 로 카드에 얹는다. worksheet-view 는 imageUrl 을 w-full img 로 그린다(15차와 같은 수법).
+ * data:image/svg+xml + encodeURIComponent 로 한글··색코드가 안전하게 실린다.
+ * ────────────────────────────────────────────────────────────── */
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+/** 칸 폭에 맞춰 글자를 줄바꿈한다(한글 기준 대략적 글자수) */
+function wrapCell(text: string, perLine: number): string[] {
+  const out: string[] = [];
+  let line = "";
+  for (const ch of text) {
+    if (ch === "\n") {
+      out.push(line);
+      line = "";
+      continue;
+    }
+    line += ch;
+    if ([...line].length >= perLine) {
+      out.push(line);
+      line = "";
+    }
+  }
+  if (line) out.push(line);
+  return out.length ? out : [""];
+}
+function svgTable(o: {
+  title: string;
+  headers: string[];
+  headFills: string[];
+  headText: string[];
+  rows: string[][];
+  colW: number[];
+}): string {
+  const pad = 12;
+  const fontS = 15;
+  const lineH = 22;
+  const cellPadX = 10;
+  const cellPadY = 14;
+  const titleH = 40;
+  const headH = 38;
+  const W = o.colW.reduce((a, b) => a + b, 0) + pad * 2;
+  const perLine = o.colW.map((w) => Math.max(4, Math.floor((w - cellPadX * 2) / (fontS + 1))));
+  const rowLines = o.rows.map((r) => r.map((cell, ci) => wrapCell(cell, perLine[ci])));
+  const rowH = rowLines.map((cells) => Math.max(...cells.map((l) => l.length)) * lineH + cellPadY * 2);
+
+  const parts: string[] = [];
+  let y = titleH;
+  // 헤더
+  let x = pad;
+  o.headers.forEach((h, ci) => {
+    parts.push(`<rect x="${x}" y="${y}" width="${o.colW[ci]}" height="${headH}" fill="${o.headFills[ci]}" stroke="#e5e7eb"/>`);
+    parts.push(`<text x="${x + cellPadX}" y="${y + 25}" font-size="15" font-weight="700" fill="${o.headText[ci]}">${esc(h)}</text>`);
+    x += o.colW[ci];
+  });
+  y += headH;
+  // 데이터 행
+  rowLines.forEach((cells, ri) => {
+    const h = rowH[ri];
+    const fill = ri % 2 ? "#f8fafc" : "#ffffff";
+    let cx = pad;
+    cells.forEach((lines, ci) => {
+      parts.push(`<rect x="${cx}" y="${y}" width="${o.colW[ci]}" height="${h}" fill="${fill}" stroke="#e5e7eb"/>`);
+      lines.forEach((ln, li) => {
+        const ty = y + cellPadY + fontS + li * lineH - 3;
+        const weight = ci === 0 ? ` font-weight="700"` : "";
+        const color = ci === 0 ? "#111827" : "#0f172a";
+        parts.push(`<text x="${cx + cellPadX}" y="${ty}" font-size="${fontS}" fill="${color}"${weight}>${esc(ln)}</text>`);
+      });
+      cx += o.colW[ci];
+    });
+    y += h;
+  });
+  const H = y + pad;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" ` +
+    `font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">` +
+    `<rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>` +
+    `<text x="${W / 2}" y="26" text-anchor="middle" font-size="18" font-weight="700" fill="#111827">${esc(o.title)}</text>` +
+    parts.join("") +
+    `</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+/** 동료평가(친구 평가) 기준 표 — 내용 이해·아이디어 유용성(3점) + 건설적 피드백(주관식) */
+const PEER_CRITERIA_TABLE = svgTable({
+  title: "친구 평가(동료평가) 기준",
+  headers: ["평가 요소", "무엇을 보나요", "방식"],
+  headFills: ["#bfdbfe", "#bfdbfe", "#fde68a"],
+  headText: ["#1e40af", "#1e40af", "#92400e"],
+  colW: [150, 340, 110],
+  rows: [
+    ["내용 이해", "문제와 해결 아이디어가 잘 이해됐나요?", "3점 척도"],
+    ["아이디어·유용성", "핵심 기능이 쓸모 있어 보였나요?", "3점 척도"],
+    ["건설적 피드백", "잘한 점 한 가지 + 더 좋아지려면 한 가지", "주관식"],
+  ],
+});
+
+/** 선생님 평가(루브릭) 기준 표 — 시연 삭제, 문제·해결의 적절성/창의성 분리 */
+const TEACHER_CRITERIA_TABLE = svgTable({
+  title: "선생님 평가(루브릭) 기준",
+  headers: ["평가 요소", "무엇을 보나요"],
+  headFills: ["#bbf7d0", "#bbf7d0"],
+  headText: ["#166534", "#166534"],
+  colW: [175, 425],
+  rows: [
+    ["내용 충실성", "문제·해결·핵심 기능·개선점·소감을 담았는가"],
+    ["문제·해결의 적절성", "문제가 분명하고, 해결이 그에 잘 맞는가"],
+    ["창의성", "해결 방식이 새롭고 독창적인가"],
+    ["전달력", "이해하기 쉬운 설명, 태도와 목소리"],
+    ["동료 피드백 반영", "받은 피드백을 반영해 개선한 점이 보이는가"],
+  ],
+});
+
 const WORKSHEET: WorksheetQuestion[] = [
   /*
    * ── 오늘 순서·발표 진행·평가 기준 안내 (build 칸) ────────────────
@@ -125,36 +240,29 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "_l7_peereval_criteria",
     phase: "build",
     /*
-     * 동료평가 기준 — 6차(_l6_peereval)와 같은 문구. 발표 전에 무엇을 보고 평가할지 읽힌다.
+     * 동료평가 기준 — 표(SVG)로 얹는다. 내용 이해·아이디어 유용성(3점 척도) + 건설적 피드백(주관식).
+     * 아래 grill 의 peer_eval 입력 칸과 요소가 1:1 로 맞는다.
      */
     label: "③ 평가 기준 (1) 친구 평가 (동료평가)",
     hint:
-      "친구 발표를 들으며 아래 기준으로 봅니다. 점수는 3점 척도예요 — 잘함 3 / 보통 2 / 아쉬움 1.\n" +
-      "(배점은 선생님이 조정할 수 있어요.)\n\n" +
-      "· 내용 이해 — 문제와 해결 아이디어가 잘 이해됐나요?\n" +
-      "· 아이디어·유용성 — 핵심 기능이 쓸모 있어 보였나요?\n" +
-      "· 시연 — 실제 앱 화면을 보여 주었나요?\n" +
-      "· 전달력 — 발표가 명확하고 잘 들렸나요?\n" +
-      "· 건설적 피드백 — 잘한 점 한 가지 + 더 좋아지려면 한 가지를 남겨 주세요",
+      "친구 발표를 들으며 아래 표의 기준으로 봐요. 점수는 3점 척도 — 잘함 3 · 보통 2 · 아쉬움 1.\n" +
+      "건설적 피드백은 글로 적어요. (배점은 선생님이 조정할 수 있어요.)",
     kind: "note",
+    imageUrl: PEER_CRITERIA_TABLE,
     maxLength: 0,
   },
   {
     key: "_l7_teachereval_criteria",
     phase: "build",
     /*
-     * 교사평가 기준(루브릭) — 6차(_l6_teachereval)와 같은 문구. 학생이 어떻게 평가받는지 미리 안다.
+     * 교사평가 기준(루브릭) — 표(SVG)로 얹는다. 시연 삭제, 문제·해결의 적절성/창의성 2개로 분리.
      */
     label: "③ 평가 기준 (2) 선생님 평가 (루브릭)",
     hint:
-      "선생님은 아래 기준(루브릭)으로 봅니다. 발표를 준비한 필수 요소와 같은 기준이에요.\n" +
-      "(항목별 배점·척도는 선생님이 조정할 수 있어요.)\n\n" +
-      "· 내용 충실성 — 문제·해결·핵심 기능·시연·개선점·소감을 담았는가\n" +
-      "· 문제·해결의 적절성과 창의성 — 문제가 분명하고, 해결이 그에 맞고 새로운가\n" +
-      "· 전달력 — 이해하기 쉬운 설명, 태도와 목소리\n" +
-      "· 시연 — 실제 앱·화면을 보여 주었는가\n" +
-      "· 동료 피드백 반영 — 받은 피드백을 반영해 개선한 점이 보이는가",
+      "선생님은 아래 표의 기준(루브릭)으로 봐요. 발표를 준비한 필수 요소와 같은 기준이에요.\n" +
+      "(항목별 배점·척도는 선생님이 조정할 수 있어요.)",
     kind: "note",
+    imageUrl: TEACHER_CRITERIA_TABLE,
     maxLength: 0,
   },
   {
@@ -197,12 +305,12 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "_l7_peereval_note",
     phase: "grill",
-    label: "⑥ 동료평가 — 발표를 들으며 남겨요",
+    label: "동료평가 — 발표를 들으며 남겨요",
     hint:
       "발표를 한 사람 들을 때마다 아래에 한 줄씩 추가하세요 ([+ 줄 추가]).\n" +
       "· 발표자 번호 — 몇 번 친구인지 (예: 3)\n" +
-      "· 점수 — 3점이 제일 잘함, 1점이 아쉬움 (위 기준으로)\n" +
-      "· 잘한 점 한 가지 · 더 좋아지려면 한 가지\n\n" +
+      "· 내용 이해 · 아이디어 유용성 — 각각 3점 척도(3 잘함 · 1 아쉬움)\n" +
+      "· 건설적 피드백 — 잘한 점 한 가지 + 더 좋아지려면 한 가지 (글로)\n\n" +
       "여기 적은 것은 발표자에게 보이지 않아요 — 솔직하게, 그리고 예의 있게 적어요.\n" +
       "다 못 적어도 괜찮아요. 한 명이라도 제대로 봐 주는 게 낫습니다.",
     kind: "note",
@@ -212,9 +320,10 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "peer_eval",
     phase: "grill",
     /*
-     * 발표자 × (번호·점수·코멘트). rows 답은 JSON 배열로 이 학생 본인 답에 저장된다.
-     * 발표자에게 노출되지 않는다(galleryEnabled false · galleryAnswerKeys 미지정).
-     * 점수는 이모지 칸으로 3점 척도(하나만 고름). 코멘트 칸은 40자 상한(rows-field 기본).
+     * 발표자 × (번호·내용 이해·아이디어 유용성·건설적 피드백). 기준표(위)와 요소가 1:1.
+     * rows 답은 JSON 배열로 평가한 학생 본인 답에 저장된다 — 발표자에게 노출 안 됨
+     * (galleryEnabled false · galleryAnswerKeys 미지정). 점수 둘은 3점 이모지(하나만),
+     * 건설적 피드백은 주관식 텍스트 칸.
      */
     label: "발표자별 평가",
     hint: "",
@@ -222,9 +331,9 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxRows: 12,
     rowColumns: [
       { key: "num", label: "발표자 번호", placeholder: "예) 3" },
-      { key: "score", label: "점수 (3이 제일 잘함)", emojis: ["1", "2", "3"] },
-      { key: "good", label: "잘한 점 한 가지", placeholder: "예) 시연이 실제로 잘 됐어요" },
-      { key: "improve", label: "더 좋아지려면", placeholder: "예) 목소리가 조금 더 크면 좋겠어요" },
+      { key: "content", label: "내용 이해 (3점)", emojis: ["1", "2", "3"] },
+      { key: "idea", label: "아이디어 유용성 (3점)", emojis: ["1", "2", "3"] },
+      { key: "feedback", label: "건설적 피드백", placeholder: "잘한 점 + 더 좋아지려면" },
     ],
     maxLength: 4000,
   },
@@ -366,7 +475,8 @@ async function main(): Promise<void> {
   console.log(`차시 번호 ${LESSON_NO} (정보과와 안 겹치게)`);
   console.log("단계: 대기=발표 리허설(waiting, 기분 체크 먼저→내 슬라이드) → ①평가 기준·발표 진행(build) → ②발표 → ③동료평가(grill) → 회고");
   console.log("  ※ 발표는 7차에 무작위 10~11명, 나머지는 8차 (8차는 미제작). 1인 약 3분 + 질의응답. 발표자 무작위 추첨은 교사가(포털 추첨 기능 없음).");
-  console.log("  ※ 동료평가 = peer_eval(kind: rows): 발표자별 번호·점수(3점 이모지)·잘한 점·더 나아지려면. 답은 평가자 본인 활동지에만 저장 → 발표자 비노출(galleryEnabled false).");
+  console.log("  ※ 동료평가 = peer_eval(kind: rows): 발표자별 번호·내용 이해(3점)·아이디어 유용성(3점)·건설적 피드백(주관식). 답은 평가자 본인 활동지에만 저장 → 발표자 비노출(galleryEnabled false).");
+  console.log("  ※ 평가 기준(동료·교사)은 카드에 표(SVG imageUrl)로 얹음. 교사 기준: 시연 삭제, 적절성/창의성 분리.");
   console.log("  ※ 교사평가 = teacher/pre-review 의 teacherFeedback.note(자유 서술, 발표자별, 같은 활동). 구조화 루브릭 점수 입력은 새 컴포넌트 필요 — 이번 범위 밖.");
   console.log("  ※ 발표자 본인 자료(6차 slides_url·build_url·final_pitch·script)는 build 의 echo 로 열립니다.");
   console.log("  ※ 평가 기준은 6차 동료·교사 기준 재사용. 대기 화면 = 발표 리허설(본인 slides_url, waiting 으로 시작). 서로 구경하기 끔.");
