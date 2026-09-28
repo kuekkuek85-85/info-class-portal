@@ -72,14 +72,10 @@ const app = initializeApp({
 const db = getFirestore(app);
 db.settings({ ignoreUndefinedProperties: true });
 
-/** 저장소가 공개라 캔바 초대 주소는 .env.local 에서만 읽는다 (seed-hai6 와 같은 이유) */
-const CANVA_INVITE_URL = process.env.CANVA_INVITE_URL ?? "";
-const CANVA_BY_GROUP: Record<string, string> = {
-  "hai-tue-1": process.env.CANVA_INVITE_TUE_1 ?? "",
-  "hai-tue-2": process.env.CANVA_INVITE_TUE_2 ?? "",
-  "hai-thu-1": process.env.CANVA_INVITE_THU_1 ?? "",
-  "hai-thu-2": process.env.CANVA_INVITE_THU_2 ?? "",
-};
+/*
+ * 7차는 캔바 로그인/초대 주소 단계를 두지 않는다(학생은 자기 발표 링크 하나로 발표).
+ * 그래서 seed-hai6 과 달리 CANVA_* 초대 주소를 읽지 않는다.
+ */
 
 /** ★ 2~6차시와 같은 값. 이 값이 같아야 6차에 낸 발표 자료·앱·대본이 오늘 화면에 열린다 */
 const ACTIVITY_ID = "hai-2026-1기";
@@ -92,31 +88,15 @@ function empty(): PhaseContent {
 
 const WORKSHEET: WorksheetQuestion[] = [
   /*
-   * ── ① 평가 기준과 발표 진행 안내 (build 칸) ────────────────
+   * ── 오늘 순서·발표 진행·평가 기준 안내 (build 칸) ────────────────
    *
    * 교사 확정 순서대로, 발표 전에 평가 기준을 먼저 읽힌다(같은 기준으로 준비→발표→평가).
-   * 로그인을 맨 위에 둔다 — 발표자가 자기 캔바 슬라이드를 열려면 로그인이 필요하다(병목 관례).
+   * (캔바 로그인 단계는 뺐다 — 학생은 자기 발표 링크 하나로 발표한다.)
    */
-  {
-    key: "_l7_login",
-    phase: "build",
-    label: "① 캔바에 다시 들어가기 — 발표자는 먼저 눌러 두세요",
-    hint:
-      "아래 [캔바 열기] 를 누르고 [Microsoft로 계속하기] 를 고르세요.\n" +
-      "내 학교 계정은 아래 칸에 있어요. [복사하기] 를 눌러 그대로 붙여 넣으면 됩니다.\n\n" +
-      "발표할 때 6차에 만든 발표 슬라이드와 앱을 열어 보여 줍니다.\n" +
-      "· 화면이 안 넘어간다 → 30초 기다려 보고, 그래도 그대로면 손을 드세요",
-    kind: "note",
-    copyText: "{학교계정}",
-    linkUrl: CANVA_INVITE_URL,
-    linkUrlByGroup: Object.fromEntries(Object.entries(CANVA_BY_GROUP).filter(([, url]) => url)),
-    linkLabel: "캔바 열기 (새 창)",
-    maxLength: 0,
-  },
   {
     key: "_l7_today",
     phase: "build",
-    label: "② 오늘 순서",
+    label: "① 오늘 순서",
     hint:
       "오늘은 그동안 만든 앱을 발표해요. 이 발표는 나 혼자 만든 개인 프로젝트예요.\n" +
       "오늘(7차)은 무작위로 뽑힌 10~11명이 발표하고, 나머지는 다음 시간(8차)에 발표합니다.\n\n" +
@@ -131,7 +111,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "_l7_run",
     phase: "build",
-    label: "③ 발표는 이렇게 진행해요",
+    label: "② 발표는 이렇게 진행해요",
     hint:
       "· 오늘 발표할 10~11명은 선생님이 무작위로 뽑아 알려 줍니다.\n" +
       "· 뽑히면 앞으로 나와, 6차에 만든 발표 슬라이드를 띄우고 약 3분 동안 발표합니다.\n" +
@@ -147,7 +127,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     /*
      * 동료평가 기준 — 6차(_l6_peereval)와 같은 문구. 발표 전에 무엇을 보고 평가할지 읽힌다.
      */
-    label: "④ 평가 기준 (1) 친구 평가 (동료평가)",
+    label: "③ 평가 기준 (1) 친구 평가 (동료평가)",
     hint:
       "친구 발표를 들으며 아래 기준으로 봅니다. 점수는 3점 척도예요 — 잘함 3 / 보통 2 / 아쉬움 1.\n" +
       "(배점은 선생님이 조정할 수 있어요.)\n\n" +
@@ -165,7 +145,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     /*
      * 교사평가 기준(루브릭) — 6차(_l6_teachereval)와 같은 문구. 학생이 어떻게 평가받는지 미리 안다.
      */
-    label: "④ 평가 기준 (2) 선생님 평가 (루브릭)",
+    label: "③ 평가 기준 (2) 선생님 평가 (루브릭)",
     hint:
       "선생님은 아래 기준(루브릭)으로 봅니다. 발표를 준비한 필수 요소와 같은 기준이에요.\n" +
       "(항목별 배점·척도는 선생님이 조정할 수 있어요.)\n\n" +
@@ -180,7 +160,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "_l7_presenter",
     phase: "build",
-    label: "⑤ 발표자라면 — 내 발표 자료를 열어 두세요",
+    label: "④ 발표자라면 — 내 발표 자료를 열어 두세요",
     hint:
       "오늘 발표로 뽑혔다면, 아래에 6차에 만든 내 발표 슬라이드·앱 링크·대본이 있어요.\n" +
       "슬라이드 링크를 눌러 띄워 놓고, 대본을 참고해 약 3분 동안 발표하세요.\n" +
@@ -354,16 +334,6 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 };
 
 async function main(): Promise<void> {
-  if (!CANVA_INVITE_URL) {
-    console.error(
-      "✗ CANVA_INVITE_URL 이 없습니다.\n" +
-        "  .env.local 에 캔바 학교 팀 초대 주소를 넣어 주세요:\n" +
-        "  CANVA_INVITE_URL=https://www.canva.com/brand/join?token=...\n" +
-        "  (저장소가 공개라 코드에 직접 적지 않습니다)",
-    );
-    process.exit(1);
-  }
-
   const existing = await db.collection("lessonPlans").where("lessonNo", "==", LESSON_NO).get();
   const now = Date.now();
 
@@ -390,19 +360,6 @@ async function main(): Promise<void> {
         );
       }
     }
-  }
-
-  console.log("\n캔바 초대 주소");
-  for (const [key, label] of [
-    ["hai-tue-1", "화요일 1기"],
-    ["hai-tue-2", "화요일 2기"],
-    ["hai-thu-1", "목요일 1기"],
-    ["hai-thu-2", "목요일 2기"],
-  ] as const) {
-    const url = CANVA_BY_GROUP[key];
-    console.log(
-      `  ${label}  ${url ? url.replace(/token=([^&]{4})[^&]*/, "token=$1…") : "없음 — 기본 주소로 물러남"}`,
-    );
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (2~6차시와 같음 — 6차 발표 자료·앱·대본이 그대로 열립니다)`);
