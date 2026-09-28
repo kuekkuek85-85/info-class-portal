@@ -267,14 +267,15 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   /*
    * 대기 = 발표 리허설. 게임 대신 발표자 본인의 발표 자료(6차 slides_url)를 띄운다.
-   * url 의 "answer:slides_url" 는 lesson 화면이 읽어, 그 학생의 활동지 답(슬라이드 링크)을
-   * 임베드하고 새 창으로 크게 여는 단추를 낸다. 아직 슬라이드를 안 낸 학생은 안내만 본다.
+   * url 의 "answer:slides_url" 는 lesson 화면이 읽어, 그 학생의 슬라이드를 새 탭으로 크게 여는
+   * 단추를 낸다. (캔바는 frame-ancestors CSP 로 iframe 임베드를 막으므로 미리보기는 안 넣는다.)
+   * 아직 슬라이드를 안 낸 학생은 안내만 본다.
    */
   game: {
     heading: "발표 리허설 — 내 발표 자료 넘겨보기",
     body:
-      "발표 순서를 기다리는 동안, 아래에서 내 발표 슬라이드를 넘겨보며 연습하세요.\n" +
-      "[내 발표 자료 크게 열기] 를 누르면 새 창에서 발표 모드로 넘겨볼 수 있어요.",
+      "발표 순서를 기다리는 동안, 아래 단추로 내 발표 슬라이드를 열어 넘겨보며 연습하세요.\n" +
+      "새 탭에서 전체화면으로 크게 열려요.",
     url: "answer:slides_url",
   },
   gameExplainer: empty(),
