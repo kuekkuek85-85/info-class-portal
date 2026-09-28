@@ -1865,6 +1865,28 @@ export interface ArtifactFeedback {
   updatedAt: number;
 }
 
+/**
+ * 교사 전용 발표 평가 (인간과 인공지능 7·8차시). **학생에게 절대 안 보인다.**
+ *
+ * teacherFeedback 과 **완전히 분리된 별도 컬렉션(teacherEvals)** 에 저장한다 — 문서 ID 는
+ * `${activityId}__${studentId}`(artifactId 와 같은 꼴이지만 다른 컬렉션). 학생이 닿는 어떤
+ * 라우트·컴포넌트도 이 컬렉션을 조회하지 않는다(교사 /teacher/eval 에서만 읽고 쓴다).
+ * 기준·척도는 teacher-eval.ts 의 TEACHER_EVAL_CRITERIA·TEACHER_EVAL_MAX 를 따른다.
+ */
+export interface TeacherEval {
+  id: string;
+  activityId: string;
+  studentId: string;
+  classNo: ClassNo;
+  /** 기준 key → 점수(0~TEACHER_EVAL_MAX) */
+  scores: Record<string, number>;
+  comment: string;
+  /** 마지막 저장 시각 */
+  at: number;
+  /** 저장한 교사(uid) — 감사·귀속용, 학생에게 안 나간다 */
+  by: string;
+}
+
 /** 교사가 쓴 피드백의 작성자 자리 값 */
 export const TEACHER_AUTHOR_ID = "teacher";
 

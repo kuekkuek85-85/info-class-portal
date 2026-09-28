@@ -22,6 +22,9 @@ const DATED = ["/teacher/dashboard", "/teacher/screen", "/teacher/board"];
 
 const NAV = [
   { href: "/teacher/dashboard", label: "대시보드" },
+  // 발표 평가(교사 전용, 학생 비노출). 발표 때 교사가 폰에서 연다. 라벨만 노출 — 점수는
+  // 그 화면 안에서 발표자를 펼쳐야만 보이므로, 이 nav 칩에는 어떤 평가값도 실리지 않는다.
+  { href: "/teacher/eval", label: "발표 평가" },
   { href: "/teacher/screen", label: "영상 재생" },
   { href: "/teacher/board", label: "공유 화면" },
   { href: "/teacher/lessons", label: "차시" },

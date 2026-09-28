@@ -18,6 +18,7 @@ import type {
   Reflection,
   SessionStatus,
   Student,
+  TeacherEval,
 } from "./types";
 
 /**
@@ -38,6 +39,13 @@ export const COLLECTIONS = {
   quizAnswers: "quizAnswers",
   artifacts: "artifacts",
   artifactFeedbacks: "artifactFeedbacks",
+  /**
+   * 교사 전용 발표 평가 (인간과 인공지능 7·8차시). 문서 ID = `활동ID__학번`.
+   *
+   * teacherFeedback(학생에게 보이는 피드백)과 **완전히 분리된** 컬렉션이다. 학생이 닿는
+   * 어떤 라우트도 이 컬렉션을 조회하지 않는다 — 교사 /teacher/eval 에서만 읽고 쓴다.
+   */
+  teacherEvals: "teacherEvals",
   /** 분반 수강 명단. 문서 ID = `분반열쇠__학번` */
   enrollments: "enrollments",
   /** AI 호출 기록. 무엇을 물었는지는 안 남기고 누가·언제·무엇 때문에 불렀는지만 남긴다 */
@@ -787,6 +795,63 @@ export async function listArtifactsByStudent(studentId: string): Promise<Artifac
     db().collection(COLLECTIONS.artifacts).where("studentId", "==", studentId),
   );
   return rows.sort((a, b) => a.activityId.localeCompare(b.activityId));
+}
+
+// --------------------------------------------------- 교사 전용 발표 평가 (7·8차)
+
+/**
+ * 교사 전용 발표 평가 문서 ID = `활동ID__학번` (artifactId 와 같은 꼴, 다른 컬렉션).
+ * teacherFeedback 과 완전히 분리돼 있어 학생 라우트가 이 컬렉션을 조회하지 않는다.
+ */
+export function teacherEvalId(activityId: string, studentId: string): string {
+  return `${activityId}__${studentId}`;
+}
+
+export async function getTeacherEval(
+  activityId: string,
+  studentId: string,
+): Promise<TeacherEval | null> {
+  const doc = await db()
+    .collection(COLLECTIONS.teacherEvals)
+    .doc(teacherEvalId(activityId, studentId))
+    .get();
+  return doc.exists ? withId<TeacherEval>(doc) : null;
+}
+
+export async function listTeacherEvals(
+  activityId: string,
+  classNo?: ClassNo,
+): Promise<TeacherEval[]> {
+  const base = db().collection(COLLECTIONS.teacherEvals).where("activityId", "==", activityId);
+  return collectAll<TeacherEval>(classNo ? base.where("classNo", "==", classNo) : base);
+}
+
+/** 교사 평가를 저장(병합)한다. 교사 화면(/teacher/eval)에서만 호출한다. */
+export async function setTeacherEval(rec: {
+  activityId: string;
+  studentId: string;
+  classNo: ClassNo;
+  scores: Record<string, number>;
+  comment: string;
+  by: string;
+}): Promise<void> {
+  const id = teacherEvalId(rec.activityId, rec.studentId);
+  await db()
+    .collection(COLLECTIONS.teacherEvals)
+    .doc(id)
+    .set(
+      {
+        id,
+        activityId: rec.activityId,
+        studentId: rec.studentId,
+        classNo: rec.classNo,
+        scores: rec.scores,
+        comment: rec.comment,
+        at: Date.now(),
+        by: rec.by,
+      },
+      { merge: true },
+    );
 }
 
 // --------------------------------------------------------------- 도우미 명단

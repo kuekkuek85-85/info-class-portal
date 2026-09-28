@@ -21,11 +21,13 @@
  *     ["peer_eval"])에 JSON 배열로 쌓인다. 발표자에게는 어디에도 안 나간다(서로 구경하기를
  *     끄고 galleryAnswerKeys 에도 안 넣는다) — 발표자 익명 노출 금지가 기본으로 지켜진다.
  *     교사만 대시보드·CSV 로 모아 본다.
- *   · 교사평가 — 포털의 구조화된 루브릭 입력 컴포넌트는 아직 없다. 기존 「미리 피드백」
- *     (teacher/pre-review)이 발표자별 teacherFeedback.note(자유 서술)를 같은 활동(hai-2026-1기)
- *     에 저장한다. 교사가 발표를 보며 그 화면에 루브릭 점수·코멘트를 적으면 된다. 학생 화면에는
- *     띄우지 않는다(이 차시에 teacher_note 문항을 두지 않는다) — 평가는 채점용이라 발표 중
- *     노출하지 않는다. (구조화 점수 입력이 필요하면 새 컴포넌트가 필요 — 이번 범위 밖. 보고 참조.)
+ *   · 교사평가 — **교사 전용 화면 /teacher/eval** 에서 발표자별로 루브릭 점수(6차 기준
+ *     5항목 × 0~3)와 코멘트를 매긴다. 저장은 teacherFeedback 이 아니라 **별도 컬렉션
+ *     teacherEvals**(문서 ID = 활동ID__학번) — 학생이 닿는 어떤 라우트·컴포넌트도 이 값을
+ *     읽지 않는다(teacherFeedback 을 절대 안 건드려 6차 '받은 피드백'·teacher-note-panel 로
+ *     새지 않는다). 발표 때 학생이 교사 대시보드에서 발표를 진행하고 교사는 폰에서 이 화면으로
+ *     평가한다 — 목록은 기본 접힘이라 발표자를 펼치기 전엔 점수가 안 보인다. 이 차시에
+ *     teacher_note 문항을 두지 않아 학생 화면에는 교사평가가 나타나지 않는다(채점용).
  *   · 발표자 본인 자료 — 활동 ID 가 2~6차시와 같아(hai-2026-1기) 6차에 낸 발표 슬라이드 링크
  *     (slides_url)·앱 링크(build_url)·확정 소개(final_pitch)·대본(script)이 그대로 열린다.
  *     발표자가 자기 차례에 열어 보도록 echo 로 편다.
@@ -398,7 +400,7 @@ async function main(): Promise<void> {
   console.log("단계: 기분 체크(mood) → ①평가 기준·발표 진행(build) → ②발표 → ③동료평가(grill) → 회고");
   console.log("  ※ 발표는 7차에 무작위 10~11명, 나머지는 8차 (8차는 미제작). 1인 약 3분 + 질의응답. 발표자 무작위 추첨은 교사가(포털 추첨 기능 없음).");
   console.log("  ※ 동료평가 = peer_eval(kind: rows): 발표자별 번호·점수(3점 이모지)·잘한 점·더 나아지려면. 답은 평가자 본인 활동지에만 저장 → 발표자 비노출(galleryEnabled false).");
-  console.log("  ※ 교사평가 = teacher/pre-review 의 teacherFeedback.note(자유 서술, 발표자별, 같은 활동). 구조화 루브릭 점수 입력은 새 컴포넌트 필요 — 이번 범위 밖.");
+  console.log("  ※ 교사평가 = 교사 전용 /teacher/eval (별도 컬렉션 teacherEvals, 발표자별 5항목×0~3 + 코멘트). teacherFeedback 과 분리 → 학생 어떤 경로도 비노출. 발표 때 폰에서 입력, 기본 접힘(점수 비노출).");
   console.log("  ※ 발표자 본인 자료(6차 slides_url·build_url·final_pitch·script)는 build 의 echo 로 열립니다.");
   console.log("  ※ 평가 기준은 6차 동료·교사 기준 재사용. 대기 게임 없음(mood 로 시작). 서로 구경하기 끔.");
   process.exit(0);
