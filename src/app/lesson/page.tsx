@@ -93,6 +93,8 @@ interface LessonData {
     freeNavigation?: boolean;
     /** 이 차시에서만 쓰는 단계 이름 (되돌아가기 줄에 쓴다) */
     phaseLabels?: Partial<Record<LessonPhase, string>>;
+    /** 라이브 발표 진행을 띄우는 단계 (hai7 은 grill). 이 단계는 활동지 대신 발표 화면 */
+    presentationPhase?: LessonPhase;
     /** 문항과 선지만. 정답은 교사가 공개할 때 따로 내려온다 */
     quizQuestions: { prompt: string; choices: string[] }[];
     activity: ActivityInfo | null;
@@ -265,6 +267,13 @@ export default function LessonPage() {
   const [viewPhase, setViewPhase] = useState<LessonPhase>("waiting");
 
   /*
+   * 라이브 발표 진행 — 교사가 추첨한 발표 순서와 현재 발표자. /api/student/phase 폴링으로 받는다.
+   * presenterIndex: -1 순서 확인 화면 · 0..n-1 그 발표자 차례 · n 이상 종료.
+   */
+  const [presenters, setPresenters] = useState<{ studentId: string; name: string }[]>([]);
+  const [presenterIndex, setPresenterIndex] = useState<number>(-1);
+
+  /*
    * 화면을 벗어난 시간을 잰다. 수업이 끝난 뒤에는 세지 않는다.
    *
    * 배너를 띄우는 것이 이 기능 효과의 대부분이다 — "기록되고 있다"를 학생이 체감하는
@@ -421,6 +430,11 @@ export default function LessonPage() {
       setClosed(Boolean(result.closed));
       // 문항 이동·정답 공개도 같은 응답에 실려 온다 (퀴즈 전용 폴링을 만들지 않는다)
       setQuiz((result.quiz as QuizState | null) ?? null);
+      // 라이브 발표 진행 — 교사의 추첨·다음 넘김을 따라온다 (같은 응답에 실려 온다)
+      setPresenters(
+        (result.presenters as { studentId: string; name: string }[] | undefined) ?? [],
+      );
+      setPresenterIndex(typeof result.presenterIndex === "number" ? result.presenterIndex : -1);
 
       /*
        * 교사가 "성찰 서로 공개"를 켜는 순간 친구들 글을 받아 온다.
@@ -439,6 +453,8 @@ export default function LessonPage() {
       wasPublic.current = nowPublic;
     }
 
+    // 한 번 즉시 불러 발표 진행 화면이 4초 기다리지 않고 바로 채워지게 한다
+    void tick();
     const timer = setInterval(() => void tick(), PHASE_POLL_MS);
     return () => {
       cancelled = true;
@@ -717,6 +733,43 @@ export default function LessonPage() {
       (q) => (q.phase ?? "worksheet") === item,
     );
   const stepQuestions = STEP_PHASES.includes(viewPhase) ? questionsFor(viewPhase) : [];
+
+  /*
+   * 라이브 발표 진행 모드. presentationPhase 단계를 보고 있으면, 활동지 대신
+   * "현재 발표자 + 그 발표자용 동료평가"를 그린다. 내 차례면 발표 안내를 띄운다.
+   */
+  const presentationPhase = session.presentationPhase;
+  const inPresentation = presentationPhase != null && viewPhase === presentationPhase;
+  const currentPresenter =
+    presenterIndex >= 0 && presenterIndex < presenters.length ? presenters[presenterIndex] : null;
+  const iAmPresenter = !!currentPresenter && currentPresenter.studentId === me.studentId;
+  const mySlidesRaw = (worksheet.answers.slides_url ?? "").trim();
+  const mySlides = mySlidesRaw
+    ? /^https?:\/\//i.test(mySlidesRaw)
+      ? mySlidesRaw
+      : "https://" + mySlidesRaw
+    : "";
+  // 현재 발표자 1명에 대한 동료평가 문항(rows, 한 줄). 답은 answers["pe_<발표자학번>"] 에 저장된다.
+  const evalQuestions: WorksheetQuestion[] =
+    currentPresenter && !iAmPresenter
+      ? [
+          {
+            key: `pe_${currentPresenter.studentId}`,
+            phase: presentationPhase,
+            label: `${currentPresenter.name} 발표 평가`,
+            hint: "내용 이해·아이디어 유용성은 3점(3 잘함 · 1 아쉬움), 건설적 피드백은 글로 적어요.",
+            kind: "rows",
+            maxRows: 1,
+            rowColumns: [
+              { key: "content", label: "내용 이해", emojis: ["1", "2", "3"] },
+              { key: "idea", label: "아이디어 유용성", emojis: ["1", "2", "3"] },
+              { key: "feedback", label: "건설적 피드백", placeholder: "잘한 점 + 더 좋아지려면" },
+            ],
+            maxLength: 1000,
+          },
+        ]
+      : [];
+
   /**
    * 제출 단추를 띄울 단계 — 이 차시에서 학생이 **마지막으로 무언가를 하는** 곳.
    *
@@ -1171,7 +1224,99 @@ export default function LessonPage() {
           STEP 단계 중 일부는 이제 활동지 대신 퀴즈가 뜬다(노래·감정 추측·AI 감정분석).
           그 단계에서는 위의 QuizView 가 그려지므로, 여기 활동지/대기 placeholder 는 건너뛴다.
         */}
-        {!showDone && STEP_PHASES.includes(viewPhase) && !(quiz && viewPhase === phase) &&
+        {/*
+          라이브 발표 진행 — 이 단계에서는 활동지 대신 발표 화면을 그린다.
+          · 추첨 전: 대기 안내 · 추첨 후 시작 전: 발표 순서 목록
+          · 발표 중: (내 차례) 발표 안내 / (그 외) 현재 발표자 크게 + 동료평가
+          · 모두 끝: 종료 안내
+        */}
+        {!showDone && inPresentation && (
+          presenters.length === 0 ? (
+            <Placeholder
+              title="발표자 추첨을 기다리는 중"
+              description="선생님이 곧 오늘 발표자를 뽑을 거예요."
+            />
+          ) : presenterIndex < 0 ? (
+            <div className="block bg-lime">
+              <h2 className="t-headline">오늘 발표 순서</h2>
+              <ol className="mt-3 flex flex-col gap-1">
+                {presenters.map((p, i) => (
+                  <li key={p.studentId} className="t-body">
+                    <b>{i + 1}.</b> {p.name} <span className="opacity-60">({p.studentId})</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="t-caption mt-3 opacity-70">
+                곧 1번부터 발표를 시작해요. 잠깐만 기다려 주세요.
+              </p>
+            </div>
+          ) : currentPresenter ? (
+            iAmPresenter ? (
+              <div className="block bg-lime text-center">
+                <p className="t-caption">
+                  내 차례 ({presenterIndex + 1}/{presenters.length})
+                </p>
+                <h2 className="mt-1 text-2xl font-extrabold">🎤 지금 발표하세요!</h2>
+                <p className="t-body mt-2">
+                  앞으로 나와 선생님 화면에서 발표해요. 발표 자료는 아래에서 열 수 있어요.
+                </p>
+                {mySlides && (
+                  <a
+                    href={mySlides}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="pill pill-primary pill-block mt-3 text-center"
+                  >
+                    내 발표 자료 열기 (새 탭)
+                  </a>
+                )}
+              </div>
+            ) : (
+              <section className="flex flex-col gap-4">
+                <div className="block bg-lime text-center">
+                  <p className="t-caption">
+                    지금 발표 중 ({presenterIndex + 1}/{presenters.length})
+                  </p>
+                  <h2 className="mt-1 text-3xl font-extrabold">{currentPresenter.name}</h2>
+                  <p className="t-body opacity-70">{currentPresenter.studentId}</p>
+                </div>
+                {session.activity && artifact ? (
+                  <WorksheetView
+                    questions={evalQuestions}
+                    place={artifact.place}
+                    year={artifact.year}
+                    canDraw={false}
+                    carried={null}
+                    studentName={me.name}
+                    studentId={me.studentId}
+                    strokes={[]}
+                    texts={[]}
+                    value={worksheet}
+                    onChange={setWorksheet}
+                    onSubmit={submitArtifact}
+                    onFeedback={handleFeedback}
+                    submitted={false}
+                    submitError={submitError}
+                    disabled={closed}
+                    hideSubmit
+                    hideSources
+                    firstMood={mood}
+                    heading="동료평가"
+                  />
+                ) : (
+                  <Placeholder title="불러오는 중" description="잠시만 기다려 주세요." />
+                )}
+              </section>
+            )
+          ) : (
+            <Placeholder
+              title="발표가 모두 끝났어요"
+              description="선생님이 다음 화면으로 넘겨 줄 거예요."
+            />
+          )
+        )}
+
+        {!showDone && !inPresentation && STEP_PHASES.includes(viewPhase) && !(quiz && viewPhase === phase) &&
           (session.activity && artifact && stepQuestions.length > 0 ? (
             <WorksheetView
               questions={stepQuestions}

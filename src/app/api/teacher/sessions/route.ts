@@ -7,7 +7,9 @@ import {
   getSession,
   invalidateSessionCache,
   listAllSessions,
+  listAttendance,
   listQuizAnswers,
+  listRoster,
   listSessionsByDate,
   reserveCode,
   setSessionPhase,
@@ -198,6 +200,10 @@ export async function PATCH(request: Request) {
       phase?: LessonPhase;
       quizIndex?: number;
       quizRevealed?: boolean;
+      // 라이브 발표 진행 제어
+      drawPresenters?: boolean;
+      setPresenterIndex?: number;
+      clearPresenters?: boolean;
     }>(request);
 
     if (!body?.id) return fail("invalid_input");
@@ -281,6 +287,47 @@ export async function PATCH(request: Request) {
 
       await updateSession(body.id, patch);
       // 학생 화면은 세션 캐시를 읽는다. 비워 주지 않으면 최대 3초 늦게 반영된다.
+      invalidateSessionCache(body.id);
+    }
+
+    /*
+     * 라이브 발표 진행 — 교사만 쓰고 학생이 폴링으로 읽는다(quizIndex 패턴).
+     *  · 추첨: 지금 접속(입장)한 학생을 무작위로 섞어 절반을 발표자로. 성명은 지금 명단으로
+     *    조인해 박아 둔다(학생 폴링마다 명단을 다시 읽지 않게). presenterIndex=-1(순서만 먼저 보임).
+     *  · 다음/이전/시작: presenterIndex 를 옮긴다. -1(순서 확인) ~ n(종료)로 가둔다.
+     *  · 초기화: 발표자 목록을 비운다.
+     */
+    if (body.drawPresenters) {
+      const [attendance, roster] = await Promise.all([
+        listAttendance(body.id),
+        listRoster(session),
+      ]);
+      const nameOf = new Map(roster.map((s) => [s.studentId, s.name]));
+      const ids = attendance.map((a) => a.studentId);
+      if (ids.length === 0) {
+        return fail("invalid_input", "아직 접속(입장)한 학생이 없습니다. 학생이 들어온 뒤 추첨하세요.");
+      }
+      // 매 추첨마다 새로 섞는다(Fisher–Yates). 결정적일 필요가 없다 — 결과는 세션에 한 번 저장된다.
+      const shuffled = [...ids];
+      for (let i = shuffled.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      const half = Math.ceil(shuffled.length / 2); // 오늘 절반(홀수면 올림), 나머지는 다음 시간
+      const presenters = shuffled
+        .slice(0, half)
+        .map((sid) => ({ studentId: sid, name: nameOf.get(sid) ?? sid }));
+      await updateSession(body.id, { presenters, presenterIndex: -1 });
+      invalidateSessionCache(body.id);
+    }
+    if (typeof body.setPresenterIndex === "number") {
+      const list = session.presenters ?? [];
+      const idx = Math.max(-1, Math.min(Math.trunc(body.setPresenterIndex), list.length));
+      await updateSession(body.id, { presenterIndex: idx });
+      invalidateSessionCache(body.id);
+    }
+    if (body.clearPresenters) {
+      await updateSession(body.id, { presenters: [], presenterIndex: -1 });
       invalidateSessionCache(body.id);
     }
 

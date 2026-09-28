@@ -74,6 +74,10 @@ interface SessionRow {
   };
   quizIndex?: number;
   quizRevealed?: boolean;
+  /** 라이브 발표 진행 — 추첨한 발표 순서·현재 발표자·발표 화면을 띄우는 단계 */
+  presenters?: { studentId: string; name: string }[];
+  presenterIndex?: number;
+  presentationPhase?: LessonPhase;
   activity?: {
     activityId: string;
     places?: string[];
@@ -1151,6 +1155,110 @@ function Dashboard() {
               </button>
             </div>
           </section>
+
+          {/*
+            라이브 발표 진행 — presentationPhase 단계일 때만 뜨는 제어 패널(퀴즈 패널과 같은 조건부 방식).
+            추첨(접속 학생 절반 무작위) → 발표 시작/다음 넘김. 학생 화면은 4초 폴링으로 따라온다.
+          */}
+          {session.presentationPhase && session.presentationPhase === session.phase && (() => {
+            const list = session.presenters ?? [];
+            const idx = session.presenterIndex ?? -1;
+            const cur = idx >= 0 && idx < list.length ? list[idx] : null;
+            return (
+              <section className="card flex flex-col gap-3">
+                <h2 className="t-body font-bold">발표 진행 (라이브)</h2>
+                {list.length === 0 ? (
+                  <>
+                    <p className="t-caption">
+                      지금 접속한 학생 중 절반을 무작위로 뽑아 발표 순서를 만듭니다. (학생이 다 들어온 뒤 누르세요)
+                    </p>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => patchSession({ drawPresenters: true })}
+                        className="pill pill-primary"
+                      >
+                        🎲 발표자 추첨
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="t-body font-bold">
+                      {idx < 0
+                        ? "학생 화면에 발표 순서가 떠 있어요. [발표 시작]을 누르면 1번부터 진행됩니다."
+                        : cur
+                          ? `지금 발표 중 · ${idx + 1}/${list.length} — ${cur.name} (${cur.studentId})`
+                          : "모든 발표가 끝났어요. 회고 단계로 넘겨 주세요."}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => patchSession({ setPresenterIndex: idx - 1 })}
+                        disabled={idx < 0}
+                        className="pill pill-secondary"
+                      >
+                        ◀ 이전
+                      </button>
+                      {idx < 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => patchSession({ setPresenterIndex: 0 })}
+                          className="pill pill-primary"
+                        >
+                          ▶ 발표 시작 (1번)
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => patchSession({ setPresenterIndex: idx + 1 })}
+                          disabled={idx >= list.length}
+                          className="pill pill-primary"
+                        >
+                          다음 발표자 ▶
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => patchSession({ drawPresenters: true })}
+                        className="pill pill-secondary"
+                      >
+                        🎲 다시 추첨
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => patchSession({ clearPresenters: true })}
+                        className="pill pill-secondary"
+                      >
+                        초기화
+                      </button>
+                    </div>
+                    <ol className="flex flex-col gap-1">
+                      {list.map((p, i) => (
+                        <li
+                          key={p.studentId}
+                          className={`t-body-sm ${i === idx ? "font-bold text-accent" : ""}`}
+                        >
+                          {i + 1}. {p.name} <span className="text-muted">({p.studentId})</span>
+                          {i === idx ? " ← 지금" : ""}
+                        </li>
+                      ))}
+                    </ol>
+                    <div className="rounded-lg border border-line bg-background px-3 py-2">
+                      <p className="t-caption font-bold">선생님 평가 루브릭 (발표를 보며)</p>
+                      <ul className="mt-1 list-disc pl-5 text-xs text-muted">
+                        <li>내용 충실성 — 문제·해결·핵심 기능·개선점·소감을 담았는가</li>
+                        <li>문제·해결의 적절성 — 문제가 분명하고, 해결이 그에 잘 맞는가</li>
+                        <li>창의성 — 해결 방식이 새롭고 독창적인가</li>
+                        <li>전달력 — 이해하기 쉬운 설명, 태도와 목소리</li>
+                        <li>동료 피드백 반영 — 받은 피드백을 반영해 개선한 점이 보이는가</li>
+                      </ul>
+                    </div>
+                  </>
+                )}
+              </section>
+            );
+          })()}
 
           {/*
             퀴즈는 이제 여러 단계에 붙을 수 있다(문항별 group). 지금 단계(session.phase)에

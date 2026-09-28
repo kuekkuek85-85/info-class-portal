@@ -147,6 +147,8 @@ async function main(): Promise<void> {
     // 단계 버튼 순서. 7차 계획은 phaseOrder 로 대기를 흐름에서 뺀다 — 세션에 함께 실어 나른다
     // (snapshotOf 도 같은 값을 싣는다; 여기서도 실어 화면·open 세션이 같은 순서가 되게)
     ...(p.phaseOrder ? { phaseOrder: p.phaseOrder } : {}),
+    // 라이브 발표 진행 단계 (grill). 이게 있어야 학생·교사 화면에 발표 진행 UI 가 뜬다
+    ...(p.presentationPhase ? { presentationPhase: p.presentationPhase } : {}),
     focusExempt: p.focusExempt ?? [],
     freeNavigation: p.freeNavigation ?? false,
   });
