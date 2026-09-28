@@ -16,6 +16,7 @@ import { describePeriod, isPeriodOver, periodTime } from "@/lib/timetable";
 import { usePolled } from "@/lib/use-polled";
 import { AWAY_ALERT, LESSON_PHASES, PHASE_LABELS, type LessonPhase } from "@/lib/types";
 import { groupName } from "@/lib/group-label";
+import { normalizeUrl } from "@/lib/url";
 
 /**
  * 교사 대시보드 — 출석 확인 겸 접속자 실시간 명단, 감정 개별 응답, 성찰 모아보기, 교사 메모.
@@ -74,6 +75,8 @@ interface SessionRow {
   };
   quizIndex?: number;
   quizRevealed?: boolean;
+  /** 분반 열쇠 (선택과목 분반 수업). 교사 전용 발표자 슬라이드 링크 조회에 쓴다 */
+  groupKey?: string;
   /** 라이브 발표 진행 — 추첨한 발표 순서·현재 발표자·발표 화면을 띄우는 단계 */
   presenters?: { studentId: string; name: string }[];
   presenterIndex?: number;
@@ -1233,6 +1236,18 @@ function Dashboard() {
                         초기화
                       </button>
                     </div>
+                    {/*
+                      현재 발표자의 슬라이드를 교사가 한 번 눌러 새 탭으로 연다 (A안).
+                      링크는 학생 payload(presenters)에 넣지 않고 교사 전용 /api/teacher/eval 로만
+                      가져온다 — 남의 슬라이드 주소가 학생 화면에 실리지 않게. cur 이 있을 때만 뜬다.
+                    */}
+                    {cur && (
+                      <PresenterSlidesButton
+                        studentId={cur.studentId}
+                        activityId={session.activity?.activityId}
+                        groupKey={session.groupKey}
+                      />
+                    )}
                     <ol className="flex flex-col gap-1">
                       {list.map((p, i) => (
                         <li
@@ -1835,4 +1850,83 @@ function StatusBadge({ status }: { status: SessionRow["status"] }) {
     ended: { label: "종료", className: "text-rose-600 dark:text-rose-400" },
   } as const;
   return <span className={map[status].className}>{map[status].label}</span>;
+}
+
+/**
+ * "이 발표자 슬라이드 열기" — 교사 대시보드 발표 패널 전용 (인간과 인공지능 7·8차시).
+ *
+ * ## 링크는 교사 전용 경로로만 가져온다
+ *
+ * 현재 발표자의 slides_url·build_url 은 **학생과 동기화되는 presenters 배열에 넣지 않는다**
+ * (그러면 남의 슬라이드 주소가 학생 payload 로 실린다). 대신 교사 전용 /api/teacher/eval GET
+ * (requireTeacher)이 발표자별 링크를 돌려주므로 그걸 재사용해, 이 분반 링크 맵을 한 번 받아
+ * 둔다. 학생 경로는 전혀 안 거친다.
+ *
+ * ## 팝업 차단 회피
+ *
+ * 링크는 미리 받아 두고, 클릭 핸들러에서 **동기적으로** window.open 한다 (await 뒤에 열면
+ * 브라우저가 팝업으로 막는다). 자동으로 열지 않는다 — 교사가 이 버튼을 눌러야 열린다.
+ *
+ * slides_url 이 없으면 build_url(앱 링크)로 폴백하고, 둘 다 없으면 버튼을 비활성화한다.
+ */
+function PresenterSlidesButton({
+  studentId,
+  activityId,
+  groupKey,
+}: {
+  studentId: string;
+  activityId?: string;
+  groupKey?: string;
+}) {
+  const [links, setLinks] = useState<Record<string, { slidesUrl: string; buildUrl: string }>>({});
+
+  useEffect(() => {
+    if (!activityId || !groupKey) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch(
+          `/api/teacher/eval?activity=${encodeURIComponent(activityId)}&group=${encodeURIComponent(groupKey)}`,
+        );
+        const body = await response.json();
+        if (cancelled || !body?.ok) return;
+        const map: Record<string, { slidesUrl: string; buildUrl: string }> = {};
+        for (const s of (body.students ?? []) as {
+          studentId: string;
+          slidesUrl?: string;
+          buildUrl?: string;
+        }[]) {
+          map[s.studentId] = { slidesUrl: s.slidesUrl ?? "", buildUrl: s.buildUrl ?? "" };
+        }
+        setLinks(map);
+      } catch {
+        // 조용히 물러난다 — 링크가 없으면 아래에서 버튼이 비활성으로 뜬다
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // 분반이 바뀌면 다시 받는다. 발표자 이동만으로는 다시 받지 않는다(같은 분반 맵을 재사용)
+  }, [activityId, groupKey]);
+
+  const cur = links[studentId];
+  // 슬라이드가 우선, 없으면 앱 링크로 폴백. 스킴이 빠졌어도 눌리게 https:// 를 채운다
+  const url = normalizeUrl(cur?.slidesUrl || cur?.buildUrl || "");
+  const openable = /^https?:\/\//i.test(url);
+
+  return (
+    <div className="flex flex-col gap-1">
+      <button
+        type="button"
+        disabled={!openable}
+        onClick={() => {
+          if (openable) window.open(url, "_blank", "noopener,noreferrer");
+        }}
+        className="pill pill-primary self-start disabled:opacity-60"
+      >
+        ▶ 이 발표자 슬라이드 열기 (새 탭)
+      </button>
+      {!openable && <span className="t-caption text-muted">제출한 슬라이드 링크 없음</span>}
+    </div>
+  );
 }
