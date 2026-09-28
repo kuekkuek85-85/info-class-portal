@@ -37,10 +37,13 @@
  * 포털에는 발표자 무작위 추첨 기능이 없다(서로 구경하기의 peerAssign random 은 작품 배정용).
  * 교사가 10~11명을 무작위로 뽑아(주사위·뽑기·번호표 등) 이름을 알려 준다. 안내 note 로만 돕는다.
  *
- * ## 대기·기분 — 6차 관례를 따른다
+ * ## 대기 = 발표 리허설 (게임 대신 본인 발표 자료)
  *
- * 대기(waiting) 게임 단계를 흐름에서 빼고(game 비움 + phaseOrder 에서 제외 + 세션을 mood 로
- * 연다), 기분 체크만 하고 곧바로 발표 안내로 넘어간다. 발표 차시라 대기 게임은 방해가 된다.
+ * 발표 차시라 대기 화면에 게임을 띄우지 않는다. 대신 그 자리에 발표자 '본인'의 발표 자료
+ * (6차 slides_url)를 띄워, 대기 시간에 자기 슬라이드를 넘겨보며 발표 연습을 하게 한다.
+ * game.url 을 "answer:slides_url" 로 두면 lesson 화면이 그 학생의 활동지 답(슬라이드 링크)을
+ * 임베드하고 새 창으로 크게 여는 단추를 함께 낸다. 세션은 waiting 으로 열어(open 스크립트)
+ * 학생이 이 화면을 먼저 만난다 — 교사 표준대로 기분 체크를 먼저 하고, 제출하면 리허설 화면으로.
  *
  * ## 세션은 열지 않는다
  *
@@ -71,14 +74,10 @@ const app = initializeApp({
 const db = getFirestore(app);
 db.settings({ ignoreUndefinedProperties: true });
 
-/** 저장소가 공개라 캔바 초대 주소는 .env.local 에서만 읽는다 (seed-hai6 와 같은 이유) */
-const CANVA_INVITE_URL = process.env.CANVA_INVITE_URL ?? "";
-const CANVA_BY_GROUP: Record<string, string> = {
-  "hai-tue-1": process.env.CANVA_INVITE_TUE_1 ?? "",
-  "hai-tue-2": process.env.CANVA_INVITE_TUE_2 ?? "",
-  "hai-thu-1": process.env.CANVA_INVITE_THU_1 ?? "",
-  "hai-thu-2": process.env.CANVA_INVITE_THU_2 ?? "",
-};
+/*
+ * 7차는 캔바 로그인/초대 주소 단계를 두지 않는다(학생은 자기 발표 링크 하나로 발표).
+ * 그래서 seed-hai6 과 달리 CANVA_* 초대 주소를 읽지 않는다.
+ */
 
 /** ★ 2~6차시와 같은 값. 이 값이 같아야 6차에 낸 발표 자료·앱·대본이 오늘 화면에 열린다 */
 const ACTIVITY_ID = "hai-2026-1기";
@@ -89,39 +88,139 @@ function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
 
+/* ──────────────────────────────────────────────────────────────
+ * 평가 기준을 글로 나열하면 눈에 안 들어와(교사 지적), 동료·교사 기준을 표(SVG)로 그려
+ * imageUrl 로 카드에 얹는다. worksheet-view 는 imageUrl 을 w-full img 로 그린다(15차와 같은 수법).
+ * data:image/svg+xml + encodeURIComponent 로 한글··색코드가 안전하게 실린다.
+ * ────────────────────────────────────────────────────────────── */
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+/** 칸 폭에 맞춰 글자를 줄바꿈한다(한글 기준 대략적 글자수) */
+function wrapCell(text: string, perLine: number): string[] {
+  const out: string[] = [];
+  let line = "";
+  for (const ch of text) {
+    if (ch === "\n") {
+      out.push(line);
+      line = "";
+      continue;
+    }
+    line += ch;
+    if ([...line].length >= perLine) {
+      out.push(line);
+      line = "";
+    }
+  }
+  if (line) out.push(line);
+  return out.length ? out : [""];
+}
+function svgTable(o: {
+  title: string;
+  headers: string[];
+  headFills: string[];
+  headText: string[];
+  rows: string[][];
+  colW: number[];
+}): string {
+  const pad = 12;
+  const fontS = 15;
+  const lineH = 22;
+  const cellPadX = 10;
+  const cellPadY = 14;
+  const titleH = 40;
+  const headH = 38;
+  const W = o.colW.reduce((a, b) => a + b, 0) + pad * 2;
+  const perLine = o.colW.map((w) => Math.max(4, Math.floor((w - cellPadX * 2) / (fontS + 1))));
+  const rowLines = o.rows.map((r) => r.map((cell, ci) => wrapCell(cell, perLine[ci])));
+  const rowH = rowLines.map((cells) => Math.max(...cells.map((l) => l.length)) * lineH + cellPadY * 2);
+
+  const parts: string[] = [];
+  let y = titleH;
+  // 헤더
+  let x = pad;
+  o.headers.forEach((h, ci) => {
+    parts.push(`<rect x="${x}" y="${y}" width="${o.colW[ci]}" height="${headH}" fill="${o.headFills[ci]}" stroke="#e5e7eb"/>`);
+    parts.push(`<text x="${x + cellPadX}" y="${y + 25}" font-size="15" font-weight="700" fill="${o.headText[ci]}">${esc(h)}</text>`);
+    x += o.colW[ci];
+  });
+  y += headH;
+  // 데이터 행
+  rowLines.forEach((cells, ri) => {
+    const h = rowH[ri];
+    const fill = ri % 2 ? "#f8fafc" : "#ffffff";
+    let cx = pad;
+    cells.forEach((lines, ci) => {
+      parts.push(`<rect x="${cx}" y="${y}" width="${o.colW[ci]}" height="${h}" fill="${fill}" stroke="#e5e7eb"/>`);
+      lines.forEach((ln, li) => {
+        const ty = y + cellPadY + fontS + li * lineH - 3;
+        const weight = ci === 0 ? ` font-weight="700"` : "";
+        const color = ci === 0 ? "#111827" : "#0f172a";
+        parts.push(`<text x="${cx + cellPadX}" y="${ty}" font-size="${fontS}" fill="${color}"${weight}>${esc(ln)}</text>`);
+      });
+      cx += o.colW[ci];
+    });
+    y += h;
+  });
+  const H = y + pad;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" ` +
+    `font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">` +
+    `<rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>` +
+    `<text x="${W / 2}" y="26" text-anchor="middle" font-size="18" font-weight="700" fill="#111827">${esc(o.title)}</text>` +
+    parts.join("") +
+    `</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+/** 동료평가(친구 평가) 기준 표 — 내용 이해·아이디어 유용성(3점) + 건설적 피드백(주관식) */
+const PEER_CRITERIA_TABLE = svgTable({
+  title: "친구 평가(동료평가) 기준",
+  headers: ["평가 요소", "무엇을 보나요", "방식"],
+  headFills: ["#bfdbfe", "#bfdbfe", "#fde68a"],
+  headText: ["#1e40af", "#1e40af", "#92400e"],
+  colW: [150, 340, 110],
+  rows: [
+    ["내용 이해", "문제와 해결 아이디어가 잘 이해됐나요?", "3점 척도"],
+    ["아이디어·유용성", "핵심 기능이 쓸모 있어 보였나요?", "3점 척도"],
+    ["건설적 피드백", "잘한 점 한 가지 + 더 좋아지려면 한 가지", "주관식"],
+  ],
+});
+
+/** 선생님 평가(루브릭) 기준 표 — 시연 삭제, 문제·해결의 적절성/창의성 분리 */
+const TEACHER_CRITERIA_TABLE = svgTable({
+  title: "선생님 평가(루브릭) 기준",
+  headers: ["평가 요소", "무엇을 보나요"],
+  headFills: ["#bbf7d0", "#bbf7d0"],
+  headText: ["#166534", "#166534"],
+  colW: [175, 425],
+  rows: [
+    ["내용 충실성", "문제·해결·핵심 기능·개선점·소감을 담았는가"],
+    ["문제·해결의 적절성", "문제가 분명하고, 해결이 그에 잘 맞는가"],
+    ["창의성", "해결 방식이 새롭고 독창적인가"],
+    ["전달력", "이해하기 쉬운 설명, 태도와 목소리"],
+    ["동료 피드백 반영", "받은 피드백을 반영해 개선한 점이 보이는가"],
+  ],
+});
+
 const WORKSHEET: WorksheetQuestion[] = [
   /*
-   * ── ① 평가 기준과 발표 진행 안내 (build 칸) ────────────────
+   * ── 오늘 순서·발표 진행·평가 기준 안내 (build 칸) ────────────────
    *
    * 교사 확정 순서대로, 발표 전에 평가 기준을 먼저 읽힌다(같은 기준으로 준비→발표→평가).
-   * 로그인을 맨 위에 둔다 — 발표자가 자기 캔바 슬라이드를 열려면 로그인이 필요하다(병목 관례).
+   * (캔바 로그인 단계는 뺐다 — 학생은 자기 발표 링크 하나로 발표한다.)
    */
-  {
-    key: "_l7_login",
-    phase: "build",
-    label: "① 캔바에 다시 들어가기 — 발표자는 먼저 눌러 두세요",
-    hint:
-      "아래 [캔바 열기] 를 누르고 [Microsoft로 계속하기] 를 고르세요.\n" +
-      "내 학교 계정은 아래 칸에 있어요. [복사하기] 를 눌러 그대로 붙여 넣으면 됩니다.\n\n" +
-      "발표할 때 6차에 만든 발표 슬라이드와 앱을 열어 보여 줍니다.\n" +
-      "· 화면이 안 넘어간다 → 30초 기다려 보고, 그래도 그대로면 손을 드세요",
-    kind: "note",
-    copyText: "{학교계정}",
-    linkUrl: CANVA_INVITE_URL,
-    linkUrlByGroup: Object.fromEntries(Object.entries(CANVA_BY_GROUP).filter(([, url]) => url)),
-    linkLabel: "캔바 열기 (새 창)",
-    maxLength: 0,
-  },
   {
     key: "_l7_today",
     phase: "build",
-    label: "② 오늘 순서",
+    label: "① 오늘 순서",
     hint:
       "오늘은 그동안 만든 앱을 발표해요. 이 발표는 나 혼자 만든 개인 프로젝트예요.\n" +
       "오늘(7차)은 무작위로 뽑힌 10~11명이 발표하고, 나머지는 다음 시간(8차)에 발표합니다.\n\n" +
       "1) 평가 기준 먼저 보기 (아래)\n" +
       "2) 발표 — 한 사람당 약 3분, 발표 뒤 짧게 질의응답\n" +
-      "3) 동료평가 — 발표를 들으며 발표자마다 점수와 한마디를 남깁니다 ([동료평가] 탭)\n" +
+      "3) 발표 진행 — 선생님이 발표자를 뽑으면, 화면에 현재 발표자와 평가 창이 떠요\n" +
+      "   (발표를 들으며 지금 발표자를 3점 평가 + 한마디)\n" +
       "4) 교사평가 — 선생님이 발표를 보며 평가합니다\n\n" +
       "발표 시간과 인원은 선생님이 조정할 수 있어요.",
     kind: "note",
@@ -130,7 +229,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "_l7_run",
     phase: "build",
-    label: "③ 발표는 이렇게 진행해요",
+    label: "② 발표는 이렇게 진행해요",
     hint:
       "· 오늘 발표할 10~11명은 선생님이 무작위로 뽑아 알려 줍니다.\n" +
       "· 뽑히면 앞으로 나와, 6차에 만든 발표 슬라이드를 띄우고 약 3분 동안 발표합니다.\n" +
@@ -144,42 +243,35 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "_l7_peereval_criteria",
     phase: "build",
     /*
-     * 동료평가 기준 — 6차(_l6_peereval)와 같은 문구. 발표 전에 무엇을 보고 평가할지 읽힌다.
+     * 동료평가 기준 — 표(SVG)로 얹는다. 내용 이해·아이디어 유용성(3점 척도) + 건설적 피드백(주관식).
+     * 아래 grill 의 peer_eval 입력 칸과 요소가 1:1 로 맞는다.
      */
-    label: "④ 평가 기준 (1) 친구 평가 (동료평가)",
+    label: "③ 평가 기준 (1) 친구 평가 (동료평가)",
     hint:
-      "친구 발표를 들으며 아래 기준으로 봅니다. 점수는 3점 척도예요 — 잘함 3 / 보통 2 / 아쉬움 1.\n" +
-      "(배점은 선생님이 조정할 수 있어요.)\n\n" +
-      "· 내용 이해 — 문제와 해결 아이디어가 잘 이해됐나요?\n" +
-      "· 아이디어·유용성 — 핵심 기능이 쓸모 있어 보였나요?\n" +
-      "· 시연 — 실제 앱 화면을 보여 주었나요?\n" +
-      "· 전달력 — 발표가 명확하고 잘 들렸나요?\n" +
-      "· 건설적 피드백 — 잘한 점 한 가지 + 더 좋아지려면 한 가지를 남겨 주세요",
+      "친구 발표를 들으며 아래 표의 기준으로 봐요. 점수는 3점 척도 — 잘함 3 · 보통 2 · 아쉬움 1.\n" +
+      "건설적 피드백은 글로 적어요. (배점은 선생님이 조정할 수 있어요.)",
     kind: "note",
+    imageUrl: PEER_CRITERIA_TABLE,
     maxLength: 0,
   },
   {
     key: "_l7_teachereval_criteria",
     phase: "build",
     /*
-     * 교사평가 기준(루브릭) — 6차(_l6_teachereval)와 같은 문구. 학생이 어떻게 평가받는지 미리 안다.
+     * 교사평가 기준(루브릭) — 표(SVG)로 얹는다. 시연 삭제, 문제·해결의 적절성/창의성 2개로 분리.
      */
-    label: "④ 평가 기준 (2) 선생님 평가 (루브릭)",
+    label: "③ 평가 기준 (2) 선생님 평가 (루브릭)",
     hint:
-      "선생님은 아래 기준(루브릭)으로 봅니다. 발표를 준비한 필수 요소와 같은 기준이에요.\n" +
-      "(항목별 배점·척도는 선생님이 조정할 수 있어요.)\n\n" +
-      "· 내용 충실성 — 문제·해결·핵심 기능·시연·개선점·소감을 담았는가\n" +
-      "· 문제·해결의 적절성과 창의성 — 문제가 분명하고, 해결이 그에 맞고 새로운가\n" +
-      "· 전달력 — 이해하기 쉬운 설명, 태도와 목소리\n" +
-      "· 시연 — 실제 앱·화면을 보여 주었는가\n" +
-      "· 동료 피드백 반영 — 받은 피드백을 반영해 개선한 점이 보이는가",
+      "선생님은 아래 표의 기준(루브릭)으로 봐요. 발표를 준비한 필수 요소와 같은 기준이에요.\n" +
+      "(항목별 배점·척도는 선생님이 조정할 수 있어요.)",
     kind: "note",
+    imageUrl: TEACHER_CRITERIA_TABLE,
     maxLength: 0,
   },
   {
     key: "_l7_presenter",
     phase: "build",
-    label: "⑤ 발표자라면 — 내 발표 자료를 열어 두세요",
+    label: "④ 발표자라면 — 내 발표 자료를 열어 두세요",
     hint:
       "오늘 발표로 뽑혔다면, 아래에 6차에 만든 내 발표 슬라이드·앱 링크·대본이 있어요.\n" +
       "슬라이드 링크를 눌러 띄워 놓고, 대본을 참고해 약 3분 동안 발표하세요.\n" +
@@ -208,44 +300,26 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
 
   /*
-   * ── ③ 동료평가 (grill 칸) ─────────────────────────────────
+   * ── 발표 진행 (grill 칸) — 라이브 오케스트레이션 ─────────────
    *
-   * 발표를 들으며 발표자마다 한 줄씩 남긴다. rows 라 발표자 수만큼 줄을 늘려 적는다.
-   * 답은 평가한 학생 본인의 활동지에만 저장된다 — 발표자에게는 안 나간다(서로 구경하기 끔).
+   * 이 단계(grill) 학생 화면은 활동지 대신 lesson 페이지가 그리는 발표 화면으로 대체된다
+   * (presentationPhase: "grill"). 교사가 발표자를 추첨하면 순서가 뜨고, 발표가 시작되면
+   * 현재 발표자와 그 친구용 동료평가 창(내용 이해·아이디어 유용성 3점 + 건설적 피드백)이 뜬다.
+   * 동료평가 답은 발표자마다 pe_<발표자학번> 키로 평가한 학생 본인 활동지에 저장된다 —
+   * 발표자에게 노출 안 됨(galleryEnabled false). 교사만 대시보드·CSV 로 본다.
+   *
+   * 아래 note 는 화면에 뜨지 않는다(발표 화면이 대체함). 다만 대시보드가 이 단계 버튼을
+   * 띄우려면 이 단계에 문항이 하나는 있어야 해서(availablePhase) 남겨 둔다.
    */
   {
-    key: "_l7_peereval_note",
+    key: "_l7_present_intro",
     phase: "grill",
-    label: "⑥ 동료평가 — 발표를 들으며 남겨요",
+    label: "발표 진행",
     hint:
-      "발표를 한 사람 들을 때마다 아래에 한 줄씩 추가하세요 ([+ 줄 추가]).\n" +
-      "· 발표자 번호 — 몇 번 친구인지 (예: 3)\n" +
-      "· 점수 — 3점이 제일 잘함, 1점이 아쉬움 (위 기준으로)\n" +
-      "· 잘한 점 한 가지 · 더 좋아지려면 한 가지\n\n" +
-      "여기 적은 것은 발표자에게 보이지 않아요 — 솔직하게, 그리고 예의 있게 적어요.\n" +
-      "다 못 적어도 괜찮아요. 한 명이라도 제대로 봐 주는 게 낫습니다.",
+      "선생님이 발표자를 추첨하면 발표 순서가 뜨고, 발표가 시작되면 현재 발표자와\n" +
+      "그 친구를 평가하는 창이 이 화면에 나타나요.",
     kind: "note",
     maxLength: 0,
-  },
-  {
-    key: "peer_eval",
-    phase: "grill",
-    /*
-     * 발표자 × (번호·점수·코멘트). rows 답은 JSON 배열로 이 학생 본인 답에 저장된다.
-     * 발표자에게 노출되지 않는다(galleryEnabled false · galleryAnswerKeys 미지정).
-     * 점수는 이모지 칸으로 3점 척도(하나만 고름). 코멘트 칸은 40자 상한(rows-field 기본).
-     */
-    label: "발표자별 평가",
-    hint: "",
-    kind: "rows",
-    maxRows: 12,
-    rowColumns: [
-      { key: "num", label: "발표자 번호", placeholder: "예) 3" },
-      { key: "score", label: "점수 (3이 제일 잘함)", emojis: ["1", "2", "3"] },
-      { key: "good", label: "잘한 점 한 가지", placeholder: "예) 시연이 실제로 잘 됐어요" },
-      { key: "improve", label: "더 좋아지려면", placeholder: "예) 목소리가 조금 더 크면 좋겠어요" },
-    ],
-    maxLength: 4000,
   },
 ];
 
@@ -265,10 +339,18 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   ],
 
   /*
-   * 대기 게임을 비운다 (6차와 같음 — 세션을 mood 로 열어 대기 화면을 지나지 않는다).
-   * 발표 차시라 대기 게임은 방해가 된다.
+   * 대기 = 발표 리허설. 게임 대신 발표자 본인의 발표 자료(6차 slides_url)를 띄운다.
+   * url 의 "answer:slides_url" 는 lesson 화면이 읽어, 그 학생의 슬라이드를 새 탭으로 크게 여는
+   * 단추를 낸다. (캔바는 frame-ancestors CSP 로 iframe 임베드를 막으므로 미리보기는 안 넣는다.)
+   * 아직 슬라이드를 안 낸 학생은 안내만 본다.
    */
-  game: empty(),
+  game: {
+    heading: "발표 리허설 — 내 발표 자료 넘겨보기",
+    body:
+      "발표 순서를 기다리는 동안, 아래 단추로 내 발표 슬라이드를 열어 넘겨보며 연습하세요.\n" +
+      "새 탭에서 전체화면으로 크게 열려요.",
+    url: "answer:slides_url",
+  },
   gameExplainer: empty(),
 
   progress: {
@@ -279,7 +361,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
       "한 사람당 약 3분 발표하고, 끝나면 짧게 질문을 주고받습니다.\n\n" +
       "① 평가 기준 먼저 보기 — 친구 평가·선생님 평가 기준\n" +
       "② 발표 — 뽑힌 사람부터 앞에 나와 슬라이드를 띄우고 발표\n" +
-      "③ 동료평가 — 발표를 들으며 발표자마다 점수와 한마디 ([동료평가] 탭)\n" +
+      "③ 발표 진행 — 선생님이 발표자를 뽑으면 화면에 현재 발표자·평가 창이 떠요\n" +
       "④ 회고 — 짧게\n\n" +
       "발표 안 한 사람도 다음 시간에 발표하니, 오늘은 잘 듣고 좋은 피드백을 남겨 줘요.",
     url: "",
@@ -298,8 +380,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    */
   focusExempt: ["build", "grill", "worksheet"],
 
-  // 발표자는 자기 자료(build)와 동료평가(grill)를 오간다. 되돌아가기를 켜 둔다
-  freeNavigation: true,
+  // 되돌아가기 끔 (교사 표준: 새 수업 기본 off). 발표는 대기(리허설)→build(발표)→grill(동료평가)
+  // 로 앞으로만 가면 되고, 발표자 자료는 build 의 echo·대기 리허설에서 열리므로 뒤로 갈 일이 없다.
+  freeNavigation: false,
 
   /*
    * 단계 이름. build(평가 기준·발표 진행) → grill(동료평가) → reflection(회고).
@@ -308,19 +391,25 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    */
   phaseLabels: {
     progress: "오늘 할 일",
-    build: "평가 기준·발표 진행",
-    grill: "동료평가",
+    build: "발표 안내",
+    grill: "발표 진행",
     reflection: "회고",
   },
 
   /*
-   * 단계 버튼 순서 (6차와 같은 이유로 대기를 흐름에서 뺀다).
-   * 대시보드는 [...phaseOrder, ...LESSON_PHASES 중 안 적은 것] 을 availablePhase 로 걸러
-   * 버튼을 만든다. mood→build→grill→reflection→done 을 앞세우고, 여기 없는 waiting 은
-   * 맨 뒤로 밀린다(availablePhase 기본 true 라 버튼 자체는 못 없앰 — 세션을 mood 로 열어
-   * 학생은 대기 화면을 지나지 않는다). phaseOrder 는 snapshotOf·open 스크립트로 세션에 실린다.
+   * 라이브 발표 진행을 띄우는 단계. grill 단계에서 학생 화면은 활동지 대신
+   * "현재 발표자 + 그 발표자용 동료평가"만 뜨고, 교사 대시보드에는 추첨·다음 넘김 패널이 뜬다.
    */
-  phaseOrder: ["mood", "build", "grill", "reflection", "done"],
+  presentationPhase: "grill",
+
+  /*
+   * 단계 버튼 순서. 대기(waiting)를 맨 앞에 둔다 — 여기가 발표 리허설 화면이다.
+   * 세션을 waiting 으로 열면 학생은 기분 체크(교사 표준) 먼저, 제출하면 리허설 화면을 만난다.
+   * 교사가 발표를 시작하면 build 로 넘긴다. 리허설로 되돌리고 싶으면 [대기] 버튼을 다시 누른다.
+   * mood 는 waiting 안에서 처리되므로 별도 단계로 두지 않는다.
+   * phaseOrder 는 snapshotOf·open 스크립트로 세션에 실린다.
+   */
+  phaseOrder: ["waiting", "build", "grill", "reflection", "done"],
 
   activity: {
     activityId: ACTIVITY_ID,
@@ -344,16 +433,6 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 };
 
 async function main(): Promise<void> {
-  if (!CANVA_INVITE_URL) {
-    console.error(
-      "✗ CANVA_INVITE_URL 이 없습니다.\n" +
-        "  .env.local 에 캔바 학교 팀 초대 주소를 넣어 주세요:\n" +
-        "  CANVA_INVITE_URL=https://www.canva.com/brand/join?token=...\n" +
-        "  (저장소가 공개라 코드에 직접 적지 않습니다)",
-    );
-    process.exit(1);
-  }
-
   const existing = await db.collection("lessonPlans").where("lessonNo", "==", LESSON_NO).get();
   const now = Date.now();
 
@@ -382,27 +461,16 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log("\n캔바 초대 주소");
-  for (const [key, label] of [
-    ["hai-tue-1", "화요일 1기"],
-    ["hai-tue-2", "화요일 2기"],
-    ["hai-thu-1", "목요일 1기"],
-    ["hai-thu-2", "목요일 2기"],
-  ] as const) {
-    const url = CANVA_BY_GROUP[key];
-    console.log(
-      `  ${label}  ${url ? url.replace(/token=([^&]{4})[^&]*/, "token=$1…") : "없음 — 기본 주소로 물러남"}`,
-    );
-  }
-
   console.log(`\n활동 ID: ${ACTIVITY_ID} (2~6차시와 같음 — 6차 발표 자료·앱·대본이 그대로 열립니다)`);
   console.log(`차시 번호 ${LESSON_NO} (정보과와 안 겹치게)`);
-  console.log("단계: 기분 체크(mood) → ①평가 기준·발표 진행(build) → ②발표 → ③동료평가(grill) → 회고");
+  console.log("단계: 대기=발표 리허설(waiting) → 발표 안내(build: 오늘 순서·평가 기준 표·발표자 자료) → 발표 진행(grill: 라이브 추첨·발표·동료평가) → 회고");
+  console.log("  ※ 발표 진행(grill) = 교사가 [추첨]→접속 학생 절반 무작위 발표 순서, [다음]으로 넘기면 학생 화면이 4초 폴링으로 현재 발표자·평가창에 동기화. presentationPhase=grill.");
   console.log("  ※ 발표는 7차에 무작위 10~11명, 나머지는 8차 (8차는 미제작). 1인 약 3분 + 질의응답. 발표자 무작위 추첨은 교사가(포털 추첨 기능 없음).");
-  console.log("  ※ 동료평가 = peer_eval(kind: rows): 발표자별 번호·점수(3점 이모지)·잘한 점·더 나아지려면. 답은 평가자 본인 활동지에만 저장 → 발표자 비노출(galleryEnabled false).");
-  console.log("  ※ 교사평가 = 교사 전용 /teacher/eval (별도 컬렉션 teacherEvals, 발표자별 5항목×0~3 + 코멘트). teacherFeedback 과 분리 → 학생 어떤 경로도 비노출. 발표 때 폰에서 입력, 기본 접힘(점수 비노출).");
+  console.log("  ※ 동료평가 = 현재 발표자마다 pe_<발표자학번> 키(내용 이해·아이디어 유용성 3점 + 건설적 피드백). 답은 평가자 본인 활동지에만 저장 → 발표자 비노출(galleryEnabled false).");
+  console.log("  ※ 평가 기준(동료·교사)은 카드에 표(SVG imageUrl)로 얹음.");
+  console.log("  ※ 교사평가 = 교사 전용 /teacher/eval (별도 컬렉션 teacherEvals, teacherFeedback 과 분리 → 학생 어떤 경로도 비노출). 발표 때 폰에서 입력, 기본 접힘(점수 비노출).");
   console.log("  ※ 발표자 본인 자료(6차 slides_url·build_url·final_pitch·script)는 build 의 echo 로 열립니다.");
-  console.log("  ※ 평가 기준은 6차 동료·교사 기준 재사용. 대기 게임 없음(mood 로 시작). 서로 구경하기 끔.");
+  console.log("  ※ 평가 기준은 6차 동료·교사 기준 재사용. 대기 화면 = 발표 리허설(본인 slides_url, waiting 으로 시작). 서로 구경하기 끔.");
   process.exit(0);
 }
 

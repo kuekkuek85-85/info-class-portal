@@ -103,6 +103,8 @@ export async function GET() {
         reflectionPublic: session.reflectionPublic,
         freeNavigation: session.freeNavigation ?? false,
         phaseLabels: session.phaseLabels ?? {},
+        // 라이브 발표 진행을 띄우는 단계(정적 설정). 이 단계에서는 활동지 대신 발표 화면을 그린다.
+        presentationPhase: session.presentationPhase,
         // 문항과 선지만. 정답·해설은 교사가 공개한 뒤 /api/student/phase 로 따로 내려간다.
         quizQuestions: publicQuestions(session),
         // 활동지·장소 선택지. 그림 자체는 /api/student/artifact 로 따로 받는다.

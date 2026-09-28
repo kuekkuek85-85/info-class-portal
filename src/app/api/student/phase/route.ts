@@ -37,6 +37,13 @@ export async function GET() {
       freeNavigation: session.freeNavigation ?? false,
       // 이 차시에서만 이탈을 세지 않는 단계 — 화면 쪽에서 1차로 거른다
       focusExempt: session.focusExempt ?? [],
+      /*
+       * 라이브 발표 진행 — 세션 문서에 이미 있는 값이라 추가 조회가 없다(quizIndex 와 같은 이유).
+       * presenters(순서·성명)와 presenterIndex(현재 발표자)를 실어, 학생 화면이 4초 폴링으로
+       * 교사의 추첨·다음 넘김을 그대로 따라온다.
+       */
+      presenters: session.presenters ?? [],
+      presenterIndex: session.presenterIndex ?? -1,
     });
   });
 }

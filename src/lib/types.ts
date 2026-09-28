@@ -1320,6 +1320,8 @@ export interface LessonPlan {
    * 마음 톡톡 5회기가 착시 영상(video)을 토끼/오리(assessment) 앞에 두려고 쓴다.
    */
   phaseOrder?: LessonPhase[];
+  /** 라이브 발표 진행을 띄우는 단계 (hai7 은 grill). 세션 스냅샷으로도 실린다 */
+  presentationPhase?: LessonPhase;
   /** 이 차시에서만 이탈을 세지 않을 단계 */
   focusExempt?: LessonPhase[];
   /**
@@ -1433,6 +1435,18 @@ export interface ClassSession {
    * 옮기거나 공개를 끄면 서버가 지운다.
    */
   quizDist?: { index: number; counts: number[]; answered: number };
+  /**
+   * 라이브 발표 진행 — quizIndex 와 같은 broadcast 패턴(교사만 쓰고 학생이 폴링으로 읽음).
+   *
+   * `presenters` 는 교사가 추첨한 발표 순서(학번·성명, 성명은 추첨 시점에 명단으로 조인해 박아 둔다 —
+   * 학생 폴링마다 명단을 다시 읽지 않게). `presenterIndex` 는 지금 발표자: -1 이면 추첨은 됐지만
+   * 아직 순서만 보여주는 상태, 0..n-1 이면 그 발표자 차례, n 이상이면 발표 종료.
+   * `presentationPhase` 는 이 라이브 진행 화면을 띄우는 단계(hai7 은 grill). 이 단계에서 학생 화면은
+   * 활동지 대신 "현재 발표자 + 그 발표자용 동료평가"만 뜬다.
+   */
+  presenters?: { studentId: string; name: string }[];
+  presenterIndex?: number;
+  presentationPhase?: LessonPhase;
   /**
    * 교사가 혼자 걸어보는 리허설 수업.
    *
