@@ -19,9 +19,9 @@ export const TEACHER_EVAL_MAX = 3;
 /** 교사 루브릭 기준 (6차시 교사평가 기준과 같음). key 로 저장, label 로 표시. */
 export const TEACHER_EVAL_CRITERIA = [
   { key: "content", label: "내용 충실성" },
-  { key: "problem", label: "문제·해결의 적절성과 창의성" },
+  { key: "problem", label: "문제·해결의 적절성" },
+  { key: "creativity", label: "창의성" },
   { key: "delivery", label: "전달력" },
-  { key: "demo", label: "시연" },
   { key: "feedback", label: "동료 피드백 반영" },
 ] as const;
 
