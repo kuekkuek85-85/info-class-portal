@@ -207,6 +207,25 @@ function submitField(
   };
 }
 
+/*
+ * 각 주제 단계 맨 앞에 두는 'OneCompiler 터틀 열기' 단추 카드(16차와 동일). 주제마다 단계가
+ * 나뉘어 있어, 무대(problem)의 안내 카드에만 링크가 있으면 거북이 단계에서 편집기를 못 연다.
+ */
+function ocOpen(key: string, phase: WorksheetQuestion["phase"]): WorksheetQuestion {
+  return {
+    key,
+    phase,
+    label: "먼저 — OneCompiler 터틀 열기",
+    hint:
+      "아래 단추로 편집기를 새 탭에서 열어요(이미 열려 있으면 그대로 두고 거기서 해요).\n" +
+      "이 주제의 코드를 복사해 ★★★만 채워 완성하고 실행해 봐요.",
+    kind: "note",
+    linkUrl: ONECOMPILER_TURTLE_URL,
+    linkLabel: "OneCompiler 터틀 열기 (새 탭)",
+    maxLength: 0,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────
 // 활동지 —
 //   · 파이썬 타자 연습(phase: wordquiz, 별도 단계) : 외부 앱 새 탭 링크
@@ -284,6 +303,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   submitField("poke_submit_stage", "무대 — 코드 제출", "무대", "problem"),
 
   /* ── ③ 거북이 만들기·꾸미기 — Turtle·shape·color (색을 여러 형태로) ── */
+  ocOpen("_poke_oc_turtle", "mvp"),
   {
     key: "_poke_turtle",
     phase: "mvp",
