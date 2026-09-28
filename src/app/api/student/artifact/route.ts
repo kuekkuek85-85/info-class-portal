@@ -208,6 +208,17 @@ export async function POST(request: Request) {
           if (base?.confirmLock) answers[key] = String(value ?? "") === "1" ? "1" : "";
           continue;
         }
+        /*
+         * 라이브 발표 진행의 동료평가(pe_<발표자학번>)는 활동지에 미리 적힌 문항이 아니라
+         * 발표자마다 화면에서 만들어지는 동적 키다. 그래서 allowed 에 없다 — 발표 단계인
+         * 세션에서, 그 세션의 발표자 목록에 있는 학번일 때만 받는다(임의 키 쌓임은 여전히 차단).
+         * 값은 rows JSON(점수 둘 + 피드백)이라 넉넉히 2000자로 받는다.
+         */
+        if (key.startsWith("pe_") && session.presentationPhase) {
+          const isPresenter = (session.presenters ?? []).some((p) => `pe_${p.studentId}` === key);
+          if (isPresenter) answers[key] = String(value ?? "").slice(0, 2000);
+          continue;
+        }
         const question = allowed.get(key);
         // 활동지에 없는 키는 버린다 — 문서에 임의의 필드가 쌓이는 것을 막는다
         if (!question || question.kind === "traits") continue;
