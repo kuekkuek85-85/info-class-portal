@@ -975,6 +975,54 @@ export default function LessonPage() {
               saved={moodSaved}
               disabled={closed}
             />
+          ) : (session.game.url ?? "").startsWith("answer:") ? (
+            /*
+              발표 리허설 — 대기 게임 자리에 학생 '본인' 발표 자료를 띄운다.
+              game.url 이 "answer:<키>" 면 그 학생의 활동지 답(예: slides_url)을 임베드해,
+              대기 시간에 자기 슬라이드를 넘겨보며 연습하게 한다(게임 대신). 캔바 링크가 iframe 을
+              막을 수 있어, 새 탭에서 크게 열어 발표 모드로 넘겨볼 수 있는 단추를 함께 둔다.
+            */
+            (() => {
+              const relKey = (session.game.url ?? "").slice("answer:".length);
+              const raw = (worksheet.answers[relKey] ?? "").trim();
+              const slides = raw ? (/^https?:\/\//i.test(raw) ? raw : "https://" + raw) : "";
+              if (!slides) {
+                return (
+                  <div className="block bg-lime">
+                    <h2 className="t-headline">{session.game.heading || "발표 리허설"}</h2>
+                    <p className="t-body mt-2">
+                      아직 발표 자료 링크가 없어요. 선생님이 발표 단계로 넘기면 그때 낼 수 있어요.
+                    </p>
+                  </div>
+                );
+              }
+              return (
+                <section className="flex flex-col gap-4">
+                  <div className="block bg-lime">
+                    <h2 className="t-headline">{session.game.heading || "발표 리허설"}</h2>
+                    {session.game.body && (
+                      <p className="t-body mt-2 whitespace-pre-wrap">{session.game.body}</p>
+                    )}
+                    <a
+                      href={slides}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="pill pill-primary pill-block mt-3 text-center"
+                    >
+                      내 발표 자료 크게 열기 — 넘겨보며 리허설 (새 탭)
+                    </a>
+                  </div>
+                  <div className="overflow-hidden rounded-lg border border-line">
+                    <iframe
+                      src={slides}
+                      title="내 발표 자료"
+                      className="h-[70vh] w-full"
+                      allow="fullscreen"
+                    />
+                  </div>
+                </section>
+              );
+            })()
           ) : session.game.url ? (
             /*
               기분 체크를 마쳤거나 안 쓰는 차시 — 먼저 온 학생이 5분을 기다리기도 한다

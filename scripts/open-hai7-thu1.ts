@@ -123,12 +123,12 @@ async function main(): Promise<void> {
     code,
     status: "scheduled",
     /*
-     * 시작 단계를 'mood' 로 연다 (7차도 6차 관례 — 대기 단계를 흐름에서 뺀다).
-     * 학생은 대기(waiting) 화면(게임/placeholder)을 지나지 않고, 기분 체크 →
-     * 곧바로 build(평가 기준·발표 진행)로 넘어간다. moodCheckEnabled 가 true 라
-     * mood 단계가 MoodPicker 를 띄운다.
+     * 시작 단계를 'waiting' 으로 연다 — 7차 대기 화면은 발표 리허설이다.
+     * moodCheckEnabled 가 true 라 학생은 먼저 기분 체크(교사 표준)를 하고, 제출하면
+     * 그 자리에 본인 발표 자료(game.url = "answer:slides_url")가 떠 넘겨보며 연습한다.
+     * 교사가 발표를 시작하면 build(평가 기준·발표 진행)로 넘긴다.
      */
-    phase: "mood",
+    phase: "waiting",
     rehearsal: false,
     teacherNote: "",
     startedAt: null,
@@ -168,7 +168,7 @@ async function main(): Promise<void> {
   console.log(`  상태 ${back.status} · 단계 ${back.phase} · 되돌아가기 ${back.freeNavigation ? "켬" : "끔"}`);
   console.log(`  남의 분반 토큰 실림  ${dumped.includes("linkUrlByGroup") ? "예 ← 문제" : "아니오"}`);
   console.log(`  서로 구경하기  ${act?.galleryEnabled ? "켬 ← 확인" : "끔 (동료평가는 발표자 비노출)"}`);
-  console.log(`  시작 단계  ${back.phase}${back.phase === "mood" ? " (대기 단계 건너뜀 — 기분 체크부터)" : ""}`);
+  console.log(`  시작 단계  ${back.phase}${back.phase === "waiting" ? " (대기=발표 리허설 — 기분 체크 먼저→내 슬라이드)" : ""}`);
   console.log(`  단계 순서(phaseOrder)  ${Array.isArray(back.phaseOrder) ? (back.phaseOrder as string[]).join(" → ") : "없음(LESSON_PHASES 기본)"}`);
   process.exit(0);
 }

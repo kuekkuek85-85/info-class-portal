@@ -35,10 +35,13 @@
  * 포털에는 발표자 무작위 추첨 기능이 없다(서로 구경하기의 peerAssign random 은 작품 배정용).
  * 교사가 10~11명을 무작위로 뽑아(주사위·뽑기·번호표 등) 이름을 알려 준다. 안내 note 로만 돕는다.
  *
- * ## 대기·기분 — 6차 관례를 따른다
+ * ## 대기 = 발표 리허설 (게임 대신 본인 발표 자료)
  *
- * 대기(waiting) 게임 단계를 흐름에서 빼고(game 비움 + phaseOrder 에서 제외 + 세션을 mood 로
- * 연다), 기분 체크만 하고 곧바로 발표 안내로 넘어간다. 발표 차시라 대기 게임은 방해가 된다.
+ * 발표 차시라 대기 화면에 게임을 띄우지 않는다. 대신 그 자리에 발표자 '본인'의 발표 자료
+ * (6차 slides_url)를 띄워, 대기 시간에 자기 슬라이드를 넘겨보며 발표 연습을 하게 한다.
+ * game.url 을 "answer:slides_url" 로 두면 lesson 화면이 그 학생의 활동지 답(슬라이드 링크)을
+ * 임베드하고 새 창으로 크게 여는 단추를 함께 낸다. 세션은 waiting 으로 열어(open 스크립트)
+ * 학생이 이 화면을 먼저 만난다 — 교사 표준대로 기분 체크를 먼저 하고, 제출하면 리허설 화면으로.
  *
  * ## 세션은 열지 않는다
  *
@@ -263,10 +266,17 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   ],
 
   /*
-   * 대기 게임을 비운다 (6차와 같음 — 세션을 mood 로 열어 대기 화면을 지나지 않는다).
-   * 발표 차시라 대기 게임은 방해가 된다.
+   * 대기 = 발표 리허설. 게임 대신 발표자 본인의 발표 자료(6차 slides_url)를 띄운다.
+   * url 의 "answer:slides_url" 는 lesson 화면이 읽어, 그 학생의 활동지 답(슬라이드 링크)을
+   * 임베드하고 새 창으로 크게 여는 단추를 낸다. 아직 슬라이드를 안 낸 학생은 안내만 본다.
    */
-  game: empty(),
+  game: {
+    heading: "발표 리허설 — 내 발표 자료 넘겨보기",
+    body:
+      "발표 순서를 기다리는 동안, 아래에서 내 발표 슬라이드를 넘겨보며 연습하세요.\n" +
+      "[내 발표 자료 크게 열기] 를 누르면 새 창에서 발표 모드로 넘겨볼 수 있어요.",
+    url: "answer:slides_url",
+  },
   gameExplainer: empty(),
 
   progress: {
@@ -296,8 +306,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    */
   focusExempt: ["build", "grill", "worksheet"],
 
-  // 발표자는 자기 자료(build)와 동료평가(grill)를 오간다. 되돌아가기를 켜 둔다
-  freeNavigation: true,
+  // 되돌아가기 끔 (교사 표준: 새 수업 기본 off). 발표는 대기(리허설)→build(발표)→grill(동료평가)
+  // 로 앞으로만 가면 되고, 발표자 자료는 build 의 echo·대기 리허설에서 열리므로 뒤로 갈 일이 없다.
+  freeNavigation: false,
 
   /*
    * 단계 이름. build(평가 기준·발표 진행) → grill(동료평가) → reflection(회고).
@@ -312,13 +323,13 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   },
 
   /*
-   * 단계 버튼 순서 (6차와 같은 이유로 대기를 흐름에서 뺀다).
-   * 대시보드는 [...phaseOrder, ...LESSON_PHASES 중 안 적은 것] 을 availablePhase 로 걸러
-   * 버튼을 만든다. mood→build→grill→reflection→done 을 앞세우고, 여기 없는 waiting 은
-   * 맨 뒤로 밀린다(availablePhase 기본 true 라 버튼 자체는 못 없앰 — 세션을 mood 로 열어
-   * 학생은 대기 화면을 지나지 않는다). phaseOrder 는 snapshotOf·open 스크립트로 세션에 실린다.
+   * 단계 버튼 순서. 대기(waiting)를 맨 앞에 둔다 — 여기가 발표 리허설 화면이다.
+   * 세션을 waiting 으로 열면 학생은 기분 체크(교사 표준) 먼저, 제출하면 리허설 화면을 만난다.
+   * 교사가 발표를 시작하면 build 로 넘긴다. 리허설로 되돌리고 싶으면 [대기] 버튼을 다시 누른다.
+   * mood 는 waiting 안에서 처리되므로 별도 단계로 두지 않는다.
+   * phaseOrder 는 snapshotOf·open 스크립트로 세션에 실린다.
    */
-  phaseOrder: ["mood", "build", "grill", "reflection", "done"],
+  phaseOrder: ["waiting", "build", "grill", "reflection", "done"],
 
   activity: {
     activityId: ACTIVITY_ID,
@@ -395,12 +406,12 @@ async function main(): Promise<void> {
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (2~6차시와 같음 — 6차 발표 자료·앱·대본이 그대로 열립니다)`);
   console.log(`차시 번호 ${LESSON_NO} (정보과와 안 겹치게)`);
-  console.log("단계: 기분 체크(mood) → ①평가 기준·발표 진행(build) → ②발표 → ③동료평가(grill) → 회고");
+  console.log("단계: 대기=발표 리허설(waiting, 기분 체크 먼저→내 슬라이드) → ①평가 기준·발표 진행(build) → ②발표 → ③동료평가(grill) → 회고");
   console.log("  ※ 발표는 7차에 무작위 10~11명, 나머지는 8차 (8차는 미제작). 1인 약 3분 + 질의응답. 발표자 무작위 추첨은 교사가(포털 추첨 기능 없음).");
   console.log("  ※ 동료평가 = peer_eval(kind: rows): 발표자별 번호·점수(3점 이모지)·잘한 점·더 나아지려면. 답은 평가자 본인 활동지에만 저장 → 발표자 비노출(galleryEnabled false).");
   console.log("  ※ 교사평가 = teacher/pre-review 의 teacherFeedback.note(자유 서술, 발표자별, 같은 활동). 구조화 루브릭 점수 입력은 새 컴포넌트 필요 — 이번 범위 밖.");
   console.log("  ※ 발표자 본인 자료(6차 slides_url·build_url·final_pitch·script)는 build 의 echo 로 열립니다.");
-  console.log("  ※ 평가 기준은 6차 동료·교사 기준 재사용. 대기 게임 없음(mood 로 시작). 서로 구경하기 끔.");
+  console.log("  ※ 평가 기준은 6차 동료·교사 기준 재사용. 대기 화면 = 발표 리허설(본인 slides_url, waiting 으로 시작). 서로 구경하기 끔.");
   process.exit(0);
 }
 
