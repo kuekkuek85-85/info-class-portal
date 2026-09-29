@@ -8,6 +8,7 @@ import { ComfortBotPanel } from "@/components/comfort-bot-panel";
 import { DilemmaGame } from "@/components/dilemma-game";
 import { EmotionLensPanel } from "@/components/emotion-lens-panel";
 import { RulesResultPanel } from "@/components/rules-result-panel";
+import { StreamsSolo } from "@/components/streams-solo";
 import { EmotionQuiz } from "@/components/emotion-quiz";
 import { ImageField } from "@/components/image-field";
 import { ListField } from "@/components/list-field";
@@ -969,6 +970,18 @@ export function WorksheetView({
               onChange={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}
               rounds={question.dilemmaRounds}
+            />
+          ) : question.kind === "streams_solo" ? (
+            /*
+              STREAMS 개인전(공동체 활동). 한 장씩 뽑아 20칸에 배치, 오름차순 구간을 채점한다.
+              계산·진행은 컴포넌트 안에서(streams.ts 엔진), 최고 점수만 answers 에 저장한다 —
+              서버·Gemini 를 쓰지 않는다 (streams-solo).
+            */
+            <StreamsSolo
+              questionKey={question.key}
+              raw={value.answers[question.key] ?? ""}
+              onChange={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
             />
           ) : question.kind === "rules_result" ? (
             /*

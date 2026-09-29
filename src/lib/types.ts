@@ -619,6 +619,13 @@ export interface WorksheetQuestion {
      * 안에서 하고 서버·Gemini 는 쓰지 않는다. 민감 정보 아님 (dilemma-game).
      */
     | "dilemma_game"
+    /**
+     * streams_solo — STREAMS 보드게임 개인전(공동체 활동). 학생이 한 장씩 뽑아 20칸 보드에
+     * 배치하고, 오름차순 구간을 점수표로 채점한다(조커 와일드). 계산·진행은 클라이언트
+     * 컴포넌트 안에서(공유 엔진 streams.ts) 하고 서버·Gemini 는 쓰지 않는다. 최고 점수만
+     * answers 에 저장한다. 비민감 (streams-solo).
+     */
+    | "streams_solo"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
