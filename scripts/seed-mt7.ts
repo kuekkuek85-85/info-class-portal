@@ -310,16 +310,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   },
   gameExplainer: empty(),
 
-  progress: {
-    heading: "오늘 할 일 — 그림으로 마음 전하기 + 우리 학교 규칙 만들기",
-    body:
-      "① 그림으로 마음 전하기 — Sketchful.io 게임 + 돌아보기\n" +
-      "② 반복 죄수의 딜레마 — 협력과 배신, 무엇이 이득일까?\n" +
-      "③ 규칙 아이디어 제시 → 서로 감상·피드백(익명) → 피드백 반영해 고치기\n" +
-      "④ 우리 반 규칙을 하나로 완성하기\n" +
-      "⑤ STREAMS 개인전 — 숫자 줄기를 길게 이어 점수 내기 → 마음일기",
-    url: "",
-  },
+  // 진도 안내(오늘 할 일) 단계는 두지 않는다(교사 요청). 비우면 그 단추가 대시보드에서 사라진다.
+  progress: empty(),
 
   assessment: empty(),
   video: empty(),
@@ -342,14 +334,15 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   // STREAMS(wrapmap)를 규칙 만들기 블록과 스위칭 — 규칙 만들기·감상·완성 뒤, 마지막 활동으로.
   phaseOrder: ["waiting", "mvp", "worksheet", "grill", "problem", "gallery", "build", "wrapmap", "reflection"],
 
+  // 단계명은 명칭만 — 동그라미 번호(①②③…)는 붙이지 않는다(교사 요청).
   phaseLabels: {
-    mvp: "① 그림으로 마음 전하기 (게임)",
-    worksheet: "① 게임 후 돌아보기",
-    grill: "② 반복 죄수의 딜레마",
-    problem: "③ 규칙 만들기 · 피드백 반영",
-    gallery: "③ 서로 감상·피드백",
-    build: "④ 우리 학교 규칙 완성",
-    wrapmap: "⑤ STREAMS 개인전",
+    mvp: "그림으로 마음 전하기 (게임)",
+    worksheet: "게임 후 돌아보기",
+    grill: "반복 죄수의 딜레마",
+    problem: "규칙 만들기 · 피드백 반영",
+    gallery: "서로 감상·피드백",
+    build: "우리 학교 규칙 완성",
+    wrapmap: "STREAMS 개인전",
     reflection: "마음일기",
   },
 
