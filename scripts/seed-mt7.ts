@@ -315,9 +315,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     body:
       "① 그림으로 마음 전하기 — Sketchful.io 게임 + 돌아보기\n" +
       "② 반복 죄수의 딜레마 — 협력과 배신, 무엇이 이득일까?\n" +
-      "③ STREAMS 개인전 — 숫자 줄기를 길게 이어 점수 내기\n" +
-      "④ 규칙 아이디어 제시 → 서로 감상·피드백(익명) → 피드백 반영해 고치기\n" +
-      "⑤ 우리 반 규칙을 하나로 완성하기 → 마음일기",
+      "③ 규칙 아이디어 제시 → 서로 감상·피드백(익명) → 피드백 반영해 고치기\n" +
+      "④ 우리 반 규칙을 하나로 완성하기\n" +
+      "⑤ STREAMS 개인전 — 숫자 줄기를 길게 이어 점수 내기 → 마음일기",
     url: "",
   },
 
@@ -339,16 +339,17 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   // 교사 버튼 순서.
   // 마음 체크인(mood)은 별도 단계로 두지 않는다 — 대기 화면에서 기분 체크를 먼저 한다(교사 표준).
-  phaseOrder: ["waiting", "mvp", "worksheet", "grill", "wrapmap", "problem", "gallery", "build", "reflection"],
+  // STREAMS(wrapmap)를 규칙 만들기 블록과 스위칭 — 규칙 만들기·감상·완성 뒤, 마지막 활동으로.
+  phaseOrder: ["waiting", "mvp", "worksheet", "grill", "problem", "gallery", "build", "wrapmap", "reflection"],
 
   phaseLabels: {
     mvp: "① 그림으로 마음 전하기 (게임)",
     worksheet: "① 게임 후 돌아보기",
     grill: "② 반복 죄수의 딜레마",
-    wrapmap: "③ STREAMS 개인전",
-    problem: "④ 규칙 만들기 · 피드백 반영",
-    gallery: "④ 서로 감상·피드백",
-    build: "⑤ 우리 학교 규칙 완성",
+    problem: "③ 규칙 만들기 · 피드백 반영",
+    gallery: "③ 서로 감상·피드백",
+    build: "④ 우리 학교 규칙 완성",
+    wrapmap: "⑤ STREAMS 개인전",
     reflection: "마음일기",
   },
 
