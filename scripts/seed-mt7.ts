@@ -340,10 +340,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   focusExempt: ["mvp"],
 
   // 교사 버튼 순서.
-  phaseOrder: ["waiting", "mood", "mvp", "worksheet", "grill", "wrapmap", "problem", "gallery", "build", "reflection"],
+  // 마음 체크인(mood)은 별도 단계로 두지 않는다 — 대기 화면에서 기분 체크를 먼저 한다(교사 표준).
+  phaseOrder: ["waiting", "mvp", "worksheet", "grill", "wrapmap", "problem", "gallery", "build", "reflection"],
 
   phaseLabels: {
-    mood: "마음 체크인",
     mvp: "① 그림으로 마음 전하기 (게임)",
     worksheet: "① 게임 후 돌아보기",
     grill: "② 반복 죄수의 딜레마",
