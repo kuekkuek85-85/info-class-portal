@@ -60,6 +60,13 @@ const CLASS_NO = 1;
 const PERIOD = 7;
 
 /**
+ * --rehearsal 을 주면 rehearsal: true 로 연다 — 교시 시각과 무관하게 열려 테스트할 수 있고,
+ * scripts/clear-rehearsals.ts --write 로 정리된다. 안 주면 실제 수업(rehearsal: false).
+ * 교사가 먼저 리허설로 207(STREAMS 포함)을 테스트한 뒤, 인자 없이 실제로 연다.
+ */
+const REHEARSAL = process.argv.includes("--rehearsal");
+
+/**
  * 계획에서 세션으로 복사되는 부분 — snapshotOf 목록 + phaseOrder.
  *
  * ⚠ 감정 회기와 달리 activity 의 galleryEnabled·galleryAnswerKeys 를 **덮어쓰지 않는다** —
@@ -173,7 +180,7 @@ async function main(): Promise<void> {
 
     status: "scheduled",
     phase: "waiting",
-    rehearsal: false,
+    rehearsal: REHEARSAL,
     demo: false,
     teacherNote: "",
     startedAt: null,
@@ -181,7 +188,9 @@ async function main(): Promise<void> {
     createdAt: Date.now(),
   });
 
-  console.log(`✓ ${GROUP_LABEL} ${PERIOD}교시 수업을 만들었습니다 (대기 상태)`);
+  console.log(
+    `✓ ${GROUP_LABEL} ${PERIOD}교시 수업을 만들었습니다 (대기 상태${REHEARSAL ? " · rehearsal" : ""})`,
+  );
   report(id, code, kept, plan);
   process.exit(0);
 }
@@ -209,7 +218,12 @@ function report(id: string, code: string, kept: WorksheetQuestion[], plan: Lesso
   const showNames = plan.activity?.galleryShowNames === true;
   console.log(`   작성자 이름: ${showNames ? "⚠ 실명(확인 필요)" : "익명(이름 안 붙음)"}`);
   console.log(`   남의 분반 토큰 실림: ${JSON.stringify(kept).includes("linkUrlByGroup") ? "예 ← 문제" : "아니오"}`);
-  console.log("\n⚠ 배포 전제: dilemma_game·rules_result·집계 라우트는 코드 기능이라 main 배포가 되어 있어야 화면에 뜹니다. AI 집계는 GEMINI_API_KEY 필요.");
+  console.log(
+    REHEARSAL
+      ? "\n리허설 모드(rehearsal: true) — 아무 때나 열립니다. 화요일 1기 30번으로 로그인해 테스트하고, 끝나면 node --env-file=.env.local scripts/clear-rehearsals.ts --write 로 정리하세요."
+      : "\n실제 수업 모드(rehearsal: false). 리허설로 먼저 확인하려면 --rehearsal 을 붙여 여세요.",
+  );
+  console.log("\n⚠ 배포 전제: streams_solo·dilemma_game·rules_result·집계 라우트는 코드 기능이라 main 배포가 되어 있어야 화면에 뜹니다. AI 집계는 GEMINI_API_KEY 필요.");
 }
 
 main().catch((error: unknown) => {

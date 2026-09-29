@@ -12,9 +12,10 @@
  * 교사 버튼 순서:
  *   대기 → 마음 체크인
  *   → ① 그림으로 마음 전하기(게임 · mvp) → ① 게임 후 돌아보기(성찰 · worksheet)
- *   → ② 반복 죄수의 딜레마(훅 · grill)
- *   → ③ 규칙 만들기·피드백 반영(problem) → ③ 서로 감상·피드백(익명 갤러리 · gallery)
- *   → ④ 우리 학교 규칙 완성(AI 집계 표 · build)
+ *   → ② 반복 죄수의 딜레마(게임 · grill)
+ *   → ③ STREAMS 개인전(게임 · wrapmap)
+ *   → ④ 규칙 만들기·피드백 반영(problem) → ④ 서로 감상·피드백(익명 갤러리 · gallery)
+ *   → ⑤ 우리 학교 규칙 완성(AI 집계 표 · build)
  *   → 마음일기(reflection)
  *
  * ## ★ 프라이버시 — 한 세션이라 galleryEnabled 가 하나뿐 (핵심)
@@ -179,7 +180,54 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 300,
   },
 
-  /* ═══════════ ③ 규칙 아이디어 제시(rows) + 피드백 반영 (problem) ═══════════ */
+  /* ═══════════ ③ STREAMS 개인전 (게임 · wrapmap) ═══════════
+   *
+   * 죄수의 딜레마에 이어 또 하나의 게임. 클라이언트에서 계산·채점(공유 엔진 streams.ts),
+   * 최고 점수만 answers 에 저장한다 — 서버·Gemini 없음. st_* 성찰·게임 결과는 galleryAnswerKeys
+   * (["rule_ideas"])에 없으므로 자동 비공개다.
+   */
+  {
+    key: "_st_intro",
+    phase: "wrapmap",
+    label: "STREAMS — 숫자 줄기 잇기 게임",
+    hint:
+      "타일을 한 장씩 뽑아 20칸에 놓는 게임이에요.\n" +
+      "① 뽑힌 타일을 빈 칸 하나에 놓아요. 한 번 놓으면 옮길 수 없어요.\n" +
+      "② 왼쪽부터 숫자가 같거나 커지면(예: 3-3-7-9) 한 ‘줄기’ 로 이어져요.\n" +
+      "③ 줄기가 길수록 점수가 훨씬 커져요. 조커는 아무 데나 이어 주는 만능 타일이에요.\n" +
+      "다음에 어떤 숫자가 나올지 생각하며 자리를 잘 골라, 두어 판 도전해요!",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "st_game",
+    phase: "wrapmap",
+    // STREAMS 개인전. 클라이언트 계산·채점, 최고 점수만 저장. 개인 기록(비공개).
+    label: "STREAMS 개인전",
+    hint: "‘게임 시작’ 을 누르고, 뽑힌 타일을 빈 칸에 놓아요. 20칸을 다 채우면 점수가 나와요.",
+    kind: "streams_solo",
+    maxLength: 0,
+  },
+  {
+    key: "st_strategy",
+    phase: "wrapmap",
+    // 짧은 성찰(전략). 개인 글, 비공개.
+    label: "타일을 어디에 놓을지 어떻게 정했나요? 나만의 방법이 있었나요?",
+    hint: "예) 큰 숫자는 오른쪽에 남겨 뒀다 / 조커는 아껴 뒀다. 이 칸은 나와 선생님만 봐요.",
+    kind: "long",
+    maxLength: 250,
+  },
+  {
+    key: "st_feel",
+    phase: "wrapmap",
+    // 짧은 성찰(기분). 개인 글, 비공개.
+    label: "게임하는 동안 기분이 어땠나요? 짜릿했거나 아쉬웠던 순간이 있었나요?",
+    hint: "예) 긴 줄기가 이어질 때 신났다 / 큰 숫자가 일찍 나와 아쉬웠다. 이 칸은 나와 선생님만 봐요.",
+    kind: "long",
+    maxLength: 250,
+  },
+
+  /* ═══════════ ④ 규칙 아이디어 제시(rows) + 피드백 반영 (problem) ═══════════ */
   {
     key: "_rule_intro",
     phase: "problem",
@@ -269,8 +317,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     body:
       "① 그림으로 마음 전하기 — Sketchful.io 게임 + 돌아보기\n" +
       "② 반복 죄수의 딜레마 — 협력과 배신, 무엇이 이득일까?\n" +
-      "③ 규칙 아이디어 제시 → 서로 감상·피드백(익명) → 피드백 반영해 고치기\n" +
-      "④ 우리 반 규칙을 하나로 완성하기 → 마음일기",
+      "③ STREAMS 개인전 — 숫자 줄기를 길게 이어 점수 내기\n" +
+      "④ 규칙 아이디어 제시 → 서로 감상·피드백(익명) → 피드백 반영해 고치기\n" +
+      "⑤ 우리 반 규칙을 하나로 완성하기 → 마음일기",
     url: "",
   },
 
@@ -291,16 +340,17 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   focusExempt: ["mvp"],
 
   // 교사 버튼 순서.
-  phaseOrder: ["waiting", "mood", "mvp", "worksheet", "grill", "problem", "gallery", "build", "reflection"],
+  phaseOrder: ["waiting", "mood", "mvp", "worksheet", "grill", "wrapmap", "problem", "gallery", "build", "reflection"],
 
   phaseLabels: {
     mood: "마음 체크인",
     mvp: "① 그림으로 마음 전하기 (게임)",
     worksheet: "① 게임 후 돌아보기",
     grill: "② 반복 죄수의 딜레마",
-    problem: "③ 규칙 만들기 · 피드백 반영",
-    gallery: "③ 서로 감상·피드백",
-    build: "④ 우리 학교 규칙 완성",
+    wrapmap: "③ STREAMS 개인전",
+    problem: "④ 규칙 만들기 · 피드백 반영",
+    gallery: "④ 서로 감상·피드백",
+    build: "⑤ 우리 학교 규칙 완성",
     reflection: "마음일기",
   },
 
@@ -361,6 +411,7 @@ async function main(): Promise<void> {
   console.log("교사 버튼 순서: 대기 → 마음 체크인 →");
   console.log("  [mvp] 그림으로 마음 전하기(Sketchful 새 탭) → [worksheet] 게임 후 성찰 4문항");
   console.log("  [grill] 반복 죄수의 딜레마 게임 + 성찰");
+  console.log("  [wrapmap] STREAMS 개인전 + 짧은 성찰(전략·기분)");
   console.log("  [problem] 규칙 rows + 받은 피드백 → [gallery] 서로 감상·피드백(익명) → [build] 「규칙 완성하기」");
   console.log("  → 마음일기 → 마침");
   console.log("\n★ 프라이버시: galleryEnabled: true 지만 galleryAnswerKeys: [\"rule_ideas\"] 하나뿐.");
