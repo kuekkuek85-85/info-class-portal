@@ -603,6 +603,22 @@ export interface WorksheetQuestion {
      * (ai-feedback-panel · /api/student/ai-feedback · ai-feedback.ts).
      */
     | "ai_feedback"
+    /**
+     * rules_result — 「우리 학교 상점/벌점 규칙 만들기」의 완성 지면(읽기 전용, 학생·교사 공용).
+     * 교사가 「규칙 완성하기」를 1회 누르면 서버가 이 분반 전체 학생의 최종 규칙(rulesSourceKey
+     * 칸의 rows)을 Gemini 로 카테고리별로 묶고 중복 정리해 학급 공용 결과(session.rulesResult)에
+     * 저장한다. 이 문항은 그 표를 폴링해 보여준다 — 답을 저장하지 않는다(공용 산출물이라 개인
+     * answers 가 아니다). 저자 표시 없음, 이름·학번은 Gemini 에 보내지 않는다
+     * (rules-result-panel · /api/student/rules-result · /api/teacher/rules-compile).
+     */
+    | "rules_result"
+    /**
+     * dilemma_game — 반복 죄수의 딜레마 게임(공동체 활동의 도입 훅). 학생이 컴퓨터(팃포탯)와
+     * 약 10라운드 협력/배신을 반복하고, 라운드별 선택·점수·누적을 본다. 점수표는 고정. 결과
+     * (라운드별 선택·총점)만 answers 에 JSON 으로 저장한다 — 계산·진행은 클라이언트 컴포넌트
+     * 안에서 하고 서버·Gemini 는 쓰지 않는다. 민감 정보 아님 (dilemma-game).
+     */
+    | "dilemma_game"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
@@ -857,6 +873,18 @@ export interface WorksheetQuestion {
    * 나온다. 투명성 안내라 이 값이 없어도 컴포넌트가 기본 문구를 반드시 보인다.
    */
   botNotice?: string;
+  /**
+   * rules_result 가 집계할 **규칙 rows 문항의 key**. 서버(rules-compile)가 이 분반 전체 학생의
+   * 그 칸(rows)을 모아 Gemini 로 하나의 표로 정리한다. situationSourceKey 와 같은 참조 방식이다.
+   */
+  rulesSourceKey?: string;
+  /**
+   * dilemma_game 의 라운드 수 (기본 10). 반복 죄수의 딜레마 훅에서 쓴다. 점수표는 고정
+   * (협력·협력 3/3 · 배신·협력 5/0 · 협력·배신 0/5 · 배신·배신 1/1), 상대는 팃포탯(1라운드 협력,
+   * 이후 학생의 직전 선택을 따라함). 결과(라운드별 선택·총점)만 answers 에 저장한다 —
+   * 클라이언트에서 계산하고 서버·Gemini 는 쓰지 않는다 (dilemma-game).
+   */
+  dilemmaRounds?: number;
   /**
    * comfort_bot 프리셋. "comfort"(기본)=학생이 고른 상황·설계로 만든 감정 위로 챗봇(6회기 grill).
    * "empathy_dialogue"=감정 대화 연습 봇(6회기 wrapheal ②) — 상황 선택·설계 없이, 봇이 감정 상황을
@@ -1435,6 +1463,21 @@ export interface ClassSession {
    * 옮기거나 공개를 끄면 서버가 지운다.
    */
   quizDist?: { index: number; counts: number[]; answered: number };
+  /**
+   * 「우리 학교 상점/벌점 규칙 만들기」 공동체 활동의 **학급 공용 산출물**.
+   *
+   * 교사가 「규칙 완성하기」를 누르면, 서버가 이 분반 전체 학생의 최종 규칙(rows)을 모아
+   * Gemini 로 카테고리별로 묶고 중복을 정리한 하나의 표를 만들어 여기에 저장한다(개별 저자
+   * 없음 — 통합 "우리 학교 규칙"). 교사 대시보드와 모든 학생 화면이 이 값을 읽어 같은 완성
+   * 지면(표)을 본다. 개인 감정 글이 아니라 공동체 결과라 모두에게 보여도 된다
+   * (rules-compile route · school-rules.ts · rules-result-panel).
+   */
+  rulesResult?: {
+    table: { category: string; items: { item: string; type: string; score: string }[] }[];
+    /** 몇 명의 규칙을 모았는지 (저자 신원은 담지 않는다) */
+    count: number;
+    at: number;
+  };
   /**
    * 라이브 발표 진행 — quizIndex 와 같은 broadcast 패턴(교사만 쓰고 학생이 폴링으로 읽음).
    *

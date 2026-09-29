@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { AiReviewPanel } from "@/components/ai-review-panel";
 import { AiFeedbackPanel } from "@/components/ai-feedback-panel";
 import { ComfortBotPanel } from "@/components/comfort-bot-panel";
+import { DilemmaGame } from "@/components/dilemma-game";
 import { EmotionLensPanel } from "@/components/emotion-lens-panel";
+import { RulesResultPanel } from "@/components/rules-result-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
 import { ImageField } from "@/components/image-field";
 import { ListField } from "@/components/list-field";
@@ -955,6 +957,26 @@ export function WorksheetView({
               onResult={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}
             />
+          ) : question.kind === "dilemma_game" ? (
+            /*
+              반복 죄수의 딜레마 훅(공동체 활동 도입). 컴퓨터(팃포탯)와 반복 게임을 하고
+              결과(라운드별 선택·총점)만 answers 에 저장한다 — 계산·진행은 컴포넌트 안에서
+              (dilemma-game). 서버·Gemini 를 쓰지 않는다.
+            */
+            <DilemmaGame
+              questionKey={question.key}
+              raw={value.answers[question.key] ?? ""}
+              onChange={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+              rounds={question.dilemmaRounds}
+            />
+          ) : question.kind === "rules_result" ? (
+            /*
+              「우리 학교 규칙」 완성 지면(읽기 전용, 학급 공용). 교사가 완성하면 학생 화면에
+              같은 표가 폴링으로 나타난다 — 개인 답이 아니라 공동체 산출물이라 answers 에
+              저장하지 않는다 (rules-result-panel · /api/student/rules-result).
+            */
+            <RulesResultPanel />
           ) : question.kind === "emotion_quiz" ? (
             <EmotionQuiz
               question={question}

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { ComfortBotReviewPanel } from "@/components/comfort-bot-review-panel";
+import { RulesCompilePanel } from "@/components/rules-compile-panel";
 import { TeacherArtifactPanel } from "@/components/teacher-artifact-panel";
 import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
 import { TeacherReviewPanel } from "@/components/teacher-review-panel";
@@ -1344,6 +1345,15 @@ function Dashboard() {
           {session.activity &&
             (session.activity.worksheet ?? []).some((q) => q.kind === "comfort_bot") && (
               <ComfortBotReviewPanel sessionId={session.id} />
+            )}
+
+          {/*
+            우리 학교 규칙 완성하기 — 그 문항이 있는 세션에서만 뜬다. 교사가 1회 눌러 전체
+            학생 규칙을 하나의 표로 정리하고, 그 순간 모든 학생 화면에도 같은 완성 지면이 뜬다.
+          */}
+          {session.activity &&
+            (session.activity.worksheet ?? []).some((q) => q.kind === "rules_result") && (
+              <RulesCompilePanel sessionId={session.id} />
             )}
 
           {/*
