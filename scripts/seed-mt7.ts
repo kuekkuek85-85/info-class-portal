@@ -211,7 +211,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "wrapmap",
     // 짧은 성찰(전략). 개인 글, 비공개.
     label: "타일을 어디에 놓을지 어떻게 정했나요? 나만의 방법이 있었나요?",
-    hint: "예) 큰 숫자는 오른쪽에 남겨 뒀다 / 조커는 아껴 뒀다. 이 칸은 나와 선생님만 봐요.",
+    hint: "예) 큰 숫자는 오른쪽에 남겨 뒀다 / 조커는 아껴 뒀다.",
     kind: "long",
     maxLength: 250,
   },
@@ -220,7 +220,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "wrapmap",
     // 짧은 성찰(기분). 개인 글, 비공개.
     label: "게임하는 동안 기분이 어땠나요? 짜릿했거나 아쉬웠던 순간이 있었나요?",
-    hint: "예) 긴 줄기가 이어질 때 신났다 / 큰 숫자가 일찍 나와 아쉬웠다. 이 칸은 나와 선생님만 봐요.",
+    hint: "예) 긴 줄기가 이어질 때 신났다 / 큰 숫자가 일찍 나와 아쉬웠다.",
     kind: "long",
     maxLength: 250,
   },
