@@ -135,7 +135,7 @@ export function StreamsSolo({
       {/* 상단 바 — 점수표 버튼 + 진행(점수는 안 보여준다: 직접 계산하도록) */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <button type="button" onClick={() => setShowTable(true)} className="pill pill-secondary">
-          📋 점수표 보기
+          📋 점수표·숫자 구성
         </button>
         {game && (
           <p className="t-body-sm font-semibold">
@@ -248,8 +248,8 @@ export function StreamsSolo({
           {game.finished && (
             <div className="flex flex-col gap-2 rounded-lg border-2 border-ink bg-canvas p-3">
               <p className="t-body-sm">
-                색으로 묶인 <b>줄기마다 칸 수</b>를 세고, <b>[점수표 보기]</b> 에서 점수를 찾아 모두
-                더하면 내 점수예요.
+                색으로 묶인 <b>줄기마다 칸 수</b>를 세고, <b>[점수표·숫자 구성]</b> 에서 점수를 찾아
+                모두 더하면 내 점수예요.
               </p>
               {checked === null ? (
                 <div className="flex flex-wrap items-center gap-2">
@@ -326,7 +326,7 @@ export function StreamsSolo({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-2">
-              <h3 className="t-body font-bold">점수표</h3>
+              <h3 className="t-body font-bold">점수표 · 숫자 구성</h3>
               <button
                 type="button"
                 onClick={() => setShowTable(false)}
@@ -335,7 +335,19 @@ export function StreamsSolo({
                 닫기
               </button>
             </div>
-            <p className="mt-1 t-caption text-muted">이어진 칸 수(연속)가 길수록 점수가 커져요.</p>
+
+            {/* 숫자 구성(덱) — streams.ts makeDeck 과 같은 구성. 전략에 참고. */}
+            <div className="mt-2 rounded-lg border border-line bg-cream px-3 py-2 t-body-sm">
+              <p className="font-semibold">숫자 구성 (총 40장)</p>
+              <ul className="mt-1 list-disc pl-5">
+                <li>1~10 : 각 1장 (10장)</li>
+                <li>11~19 : 각 2장 (18장) — 가장 흔해요</li>
+                <li>20~30 : 각 1장 (11장)</li>
+                <li>조커 ★ : 1장 (아무 숫자로나)</li>
+              </ul>
+            </div>
+
+            <p className="mt-3 t-caption text-muted">이어진 칸 수(연속)가 길수록 점수가 커져요.</p>
             <table className="mt-2 w-full border-collapse text-center t-body-sm">
               <thead>
                 <tr className="bg-cream">
