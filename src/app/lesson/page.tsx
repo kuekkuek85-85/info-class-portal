@@ -698,7 +698,19 @@ export default function LessonPage() {
    * 그 자리는 자기 공간을 그리는 활동이라 서로 볼 것이 아니고, 앞에서 이미 감상을
    * 끝낸 뒤다. 탭이 남아 있으면 그리다 말고 그리로 새고, 돌아올 이유가 없다.
    */
-  const canShare = session.activity?.galleryEnabled !== false && viewPhase !== "wrapheal";
+  /*
+   * 감상(gallery) 탭을 언제 띄우는가.
+   *
+   * 그리기 차시는 그림 · 활동지 · 감상을 자유롭게 오가야 해서(위 주석), 어느 작업 단계에서든
+   * 감상 탭을 띄운다. 하지만 공유 답을 딱 집어 여는 차시(galleryAnswerKeys 지정 — 마음 톡톡
+   * 6·7회기)는 감상을 **전용 감상(gallery) 단계에서만** 한다. 그 밖의 쓰기 단계(게임 후 돌아보기
+   * 등)에서 감상 탭이 뜨면, 쓰기만 하면 되는 자리에 군더더기가 된다(교사 요청).
+   */
+  const scopedGallery = (session.activity?.galleryAnswerKeys?.length ?? 0) > 0;
+  const canShare =
+    session.activity?.galleryEnabled !== false &&
+    viewPhase !== "wrapheal" &&
+    (!scopedGallery || viewPhase === "gallery");
 
   /** 활동지를 그리기 앞에 두는 차시인가 (ActivityContent 의 worksheetFirst) */
   const worksheetFirst = Boolean(session.activity?.worksheetFirst);

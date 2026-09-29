@@ -107,7 +107,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "_sk_reflect_intro",
     phase: "worksheet",
     label: "게임을 하고 나서 — 잠깐 돌아봐요",
-    hint: "아래 칸들은 나와 선생님만 봐요. 편하게 적어 주세요.",
+    hint: "편하게 적어 주세요.",
     kind: "note",
     maxLength: 0,
   },
@@ -116,8 +116,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "worksheet",
     label: "가장 인상에 남은 제시어는 무엇이었나요? 왜 그런가요?",
     hint:
-      "그리기 어려웠던 것, 재미있었던 것, 뜻밖에 다들 잘 맞힌 것 무엇이든 좋아요.\n" +
-      "이 칸은 나와 선생님만 봐요.",
+      "그리기 어려웠던 것, 재미있었던 것, 뜻밖에 다들 잘 맞힌 것 무엇이든 좋아요.",
     kind: "long",
     maxLength: 300,
   },
@@ -126,8 +125,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "worksheet",
     label: "그릴 때와 맞힐 때, 기분이 어땠나요?",
     hint:
-      "예) 내 그림을 못 알아볼까 봐 조마조마했다 / 친구 그림을 맞혔을 때 신났다.\n" +
-      "이 칸은 나와 선생님만 봐요.",
+      "예) 내 그림을 못 알아볼까 봐 조마조마했다 / 친구 그림을 맞혔을 때 신났다.",
     kind: "long",
     maxLength: 300,
   },
@@ -137,7 +135,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "남이 알아보게 그리려고 어떻게 신경 썼나요? 상대 입장에서 생각해 본 점을 적어 보세요",
     hint:
       "예) 특징을 크게 그렸다 / 다들 아는 모양으로 단순하게 그렸다 / 글자 대신 그림으로만.\n" +
-      "‘보는 사람이 무엇을 떠올릴까’ 를 생각한 순간을 적어 봐요. 이 칸은 나와 선생님만 봐요.",
+      "‘보는 사람이 무엇을 떠올릴까’ 를 생각한 순간을 적어 봐요.",
     kind: "long",
     maxLength: 300,
   },
@@ -145,7 +143,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "sk_fun",
     phase: "worksheet",
     label: "(선택) 친구 그림 중 기억에 남는 것이나, 함께 웃었던 순간이 있다면 적어 주세요",
-    hint: "안 적어도 괜찮아요. 이 칸은 나와 선생님만 봐요.",
+    hint: "안 적어도 괜찮아요.",
     kind: "text",
     maxLength: 200,
   },
