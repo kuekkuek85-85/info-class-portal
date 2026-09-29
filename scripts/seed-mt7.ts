@@ -224,6 +224,18 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "long",
     maxLength: 250,
   },
+  {
+    // 개인 게임을 공동체 관점으로 잇는 마무리 안내(교사 요청 1번). 읽기용 note.
+    key: "_st_together",
+    phase: "wrapmap",
+    label: "게임을 마치며 — 함께 생각해요",
+    hint:
+      "같은 숫자를 받아도 사람마다 놓는 자리가 달라요. 순위는 재미로 보고, 진짜 목표는 " +
+      "‘내 최고점 갱신’ 이에요.\n" +
+      "오늘 우리가 함께 만든 학교 규칙처럼, 여러 사람의 다른 생각이 모이면 더 단단해져요.",
+    kind: "note",
+    maxLength: 0,
+  },
 
   /* ═══════════ ④ 규칙 아이디어 제시(rows) + 피드백 반영 (problem) ═══════════ */
   {
