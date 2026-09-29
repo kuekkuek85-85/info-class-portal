@@ -367,6 +367,13 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     galleryEnabled: true,
     galleryAnswerKeys: ["rule_ideas"],
 
+    /*
+     * 왼쪽 필터를 상점/벌점으로 세운다. 상점·벌점 값은 rule_ideas rows 의 'type' 열에 있으므로
+     * "rule_ideas.type" 로 그 열만 집어 낸다(gallery 라우트 answerValues 가 rows 열을 파싱).
+     * 안 정하면 기본값(디지털 사회의 특성·장소)이 떠서 규칙 감상과 안 맞는다.
+     */
+    galleryFacets: [{ key: "type", label: "상점/벌점", answerKeys: ["rule_ideas.type"] }],
+
     // 존중·건설적 피드백 두 칸(익명).
     feedbackPrompts: {
       found: {
