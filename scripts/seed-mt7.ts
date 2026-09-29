@@ -173,7 +173,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "pd_reflect",
     phase: "grill",
     label: "혼자 이익만 좇으면 어떻게 될까요? 함께 지키는 규칙은 왜 필요할까요?",
-    hint: "게임을 떠올리며 한두 줄로 적어 보세요. 이 칸은 나와 선생님만 봐요.",
+    hint: "게임을 떠올리며 한두 줄로 적어 보세요.",
     kind: "long",
     maxLength: 300,
   },
