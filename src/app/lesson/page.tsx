@@ -532,7 +532,13 @@ export default function LessonPage() {
       LESSON_PHASES.indexOf("draw"),
     );
     const reached = (item: LessonPhase) => LESSON_PHASES.indexOf(item) >= earliest;
-    if (!reached(phase) && !reached(viewPhase)) return;
+    /*
+     * 대기 화면이 학생 본인 답을 써야 하는 차시(발표 리허설: game.url="answer:slides_url")는
+     * 대기 단계에서도 활동지를 받아 와야 한다. 안 그러면 worksheet.answers 가 비어 있어
+     * 발표 자료 링크가 "없음"으로 뜬다(진로탐색 7차 발표 리허설).
+     */
+    const needsAnswerInWaiting = (data?.session.game?.url ?? "").startsWith("answer:");
+    if (!reached(phase) && !reached(viewPhase) && !needsAnswerInWaiting) return;
     if (artifactLoaded.current) return;
     artifactLoaded.current = true;
 
