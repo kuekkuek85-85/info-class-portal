@@ -20,8 +20,14 @@ interface Result {
 }
 
 export function RulesCompilePanel({ sessionId }: { sessionId: string }) {
+  /*
+   * 15초마다 다시 읽는다. 안 그러면 화면을 연 순간의 "규칙 낸 학생 수" 에 멈춰,
+   * 학생들이 수업 중에 규칙을 자동저장해도 「규칙 완성하기」 버튼이 계속 꺼진 채로 남는다
+   * (자동저장이 곧 제출이므로, 낸 학생이 생기면 버튼이 저절로 켜져야 한다 — 교사 요청).
+   */
   const { data, reload } = usePolled<{ result: Result | null; contributed: number }>(
     `/api/teacher/rules-result?sessionId=${sessionId}`,
+    15000,
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
