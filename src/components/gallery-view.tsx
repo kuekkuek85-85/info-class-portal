@@ -100,6 +100,32 @@ interface Facet {
  * 필터가 쓰는 이름표를 그대로 쓴다(facets). 차시가 이미 "이 칸들은 사라질 직업" 이라고
  * 정해 두었으므로, 같은 것을 두 군데에 적지 않는다.
  */
+/**
+ * rows 칸 답(JSON 배열)을 사람이 읽을 줄들로 바꾼다. rows 가 아니면 null.
+ *
+ * 규칙 아이디어(rule_ideas)처럼 rows 답을 갤러리로 공유하는 차시에서, 카드에 날 JSON
+ * ([{"type":"벌점",...}]) 이 그대로 찍히던 것을 한 행씩 "값 · 값 · 값" 으로 편다.
+ */
+function parseRowsAnswer(raw: string): string[] | null {
+  if (!raw.startsWith("[")) return null;
+  try {
+    const arr: unknown = JSON.parse(raw);
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+    if (!arr.every((r) => r !== null && typeof r === "object" && !Array.isArray(r))) return null;
+    const lines = arr
+      .map((r) =>
+        Object.values(r as Record<string, unknown>)
+          .map((v) => String(v ?? "").replace(/\s+/g, " ").trim())
+          .filter(Boolean)
+          .join(" · "),
+      )
+      .filter(Boolean);
+    return lines.length > 0 ? lines : null;
+  } catch {
+    return null;
+  }
+}
+
 function summaryOf(
   work: Work,
   facets: Facet[],
@@ -122,23 +148,30 @@ function summaryOf(
     return sharedKeys
       .map((key) => ({ key, value: (work.answers[key] ?? "").trim() }))
       .filter((row) => row.value)
-      /*
-       * 주소는 주소로 보여주지 않는다.
-       *
-       * 캔바 공유 주소는 토큰이 붙어 백 자가 넘는다. 그대로 두면 카드 한 장이 알아볼 수
-       * 없는 글자로 꽉 차서, 정작 읽어야 할 프롬프트가 안 보인다. 카드는 `<button>` 이라
-       * 안에 링크를 넣을 수도 없다 — 여기서는 표시만 하고, 실제로 여는 것은 카드를 눌러
-       * 들어간 상세 화면이 맡는다 (card-news.tsx).
-       *
-       * 주소 칸(build_url·song_url 등, URL_ANSWER_KEYS)은 스킴이 빠져 저장됐어도 주소로
-       * 알아보고 감춘다 — 다른 칸은 자유 서술이라 손대지 않는다 (card-news 와 같은 원칙).
-       */
-      .map(({ key, value }) => {
+      .flatMap(({ key, value }) => {
+        /*
+         * rows 칸(규칙 아이디어 등)은 JSON 이라 그대로 찍으면 [{"type":…}] 이 뜬다.
+         * 한 행씩 "값 · 값" 으로 펴서, 카드에서 규칙이 사람 글로 읽히게 한다.
+         */
+        const lines = parseRowsAnswer(value);
+        if (lines) {
+          return lines.map((line, i) => ({
+            label: i === 0 ? (sharedLabels[key] ?? "") : "",
+            values: [line],
+          }));
+        }
+        /*
+         * 주소는 주소로 보여주지 않는다. 캔바 공유 주소는 토큰이 붙어 백 자가 넘어, 그대로
+         * 두면 카드가 알아볼 수 없는 글자로 꽉 찬다. 실제로 여는 것은 카드를 눌러 들어간
+         * 상세 화면이 맡는다(card-news.tsx). URL_ANSWER_KEYS 는 스킴이 빠져 저장됐어도 감춘다.
+         */
         const shown = URL_ANSWER_KEYS.has(key) ? normalizeUrl(value) : value;
-        return {
-          label: sharedLabels[key] ?? "",
-          values: [/^https?:\/\//.test(shown) ? "🎨 눌러서 작품 보기" : value],
-        };
+        return [
+          {
+            label: sharedLabels[key] ?? "",
+            values: [/^https?:\/\//.test(shown) ? "🎨 눌러서 작품 보기" : value],
+          },
+        ];
       });
   }
 
