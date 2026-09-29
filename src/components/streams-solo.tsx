@@ -84,6 +84,29 @@ export function StreamsSolo({
   const [guess, setGuess] = useState("");
   const [checked, setChecked] = useState<{ actual: number; correct: boolean } | null>(null);
 
+  // 순위(리더보드) — 최고 점수를 이 분반 안에서 모아 높은 순으로 보여준다.
+  const [showRank, setShowRank] = useState(false);
+  const [ranks, setRanks] = useState<
+    { rank: number; name: string; score: number; plays: number; me: boolean }[] | null
+  >(null);
+  const [myRank, setMyRank] = useState<number | null>(null);
+  const [rankLoading, setRankLoading] = useState(false);
+
+  async function openRank() {
+    setShowRank(true);
+    setRankLoading(true);
+    try {
+      const res = await fetch("/api/student/streams-rank");
+      const body = await res.json();
+      setRanks(body.ok ? body.ranks : []);
+      setMyRank(body.ok ? (body.myRank ?? null) : null);
+    } catch {
+      setRanks([]);
+    } finally {
+      setRankLoading(false);
+    }
+  }
+
   const currentTile: Tile | null =
     game && !game.finished ? (game.deck[game.drawnIndex] ?? null) : null;
   const scored = game ? scoreBoard(game.board) : { segments: [], total: 0 };
@@ -132,13 +155,16 @@ export function StreamsSolo({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* 상단 바 — 점수표 버튼 + 진행(점수는 안 보여준다: 직접 계산하도록) */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      {/* 상단 바 — 점수표·순위 버튼 + 진행(점수는 안 보여준다: 직접 계산하도록) */}
+      <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => setShowTable(true)} className="pill pill-secondary">
           📋 점수표·숫자 구성
         </button>
+        <button type="button" onClick={() => void openRank()} className="pill pill-secondary">
+          🏆 순위 보기
+        </button>
         {game && (
-          <p className="t-body-sm font-semibold">
+          <p className="ml-auto t-body-sm font-semibold">
             {game.placed}/{BOARD_SIZE}칸 놓음
           </p>
         )}
@@ -366,6 +392,69 @@ export function StreamsSolo({
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* 순위 팝업 — 이 분반 학생들의 최고 점수 리스트 */}
+      {showRank && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowRank(false)}
+        >
+          <div
+            className="max-h-[80vh] w-full max-w-sm overflow-auto rounded-xl bg-canvas p-4 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="t-body font-bold">🏆 STREAMS 순위</h3>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => void openRank()} className="pill pill-secondary">
+                  새로고침
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRank(false)}
+                  className="pill pill-secondary"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+            {myRank && <p className="mt-1 t-caption">내 순위: {myRank}등</p>}
+            {rankLoading ? (
+              <p className="mt-3 t-body-sm text-muted">불러오는 중…</p>
+            ) : !ranks || ranks.length === 0 ? (
+              <p className="mt-3 t-body-sm text-muted">
+                아직 점수가 없어요. 게임을 완성하면 순위에 올라가요.
+              </p>
+            ) : (
+              <table className="mt-2 w-full border-collapse text-left t-body-sm">
+                <thead>
+                  <tr className="bg-cream">
+                    <th className="border border-line px-2 py-1 text-center">순위</th>
+                    <th className="border border-line px-2 py-1">이름</th>
+                    <th className="border border-line px-2 py-1 text-right">최고점</th>
+                    <th className="border border-line px-2 py-1 text-center">판</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ranks.map((r) => (
+                    <tr key={r.rank} className={r.me ? "bg-lime font-bold" : ""}>
+                      <td className="border border-line px-2 py-0.5 text-center">{r.rank}</td>
+                      <td className="border border-line px-2 py-0.5">
+                        {r.name}
+                        {r.me ? " (나)" : ""}
+                      </td>
+                      <td className="border border-line px-2 py-0.5 text-right">{r.score}</td>
+                      <td className="border border-line px-2 py-0.5 text-center">{r.plays}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
