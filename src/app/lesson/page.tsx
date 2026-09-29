@@ -15,6 +15,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { useFocusTracker } from "@/hooks/use-focus-tracker";
 import { ProgressCheckModal } from "@/components/progress-check-modal";
 import { ReviewDescModal } from "@/components/review-desc-modal";
+import { RulesResultPanel } from "@/components/rules-result-panel";
 import { WorksheetView, type WorksheetValue } from "@/components/worksheet-view";
 import { artifactTitle } from "@/lib/artifact-title";
 import {
@@ -1569,6 +1570,17 @@ export default function LessonPage() {
                 />
               </div>
             ))}
+
+            {/*
+              규칙 만들기 차시(rules_result 문항 있음)는 성찰에 오늘 완성한 규칙 표를 함께 띄운다
+              — "가장 마음에 드는 규칙 하나" 를 고르는 질문을 표를 보며 쓰게 한다(교사 요청, 마음 톡톡 7회기).
+            */}
+            {(session.activity?.worksheet ?? []).some((q) => q.kind === "rules_result") && (
+              <div className="flex flex-col gap-2">
+                <h3 className="t-subhead">오늘 완성한 우리 학교 규칙</h3>
+                <RulesResultPanel />
+              </div>
+            )}
 
             <span className="t-caption" aria-live="polite">
               {reflectionState === "saving" && "저장 중…"}
