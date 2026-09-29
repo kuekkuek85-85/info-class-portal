@@ -108,8 +108,8 @@ export function RowsField({
                         aria-pressed={on}
                         onClick={() => setCell(index, column.key, on ? "" : emoji)}
                         disabled={disabled}
-                        className={`h-11 w-11 rounded-lg border text-2xl ${
-                          on ? "border-ink border-2 bg-surface" : "border-line bg-canvas"
+                        className={`inline-flex min-h-[2.75rem] min-w-[2.75rem] items-center justify-center whitespace-nowrap rounded-lg border-2 px-3 text-xl leading-none ${
+                          on ? "border-ink bg-surface" : "border-line bg-canvas"
                         }`}
                       >
                         {emoji}
