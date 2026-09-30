@@ -437,7 +437,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
   submitField("poke_submit_move", "상대 이동·회전 — 완성한 코드 제출", "상대 이동·회전", "wrapmap"),
-  /* ── 이동 응용 세트 — 뼈대 코드를 복사해 주석 자리에 도형 명령을 채워 완성. 네모→삼각형→다각형·별 ── */
+  /* ── 이동 응용 세트 — 뼈대 코드를 복사해 주석 자리에 도형 명령을 채워 완성. 네모①→삼각형②→오각형③→별④→집⑤ ── */
   {
     key: "_apply_move_set",
     phase: "wrapmap",
@@ -445,7 +445,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "이제 배운 forward 와 left/right 로 도형을 그려봐요. 미션마다 뼈대 코드를 복사해\n" +
       "OneCompiler 에 붙여넣고, 주석(#) 자리에 그리기 명령을 써서 완성해요.\n" +
-      "쉬운 것부터: 네모 → 삼각형 → 다각형·별. 완성한 코드는 각 미션의 제출 칸에 붙여넣어 내요.\n" +
+      "쉬운 것부터: 네모 → 삼각형 → 오각형 → 별. 완성한 코드는 각 미션의 제출 칸에 붙여넣어 내요.\n" +
       "(공통 힌트: forward 로 한 변을 긋고, left 로 방향을 틀기를 반복하면 도형이 돼요.)",
     kind: "note",
     maxLength: 0,
@@ -491,31 +491,50 @@ turtle.mainloop()`,
     imageAlt: "터틀로 그린 삼각형(정삼각형) 완성 모습",
   },
   {
-    key: "apply_move_polygon",
+    key: "apply_move_pentagon",
     phase: "wrapmap",
-    label: "응용 ③ 다각형·별 그리기 (각도 바꾸기)",
+    label: "응용 ③ 오각형 그리기 (forward + left 72, 5번)",
     hint:
-      "각도를 바꾸면 다른 도형이 나와요. 아래 뼈대를 복사해, 주석 자리에 하나 골라 그려 봐요:\n" +
-      "· 오각형 — forward 와 left(72) 를 다섯 번 (360 나누기 5 = 72)\n" +
-      "· 별 — forward 와 left(144) 를 다섯 번\n" +
-      "아래 그림이 완성 모습이에요(왼쪽 오각형, 오른쪽 별). 다 되면 완성 코드를 아래에 붙여넣어 제출해요.",
+      "이번엔 오각형이에요. 아래 뼈대를 복사해, 주석 자리에 forward 와 left(72) 를 번갈아 다섯 번\n" +
+      "써서 완성해요. (각도가 왜 72? 다섯 번 돌아 제자리로 오려면 360 나누기 5 = 72)\n" +
+      "아래 그림이 완성 모습이에요. 다 되면 완성 코드를 아래에 붙여넣어 제출해요.",
     kind: "long",
     code: `import turtle
 
 player = turtle.Turtle()
 
-# 다각형이나 별을 그려요 — 각도를 바꿔서 (오각형 left(72), 별 left(144))
+# 오각형을 그려요 — forward 와 left(72) 를 번갈아 5번
 
 turtle.mainloop()`,
     maxLength: 1000,
-    imageUrl: "/turtle-polygon.svg",
-    imageAlt: "터틀로 그린 오각형과 별 완성 모습",
+    imageUrl: "/turtle-pentagon.svg",
+    imageAlt: "터틀로 그린 오각형 완성 모습",
+  },
+  {
+    key: "apply_move_star",
+    phase: "wrapmap",
+    label: "응용 ④ 별 그리기 (forward + left 144, 5번)",
+    hint:
+      "이번엔 별이에요. 아래 뼈대를 복사해, 주석 자리에 forward 와 left(144) 를 번갈아 다섯 번\n" +
+      "써서 완성해요. (각도만 144 로 바꾸면 선이 겹치며 별 모양이 돼요)\n" +
+      "아래 그림이 완성 모습이에요. 다 되면 완성 코드를 아래에 붙여넣어 제출해요.",
+    kind: "long",
+    code: `import turtle
+
+player = turtle.Turtle()
+
+# 별을 그려요 — forward 와 left(144) 를 번갈아 5번
+
+turtle.mainloop()`,
+    maxLength: 1000,
+    imageUrl: "/turtle-star.svg",
+    imageAlt: "터틀로 그린 별 완성 모습",
   },
   /* ── ④ 종합 마무리 — 지붕 있는 집 (도형 + 좌표 + 펜 모두 합치기) ── */
   {
     key: "_apply_move_house",
     phase: "wrapmap",
-    label: "④ 지붕 있는 집 그리기 (종합)",
+    label: "⑤ 지붕 있는 집 그리기 (종합)",
     hint:
       "종합 문제예요! 지금까지 배운 것을 모두 합쳐 '지붕 있는 집' 을 그려요.\n" +
       "- 도형: forward 와 left (네모 몸통, 삼각형 지붕)\n" +
@@ -537,7 +556,7 @@ turtle.mainloop()`,
   {
     key: "apply_move_house",
     phase: "wrapmap",
-    label: "④ 지붕 있는 집 — 완성한 코드 제출",
+    label: "⑤ 지붕 있는 집 — 완성한 코드 제출",
     hint:
       "위 뼈대를 채워 완성한 '지붕 있는 집' 코드를 아래에 붙여넣어 제출해요.\n" +
       "OneCompiler 에서 몸통·지붕·창문이 다 그려지면 성공! (창문에 penup·goto·pendown 이 들어갔는지 확인해요.)",
