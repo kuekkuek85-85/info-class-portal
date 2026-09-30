@@ -190,19 +190,7 @@ const CODE_HOUSE_SKELETON = `import turtle
 
 player = turtle.Turtle()
 
-# (1) 몸통 - 사각형
-
-
-# (2) 지붕 그릴 위치로 이동 (예시 - 이렇게 penup, goto, pendown 을 씁니다)
-player.penup()
-player.goto(0, 100)     # 몸통 왼쪽 위 모서리
-player.pendown()
-
-# (3) 지붕 - 삼각형
-
-
-# (4) 창문 - (2)처럼 penup, goto, pendown 으로 벽 안쪽으로 옮긴 뒤 작은 네모
-
+# 지붕 있는 집을 그려요
 
 turtle.mainloop()`;
 
@@ -543,8 +531,8 @@ turtle.mainloop()`,
       "(2) 지붕 그릴 위치로 이동 — penup 하고 goto 로 몸통 위쪽 모서리로, 그다음 pendown\n" +
       "(3) 지붕 — 삼각형을 그린다 (응용 ②에서 한 것)\n" +
       "(4) 창문 — penup 하고 goto 로 벽 안쪽 한 곳으로 간 뒤, pendown 하고 작은 네모 하나\n\n" +
-      "아래 뼈대 코드를 가져와 (1)(3)(4) 자리에 명령을 직접 채워 완성해요. 좌표 예시도 적어 뒀어요.\n" +
-      "창문은 (2)처럼 penup, goto, pendown 을 직접 써야 원하는 자리에 깔끔하게 그려져요.\n" +
+      "아래 뼈대를 복사해, 위 설계 순서대로 명령을 직접 써서 완성해요.\n" +
+      "지붕·창문으로 옮길 때는 penup → goto(x, y) → pendown 을 써요(예: 지붕 goto(0, 100), 창문 goto(30, 40)).\n" +
       "맨 아래 그림이 완성 목표예요 — 이렇게 몸통 위에 지붕이 얹히고 벽 안에 창문이 들어가요.",
     kind: "note",
     code: CODE_HOUSE_SKELETON,
