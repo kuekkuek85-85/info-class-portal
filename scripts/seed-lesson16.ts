@@ -157,11 +157,11 @@ screen.setup(600, 600)
 
 player = turtle.Turtle()
 player.penup()
-player.goto(★★★, ★★★)  # 값: x, y
+player.★★★(0, -250)    # 함수: 좌표로 이동 (goto)
 time.sleep(1)
 player.★★★(100)        # 함수: x만 이동 (setx)
 time.sleep(1)
-player.setx(★★★)       # 값: x
+player.setx(★★★)       # 값: x (오른쪽은 양수, 왼쪽은 음수)
 
 screen.mainloop()`;
 
@@ -173,10 +173,10 @@ screen = turtle.Screen()
 screen.setup(600, 600)
 
 player = turtle.Turtle()
-player.forward(★★★)   # 값: 거리
+player.★★★(100)    # 함수: 앞으로 가기 (forward)
 time.sleep(0.5)
-player.left(★★★)      # 값: 각도
-player.forward(★★★)   # 값: 거리
+player.★★★(90)     # 함수: 왼쪽으로 회전 (left)
+player.forward(★★★)  # 값: 거리
 
 screen.mainloop()`;
 
@@ -356,7 +356,8 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "핵심 키워드: goto() 좌표로 이동, setx() x만 바꾸기 (가운데가 0,0)\n\n" +
       "goto 는 '정해진 자리(x, y)' 로 한 번에 보내요. 화면 한가운데가 (0, 0) 이에요. 아래 코드를\n" +
-      "복사해 ★★★만 채워 완성한 뒤(★★★는 값·함수 이름 — 주석 참고) 실행해요.\n\n" +
+      "복사해 ★★★만 채워 완성한 뒤 실행해요. 이번엔 함수 이름 goto·setx 자체가 ★★★예요 —\n" +
+      "각 줄의 주석(함수:/값:)을 보고 채워요.\n\n" +
       "· player.goto(0, -250) — 이렇게도 넣어 봐요:\n" +
       "    (100, 100)  →  (-200, 0)  →  (0, 0)  →  (250, 250)  →  (-150, -150)\n" +
       "· player.setx(100) — x(좌우)만 바꿔요(위아래 y 는 그대로). 이렇게도:\n" +
@@ -367,7 +368,30 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_GOTO,
     maxLength: 0,
   },
+  /* 이 줄이 하는 일 — 핵심 줄을 내 말로 예측·설명해 이해를 굳힌다(제출 칸과 별개, 짧게) */
+  {
+    key: "explain_goto",
+    phase: "grill",
+    label: "이 줄이 하는 일 — goto",
+    hint:
+      "위 코드에서 player.goto(0, -250) 줄은 무엇을 하는 줄일까요? 한 줄로 적어 봐요.\n" +
+      "(예: '주인공을 화면 가운데 아래로 보낸다' 처럼 내 말로 적으면 돼요.)",
+    kind: "text",
+    maxLength: 200,
+  },
   submitField("poke_submit_goto", "좌표 이동 — 완성한 코드 제출", "좌표 이동", "grill"),
+  /* 작은 응용(무에서 유) — 스캐폴드를 떼고 빈칸 없이 직접 한 줄 써보기 */
+  {
+    key: "apply_goto",
+    phase: "grill",
+    label: "작은 응용 — 왼쪽 끝으로 옮기기",
+    hint:
+      "이번엔 빈칸 없이 직접 써봐요. setx 를 써서 주인공을 왼쪽 끝(예: -270)으로 한 번 더\n" +
+      "옮기는 줄을 아래 칸에 직접 적어 봐요. (힌트: player.setx(...) 꼴)\n" +
+      "OneCompiler 에 그 줄을 추가해 실행했을 때 주인공이 왼쪽으로 훅 가면 성공!",
+    kind: "text",
+    maxLength: 200,
+  },
 
   /* ── ⑥ 상대 이동·회전 — forward · left · right (직접 타이핑) ── */
   ocOpen("_typing_oc_move", "wrapmap"),
@@ -378,7 +402,8 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "핵심 키워드: forward() 앞으로, left()/right() 왼쪽·오른쪽 회전\n\n" +
       "forward 는 '지금 보고 있는 방향으로' 앞으로 가고, left/right 는 방향을 틀어요(도, degree).\n" +
-      "아래 코드를 복사해 ★★★만 채워 완성한 뒤(여기 ★★★는 모두 값 — 거리·각도) 실행해요.\n\n" +
+      "아래 코드를 복사해 ★★★만 채워 완성한 뒤 실행해요. 이번엔 함수 이름 forward·left 가 ★★★이고,\n" +
+      "마지막 한 곳은 값(거리)이에요 — 각 줄의 주석(함수:/값:)을 보고 채워요.\n\n" +
       "· player.forward(100) — 거리를 이렇게도:\n" +
       "    50  →  150  →  200  →  30\n" +
       "· player.left(90) — 각도를 이렇게도:\n" +
@@ -391,7 +416,31 @@ const WORKSHEET: WorksheetQuestion[] = [
     code: CODE_MOVE,
     maxLength: 0,
   },
+  /* 이 줄이 하는 일 — 핵심 줄을 내 말로 예측·설명해 이해를 굳힌다(제출 칸과 별개, 짧게) */
+  {
+    key: "explain_move",
+    phase: "wrapmap",
+    label: "이 줄이 하는 일 — forward / left",
+    hint:
+      "위 코드에서 player.forward(100) 과 player.left(90) 은 각각 무엇을 하는 줄일까요?\n" +
+      "한 줄로 적어 봐요. (예: 'forward 는 앞으로 100 가고, left 는 왼쪽으로 90도 돈다')",
+    kind: "text",
+    maxLength: 200,
+  },
   submitField("poke_submit_move", "상대 이동·회전 — 완성한 코드 제출", "상대 이동·회전", "wrapmap"),
+  /* 작은 응용(무에서 유) — 스캐폴드를 떼고 도형 하나를 직접 그려보기 */
+  {
+    key: "apply_move",
+    phase: "wrapmap",
+    label: "작은 응용 — 도형 하나 직접 그리기",
+    hint:
+      "이번엔 빈칸 없이 직접 써봐요. forward 와 left(또는 right) 를 번갈아 써서 네모나\n" +
+      "삼각형 하나를 그리는 코드를 아래 칸에 직접 적어 봐요.\n" +
+      "(힌트: 네모는 forward 와 left(90) 를 네 번, 삼각형은 forward 와 left(120) 를 세 번)\n" +
+      "OneCompiler 에 붙여 실행해서 도형이 그려지면 성공!",
+    kind: "long",
+    maxLength: 1000,
+  },
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
