@@ -463,7 +463,7 @@ const WORKSHEET: WorksheetQuestion[] = [
 
 player = turtle.Turtle()
 
-# 네모를 그려요 — forward 와 left(90) 를 번갈아 4번
+# 네모를 그려요
 
 turtle.mainloop()`,
     maxLength: 1000,
@@ -483,7 +483,7 @@ turtle.mainloop()`,
 
 player = turtle.Turtle()
 
-# 삼각형을 그려요 — forward 와 left(120) 를 번갈아 3번
+# 삼각형을 그려요
 
 turtle.mainloop()`,
     maxLength: 1000,
@@ -503,7 +503,7 @@ turtle.mainloop()`,
 
 player = turtle.Turtle()
 
-# 오각형을 그려요 — forward 와 left(72) 를 번갈아 5번
+# 오각형을 그려요
 
 turtle.mainloop()`,
     maxLength: 1000,
@@ -523,7 +523,7 @@ turtle.mainloop()`,
 
 player = turtle.Turtle()
 
-# 별을 그려요 — forward 와 left(144) 를 번갈아 5번
+# 별을 그려요
 
 turtle.mainloop()`,
     maxLength: 1000,
