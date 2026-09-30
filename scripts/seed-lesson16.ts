@@ -181,6 +181,33 @@ player.forward(★★★)  # 값: 거리
 screen.mainloop()`;
 
 /**
+ * 이동 응용 세트의 종합 마무리 — '지붕 있는 집'. 지금까지 배운 forward·left(도형) + goto·
+ * penup·pendown(좌표·펜)을 모두 합친다. 무에서 위치잡기가 어려워, 설계 뼈대를 주석으로 주고
+ * (2) 지붕 이동은 penup+goto+pendown 을 예시로 채워 둔다 — 학생은 (1)(3) 도형과 (4) 창문
+ * (penup+goto+pendown 을 직접 쓰고 작은 네모)을 채운다. 들여쓰기·구조 보존 위해 code 필드로 준다.
+ */
+const CODE_HOUSE_SKELETON = `import turtle
+
+player = turtle.Turtle()
+
+# (1) 몸통 - 사각형: forward(100) 과 left(90) 를 4번 (직접 쓰기)
+
+
+# (2) 지붕 그릴 위치로 이동 (예시 - 이렇게 penup, goto, pendown 을 씁니다)
+player.penup()
+player.goto(0, 100)     # 몸통 왼쪽 위 모서리
+player.pendown()
+
+# (3) 지붕 - 삼각형: forward(100) 과 left(120) 를 3번 (직접 쓰기)
+
+
+# (4) 창문 - (2)처럼 penup, goto, pendown 을 직접 써서 벽 안쪽으로 (예: goto(30, 40))
+#     그다음 작은 네모: forward(30) 과 left(90) 를 4번 (직접 쓰기)
+
+
+turtle.mainloop()`;
+
+/**
  * 이동 응용 세트의 '도전(선택)' — for 반복 맛보기 예시(다음 개념 예고). 참고용 코드라 복사 허용.
  * for 는 들여쓰기가 뜻을 가지므로 hint(공백 뭉갬)가 아니라 code 필드로 준다(들여쓰기 보존).
  */
@@ -471,6 +498,36 @@ const WORKSHEET: WorksheetQuestion[] = [
       "다 되면 그 코드를 아래에 붙여넣어 제출해요.",
     kind: "long",
     maxLength: 1000,
+  },
+  /* ── ④ 종합 마무리 — 지붕 있는 집 (도형 + 좌표 + 펜 모두 합치기) ── */
+  {
+    key: "_apply_move_house",
+    phase: "wrapmap",
+    label: "④ 지붕 있는 집 그리기 (종합)",
+    hint:
+      "종합 문제예요! 지금까지 배운 것을 모두 합쳐 '지붕 있는 집' 을 그려요.\n" +
+      "- 도형: forward 와 left (네모 몸통, 삼각형 지붕)\n" +
+      "- 좌표·펜: goto 로 위치 이동, penup 으로 선 없이 이동, pendown 으로 다시 그리기\n\n" +
+      "이런 순서로 만들면 쉬워요(설계):\n" +
+      "(1) 몸통 — 사각형을 그린다 (응용 ①에서 한 것)\n" +
+      "(2) 지붕 그릴 위치로 이동 — penup 하고 goto 로 몸통 위쪽 모서리로, 그다음 pendown\n" +
+      "(3) 지붕 — 삼각형을 그린다 (응용 ②에서 한 것)\n" +
+      "(4) 창문 — penup 하고 goto 로 벽 안쪽 한 곳으로 간 뒤, pendown 하고 작은 네모 하나\n\n" +
+      "아래 뼈대 코드를 가져와 (1)(3)(4) 자리에 명령을 직접 채워 완성해요. 좌표 예시도 적어 뒀어요.\n" +
+      "창문은 (2)처럼 penup, goto, pendown 을 직접 써야 원하는 자리에 깔끔하게 그려져요.",
+    kind: "note",
+    code: CODE_HOUSE_SKELETON,
+    maxLength: 0,
+  },
+  {
+    key: "apply_move_house",
+    phase: "wrapmap",
+    label: "④ 지붕 있는 집 — 완성한 코드 제출",
+    hint:
+      "위 뼈대를 채워 완성한 '지붕 있는 집' 코드를 아래에 붙여넣어 제출해요.\n" +
+      "OneCompiler 에서 몸통·지붕·창문이 다 그려지면 성공! (창문에 penup·goto·pendown 이 들어갔는지 확인해요.)",
+    kind: "long",
+    maxLength: 1500,
   },
   {
     key: "_apply_move_for_ex",
