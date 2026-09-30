@@ -2,12 +2,12 @@
  * 「인간과 인공지능」 7차시 · 목요일 1기 수업을 연다.
  *
  *   node --env-file=.env.local scripts/open-hai7-thu1.ts
- *   node --env-file=.env.local scripts/open-hai7-thu1.ts 2026-10-01 1
+ *   node --env-file=.env.local scripts/open-hai7-thu1.ts 2026-09-30 1
  *
  * open-hai7-tue1.ts 를 복제해 목요일 1기로 맞춘 것이다. 교사 화면에서도 만들 수 있지만,
  * 분반 수업은 고를 것이 많아(분반·차시·날짜·교시) 수업 직전에 손으로 고르다 틀리기 쉽다.
  *
- * 날짜·교시는 인자로 바꿀 수 있다 (기본 2026-10-01 목요일 1교시). 화요일 1기는 사본
+ * 날짜·교시는 인자로 바꿀 수 있다 (기본 2026-09-30 오늘 1교시). 화요일 1기는 사본
  * open-hai7-tue1.ts 를 쓴다 (seed-hai7 의 groups 표: hai-thu-1 = 목요일 1기 = CLASS_NO 3).
  *
  * ## 여기서 반드시 지켜야 하는 두 가지 (open-hai6 과 같다)
@@ -45,7 +45,7 @@ const GROUP_KEY = "hai-thu-1";
 const GROUP_LABEL = "목요일 1기";
 /** 화면에 안 보이는 데이터 통 번호. 2~6차시와 같아야 6차 발표 자료·앱·대본이 열린다 */
 const CLASS_NO = 3;
-const DATE = process.argv[2] ?? "2026-10-01";
+const DATE = process.argv[2] ?? "2026-09-30";
 const PERIOD = Number(process.argv[3] ?? 1);
 
 /**
