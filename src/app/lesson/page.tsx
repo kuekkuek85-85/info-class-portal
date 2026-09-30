@@ -15,6 +15,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { useFocusTracker } from "@/hooks/use-focus-tracker";
 import { ProgressCheckModal } from "@/components/progress-check-modal";
 import { ReviewDescModal } from "@/components/review-desc-modal";
+import { RulesResultPanel } from "@/components/rules-result-panel";
 import { WorksheetView, type WorksheetValue } from "@/components/worksheet-view";
 import { artifactTitle } from "@/lib/artifact-title";
 import {
@@ -698,7 +699,19 @@ export default function LessonPage() {
    * 그 자리는 자기 공간을 그리는 활동이라 서로 볼 것이 아니고, 앞에서 이미 감상을
    * 끝낸 뒤다. 탭이 남아 있으면 그리다 말고 그리로 새고, 돌아올 이유가 없다.
    */
-  const canShare = session.activity?.galleryEnabled !== false && viewPhase !== "wrapheal";
+  /*
+   * 감상(gallery) 탭을 언제 띄우는가.
+   *
+   * 그리기 차시는 그림 · 활동지 · 감상을 자유롭게 오가야 해서(위 주석), 어느 작업 단계에서든
+   * 감상 탭을 띄운다. 하지만 공유 답을 딱 집어 여는 차시(galleryAnswerKeys 지정 — 마음 톡톡
+   * 6·7회기)는 감상을 **전용 감상(gallery) 단계에서만** 한다. 그 밖의 쓰기 단계(게임 후 돌아보기
+   * 등)에서 감상 탭이 뜨면, 쓰기만 하면 되는 자리에 군더더기가 된다(교사 요청).
+   */
+  const scopedGallery = (session.activity?.galleryAnswerKeys?.length ?? 0) > 0;
+  const canShare =
+    session.activity?.galleryEnabled !== false &&
+    viewPhase !== "wrapheal" &&
+    (!scopedGallery || viewPhase === "gallery");
 
   /** 활동지를 그리기 앞에 두는 차시인가 (ActivityContent 의 worksheetFirst) */
   const worksheetFirst = Boolean(session.activity?.worksheetFirst);
@@ -1557,6 +1570,17 @@ export default function LessonPage() {
                 />
               </div>
             ))}
+
+            {/*
+              규칙 만들기 차시(rules_result 문항 있음)는 성찰에 오늘 완성한 규칙 표를 함께 띄운다
+              — "가장 마음에 드는 규칙 하나" 를 고르는 질문을 표를 보며 쓰게 한다(교사 요청, 마음 톡톡 7회기).
+            */}
+            {(session.activity?.worksheet ?? []).some((q) => q.kind === "rules_result") && (
+              <div className="flex flex-col gap-2">
+                <h3 className="t-subhead">오늘 완성한 우리 학교 규칙</h3>
+                <RulesResultPanel />
+              </div>
+            )}
 
             <span className="t-caption" aria-live="polite">
               {reflectionState === "saving" && "저장 중…"}

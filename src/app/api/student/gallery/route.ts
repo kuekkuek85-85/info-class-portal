@@ -47,10 +47,36 @@ function facetValuesOf(row: Artifact, session: ClassSession): Record<string, str
   return { traits: row.traits ?? [], place: row.place ? [row.place] : [] };
 }
 
-/** 활동지의 여러 칸에서 적힌 말을 모은다. 빈 칸과 앞뒤 공백은 버린다 */
+/**
+ * 활동지의 여러 칸에서 적힌 말을 모은다. 빈 칸과 앞뒤 공백은 버린다.
+ *
+ * 키가 "<rows칸>.<열>" 꼴이면(예: "rule_ideas.type") 그 rows 답(JSON 배열)을 파싱해 그 열의
+ * 값들만 모은다 — 상점/벌점처럼 rows 안 한 열로 필터를 세우는 차시(마음 톡톡 7회기 규칙)에 쓴다.
+ */
 function answerValues(row: Artifact, keys: string[]): string[] {
   const seen = new Set<string>();
   for (const key of keys) {
+    const dot = key.indexOf(".");
+    if (dot > 0) {
+      const rowsKey = key.slice(0, dot);
+      const column = key.slice(dot + 1);
+      const raw = String(row.answers?.[rowsKey] ?? "").trim();
+      if (!raw) continue;
+      try {
+        const arr: unknown = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          for (const r of arr) {
+            const v = String((r as Record<string, unknown>)?.[column] ?? "")
+              .replace(/\s+/g, " ")
+              .trim();
+            if (v) seen.add(v);
+          }
+        }
+      } catch {
+        // rows JSON 이 아니면 건너뛴다
+      }
+      continue;
+    }
     const value = String(row.answers?.[key] ?? "")
       .replace(/\s+/g, " ")
       .trim();
