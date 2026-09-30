@@ -472,9 +472,11 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "forward 와 left(90) 를 번갈아 네 번 하면 네모가 돼요. 직접 써서 그려 봐요.\n" +
       "(한 변 긋기 → 90도 돌기 를 네 번 반복)\n" +
-      "다 되면 그 코드를 아래에 붙여넣어 제출해요.",
+      "아래 그림이 완성 모습이에요(초록 화살표는 거북이). 다 되면 그 코드를 아래에 붙여넣어 제출해요.",
     kind: "long",
     maxLength: 1000,
+    imageUrl: "/turtle-square.svg",
+    imageAlt: "터틀로 그린 네모(정사각형) 완성 모습",
   },
   {
     key: "apply_move_triangle",
@@ -483,9 +485,11 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "이번엔 삼각형이에요. forward 와 left(120) 를 번갈아 세 번 하면 돼요. 직접 써 봐요.\n" +
       "(각도가 왜 120인지 궁금하면: 세 번 돌아 제자리로 오려면 360 나누기 3 = 120)\n" +
-      "다 되면 그 코드를 아래에 붙여넣어 제출해요.",
+      "아래 그림이 완성 모습이에요. 다 되면 그 코드를 아래에 붙여넣어 제출해요.",
     kind: "long",
     maxLength: 1000,
+    imageUrl: "/turtle-triangle.svg",
+    imageAlt: "터틀로 그린 삼각형(정삼각형) 완성 모습",
   },
   {
     key: "apply_move_polygon",
@@ -495,9 +499,11 @@ const WORKSHEET: WorksheetQuestion[] = [
       "각도를 바꾸면 다른 도형이 나와요. 아래에서 하나 골라 직접 그려 봐요:\n" +
       "· 오각형 — forward 와 left(72) 를 다섯 번 (360 나누기 5 = 72)\n" +
       "· 별 — forward 와 left(144) 를 다섯 번\n" +
-      "다 되면 그 코드를 아래에 붙여넣어 제출해요.",
+      "아래 그림이 완성 모습이에요(왼쪽 오각형, 오른쪽 별). 다 되면 그 코드를 아래에 붙여넣어 제출해요.",
     kind: "long",
     maxLength: 1000,
+    imageUrl: "/turtle-polygon.svg",
+    imageAlt: "터틀로 그린 오각형과 별 완성 모습",
   },
   /* ── ④ 종합 마무리 — 지붕 있는 집 (도형 + 좌표 + 펜 모두 합치기) ── */
   {
@@ -514,10 +520,13 @@ const WORKSHEET: WorksheetQuestion[] = [
       "(3) 지붕 — 삼각형을 그린다 (응용 ②에서 한 것)\n" +
       "(4) 창문 — penup 하고 goto 로 벽 안쪽 한 곳으로 간 뒤, pendown 하고 작은 네모 하나\n\n" +
       "아래 뼈대 코드를 가져와 (1)(3)(4) 자리에 명령을 직접 채워 완성해요. 좌표 예시도 적어 뒀어요.\n" +
-      "창문은 (2)처럼 penup, goto, pendown 을 직접 써야 원하는 자리에 깔끔하게 그려져요.",
+      "창문은 (2)처럼 penup, goto, pendown 을 직접 써야 원하는 자리에 깔끔하게 그려져요.\n" +
+      "맨 아래 그림이 완성 목표예요 — 이렇게 몸통 위에 지붕이 얹히고 벽 안에 창문이 들어가요.",
     kind: "note",
     code: CODE_HOUSE_SKELETON,
     maxLength: 0,
+    imageUrl: "/turtle-house.svg",
+    imageAlt: "터틀로 그린 지붕 있는 집(네모 몸통, 삼각형 지붕, 창문) 완성 모습",
   },
   {
     key: "apply_move_house",
