@@ -358,6 +358,8 @@ const WORKSHEET: WorksheetQuestion[] = [
       "goto 는 '정해진 자리(x, y)' 로 한 번에 보내요. 화면 한가운데가 (0, 0) 이에요. 아래 코드를\n" +
       "복사해 ★★★만 채워 완성한 뒤 실행해요. 이번엔 함수 이름 goto·setx 자체가 ★★★예요 —\n" +
       "각 줄의 주석(함수:/값:)을 보고 채워요.\n\n" +
+      "그리고 각 줄 옆이나 위에, 그 줄이 무엇을 하는지 # 주석으로 직접 적어요.\n" +
+      "다 되면 완성한 코드(주석 포함)를 아래 제출 칸에 붙여넣어 내요.\n\n" +
       "· player.goto(0, -250) — 이렇게도 넣어 봐요:\n" +
       "    (100, 100)  →  (-200, 0)  →  (0, 0)  →  (250, 250)  →  (-150, -150)\n" +
       "· player.setx(100) — x(좌우)만 바꿔요(위아래 y 는 그대로). 이렇게도:\n" +
@@ -367,17 +369,6 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "note",
     code: CODE_GOTO,
     maxLength: 0,
-  },
-  /* 이 줄이 하는 일 — 핵심 줄을 내 말로 예측·설명해 이해를 굳힌다(제출 칸과 별개, 짧게) */
-  {
-    key: "explain_goto",
-    phase: "grill",
-    label: "이 줄이 하는 일 — goto",
-    hint:
-      "위 코드에서 player.goto(0, -250) 줄은 무엇을 하는 줄일까요? 한 줄로 적어 봐요.\n" +
-      "(예: '주인공을 화면 가운데 아래로 보낸다' 처럼 내 말로 적으면 돼요.)",
-    kind: "text",
-    maxLength: 200,
   },
   submitField("poke_submit_goto", "좌표 이동 — 완성한 코드 제출", "좌표 이동", "grill"),
   /* 작은 응용(무에서 유) — 스캐폴드를 떼고 빈칸 없이 직접 한 줄 써보기 */
@@ -404,6 +395,8 @@ const WORKSHEET: WorksheetQuestion[] = [
       "forward 는 '지금 보고 있는 방향으로' 앞으로 가고, left/right 는 방향을 틀어요(도, degree).\n" +
       "아래 코드를 복사해 ★★★만 채워 완성한 뒤 실행해요. 이번엔 함수 이름 forward·left 가 ★★★이고,\n" +
       "마지막 한 곳은 값(거리)이에요 — 각 줄의 주석(함수:/값:)을 보고 채워요.\n\n" +
+      "그리고 각 줄 옆이나 위에, 그 줄이 무엇을 하는지 # 주석으로 직접 적어요.\n" +
+      "다 되면 완성한 코드(주석 포함)를 아래 제출 칸에 붙여넣어 내요.\n\n" +
       "· player.forward(100) — 거리를 이렇게도:\n" +
       "    50  →  150  →  200  →  30\n" +
       "· player.left(90) — 각도를 이렇게도:\n" +
@@ -415,17 +408,6 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "note",
     code: CODE_MOVE,
     maxLength: 0,
-  },
-  /* 이 줄이 하는 일 — 핵심 줄을 내 말로 예측·설명해 이해를 굳힌다(제출 칸과 별개, 짧게) */
-  {
-    key: "explain_move",
-    phase: "wrapmap",
-    label: "이 줄이 하는 일 — forward / left",
-    hint:
-      "위 코드에서 player.forward(100) 과 player.left(90) 은 각각 무엇을 하는 줄일까요?\n" +
-      "한 줄로 적어 봐요. (예: 'forward 는 앞으로 100 가고, left 는 왼쪽으로 90도 돈다')",
-    kind: "text",
-    maxLength: 200,
   },
   submitField("poke_submit_move", "상대 이동·회전 — 완성한 코드 제출", "상대 이동·회전", "wrapmap"),
   /* 작은 응용(무에서 유) — 스캐폴드를 떼고 도형 하나를 직접 그려보기 */
