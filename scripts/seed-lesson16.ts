@@ -190,7 +190,7 @@ const CODE_HOUSE_SKELETON = `import turtle
 
 player = turtle.Turtle()
 
-# (1) 몸통 - 사각형: forward(100) 과 left(90) 를 4번 (직접 쓰기)
+# (1) 몸통 - 사각형
 
 
 # (2) 지붕 그릴 위치로 이동 (예시 - 이렇게 penup, goto, pendown 을 씁니다)
@@ -198,11 +198,10 @@ player.penup()
 player.goto(0, 100)     # 몸통 왼쪽 위 모서리
 player.pendown()
 
-# (3) 지붕 - 삼각형: forward(100) 과 left(120) 를 3번 (직접 쓰기)
+# (3) 지붕 - 삼각형
 
 
-# (4) 창문 - (2)처럼 penup, goto, pendown 을 직접 써서 벽 안쪽으로 (예: goto(30, 40))
-#     그다음 작은 네모: forward(30) 과 left(90) 를 4번 (직접 쓰기)
+# (4) 창문 - (2)처럼 penup, goto, pendown 으로 벽 안쪽으로 옮긴 뒤 작은 네모
 
 
 turtle.mainloop()`;
