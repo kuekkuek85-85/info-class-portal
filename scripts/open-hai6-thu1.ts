@@ -2,12 +2,14 @@
  * 「인간과 인공지능」 6차시 · 목요일 1기 수업을 연다.
  *
  *   node --env-file=.env.local scripts/open-hai6-thu1.ts
- *   node --env-file=.env.local scripts/open-hai6-thu1.ts 2026-09-24 1
+ *   node --env-file=.env.local scripts/open-hai6-thu1.ts 2026-10-01 1
  *
  * open-hai5-tue1.ts 를 복제해 6차시로 맞춘 것이다. 교사 화면에서도 만들 수 있지만,
  * 분반 수업은 고를 것이 많아(분반·차시·날짜·교시) 수업 직전에 손으로 고르다 틀리기 쉽다.
  *
- * 날짜·교시는 인자로 바꿀 수 있다 (기본 2026-09-24 목요일 1교시). 화요일 1기는 사본
+ * 날짜·교시는 인자로 바꿀 수 있다 (기본 = 오늘 한국 날짜, 1교시). 원래 9/24 목요일
+ * 이었으나 추석 연휴로 쉬어 10/1 로 밀렸다 — 그래서 고정 날짜 대신 오늘을 기본으로 둔다.
+ * 화요일 1기는 사본
  * open-hai6-tue1.ts 를 쓴다 (seed-hai6 의 groups 표: hai-thu-1 = 목요일 1기 = CLASS_NO 3).
  *
  * ## 여기서 반드시 지켜야 하는 두 가지 (open-hai5 와 같다)
@@ -45,7 +47,8 @@ const GROUP_KEY = "hai-thu-1";
 const GROUP_LABEL = "목요일 1기";
 /** 화면에 안 보이는 데이터 통 번호. 2~5차시와 같아야 지난 답·앱·받은 피드백이 열린다 */
 const CLASS_NO = 3;
-const DATE = process.argv[2] ?? "2026-09-24";
+/** 기본은 오늘(한국 시간) 날짜. open-mt6-thu1 과 같은 방식 — 고정 날짜가 묵어 틀리는 걸 막는다. */
+const DATE = process.argv[2] ?? new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
 const PERIOD = Number(process.argv[3] ?? 1);
 
 /**
