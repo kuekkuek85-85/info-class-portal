@@ -207,21 +207,6 @@ player.pendown()
 
 turtle.mainloop()`;
 
-/**
- * 이동 응용 세트의 '도전(선택)' — for 반복 맛보기 예시(다음 개념 예고). 참고용 코드라 복사 허용.
- * for 는 들여쓰기가 뜻을 가지므로 hint(공백 뭉갬)가 아니라 code 필드로 준다(들여쓰기 보존).
- */
-const CODE_FOR_EXAMPLE = `import turtle
-
-player = turtle.Turtle()
-
-# for 로 같은 동작을 4번 반복 = 네모
-for i in range(4):
-    player.forward(100)
-    player.left(90)
-
-turtle.mainloop()`;
-
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
@@ -452,15 +437,15 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
   submitField("poke_submit_move", "상대 이동·회전 — 완성한 코드 제출", "상대 이동·회전", "wrapmap"),
-  /* ── 이동 응용 세트(무에서 유) — 빈칸 없이 직접 쓰는 도형 미션. 쉬운 것부터, for 는 도전(선택) ── */
+  /* ── 이동 응용 세트 — 뼈대 코드를 복사해 주석 자리에 도형 명령을 채워 완성. 네모→삼각형→다각형·별 ── */
   {
     key: "_apply_move_set",
     phase: "wrapmap",
     label: "응용 — 배운 함수로 도형 직접 그리기",
     hint:
-      "이제 배운 forward 와 left/right 로 도형을 직접 그려봐요. 빈칸(★★★) 없이 내가 직접 써요.\n" +
-      "아래 미션을 쉬운 것부터 해봐요. 미션마다 OneCompiler 에 코드를 직접 써서 실행하고,\n" +
-      "그린 코드를 그 미션의 제출 칸에 붙여넣어 내요.\n" +
+      "이제 배운 forward 와 left/right 로 도형을 그려봐요. 미션마다 뼈대 코드를 복사해\n" +
+      "OneCompiler 에 붙여넣고, 주석(#) 자리에 그리기 명령을 써서 완성해요.\n" +
+      "쉬운 것부터: 네모 → 삼각형 → 다각형·별. 완성한 코드는 각 미션의 제출 칸에 붙여넣어 내요.\n" +
       "(공통 힌트: forward 로 한 변을 긋고, left 로 방향을 틀기를 반복하면 도형이 돼요.)",
     kind: "note",
     maxLength: 0,
@@ -470,10 +455,17 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "wrapmap",
     label: "응용 ① 네모 그리기 (forward + left 90, 4번)",
     hint:
-      "forward 와 left(90) 를 번갈아 네 번 하면 네모가 돼요. 직접 써서 그려 봐요.\n" +
-      "(한 변 긋기 → 90도 돌기 를 네 번 반복)\n" +
-      "아래 그림이 완성 모습이에요(초록 화살표는 거북이). 다 되면 그 코드를 아래에 붙여넣어 제출해요.",
+      "아래 뼈대 코드를 복사해 OneCompiler 에 붙여넣고, 주석 자리에 forward 와 left(90) 를 번갈아\n" +
+      "네 번 써서 네모를 완성해요. (한 변 긋기 → 90도 돌기 를 네 번 반복)\n" +
+      "아래 그림이 완성 모습이에요(초록 화살표는 거북이). 다 되면 완성 코드를 아래에 붙여넣어 제출해요.",
     kind: "long",
+    code: `import turtle
+
+player = turtle.Turtle()
+
+# 네모를 그려요 — forward 와 left(90) 를 번갈아 4번
+
+turtle.mainloop()`,
     maxLength: 1000,
     imageUrl: "/turtle-square.svg",
     imageAlt: "터틀로 그린 네모(정사각형) 완성 모습",
@@ -483,10 +475,17 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "wrapmap",
     label: "응용 ② 삼각형 그리기 (forward + left 120, 3번)",
     hint:
-      "이번엔 삼각형이에요. forward 와 left(120) 를 번갈아 세 번 하면 돼요. 직접 써 봐요.\n" +
-      "(각도가 왜 120인지 궁금하면: 세 번 돌아 제자리로 오려면 360 나누기 3 = 120)\n" +
-      "아래 그림이 완성 모습이에요. 다 되면 그 코드를 아래에 붙여넣어 제출해요.",
+      "이번엔 삼각형이에요. 아래 뼈대를 복사해, 주석 자리에 forward 와 left(120) 를 번갈아 세 번\n" +
+      "써서 완성해요. (각도가 왜 120? 세 번 돌아 제자리로 오려면 360 나누기 3 = 120)\n" +
+      "아래 그림이 완성 모습이에요. 다 되면 완성 코드를 아래에 붙여넣어 제출해요.",
     kind: "long",
+    code: `import turtle
+
+player = turtle.Turtle()
+
+# 삼각형을 그려요 — forward 와 left(120) 를 번갈아 3번
+
+turtle.mainloop()`,
     maxLength: 1000,
     imageUrl: "/turtle-triangle.svg",
     imageAlt: "터틀로 그린 삼각형(정삼각형) 완성 모습",
@@ -496,11 +495,18 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "wrapmap",
     label: "응용 ③ 다각형·별 그리기 (각도 바꾸기)",
     hint:
-      "각도를 바꾸면 다른 도형이 나와요. 아래에서 하나 골라 직접 그려 봐요:\n" +
+      "각도를 바꾸면 다른 도형이 나와요. 아래 뼈대를 복사해, 주석 자리에 하나 골라 그려 봐요:\n" +
       "· 오각형 — forward 와 left(72) 를 다섯 번 (360 나누기 5 = 72)\n" +
       "· 별 — forward 와 left(144) 를 다섯 번\n" +
-      "아래 그림이 완성 모습이에요(왼쪽 오각형, 오른쪽 별). 다 되면 그 코드를 아래에 붙여넣어 제출해요.",
+      "아래 그림이 완성 모습이에요(왼쪽 오각형, 오른쪽 별). 다 되면 완성 코드를 아래에 붙여넣어 제출해요.",
     kind: "long",
+    code: `import turtle
+
+player = turtle.Turtle()
+
+# 다각형이나 별을 그려요 — 각도를 바꿔서 (오각형 left(72), 별 left(144))
+
+turtle.mainloop()`,
     maxLength: 1000,
     imageUrl: "/turtle-polygon.svg",
     imageAlt: "터틀로 그린 오각형과 별 완성 모습",
@@ -537,29 +543,6 @@ const WORKSHEET: WorksheetQuestion[] = [
       "OneCompiler 에서 몸통·지붕·창문이 다 그려지면 성공! (창문에 penup·goto·pendown 이 들어갔는지 확인해요.)",
     kind: "long",
     maxLength: 1500,
-  },
-  {
-    key: "_apply_move_for_ex",
-    phase: "wrapmap",
-    label: "도전(선택) — for 반복 맛보기 (해보고 싶은 사람만)",
-    hint:
-      "해보고 싶은 사람만 도전! 같은 동작을 여러 번 쓰는 대신, for 반복으로 짧게 쓸 수 있어요.\n" +
-      "다음 시간에 배울 내용을 미리 맛보는 거예요. 아래 예시(네모)를 가져와 실행해 보고,\n" +
-      "range 의 숫자와 left 각도를 바꿔 다른 다각형도 만들어 봐요.\n" +
-      "(예: 삼각형은 range(3) 과 left(120), 오각형은 range(5) 와 left(72))\n" +
-      "다 되면 아래 제출 칸에 붙여넣어 내요.",
-    kind: "note",
-    code: CODE_FOR_EXAMPLE,
-    maxLength: 0,
-  },
-  {
-    key: "apply_move_for",
-    phase: "wrapmap",
-    label: "도전(선택) — for 로 그린 도형 제출",
-    hint:
-      "위 for 예시를 바꿔 만든 도형 코드를 아래에 붙여넣어 제출해요. (도전이라 안 해도 괜찮아요.)",
-    kind: "long",
-    maxLength: 1000,
   },
 ];
 
