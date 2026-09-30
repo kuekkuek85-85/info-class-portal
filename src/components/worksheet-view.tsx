@@ -7,6 +7,7 @@ import { AiFeedbackPanel } from "@/components/ai-feedback-panel";
 import { ComfortBotPanel } from "@/components/comfort-bot-panel";
 import { DilemmaGame } from "@/components/dilemma-game";
 import { EmotionLensPanel } from "@/components/emotion-lens-panel";
+import { RelayPanel } from "@/components/relay-panel";
 import { RulesResultPanel } from "@/components/rules-result-panel";
 import { StreamsSolo } from "@/components/streams-solo";
 import { EmotionQuiz } from "@/components/emotion-quiz";
@@ -971,6 +972,13 @@ export function WorksheetView({
               disabled={disabled}
               rounds={question.dilemmaRounds}
             />
+          ) : question.kind === "relay_draw" ? (
+            /*
+              릴레이(한 장 이어) 그림 — 모둠이 포털 내장 그림판으로 한 그림을 학번 순 턴제로
+              이어 그린다. 모둠·턴·이미지는 서버(relayGroups)에 있고 폴링으로 따라온다. 답
+              (answers)에 저장하지 않는다(모둠 공용) — 감정/게임 답과 분리 (relay-panel).
+            */
+            <RelayPanel />
           ) : question.kind === "streams_solo" ? (
             /*
               STREAMS 개인전(공동체 활동). 한 장씩 뽑아 20칸에 배치, 오름차순 구간을 채점한다.

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { ComfortBotReviewPanel } from "@/components/comfort-bot-review-panel";
+import { RelayTeacherPanel } from "@/components/relay-teacher-panel";
 import { RulesCompilePanel } from "@/components/rules-compile-panel";
 import { TeacherArtifactPanel } from "@/components/teacher-artifact-panel";
 import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
@@ -1354,6 +1355,14 @@ function Dashboard() {
           {session.activity &&
             (session.activity.worksheet ?? []).some((q) => q.kind === "rules_result") && (
               <RulesCompilePanel sessionId={session.id} />
+            )}
+
+          {/*
+            릴레이 그림 — 그 문항이 있는 세션에서만. 모둠 나누기·턴 건너뛰기·공개를 제어한다.
+          */}
+          {session.activity &&
+            (session.activity.worksheet ?? []).some((q) => q.kind === "relay_draw") && (
+              <RelayTeacherPanel sessionId={session.id} />
             )}
 
           {/*

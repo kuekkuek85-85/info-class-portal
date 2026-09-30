@@ -4,6 +4,8 @@ import { FieldPath, FieldValue, type Query } from "firebase-admin/firestore";
 
 import { dateKeyKST } from "./datetime";
 import { db } from "./firebase-admin";
+import { DEFAULT_RELAY_TOPICS, splitIntoGroups, type RelayGroup } from "./relay";
+import { shuffle } from "./streams";
 import { isPeriodOver, periodTime } from "./timetable";
 import type {
   Artifact,
@@ -39,6 +41,8 @@ export const COLLECTIONS = {
   quizAnswers: "quizAnswers",
   artifacts: "artifacts",
   artifactFeedbacks: "artifactFeedbacks",
+  /** 릴레이 그림 모둠 상태 (relay_draw). 문서 ID = `수업ID__g모둠번호`. 이미지가 커서 세션 문서와 분리한다. */
+  relayGroups: "relayGroups",
   /**
    * 교사 전용 발표 평가 (인간과 인공지능 7·8차시). 문서 ID = `활동ID__학번`.
    *
@@ -1709,4 +1713,131 @@ export async function purge(target: PurgeTarget): Promise<number> {
         (await deleteQueryBatch(db().collection(COLLECTIONS.aiQuota)))
       );
   }
+}
+
+// ------------------------------------------------- 릴레이 그림 (relay_draw)
+
+/**
+ * 릴레이 그림 모둠을 새로 나눈다. 접속(출석)한 학번을 섞어 N모둠으로 가르고, 각 모둠 안은
+ * 학번 순(턴 순서)으로 정렬한다. 주제는 풀에서 모둠마다 하나씩(섞어) 뽑는다. 기존 모둠은 지운다.
+ * 반환: 만든 모둠 수.
+ */
+export async function setupRelayGroups(input: {
+  sessionId: string;
+  classNo: ClassNo;
+  activityId: string;
+  studentIds: string[];
+  nameOf: (studentId: string) => string;
+  groupCount: number;
+  topics: string[];
+}): Promise<number> {
+  const groups = splitIntoGroups(shuffle(input.studentIds), input.groupCount);
+  const pool = shuffle(input.topics.length ? input.topics : [...DEFAULT_RELAY_TOPICS]);
+
+  const existing = await db()
+    .collection(COLLECTIONS.relayGroups)
+    .where("sessionId", "==", input.sessionId)
+    .get();
+
+  const batch = db().batch();
+  for (const doc of existing.docs) batch.delete(doc.ref);
+
+  const now = Date.now();
+  groups.forEach((members, i) => {
+    const groupNo = i + 1;
+    const id = `${input.sessionId}__g${groupNo}`;
+    const group: RelayGroup = {
+      id,
+      sessionId: input.sessionId,
+      classNo: input.classNo,
+      activityId: input.activityId,
+      groupNo,
+      members,
+      memberNames: members.map(input.nameOf),
+      topic: pool[i % pool.length] ?? "자유 주제",
+      image: "",
+      turnIndex: 0,
+      status: "drawing",
+      rev: 0,
+      updatedAt: now,
+    };
+    batch.set(db().collection(COLLECTIONS.relayGroups).doc(id), group);
+  });
+  await batch.commit();
+  return groups.length;
+}
+
+/** 이 수업의 모든 릴레이 모둠(모둠번호 순). */
+export async function listRelayGroups(sessionId: string): Promise<RelayGroup[]> {
+  const snap = await db()
+    .collection(COLLECTIONS.relayGroups)
+    .where("sessionId", "==", sessionId)
+    .get();
+  return snap.docs.map((d) => d.data() as RelayGroup).sort((a, b) => a.groupNo - b.groupNo);
+}
+
+/** 이 학생이 속한 모둠(없으면 null). 복합 인덱스를 피하려 메모리에서 찾는다(모둠 수가 적다). */
+export async function getRelayGroupForStudent(
+  sessionId: string,
+  studentId: string,
+): Promise<RelayGroup | null> {
+  const groups = await listRelayGroups(sessionId);
+  return groups.find((g) => g.members.includes(studentId)) ?? null;
+}
+
+/**
+ * 내 차례일 때 이어 그린 이미지를 제출하고 턴을 넘긴다. 동시 제출 충돌은 트랜잭션으로 막는다
+ * (현재 턴의 학생만, 지금 상태가 drawing 일 때만 통과).
+ */
+export async function submitRelayTurn(input: {
+  sessionId: string;
+  studentId: string;
+  image: string;
+  topic?: string;
+}): Promise<{ ok: boolean; reason?: string; group?: RelayGroup }> {
+  const mine = await getRelayGroupForStudent(input.sessionId, input.studentId);
+  if (!mine) return { ok: false, reason: "no_group" };
+  const ref = db().collection(COLLECTIONS.relayGroups).doc(mine.id);
+
+  return db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return { ok: false, reason: "gone" };
+    const g = snap.data() as RelayGroup;
+    if (g.status !== "drawing") return { ok: false, reason: "done" };
+    if (g.members[g.turnIndex] !== input.studentId) return { ok: false, reason: "not_your_turn" };
+
+    const turnIndex = g.turnIndex + 1;
+    const status: RelayGroup["status"] = turnIndex >= g.members.length ? "done" : "drawing";
+    // 첫 차례 학생만 주제를 바꿀 수 있다(비었거나 직접 입력 시).
+    const topic =
+      g.turnIndex === 0 && input.topic && input.topic.trim()
+        ? input.topic.trim().slice(0, 40)
+        : g.topic;
+    const updated: RelayGroup = {
+      ...g,
+      image: input.image,
+      topic,
+      turnIndex,
+      status,
+      rev: g.rev + 1,
+      updatedAt: Date.now(),
+    };
+    tx.set(ref, updated);
+    return { ok: true, group: updated };
+  });
+}
+
+/** 교사가 현재 턴을 건너뛴다(결석·막힌 학생이 모둠을 막지 않게). */
+export async function skipRelayTurn(sessionId: string, groupNo: number): Promise<boolean> {
+  const ref = db().collection(COLLECTIONS.relayGroups).doc(`${sessionId}__g${groupNo}`);
+  return db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return false;
+    const g = snap.data() as RelayGroup;
+    if (g.status !== "drawing") return false;
+    const turnIndex = g.turnIndex + 1;
+    const status: RelayGroup["status"] = turnIndex >= g.members.length ? "done" : "drawing";
+    tx.set(ref, { ...g, turnIndex, status, rev: g.rev + 1, updatedAt: Date.now() });
+    return true;
+  });
 }

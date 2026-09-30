@@ -626,6 +626,14 @@ export interface WorksheetQuestion {
      * answers 에 저장한다. 비민감 (streams-solo).
      */
     | "streams_solo"
+    /**
+     * relay_draw — 릴레이(한 장 이어) 그림 그리기(공동체·협력). 포털 내장 그림판으로 모둠이
+     * 한 그림을 학번 순 턴제로 이어 그린다. 외부 사이트 없이 포털 안에서 끝난다. 모둠·턴·이미지는
+     * 서버(relayGroups 컬렉션)에 있고 학생은 폴링으로 따라온다. 교사가 모둠 나누기·턴 건너뛰기·
+     * 공개를 제어한다. 이미지는 축소 저장(긴 변 ~480px). answers 에 저장하지 않는다(모둠 공용)
+     * (relay-panel · relay-canvas · /api/student/relay · /api/teacher/relay · relay.ts).
+     */
+    | "relay_draw"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
@@ -892,6 +900,12 @@ export interface WorksheetQuestion {
    * 클라이언트에서 계산하고 서버·Gemini 는 쓰지 않는다 (dilemma-game).
    */
   dilemmaRounds?: number;
+  /**
+   * relay_draw 의 제시어(주제) 풀. 교사가 모둠을 나눌 때 이 풀에서 모둠별 주제를 하나씩 뽑는다.
+   * 첫 차례 학생이 직접 주제를 쓰는 것도 허용한다(풀은 기본값·부적절 입력 대비). 안 주면 서버
+   * 기본 풀을 쓴다 (relay.ts 의 DEFAULT_RELAY_TOPICS).
+   */
+  relayTopics?: string[];
   /**
    * comfort_bot 프리셋. "comfort"(기본)=학생이 고른 상황·설계로 만든 감정 위로 챗봇(6회기 grill).
    * "empathy_dialogue"=감정 대화 연습 봇(6회기 wrapheal ②) — 상황 선택·설계 없이, 봇이 감정 상황을
@@ -1485,6 +1499,11 @@ export interface ClassSession {
     count: number;
     at: number;
   };
+  /**
+   * 릴레이 그림(relay_draw) — 교사가 「공개」를 누르면 true. 그 전엔 각 모둠은 자기 그림만
+   * 보고, true 가 되면 모든 모둠 완성 그림을 함께 본다(교사 신호 전엔 잠금).
+   */
+  relayReveal?: boolean;
   /**
    * 라이브 발표 진행 — quizIndex 와 같은 broadcast 패턴(교사만 쓰고 학생이 폴링으로 읽음).
    *
