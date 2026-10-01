@@ -22,9 +22,8 @@ const DATED = ["/teacher/dashboard", "/teacher/screen", "/teacher/board"];
 
 const NAV = [
   { href: "/teacher/dashboard", label: "대시보드" },
-  // 발표 평가(교사 전용, 학생 비노출). 발표 때 교사가 폰에서 연다. 라벨만 노출 — 점수는
-  // 그 화면 안에서 발표자를 펼쳐야만 보이므로, 이 nav 칩에는 어떤 평가값도 실리지 않는다.
-  { href: "/teacher/eval", label: "발표 평가" },
+  // 발표 평가(/teacher/eval)는 진로탐색 7·8차 전용이라 전역 메뉴에서 뺐다 — 그 수업을 보고 있을
+  // 때만 대시보드에 버튼으로 뜬다(미리 피드백과 같은 방식, dashboard/page.tsx).
   { href: "/teacher/screen", label: "영상 재생" },
   { href: "/teacher/board", label: "공유 화면" },
   { href: "/teacher/lessons", label: "차시" },
