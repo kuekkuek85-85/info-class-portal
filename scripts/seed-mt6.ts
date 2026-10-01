@@ -724,6 +724,14 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
      */
     galleryEnabled: true,
     galleryAnswerKeys: ["a4_calli_image"],
+
+    /*
+     * 왼쪽 필터를 '덕목'으로 세운다. 덕목은 a4_virtue("존중 - 이유…")의 첫 낱말이라 firstToken 으로
+     * 덕목(존중/배려/…)만 뽑아 묶는다. 안 정하면 기본값(디지털 사회의 특성)이 떠서 캘리그래피와 안 맞는다.
+     * (a4_virtue 자체는 galleryAnswerKeys 밖이라 친구 카드엔 안 나간다 — 필터 묶음에만 쓰인다.)
+     */
+    galleryFacets: [{ key: "virtue", label: "덕목", answerKeys: ["a4_virtue"], firstToken: true }],
+
     feedbackPrompts: {
       found: {
         label: "이 작품에서 어떤 덕목이 느껴지나요?",
