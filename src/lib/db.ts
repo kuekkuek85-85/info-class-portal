@@ -660,6 +660,8 @@ export function snapshotOf(plan: LessonPlan, groupKey?: string) {
     moodCheckEnabled: plan.moodCheckEnabled,
     game: plan.game,
     gameExplainer: plan.gameExplainer,
+    // 보상 게임(성찰 단계) — 없으면 안 실린다(ignoreUndefinedProperties, 기존 차시 무영향)
+    rewardGame: plan.rewardGame,
     progress: plan.progress,
     assessment: plan.assessment,
     video: plan.video,

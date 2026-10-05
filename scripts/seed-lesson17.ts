@@ -168,7 +168,7 @@ function empty(): PhaseContent {
 //   · 분석(problem)  — 먼저 함께 보기(시뮬레이션 링크, 맨 위) + 좌표 note + 분석 설명 + 구성요소 빈칸 4지선다 + AI 채점(cloze)
 //   · 구현 1단계(build)  — 플레이어 배치
 //   · 구현 2단계(grill)  — 왼쪽 이동(go_left 답 제시)
-//   · 구현 3단계(wrapmap)— 오른쪽 이동(go_right 직접 채우기)
+//   · 구현 3단계(emotion)— 오른쪽 이동(go_right 직접 채우기)
 // 설계(만들 순서 정하기)는 뺐다 — 구현 순서는 교사가 이미 정해 뒀다(아크 설계).
 // 모든 단계가 같은 활동 통(python-dodge-game) 한 문서에 함께 저장된다 — 답 묶음은 단계와 무관하게
 // 한 artifact 에 쌓인다. 오늘 남기는 기록: 구성요소 빈칸 선택.
@@ -357,7 +357,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "_dg_impl_right",
-    phase: "wrapmap",
+    phase: "emotion",
     label: "오른쪽으로 이동하기 (직접 채우기)",
     hint:
       "마지막은 직접 만들어요! go_right 함수 안이 비어 있어요(★★★ 두 줄). 바로 위 go_left 를 본떠\n" +
@@ -377,7 +377,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "dg_impl3_submit",
-    phase: "wrapmap",
+    phase: "emotion",
     label: "✍ 완성한 코드 제출 (3단계)",
     hint: "OneCompiler 에서 완성한 코드를 복사해 붙여넣어 주세요.",
     kind: "long",
@@ -413,7 +413,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     requires: [
       { key: "dg_impl1_submit", label: "구현 1단계", phase: "build" },
       { key: "dg_impl2_submit", label: "구현 2단계", phase: "grill" },
-      { key: "dg_impl3_submit", label: "구현 3단계", phase: "wrapmap" },
+      { key: "dg_impl3_submit", label: "구현 3단계", phase: "emotion" },
     ],
   },
 
@@ -473,27 +473,29 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   /*
    * 외부 새 탭 링크가 붙은 단계는 창을 옮겨도 이탈로 세지 않는다 (14·15·16차와 같은 이유).
-   * 분석(problem)엔 똥피하기 시뮬레이션 링크, 구현 세 단계(build·grill·wrapmap)엔 OneCompiler
+   * 분석(problem)엔 똥피하기 시뮬레이션 링크, 구현 세 단계(build·grill·emotion)엔 OneCompiler
    * 터틀 링크가 있다.
    */
   // waiting 도 추가 — 대기 화면 파이썬 타자 도우미를 새 탭으로 열어도 이탈로 안 센다.
-  focusExempt: ["waiting", "problem", "build", "grill", "wrapmap"],
+  focusExempt: ["waiting", "problem", "build", "grill", "emotion"],
   /*
    * 기분(mood)은 단계에서 뺀다 — 기분은 대기 화면에서 먼저 받으므로(moodCheckEnabled 켜 둠)
    * 별도 단계가 중복이다. phaseOrder 에 mood 를 안 적으면 교사 대시보드 단추(availablePhase)도,
    * 학생 되돌아가기 줄(backPhases 가 phaseOrder 를 존중)도 기분을 안 띄운다. 마음 톡톡 6회기와 같은 방식.
    *
-   * 단계: 분석(problem) → 구현 1·2·3단계(build·grill·wrapmap). 구현도 한 번에 안 하고 셋으로 쪼갰다
+   * 단계: 분석(problem) → 구현 1·2·3단계(build·grill·emotion). 구현도 한 번에 안 하고 셋으로 쪼갰다
    * (배치 → 왼쪽 → 오른쪽 직접 채우기). 설계(만들 순서 정하기)는 뺐다 — 구현 순서는 교사가 이미
    * 정해 뒀다. 선택과목이 쓰는 범용 슬롯을 빌려 쓰고 이름은 phaseLabels 로 붙인다(문항 있는 단계만 뜸).
    */
-  phaseOrder: ["waiting", "assessment", "problem", "build", "grill", "wrapmap", "reflection"],
+  // 구현 3단계는 emotion 슬롯을 쓴다 — wrapmap 은 LESSON_PHASES 에서 성찰 뒤라, 성찰에 가면
+  // 되돌아가기 줄에서 사라졌다. emotion 은 성찰 바로 앞이라 세 구현 단계가 다 성찰 앞에 온다.
+  phaseOrder: ["waiting", "assessment", "problem", "build", "grill", "emotion", "reflection"],
   phaseLabels: {
     assessment: "안내",
     problem: "분석",
     build: "구현 1단계",
     grill: "구현 2단계",
-    wrapmap: "구현 3단계",
+    emotion: "구현 3단계",
   },
   /*
    * 되돌아가기 켬 — 학생이 안내·활동지 사이를 스스로 오갈 수 있다. 교사는 분석 → 구현 1·2·3단계
@@ -570,6 +572,7 @@ async function main(): Promise<void> {
           moodCheckEnabled: PLAN.moodCheckEnabled,
           game: PLAN.game,
           gameExplainer: PLAN.gameExplainer,
+          rewardGame: PLAN.rewardGame,
           // progress(다음 시간)·진도 팝업·옛 quiz 제거 — merge 로 안 비워지므로 세션에서도 지운다.
           progress: FieldValue.delete(),
           progressChecks: FieldValue.delete(),
@@ -594,9 +597,9 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (게임 제작 아크 공용 통 — 이후 구현 차시가 이어 씀. 입문/맛보기 통 python-intro·직접 타이핑 통 python-typing 과 분리)`);
-  console.log("단계: 대기(파이썬 타자 도우미 링크) → 안내(assessment) → 분석(problem) → 구현 1단계(build) → 구현 2단계(grill) → 구현 3단계(wrapmap) → 성찰(보상 게임: 구현 3단계 제출 다 하면 테트리스). 설계는 뺌. 기분은 대기 화면에서만.");
+  console.log("단계: 대기(파이썬 타자 도우미 링크) → 안내(assessment) → 분석(problem) → 구현 1단계(build) → 구현 2단계(grill) → 구현 3단계(emotion) → 성찰(보상 게임: 구현 3단계 제출 다 하면 테트리스). 설계는 뺌. 기분은 대기 화면에서만.");
   console.log("분석(problem): 먼저 함께 보기(똥피하기 시뮬레이션 /demo 링크, 맨 위) + 좌표 note + 게임 분석 설명 + 구성요소 빈칸 채우기(cloze, 4지선다 드롭다운 + AI 채점). 구현: 1단계 배치 / 2단계 왼쪽(답제시) / 3단계 오른쪽(직접 채우기) — 각각 교사가 단추로 넘기는 별도 단계.");
-  console.log("focusExempt: problem·build·grill·wrapmap(외부 링크 있는 단계). 모든 단계가 같은 통(python-dodge-game) 한 artifact 에 함께 저장. freeNavigation.");
+  console.log("focusExempt: waiting·problem·build·grill·emotion(타자/외부 링크 단계). 모든 단계가 같은 통(python-dodge-game) 한 artifact 에 함께 저장. freeNavigation(보상 게이트 이동·복귀에 필요).");
   console.log("분석 칸(dg_components, cloze): 6문장의 빈칸을 4지선다 드롭다운으로 고르고 [AI 채점 받기](제미나이) — 맞음/틀림은 서버가 정답 대조, 틀린 칸은 AI 힌트. 정답은 서버 전용(student/lesson 이 뗌). 주인공=좌우/똥=위·아래/좌표=x·y/충돌=똥·주인공/점수=피한 만큼/화면 경계=주인공.");
   console.log("구현 3단계(모두 ★★★ 빈칸 직접 채우기): 1 배치(shape·penup·goto 좌표 채움) → 2 go_left(xcor·setx 채움)+왼쪽키 → 3 go_right(두 줄 직접 채움, go_left 본떠 x+20)+오른쪽키. 각 단계 code 는 앞 단계 포함 전체. OneCompiler 터틀로 실행.");
   console.log("파이썬 터틀 실행: OneCompiler 터틀(https://onecompiler.com/turtle) — 구현 3단계 카드마다 새 탭 링크. 14·15·16차와 같은 편집기.");
