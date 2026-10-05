@@ -612,9 +612,30 @@ export default function LessonPage() {
     await saveReflection(answers, true);
     const reward = session.rewardGame;
     if (!reward) return;
-    const missing = (reward.requires ?? []).filter(
-      (req) => !(worksheet.answers[req.key] ?? "").trim(),
-    );
+
+    /*
+     * 게임은 '제출' 이 아니라 'AI 채점 통과' 로 연다 — 별표 코드를 그대로 붙여넣어 내는 것을 막는다.
+     * 서버 진실(활동지 재조회)로 본다(클라이언트 값 조작 방지). 실패하면 로컬 값으로 물러난다.
+     */
+    let latest = worksheet.answers;
+    try {
+      const res = await fetch("/api/student/artifact");
+      const body = await res.json();
+      if (body.ok && body.artifact) latest = body.artifact.answers ?? {};
+    } catch {
+      // 네트워크 실패 — 로컬 값으로 판단
+    }
+    const passed = (raw: string | undefined): boolean => {
+      if (!raw) return false;
+      try {
+        return (
+          (JSON.parse(raw) as { feedback?: { verdict?: string } })?.feedback?.verdict === "good"
+        );
+      } catch {
+        return false;
+      }
+    };
+    const missing = (reward.requires ?? []).filter((req) => !passed(latest[req.key]));
     if (missing.length > 0) {
       setRewardUnlocked(false);
       setRewardMissing(missing.map((req) => ({ label: req.label, phase: req.phase })));
@@ -1729,7 +1750,7 @@ export default function LessonPage() {
           <div className="flex w-full max-w-md flex-col gap-4 rounded-xl border-2 border-ink bg-canvas p-6">
             <h2 className="t-headline">🎮 게임은 조금만 더!</h2>
             <p className="t-body">
-              아래 단계의 <b>완성한 코드 제출</b>이 아직 비어 있어요. 먼저 제출하면 게임이 열려요.
+              아래 단계의 <b>AI 채점</b>을 아직 통과하지 못했어요. 코드를 고쳐 AI 채점을 통과하면 게임이 열려요.
             </p>
             <ul className="flex flex-col gap-2">
               {rewardMissing.map((item) => (

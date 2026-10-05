@@ -979,7 +979,13 @@ export interface WorksheetQuestion {
    * "empathy"=공감 문장 2요소(상황 되짚기·감정 알아주기) 점검,
    * "conflict"=갈등 상황의 입장·감정·원하는 것이 잘 구분됐는지 점검. 안 주면 imessage.
    */
-  feedbackVariant?: "imessage" | "empathy" | "conflict";
+  feedbackVariant?: "imessage" | "empathy" | "conflict" | "code";
+  /**
+   * feedbackVariant: "code" 채점 기준 — 학생이 낸 코드가 '무엇을 어떻게 채워야 맞는지'를 적는다
+   * (서버 전용: student/lesson 이 떼고 보낸다). ★★★ 가 남아 있으면 틀림. 정답 낱말은 힌트에서 안 드러낸다.
+   * 예(17차 구현 1단계): shape 는 "square", 선 안 그리기는 penup(), 위치는 goto(0, -200). ★★★ 남으면 틀림.
+   */
+  checkGoal?: string;
   /**
    * submit 이 판정할 칸들. 없으면 article-check 의 ARTICLE_RULES 기본값을 쓴다.
    *

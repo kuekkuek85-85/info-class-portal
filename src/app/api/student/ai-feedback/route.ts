@@ -101,12 +101,14 @@ export async function POST(request: Request) {
     }
 
     const variant: FeedbackVariant =
-      question.feedbackVariant === "conflict"
-        ? "conflict"
-        : question.feedbackVariant === "empathy"
-          ? "empathy"
-          : "imessage";
-    const feedback = await reviewFeedback(variant, fields);
+      question.feedbackVariant === "code"
+        ? "code"
+        : question.feedbackVariant === "conflict"
+          ? "conflict"
+          : question.feedbackVariant === "empathy"
+            ? "empathy"
+            : "imessage";
+    const feedback = await reviewFeedback(variant, fields, question.checkGoal);
     if (!feedback) {
       return fail("server_error", "AI가 잠시 대답하지 못하고 있어요. 조금 뒤에 다시 눌러 보세요.");
     }

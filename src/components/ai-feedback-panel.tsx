@@ -34,11 +34,14 @@ export function AiFeedbackPanel({
   raw,
   onResult,
   disabled,
+  codeMode,
 }: {
   questionKey: string;
   raw: string;
   onResult: (raw: string) => void;
   disabled?: boolean;
+  /** 코드 채점 모드(정보 구현) — 통과/힌트 말투. 기본은 감정 피드백 말투 */
+  codeMode?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -85,9 +88,19 @@ export function AiFeedbackPanel({
             good ? "bg-cream" : "bg-lilac"
           }`}
         >
-          <p className="t-subhead">{good ? "잘했어요 ✓" : "이렇게 고쳐 볼까요?"}</p>
+          <p className="t-subhead">
+            {codeMode
+              ? good
+                ? "통과! ✓"
+                : "아직이에요 — 힌트"
+              : good
+                ? "잘했어요 ✓"
+                : "이렇게 고쳐 볼까요?"}
+          </p>
           <p className="t-body whitespace-pre-line">{feedback.message}</p>
-          <p className="t-caption">AI 도우미의 참고 의견이에요 — 정답이 하나만 있는 건 아니에요.</p>
+          <p className="t-caption">
+            {codeMode ? "AI 채점 결과예요." : "AI 도우미의 참고 의견이에요 — 정답이 하나만 있는 건 아니에요."}
+          </p>
         </div>
       )}
 
@@ -105,7 +118,17 @@ export function AiFeedbackPanel({
           disabled={disabled || loading}
           className="pill pill-primary pill-block disabled:opacity-60"
         >
-          {loading ? "AI가 읽고 있어요…" : result ? "다시 받기" : "AI 피드백 받기"}
+          {loading
+            ? codeMode
+              ? "AI가 채점하고 있어요…"
+              : "AI가 읽고 있어요…"
+            : result
+              ? codeMode
+                ? "다시 채점받기"
+                : "다시 받기"
+              : codeMode
+                ? "AI 채점 받기"
+                : "AI 피드백 받기"}
         </button>
       )}
 

@@ -328,6 +328,21 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 800,
   },
   {
+    // AI 채점 — 위 제출 코드를 보고 맞는지 판정(통과/힌트). 별표 코드를 그대로 붙여넣는 것을 막는다.
+    key: "dg_impl1_check",
+    phase: "build",
+    label: "AI 채점 — 맞게 채웠는지 확인",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. ★★★ 세 곳을 바르게 다 채웠으면 통과! 틀리면 힌트를 줘요.",
+    kind: "ai_feedback",
+    feedbackVariant: "code",
+    feedbackFields: [{ key: "dg_impl1_submit", label: "완성한 코드" }],
+    checkGoal:
+      "주인공을 화면 가운데 하단에 놓는 코드다. 세 곳의 ★★★ 가 이렇게 채워져야 맞다: " +
+      'shape 는 "square"(네모), 선을 안 그리고 이동만 하려면 penup(), 위치는 goto(0, -200)(가로 가운데·세로 아래). ' +
+      "★★★ 가 하나라도 남아 있으면 틀림.",
+    maxLength: 2000,
+  },
+  {
     key: "_dg_impl_left",
     phase: "grill",
     label: "왼쪽으로 이동하기",
@@ -354,6 +369,20 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint: "OneCompiler 에서 완성한 코드를 복사해 붙여넣어 주세요.",
     kind: "long",
     maxLength: 800,
+  },
+  {
+    key: "dg_impl2_check",
+    phase: "grill",
+    label: "AI 채점 — 맞게 채웠는지 확인",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. go_left 안의 ★★★ 두 곳을 바르게 채웠으면 통과! 틀리면 힌트를 줘요.",
+    kind: "ai_feedback",
+    feedbackVariant: "code",
+    feedbackFields: [{ key: "dg_impl2_submit", label: "완성한 코드" }],
+    checkGoal:
+      "왼쪽 이동 함수 go_left 를 완성한 코드다. go_left 안의 ★★★ 두 곳이 이렇게 채워져야 맞다: " +
+      "'지금 x 좌표를 읽기'는 player.xcor(), 'x 좌표를 그 값으로 옮기기'는 player.setx(...). " +
+      "즉 go_left 안이 x = player.xcor() 와 player.setx(x - 20) 이어야 한다. ★★★ 가 남으면 틀림.",
+    maxLength: 2000,
   },
   {
     key: "_dg_impl_right",
@@ -383,6 +412,20 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "long",
     maxLength: 800,
   },
+  {
+    key: "dg_impl3_check",
+    phase: "emotion",
+    label: "AI 채점 — 맞게 채웠는지 확인",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. go_right 를 직접 채웠으면 통과! 별표만 남아 있으면 통과 못 해요.",
+    kind: "ai_feedback",
+    feedbackVariant: "code",
+    feedbackFields: [{ key: "dg_impl3_submit", label: "완성한 코드" }],
+    checkGoal:
+      "오른쪽 이동 함수 go_right 를 직접 채운 코드다. go_left 를 본떠 go_right 안에 두 줄이 들어가야 맞다: " +
+      "x = player.xcor() (지금 x 를 읽기) 와 player.setx(x + 20) (x 에 20 을 더한 자리로 옮기기). " +
+      "go_right 안에 '★★★ 여기를 채우세요' 주석만 있고 실제 코드가 없으면 틀림.",
+    maxLength: 2000,
+  },
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
@@ -410,10 +453,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     heading: "테트리스",
     body: "오늘 활동을 다 끝냈어요 — 쉬는 시간으로 테트리스 한 판! 수업이 끝나면 정리해요.",
     url: "https://tetris-game-seven-nu.vercel.app/",
+    // 게이트는 '제출' 이 아니라 'AI 채점 통과(verdict good)' 로 본다 — 별표 코드 복붙 제출을 막는다.
     requires: [
-      { key: "dg_impl1_submit", label: "구현 1단계", phase: "build" },
-      { key: "dg_impl2_submit", label: "구현 2단계", phase: "grill" },
-      { key: "dg_impl3_submit", label: "구현 3단계", phase: "emotion" },
+      { key: "dg_impl1_check", label: "구현 1단계", phase: "build" },
+      { key: "dg_impl2_check", label: "구현 2단계", phase: "grill" },
+      { key: "dg_impl3_check", label: "구현 3단계", phase: "emotion" },
     ],
   },
 

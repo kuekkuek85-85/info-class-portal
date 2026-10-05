@@ -134,9 +134,12 @@ export async function GET() {
                 */
                 const hasClozeAnswer =
                   q.kind === "cloze" && (q.clozeLines ?? []).some((l) => (l.blanks ?? []).length > 0);
-                if (!q.linkUrlByGroup && !hasClozeAnswer) return q;
+                // checkGoal(코드 채점 기준)도 서버 전용 — 학생 화면엔 안 보낸다(ai-feedback 라우트가 세션에서 읽음)
+                const hasCheckGoal = !!q.checkGoal;
+                if (!q.linkUrlByGroup && !hasClozeAnswer && !hasCheckGoal) return q;
                 const rest = { ...q };
                 delete rest.linkUrlByGroup;
+                delete rest.checkGoal;
                 if (hasClozeAnswer) {
                   rest.clozeLines = (q.clozeLines ?? []).map((l) => ({
                     ...l,

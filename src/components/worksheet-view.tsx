@@ -999,6 +999,7 @@ export function WorksheetView({
               raw={value.answers[question.key] ?? ""}
               onResult={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}
+              codeMode={question.feedbackVariant === "code"}
             />
           ) : question.kind === "dilemma_game" ? (
             /*
