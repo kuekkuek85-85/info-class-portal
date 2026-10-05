@@ -100,6 +100,7 @@ poop = turtle.Turtle()
 poop.shape("circle")
 poop.penup()
 poop.goto(0, 250)
+poop.color("brown")         # 갈색 똥 (18차에서 넣은 것)
 
 # 똥 떨어뜨리기 + 바닥 닿으면 다시 위로 (18차에서 만든 것)
 def fall():
@@ -145,6 +146,7 @@ poop = turtle.Turtle()
 poop.shape("circle")
 poop.penup()
 poop.goto(0, 250)
+poop.color("brown")         # 갈색 똥 (18차에서 넣은 것)
 
 # 똥 떨어뜨리기 + 바닥 닿으면 다시 위로 (18차에서 만든 것)
 def fall():
@@ -199,6 +201,7 @@ poop = turtle.Turtle()
 poop.shape("circle")
 poop.penup()
 poop.goto(0, 250)
+poop.color("brown")         # 갈색 똥 (18차에서 넣은 것)
 
 # 똥 떨어뜨리기 + 바닥 닿으면 다시 위로 + 충돌 (1·2단계에서 채운 상태)
 def fall():

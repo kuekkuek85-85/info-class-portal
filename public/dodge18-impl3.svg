@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 300" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <text x="140" y="22" text-anchor="middle" font-size="14" fill="#64748b">실행 결과 — 바닥에 닿으면 맨 위로</text>
+  <rect x="40" y="30" width="200" height="240" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <!-- 똥(갈색) : 바닥까지 내려간 뒤 맨 위의 '다른' x 로 다시 나타나 또 떨어짐 (random 재등장, 무한 반복) -->
+  <circle r="12" fill="#8B4513" stroke="#5c2e0e" stroke-width="1.5">
+    <animate attributeName="cy" values="46;258;46;258;46;258" keyTimes="0;0.3333;0.3333;0.6666;0.6666;1" dur="4.8s" repeatCount="indefinite"/>
+    <animate attributeName="cx" values="95;95;155;155;190;190" keyTimes="0;0.3333;0.3333;0.6666;0.6666;1" dur="4.8s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- 주인공(검정) : 아래 가운데 고정 -->
+  <rect x="127" y="232" width="26" height="26" rx="4" fill="#171717" stroke="#000" stroke-width="1.5"/>
+</svg>

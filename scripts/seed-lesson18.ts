@@ -99,6 +99,7 @@ poop = turtle.Turtle()
 poop.shape("★★★")          # 동그라미 모양
 poop.★★★()                  # 선을 안 그리고 이동만 (주인공과 똑같이)
 poop.goto(0, ★★★)            # 화면 맨 위 가운데 (y 는 위로 갈수록 커요)
+poop.color("brown")         # 갈색 똥 (이미 적혀 있어요 — 검정 주인공과 구분돼요)
 
 screen.listen()
 screen.onkeypress(go_left, "Left")
@@ -131,12 +132,13 @@ poop = turtle.Turtle()
 poop.shape("circle")
 poop.penup()
 poop.goto(0, 250)
+poop.color("brown")         # 갈색 똥 (1단계에서 넣은 것)
 
 # 똥 떨어뜨리기 — 조금씩 아래로, 계속 반복
 def fall():
     y = poop.★★★()           # 지금 똥의 y 좌표를 읽어서
     poop.★★★(y - 10)         # 10만큼 아래로 (y 를 줄이면 아래로 내려가요)
-    screen.ontimer(fall, 50) # 0.05초 뒤에 fall 을 또 실행 — 그래서 계속 떨어져요
+    screen.ontimer(fall, 50) # 알람 맞추듯 0.05초 뒤에 fall 을 다시 — 그래서 계속 떨어져요
 
 screen.listen()
 screen.onkeypress(go_left, "Left")
@@ -171,6 +173,7 @@ poop = turtle.Turtle()
 poop.shape("circle")
 poop.penup()
 poop.goto(0, 250)
+poop.color("brown")         # 갈색 똥 (1단계에서 넣은 것)
 
 # 똥 떨어뜨리기 + 바닥에 닿으면 다시 맨 위로
 def fall():
@@ -214,6 +217,11 @@ const WORKSHEET: WorksheetQuestion[] = [
       "· poop.goto(0, ★★★) — 화면 맨 위 가운데. y 는 위로 갈수록 커져요(맨 위는 +250쯤).\n\n" +
       "동그라미 똥이 화면 맨 위 가운데에 뜨면 성공!",
     kind: "note",
+    // 설명(왼쪽) · 실행 결과 그림(오른쪽 1/3), 그 아래 코드 — 17차와 같은 배치. 갈색 똥·검정 주인공으로 구분.
+    imageUrl: "/dodge18-impl1.svg",
+    imageAlt: "실행 결과 — 검정 네모 주인공이 화면 아래 가운데에, 갈색 동그라미 똥이 화면 맨 위 가운데에 생긴 모습(아직 안 떨어짐).",
+    imageSide: "right",
+    imageSideWidth: "third",
     code: CODE_IMPL_POOP,
     linkUrl: "https://onecompiler.com/turtle",
     linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
@@ -251,10 +259,14 @@ const WORKSHEET: WorksheetQuestion[] = [
       "이제 똥을 아래로 떨어뜨려요. fall 함수 안의 ★★★ 두 곳을 채우고 실행하면 똥이 쭉 내려가요.\n\n" +
       "· y = poop.★★★() — 똥의 '지금 y 좌표를 읽는' 함수 (y coordinate → ycor). 주인공 xcor 와 짝이에요.\n" +
       "· poop.★★★(y - 10) — y 좌표를 그 값으로 '옮기는' 함수 (set y → sety). 10 줄이면 아래로 내려가요.\n\n" +
-      "※ 맨 아랫줄 screen.ontimer(fall, 50) 이 핵심이에요(이미 적혀 있어요). fall 이 끝나기 직전\n" +
-      "   자기 자신(fall)을 0.05초 뒤에 '또' 실행하라고 예약해요. 그래서 fall → 조금 내려감 → 또 fall\n" +
-      "   → 또 조금 내려감 … 이 계속 반복되며 똥이 쉬지 않고 떨어지는 거예요.",
+      "※ 맨 아랫줄 screen.ontimer(fall, 50) 이 핵심이에요(이미 적혀 있어요). fall 은 똥을 '한 칸'\n" +
+      "   내리는 동작이고, 이 줄은 '0.05초 뒤에 다시 한 번 내려라' 하고 알람을 맞추는 거예요. 그 알람이\n" +
+      "   계속 울려서 fall → 조금 내려감 → 또 fall → 또 조금 내려감 … 이 반복되며 똥이 쉬지 않고 떨어져요.",
     kind: "note",
+    imageUrl: "/dodge18-impl2.svg",
+    imageAlt: "실행 결과 — 갈색 동그라미 똥이 화면 맨 위에서 아래로 쭉 내려가기를 계속 반복하는 모습. 검정 주인공은 아래 가운데 고정.",
+    imageSide: "right",
+    imageSideWidth: "third",
     code: CODE_IMPL_FALL,
     linkUrl: "https://onecompiler.com/turtle",
     linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
@@ -298,6 +310,10 @@ const WORKSHEET: WorksheetQuestion[] = [
       "[OneCompiler 터틀 열기] 로 채워 실행하면 똥이 바닥까지 떨어졌다가 위에서 다시 랜덤하게 떨어져요!\n" +
       "다음 시간엔 '주인공과 똥이 부딪혔는지(충돌)' 를 붙여요.",
     kind: "note",
+    imageUrl: "/dodge18-impl3.svg",
+    imageAlt: "실행 결과 — 갈색 똥이 바닥까지 떨어진 뒤 맨 위의 다른 가로 자리로 다시 나타나 또 떨어지기를 반복하는 모습. 검정 주인공은 아래 가운데 고정.",
+    imageSide: "right",
+    imageSideWidth: "third",
     code: CODE_IMPL_LOOP,
     linkUrl: "https://onecompiler.com/turtle",
     linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
