@@ -1574,22 +1574,14 @@ export default function LessonPage() {
           대기 자리에 있던 게임이 여기로 옮겨 와, 활동을 끝낸 상으로 쉬는 시간을 준다 (요청: 17차).
         */}
         {viewPhase === "reflection" && rewardUnlocked && session.rewardGame && (
-          <section className="flex flex-col gap-3">
-            <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-lg bg-lime px-4 py-2">
-              <h2 className="t-subhead">🎉 {session.rewardGame.heading || "보상 게임"}</h2>
-              <span className="t-caption">성찰 제출 완료 — 쉬는 시간이에요</span>
-            </div>
-            {session.rewardGame.body && (
-              <p className="t-body-sm whitespace-pre-wrap">{session.rewardGame.body}</p>
-            )}
-            <div className="h-[calc(100dvh-230px)] min-h-[320px] overflow-hidden rounded-lg border border-line">
-              <iframe
-                src={session.rewardGame.url}
-                title={session.rewardGame.heading || "보상 게임"}
-                className="h-full w-full"
-                allow="fullscreen"
-              />
-            </div>
+          /* 보상 게임은 머리글·설명 없이 iframe 하나만 — 세로 스크롤이 안 생기게 뷰포트에 꽉 채운다 */
+          <section className="h-[calc(100dvh-200px)] min-h-[320px] overflow-hidden rounded-lg border border-line">
+            <iframe
+              src={session.rewardGame.url}
+              title={session.rewardGame.heading || "보상 게임"}
+              className="h-full w-full"
+              allow="fullscreen"
+            />
           </section>
         )}
 
