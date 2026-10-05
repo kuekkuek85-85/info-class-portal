@@ -103,7 +103,7 @@ export function ClozeField({
 
   return (
     <div className="flex flex-col gap-3">
-      {lines.map((line) => {
+      {lines.map((line, lineIdx) => {
         const parts = line.text.split("□");
         const blanks = parts.length - 1;
         const vals = answers[line.key] ?? [];
@@ -113,6 +113,8 @@ export function ClozeField({
             key={line.key}
             className="flex flex-wrap items-center gap-x-1 gap-y-2 rounded-lg border border-line p-3 t-body-sm leading-relaxed"
           >
+            {/* 구성요소 번호 — AI 힌트가 이 번호로 가리키므로 화면에도 똑같이 붙인다 */}
+            <span className="mr-1 shrink-0 font-bold">{lineIdx + 1}.</span>
             {parts.map((seg, i) => (
               <Fragment key={i}>
                 {seg !== "" && <span className="whitespace-pre-wrap">{seg}</span>}

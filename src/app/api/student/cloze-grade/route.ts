@@ -1,5 +1,5 @@
 import { deviceKey, fail, guard, ok, rateLimit, readJson } from "@/lib/api";
-import { gradeClozeAi, type ClozeBlankEval } from "@/lib/ai-cloze";
+import { gradeClozeAi, type ClozeLineEval } from "@/lib/ai-cloze";
 import { getSession, isSessionClosed, logAiCall } from "@/lib/db";
 import { readStudentSession } from "@/lib/session";
 import type { WorksheetQuestion } from "@/lib/types";
@@ -18,13 +18,14 @@ const PER_STUDENT = 12;
 const PER_DEVICE = 40;
 const WINDOW_MS = 60 * 60_000;
 
-/** □ 자리에 학생 보기를 끼워 넣고, 지금 채점할 칸만 《》로 표시한 문장을 만든다 */
-function markSentence(text: string, choices: string[], target: number): string {
+/** □ 자리에 학생 보기를 끼워 넣고, **틀린** 낱말만 《》로 표시한 문장을 만든다 */
+function fillAndMark(text: string, choices: string[], answers: string[]): string {
   const parts = text.split("□");
   let out = parts[0] ?? "";
   for (let i = 0; i < parts.length - 1; i++) {
-    const word = (choices[i] ?? "").trim();
-    out += i === target ? `《${word || "(빈칸)"}》` : word || "□";
+    const choice = (choices[i] ?? "").trim();
+    const wrong = choice !== (answers[i] ?? "").trim();
+    out += wrong ? `《${choice || "(빈칸)"}》` : choice;
     out += parts[i + 1] ?? "";
   }
   return out;
@@ -48,23 +49,28 @@ export async function POST(request: Request) {
     );
     if (!question) return fail("not_found");
 
-    // 정답이 있는 빈칸만 채점한다 (세션 문서의 clozeLines.blanks.answer — 서버 전용)
-    const items: ClozeBlankEval[] = [];
+    /*
+     * 구성요소(줄)마다 하나씩 채점한다. 번호(num)는 화면에 보이는 그대로 줄 순서(1~6)다 —
+     * cloze-field 가 같은 번호를 각 문장 앞에 붙이고, AI 힌트도 이 번호로 가리킨다.
+     * 정답은 세션 문서의 clozeLines.blanks.answer(서버 전용)에서만 읽는다.
+     */
+    const items: ClozeLineEval[] = [];
     let unanswered = false;
-    for (const line of question.clozeLines ?? []) {
+    const lines = question.clozeLines ?? [];
+    for (let idx = 0; idx < lines.length; idx++) {
+      const line = lines[idx];
       const blanks = line.blanks ?? [];
+      if (blanks.length === 0) continue;
       const picked = selections[line.key] ?? [];
+      const answers = blanks.map((b) => (b.answer ?? "").trim());
+      let lineCorrect = true;
       for (let i = 0; i < blanks.length; i++) {
-        const answer = (blanks[i]?.answer ?? "").trim();
-        if (!answer) continue; // 정답이 없는 빈칸은 채점 대상 아님
+        if (!answers[i]) continue;
         const choice = (picked[i] ?? "").trim();
         if (!choice) unanswered = true;
-        items.push({
-          sentence: markSentence(line.text, picked, i),
-          choice,
-          correct: choice === answer,
-        });
+        if (choice !== answers[i]) lineCorrect = false;
       }
+      items.push({ num: idx + 1, sentence: fillAndMark(line.text, picked, answers), correct: lineCorrect });
     }
 
     if (items.length === 0) return fail("not_found");
