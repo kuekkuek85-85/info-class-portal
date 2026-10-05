@@ -373,16 +373,30 @@ export interface RowColumn {
   emojis?: string[];
 }
 
+/** cloze 빈칸 하나 (text 의 □ 자리, 왼→오 순서로 하나씩 대응) */
+export interface ClozeBlank {
+  /** 드롭다운 보기(4개 권장). 있으면 글칸 대신 보기에서 고른다. 없으면 자유 입력 */
+  options?: string[];
+  /**
+   * 정답 — AI 채점에만 쓰는 **서버 전용** 값이다. 학생 화면(student/lesson)으로는 실어 보내지
+   * 않는다(그 라우트가 cloze 의 answer 를 떼고 보낸다). 채점 라우트는 세션 문서에서 직접 읽는다.
+   */
+  answer?: string;
+}
+
 /**
  * cloze(빈칸 채우기) 한 줄.
  *
- * `text` 안에 □(U+25A1) 를 넣은 자리마다 입력칸이 뜬다. 나머지 글자는 그대로 문장으로 보인다.
- * 예: "주인공(플레이어) — □로 움직여 똥을 피한다" → '좌우' 를 받는 빈칸 하나.
- * 답은 이 줄 key 밑에 빈칸 값 배열로 묶인다(왼→오 순서).
+ * `text` 안에 □(U+25A1) 를 넣은 자리마다 입력칸(또는 드롭다운)이 뜬다. 나머지 글자는 그대로
+ * 문장으로 보인다. 예: "주인공(플레이어) — □로 움직여 똥을 피한다" → '좌우' 를 받는 빈칸 하나.
+ * `blanks` 가 있으면 □ 순서대로 대응한다(드롭다운 보기·정답). 답은 이 줄 key 밑에 빈칸 값
+ * 배열로 묶인다(왼→오 순서).
  */
 export interface ClozeLine {
   key: string;
   text: string;
+  /** text 의 □ 자리마다 하나씩(왼→오). 있으면 보기 드롭다운 + 정답(채점용) */
+  blanks?: ClozeBlank[];
 }
 
 /**
@@ -745,8 +759,10 @@ export interface WorksheetQuestion {
   rowColumns?: RowColumn[];
   /** rows 에서 늘릴 수 있는 줄 수 (기본 10) */
   maxRows?: number;
-  /** cloze(빈칸 채우기)가 보여줄 문장들. 각 줄의 □ 자리가 입력칸이 된다 */
+  /** cloze(빈칸 채우기)가 보여줄 문장들. 각 줄의 □ 자리가 입력칸(또는 드롭다운)이 된다 */
   clozeLines?: ClozeLine[];
+  /** cloze 아래에 AI 채점(제미나이) 단추를 띄운다 — 맞으면 칭찬, 틀리면 힌트 (clozeLines 에 정답 필요) */
+  clozeGrade?: boolean;
   /**
    * submit 이 **최종 제출을 마친 학생에게만** 띄우는 링크.
    *

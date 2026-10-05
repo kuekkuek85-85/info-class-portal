@@ -905,6 +905,8 @@ export function WorksheetView({
             <ClozeField
               value={value.answers[question.key] ?? ""}
               lines={question.clozeLines ?? []}
+              questionKey={question.key}
+              gradeEnabled={question.clozeGrade}
               onChange={(next) => setAnswer(question.key, next)}
               disabled={disabled}
             />

@@ -125,9 +125,22 @@ export async function GET() {
                 목요일 2기 캔바 초대 토큰이 실려 간다.
               */
               worksheet: (session.activity.worksheet ?? []).map((q) => {
-                if (!q.linkUrlByGroup) return q;
+                /*
+                  cloze 정답(blanks.answer)은 **학생 화면으로 안 보낸다** — 드롭다운 보기만 가고,
+                  정답·채점은 서버(cloze-grade)가 세션 문서에서 직접 읽는다. 안 떼면 devtools 로 답이
+                  보인다. (linkUrlByGroup 도 분반 토큰이라 같은 자리에서 뗀다.)
+                */
+                const hasClozeAnswer =
+                  q.kind === "cloze" && (q.clozeLines ?? []).some((l) => (l.blanks ?? []).length > 0);
+                if (!q.linkUrlByGroup && !hasClozeAnswer) return q;
                 const rest = { ...q };
                 delete rest.linkUrlByGroup;
+                if (hasClozeAnswer) {
+                  rest.clozeLines = (q.clozeLines ?? []).map((l) => ({
+                    ...l,
+                    blanks: (l.blanks ?? []).map((b) => ({ options: b.options })),
+                  }));
+                }
                 return rest;
               }),
               /*
