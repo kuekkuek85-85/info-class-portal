@@ -37,9 +37,9 @@
  *   3–8   안내 보드(assessment) — 오늘: 분석 → 구현(1·2·3단계)
  *   8–13  좌표 개념 note (화면은 x·y, 주인공은 (x,y))
  *   13–23 게임 분석 — 구성요소 빈칸 4지선다 드롭다운 + AI 채점(cloze)
- *   23–28 구현 1단계 — 플레이어 배치 (터틀 예제 따라 치기)
- *   28–33 구현 2단계 — 왼쪽 이동(go_left 답 제시)
- *   33–38 구현 3단계 — 오른쪽 이동(go_right 직접 채우기)
+ *   23–28 구현 1단계 — 플레이어 배치(shape·penup·좌표 ★★★ 채우기)
+ *   28–33 구현 2단계 — 왼쪽 이동(go_left 의 xcor·setx ★★★ 채우기)
+ *   33–38 구현 3단계 — 오른쪽 이동(go_right 두 줄 직접 채우기)
  *   38–40 성찰 → 정리
  *
  * 설계(만들 순서 정하기) 단계는 뺐다 — 구현 순서는 교사가 이미 정해 뒀다(아크 설계).
@@ -92,9 +92,9 @@ const ACTIVITY_ID = "python-dodge-game";
 /* ──────────────────────────────────────────────────────────────
  * 구현 예제 코드 — 한 번에 다 치지 않고 **세 단계로 쌓아** 완성한다(code 필드, 등폭 readonly,
  * 복사 가능). 14·15·16차와 같은 **터틀**. 방향키(Left/Right)로 주인공 x 좌표를 바꿔 움직인다.
- *   1단계: 플레이어를 가운데 하단에 놓기
- *   2단계: 앞 코드 + go_left(왼쪽 이동, 답 제시) + 왼쪽 방향키 연결
- *   3단계: 앞 코드 + go_right 를 **빈 함수로 두고** 학생이 직접 채우기(go_left 를 본떠 x 를 +20)
+ *   1단계: 플레이어를 가운데 하단에 놓기 — ★★★(모양·pen·좌표) 직접 채우기
+ *   2단계: 앞 코드 + go_left — ★★★(xcor·setx) 직접 채우기 + 왼쪽 방향키 연결
+ *   3단계: 앞 코드 + go_right 를 **빈 함수로 두고** 학생이 두 줄 직접 채우기(go_left 를 본떠 x 를 +20)
  * ────────────────────────────────────────────────────────────── */
 const CODE_IMPL_PLACE = `import turtle
 
@@ -103,9 +103,9 @@ screen.setup(400, 500)          # 게임 화면 크기(가로 400, 세로 500)
 
 # 주인공 만들기
 player = turtle.Turtle()
-player.shape("square")          # 네모 모양
-player.penup()                  # 선을 안 그리고 이동만
-player.goto(0, -200)            # 화면 아래쪽 가운데 (x=0, y=-200)
+player.shape("★★★")          # 네모 모양
+player.★★★()                  # 선을 안 그리고 이동만
+player.goto(★★★, ★★★)            # 화면 아래쪽 가운데로 이동
 
 screen.mainloop()`;
 
@@ -122,8 +122,8 @@ player.goto(0, -200)
 
 # 왼쪽으로 — x 좌표를 20만큼 줄인다
 def go_left():
-    x = player.xcor()           # 지금 x 좌표를 읽어서
-    player.setx(x - 20)         # 20만큼 왼쪽으로
+    x = player.★★★()           # 지금 x 좌표를 읽어서
+    player.★★★(x - 20)         # 현재 x 좌표보다 20만큼 왼쪽으로
 
 # 방향키를 누르면 위 함수가 실행되게 연결
 screen.listen()
@@ -149,8 +149,8 @@ def go_left():
 
 # 오른쪽으로 — go_left 를 본떠 직접 채워요 (x 를 20 늘리기)
 def go_right():
-    # ★★★ 여기를 채우세요 (아래 pass 를 지우고 두 줄을 넣어요)
-    pass
+    # ★★★ 여기를 채우세요
+    # ★★★ 여기를 채우세요
 
 # 방향키 연결 — 왼쪽은 go_left, 오른쪽은 go_right
 screen.listen()
@@ -300,9 +300,12 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "build",
     label: "플레이어를 가운데 하단에 놓기",
     hint:
-      "먼저 주인공(네모)을 화면 아래 가운데에 놓아요. 아래 [OneCompiler 터틀 열기] 로 편집기를\n" +
-      "새 탭에서 열고, 코드를 복사해 붙여넣어 실행합니다. 네모 주인공이 화면 아래 가운데에 뜨면 성공!\n\n" +
-      "· player.goto(0, -200) — (x=0, y=-200), 가로는 가운데·세로는 아래쪽에 놓아요.",
+      "먼저 주인공(네모)을 화면 아래 가운데에 놓아요. 아래 코드에 ★★★ 네 곳이 비어 있어요.\n" +
+      "[OneCompiler 터틀 열기] 로 편집기를 새 탭에서 열고, 채워 실행해 봐요(주석이 힌트!).\n\n" +
+      "· player.shape(\"★★★\") — 네모의 영어 이름 (14·15차 터틀에서 썼죠).\n" +
+      "· player.★★★() — 선을 안 그리고 이동만 (pen 을 up 하기).\n" +
+      "· player.goto(★★★, ★★★) — 앞에서 배운 좌표! 가로는 가운데·세로는 아래쪽 = 0, -200.\n\n" +
+      "네모 주인공이 화면 아래 가운데에 뜨면 성공!",
     kind: "note",
     code: CODE_IMPL_PLACE,
     linkUrl: "https://onecompiler.com/turtle",
@@ -314,10 +317,11 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "grill",
     label: "왼쪽으로 이동하기",
     hint:
-      "이제 왼쪽 이동을 더해요. 아래 코드에는 go_left 함수와, 왼쪽 방향키에 연결하는 줄이 들어 있어요.\n" +
-      "복사해 실행하고 왼쪽 방향키(←)를 눌러 봐요. 주인공이 왼쪽으로 움직이면 성공!\n\n" +
-      "· go_left() — 지금 x 를 읽어서 20 줄여요(setx(x - 20)) → 왼쪽으로.\n" +
-      "· onkeypress(go_left, \"Left\") — 왼쪽 방향키에 그 동작을 연결해요.",
+      "이제 왼쪽 이동을 직접 만들어요. go_left 함수 안의 ★★★ 두 곳을 채워, 실행하고\n" +
+      "왼쪽 방향키(←)를 눌러 봐요. 주인공이 왼쪽으로 움직이면 성공!\n\n" +
+      "· player.★★★() — 주인공의 '지금 x 좌표를 읽는' 함수 (x coordinate → xcor).\n" +
+      "· player.★★★(x - 20) — x 좌표를 그 값으로 '옮기는' 함수 (set x → setx). 왼쪽은 x 를 20 줄여요.\n\n" +
+      "방향키 연결(onkeypress)은 이미 돼 있어요 — 함수 안 두 줄만 채우면 됩니다.",
     kind: "note",
     code: CODE_IMPL_LEFT,
     linkUrl: "https://onecompiler.com/turtle",
@@ -329,11 +333,11 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "wrapmap",
     label: "오른쪽으로 이동하기 (직접 채우기)",
     hint:
-      "마지막은 직접 만들어요! 아래 코드의 go_right 함수 안이 비어 있어요(★★★ 자리의 pass).\n" +
-      "go_left 를 본떠, 오른쪽으로 가려면 어떻게 할지 생각해 채워 봐요. 오른쪽은 x 를 20 '늘리면' 돼요.\n\n" +
-      "· go_left 는 setx(x - 20) 이었죠? 오른쪽은 setx(x + 20) 이에요.\n" +
-      "· pass 를 지우고 두 줄(x 읽기 → setx(x + 20))을 넣어요.\n\n" +
-      "복사해 채워 실행하고, 오른쪽 방향키(→)로도 움직이면 완성! 다음 시간엔 여기에 '똥 떨어뜨리기' 를 붙여요.",
+      "마지막은 직접 만들어요! go_right 함수 안이 비어 있어요(★★★ 두 줄). 바로 위 go_left 를 본떠\n" +
+      "두 줄을 채워요 — 오른쪽은 x 를 20 '늘리면' 돼요(go_left 는 줄였죠).\n\n" +
+      "· 첫 줄: go_left 처럼 지금 x 좌표를 읽어요.\n" +
+      "· 둘째 줄: 이번엔 x 에 20 을 '더한' 자리로 옮겨요 (왼쪽은 x - 20 이었어요).\n\n" +
+      "[OneCompiler 터틀 열기] 로 채워 실행하고, 오른쪽 방향키(→)로도 움직이면 완성! 다음 시간엔 '똥 떨어뜨리기' 를 붙여요.",
     kind: "note",
     code: CODE_IMPL_RIGHT,
     linkUrl: "https://onecompiler.com/turtle",
@@ -406,12 +410,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   video: empty(),
 
   /*
-   * 성찰 — 게임을 뜯어본 소감 / 다음에 붙이고 싶은 기능. 개인적이라 비공개.
+   * 성찰 — 쪼개서 구현한 소감. 개인적이라 비공개.
    */
-  reflectionQuestions: [
-    "익숙한 게임을 구성요소로 뜯어보니 어땠나요? 새로 알게 된 점을 한 줄로 적어 봅시다.",
-    "다음 시간에 붙이고 싶은 기능이 있다면 무엇인가요? (똥 떨어뜨리기·충돌·점수 등)",
-  ],
+  reflectionQuestions: ["게임을 바로 만들지 않고 구성요소로 쪼개서 구현하니 어땠나요?"],
   reflectionPublic: false,
 
   /*
@@ -540,9 +541,9 @@ async function main(): Promise<void> {
   console.log("분석(problem): 먼저 함께 보기(똥피하기 시뮬레이션 /demo 링크, 맨 위) + 좌표 note + 게임 분석 설명 + 구성요소 빈칸 채우기(cloze, 4지선다 드롭다운 + AI 채점). 구현: 1단계 배치 / 2단계 왼쪽(답제시) / 3단계 오른쪽(직접 채우기) — 각각 교사가 단추로 넘기는 별도 단계.");
   console.log("focusExempt: problem·build·grill·wrapmap(외부 링크 있는 단계). 모든 단계가 같은 통(python-dodge-game) 한 artifact 에 함께 저장. freeNavigation.");
   console.log("분석 칸(dg_components, cloze): 6문장의 빈칸을 4지선다 드롭다운으로 고르고 [AI 채점 받기](제미나이) — 맞음/틀림은 서버가 정답 대조, 틀린 칸은 AI 힌트. 정답은 서버 전용(student/lesson 이 뗌). 주인공=좌우/똥=위·아래/좌표=x·y/충돌=똥·주인공/점수=피한 만큼/화면 경계=주인공.");
-  console.log("구현 3단계: 1 플레이어 배치(goto 0,-200) → 2 go_left(답 제시)+왼쪽키 연결 → 3 go_right(★★★ 빈 함수, 학생이 x+20 채움)+오른쪽키 연결. 각 단계 code 는 앞 단계 포함한 전체 코드. OneCompiler 터틀로 실행. 14·15·16·17차 모두 터틀로 일관.");
+  console.log("구현 3단계(모두 ★★★ 빈칸 직접 채우기): 1 배치(shape·penup·goto 좌표 채움) → 2 go_left(xcor·setx 채움)+왼쪽키 → 3 go_right(두 줄 직접 채움, go_left 본떠 x+20)+오른쪽키. 각 단계 code 는 앞 단계 포함 전체. OneCompiler 터틀로 실행.");
   console.log("파이썬 터틀 실행: OneCompiler 터틀(https://onecompiler.com/turtle) — 구현 3단계 카드마다 새 탭 링크. 14·15·16차와 같은 편집기.");
-  console.log("성찰 2문항(뜯어본 소감 · 다음에 붙이고 싶은 기능). 진도 팝업 없음. quiz 없음. galleryEnabled: false.");
+  console.log("성찰 1문항(구성요소로 쪼개 구현한 소감). 진도 팝업 없음. quiz 없음. galleryEnabled: false.");
   process.exit(0);
 }
 
