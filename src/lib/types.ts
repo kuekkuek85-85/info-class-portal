@@ -371,6 +371,13 @@ export interface RowColumn {
   placeholder?: string;
   /** 있으면 글칸 대신 이 이모지들 중 하나를 고르게 한다 */
   emojis?: string[];
+  /**
+   * 고정 표(fixedRows)에서 이 칸은 **미리 채워져 읽기 전용**이다 — 학생이 못 고친다.
+   * 예: 17차 구성요소 분석의 왼쪽 "구성요소" 칸(주인공·똥…)은 잠그고 "하는 일"만 받는다.
+   */
+  locked?: boolean;
+  /** 이 칸이 받는 최대 글자 수 (기본 40). 낱말만 받고 싶을 때 짧게 둔다 */
+  maxLength?: number;
 }
 
 /**
@@ -726,6 +733,12 @@ export interface WorksheetQuestion {
   rowColumns?: RowColumn[];
   /** rows 에서 늘릴 수 있는 줄 수 (기본 10) */
   maxRows?: number;
+  /**
+   * 고정 표. 있으면 줄이 이 목록으로 **고정**된다 — 줄 추가·삭제 단추가 사라지고, 각 줄의
+   * locked 칸은 여기 값으로 미리 채워 읽기 전용이 된다. 학생은 잠기지 않은 칸만 채운다.
+   * 예: 17차 구성요소 분석 — [{part:"주인공"}, {part:"똥"}, …] 로 왼쪽을 고정하고 "하는 일"만 받는다.
+   */
+  fixedRows?: Record<string, string>[];
   /**
    * submit 이 **최종 제출을 마친 학생에게만** 띄우는 링크.
    *
