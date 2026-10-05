@@ -318,6 +318,12 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 이탈로 세지 않는다 (14·15·16차 링크 단계를 focusExempt 로 둔 것과 같은 이유).
    */
   focusExempt: ["worksheet"],
+  /*
+   * 기분(mood)은 단계에서 뺀다 — 기분은 대기 화면에서 먼저 받으므로(moodCheckEnabled 켜 둠)
+   * 별도 단계가 중복이다. phaseOrder 에 mood 를 안 적으면 교사 대시보드 단추(availablePhase)도,
+   * 학생 되돌아가기 줄(backPhases 가 phaseOrder 를 존중)도 기분을 안 띄운다. 마음 톡톡 6회기와 같은 방식.
+   */
+  phaseOrder: ["waiting", "assessment", "worksheet", "reflection"],
   phaseLabels: {
     assessment: "안내",
     worksheet: "분석·설계·첫 기능",
@@ -406,6 +412,7 @@ async function main(): Promise<void> {
           reflectionQuestions: PLAN.reflectionQuestions,
           reflectionPublic: PLAN.reflectionPublic,
           focusExempt: PLAN.focusExempt,
+          phaseOrder: PLAN.phaseOrder,
           phaseLabels: PLAN.phaseLabels,
           freeNavigation: PLAN.freeNavigation,
           activity: PLAN.activity,
@@ -420,7 +427,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (게임 제작 아크 공용 통 — 이후 구현 차시가 이어 씀. 입문/맛보기 통 python-intro·직접 타이핑 통 python-typing 과 분리)`);
-  console.log("단계: 대기(테트리스) → 기분 → 안내(assessment) → 활동지(worksheet: 좌표·분석·설계·첫 기능) → 성찰. 게임 분석 카드에 똥피하기 다시하기 링크.");
+  console.log("단계: 대기(테트리스) → 안내(assessment) → 활동지(worksheet: 좌표·분석·설계·첫 기능) → 성찰. 기분은 대기 화면에서만 받고 별도 단계는 없음(phaseOrder 에서 뺌, moodCheckEnabled 는 켜 둠). 게임 분석 카드에 똥피하기 다시하기 링크.");
   console.log("실제 진행: 안내 → 좌표 note → 게임 분석(rows) → 게임 설계(순서 list) → 첫 기능 주인공 좌우 이동(터틀 코드) → 성찰 (freeNavigation)");
   console.log("분석 칸(dg_components, rows): 필요한 것(구성요소) / 하는 일 (maxRows 6). 설계 칸(dg_build_order, list): 만들 순서 4~6칸.");
   console.log("첫 기능: 주인공 좌우 이동 — 터틀 onkeypress(Left/Right)로 x 좌표 ±20. code 필드로 제시(등폭 readonly, 복사 단추). 14·15·16·17차 모두 터틀로 일관.");
