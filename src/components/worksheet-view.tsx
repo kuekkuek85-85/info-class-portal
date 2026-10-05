@@ -887,6 +887,7 @@ export function WorksheetView({
               value={value.answers[question.key] ?? ""}
               columns={question.rowColumns ?? []}
               maxRows={question.maxRows ?? 10}
+              fixedRows={question.fixedRows}
               onChange={(next) => setAnswer(question.key, next)}
               disabled={disabled}
             />
