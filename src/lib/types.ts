@@ -397,6 +397,11 @@ export interface ClozeLine {
   text: string;
   /** text 의 □ 자리마다 하나씩(왼→오). 있으면 보기 드롭다운 + 정답(채점용) */
   blanks?: ClozeBlank[];
+  /**
+   * 빈칸 순서를 안 따진다 — 고른 보기들의 '묶음'이 정답 묶음과 같으면 맞다(각각 한 번씩).
+   * 충돌처럼 "똥이 주인공에게 / 주인공이 똥에게" 둘 다 맞게 볼 때 쓴다. (채점은 서버)
+   */
+  orderless?: boolean;
 }
 
 /**

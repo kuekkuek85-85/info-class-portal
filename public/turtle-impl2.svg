@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 320" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <text x="140" y="22" text-anchor="middle" font-size="14" fill="#64748b">실행 결과 — 왼쪽 키(←)로 이동</text>
+  <rect x="40" y="36" width="200" height="250" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="78" y="166" text-anchor="middle" font-size="26" fill="#94a3b8">←</text>
+  <rect x="127" y="248" width="26" height="26" rx="4" fill="#f97316" stroke="#9a3412" stroke-width="2">
+    <animate attributeName="x" values="127;60;127" keyTimes="0;0.5;1" dur="2.2s" repeatCount="indefinite"/>
+  </rect>
+</svg>

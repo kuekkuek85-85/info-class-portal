@@ -18,17 +18,24 @@ const PER_STUDENT = 12;
 const PER_DEVICE = 40;
 const WINDOW_MS = 60 * 60_000;
 
-/** □ 자리에 학생 보기를 끼워 넣고, **틀린** 낱말만 《》로 표시한 문장을 만든다 */
-function fillAndMark(text: string, choices: string[], answers: string[]): string {
+/** □ 자리에 학생 보기를 끼워 넣고, wrong[i] 인 낱말만 《》로 표시한 문장을 만든다 */
+function fillAndMark(text: string, choices: string[], wrong: boolean[]): string {
   const parts = text.split("□");
   let out = parts[0] ?? "";
   for (let i = 0; i < parts.length - 1; i++) {
     const choice = (choices[i] ?? "").trim();
-    const wrong = choice !== (answers[i] ?? "").trim();
-    out += wrong ? `《${choice || "(빈칸)"}》` : choice;
+    out += wrong[i] ? `《${choice || "(빈칸)"}》` : choice;
     out += parts[i + 1] ?? "";
   }
   return out;
+}
+
+/** 두 배열이 '묶음'(개수까지)으로 같은가 — 순서 무관 채점용 */
+function sameMultiset(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const x = [...a].sort();
+  const y = [...b].sort();
+  return x.every((v, i) => v === y[i]);
 }
 
 export async function POST(request: Request) {
@@ -61,16 +68,22 @@ export async function POST(request: Request) {
       const line = lines[idx];
       const blanks = line.blanks ?? [];
       if (blanks.length === 0) continue;
-      const picked = selections[line.key] ?? [];
       const answers = blanks.map((b) => (b.answer ?? "").trim());
-      let lineCorrect = true;
-      for (let i = 0; i < blanks.length; i++) {
-        if (!answers[i]) continue;
-        const choice = (picked[i] ?? "").trim();
-        if (!choice) unanswered = true;
-        if (choice !== answers[i]) lineCorrect = false;
+      const picked = answers.map((_, i) => ((selections[line.key] ?? [])[i] ?? "").trim());
+      if (picked.some((c) => !c)) unanswered = true;
+
+      let lineCorrect: boolean;
+      let wrong: boolean[];
+      if (line.orderless) {
+        // 순서 무관 — 고른 묶음이 정답 묶음과 같으면 맞다(예: 충돌 "똥↔주인공" 어느 쪽이든)
+        lineCorrect = picked.every((c) => c) && sameMultiset(picked, answers);
+        wrong = answers.map(() => !lineCorrect); // 틀리면 둘 다 표시
+      } else {
+        wrong = answers.map((a, i) => !!a && picked[i] !== a);
+        lineCorrect = wrong.every((w) => !w);
       }
-      items.push({ num: idx + 1, sentence: fillAndMark(line.text, picked, answers), correct: lineCorrect });
+
+      items.push({ num: idx + 1, sentence: fillAndMark(line.text, picked, wrong), correct: lineCorrect });
     }
 
     if (items.length === 0) return fail("not_found");

@@ -260,6 +260,8 @@ const WORKSHEET: WorksheetQuestion[] = [
       },
       {
         key: "collision",
+        // 순서 무관 — "똥이 주인공에게" 도 "주인공이 똥에게" 도 맞다(둘을 한 번씩 고르면 정답).
+        orderless: true,
         text: "충돌(부딪힘) — □이 □에게 닿았는지",
         blanks: [
           { options: ["주인공", "똥", "벽", "점수"], answer: "똥" },
@@ -307,10 +309,22 @@ const WORKSHEET: WorksheetQuestion[] = [
       "· player.goto(★★★, ★★★) — 앞에서 배운 좌표! 가로는 가운데·세로는 아래쪽 = 0, -200.\n\n" +
       "네모 주인공이 화면 아래 가운데에 뜨면 성공!",
     kind: "note",
+    // 설명(왼쪽) · 실행 결과 그림(오른쪽), 그 아래 코드 — imageSide 가 넓은 화면에서 좌우로 나눈다.
+    imageUrl: "/turtle-impl1.svg",
+    imageAlt: "실행 결과 — 네모 주인공이 게임 화면 아래 가운데에 놓인 모습.",
+    imageSide: "right",
     code: CODE_IMPL_PLACE,
     linkUrl: "https://onecompiler.com/turtle",
     linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
     maxLength: 0,
+  },
+  {
+    key: "dg_impl1_submit",
+    phase: "build",
+    label: "✍ 완성한 코드 제출 (1단계)",
+    hint: "OneCompiler 에서 완성한 코드를 복사해 붙여넣어 주세요. (★★★ 에 채운 부분만 적어도 돼요.)",
+    kind: "long",
+    maxLength: 800,
   },
   {
     key: "_dg_impl_left",
@@ -323,10 +337,21 @@ const WORKSHEET: WorksheetQuestion[] = [
       "· player.★★★(x - 20) — x 좌표를 그 값으로 '옮기는' 함수 (set x → setx). 왼쪽은 x 를 20 줄여요.\n\n" +
       "방향키 연결(onkeypress)은 이미 돼 있어요 — 함수 안 두 줄만 채우면 됩니다.",
     kind: "note",
+    imageUrl: "/turtle-impl2.svg",
+    imageAlt: "실행 결과 — 왼쪽 방향키를 누르면 주인공이 왼쪽으로 움직이는 모습.",
+    imageSide: "right",
     code: CODE_IMPL_LEFT,
     linkUrl: "https://onecompiler.com/turtle",
     linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
     maxLength: 0,
+  },
+  {
+    key: "dg_impl2_submit",
+    phase: "grill",
+    label: "✍ 완성한 코드 제출 (2단계)",
+    hint: "OneCompiler 에서 완성한 코드를 복사해 붙여넣어 주세요. (★★★ 에 채운 부분만 적어도 돼요.)",
+    kind: "long",
+    maxLength: 800,
   },
   {
     key: "_dg_impl_right",
@@ -339,10 +364,21 @@ const WORKSHEET: WorksheetQuestion[] = [
       "· 둘째 줄: 이번엔 x 에 20 을 '더한' 자리로 옮겨요 (왼쪽은 x - 20 이었어요).\n\n" +
       "[OneCompiler 터틀 열기] 로 채워 실행하고, 오른쪽 방향키(→)로도 움직이면 완성! 다음 시간엔 '똥 떨어뜨리기' 를 붙여요.",
     kind: "note",
+    imageUrl: "/turtle-impl3.svg",
+    imageAlt: "실행 결과 — 왼쪽·오른쪽 방향키로 주인공이 양옆으로 움직이는 모습.",
+    imageSide: "right",
     code: CODE_IMPL_RIGHT,
     linkUrl: "https://onecompiler.com/turtle",
     linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
     maxLength: 0,
+  },
+  {
+    key: "dg_impl3_submit",
+    phase: "wrapmap",
+    label: "✍ 완성한 코드 제출 (3단계)",
+    hint: "직접 채운 go_right 를 포함한 완성 코드를 붙여넣어 주세요. (go_right 두 줄만 적어도 돼요.)",
+    kind: "long",
+    maxLength: 800,
   },
 ];
 
