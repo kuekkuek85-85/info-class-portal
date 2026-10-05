@@ -711,8 +711,15 @@ export interface WorksheetQuestion {
   /**
    * 그림 너비. 기본("full")은 카드 너비를 꽉 채운다. "half" 면 절반만 차지한다
    * (작은 도식 — 예: 17차 좌표평면 — 이 화면을 다 먹지 않게). 안 적으면 full.
+   * imageSide 를 쓰면 그쪽이 너비를 정하므로 이 값은 무시된다.
    */
   imageWidth?: "full" | "half";
+  /**
+   * 넓은 화면(md+)에서 설명과 그림을 좌우로 나눈다. "right" 면 그림이 오른쪽,
+   * "left" 면 왼쪽. 설명은 늘 먼저다 — 스마트폰 폭에선 세로로 쌓여 설명 아래 그림이 온다.
+   * 안 적으면 지금처럼 설명 아래에 그림을 가로로 깐다(imageWidth 가 너비를 정한다).
+   */
+  imageSide?: "left" | "right";
   /**
    * rows 가 한 줄에 받을 칸들. `emojis` 가 있으면 글칸 대신 이모지 고르기가 된다.
    */
