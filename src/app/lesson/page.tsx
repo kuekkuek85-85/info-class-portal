@@ -1096,22 +1096,28 @@ export default function LessonPage() {
               (태블릿 부팅, 주소 오타). 그 시간에 게임을 띄운다. 수업이 시작되면 화면이
               저절로 넘어가므로 학생이 게임을 끄고 나올 필요가 없다.
             */
-            <section className="flex flex-col gap-4">
-              <div className="block bg-lime">
-                <h2 className="t-headline">{session.game.heading || "기다리는 동안"}</h2>
-                {session.game.body && (
-                  <p className="t-body mt-2 whitespace-pre-wrap">{session.game.body}</p>
-                )}
-                <p className="t-body-sm mt-3">
-                  선생님이 수업을 시작하면 이 화면은 저절로 넘어가요.
-                </p>
+            /*
+              대기 게임은 화면(뷰포트)에 **꽉 차되 스크롤이 안 생기게** 둔다. 예전엔 iframe 을
+              h-[70vh] 고정으로 뒀는데, 학생 화면은 글자 170%(lesson-2x)라 머리글이 커서 머리글+
+              70vh 가 뷰포트를 넘어 페이지가 스크롤됐다(테트리스가 아래로 잘림). 이제 구역을
+              뷰포트 높이로 묶고(머리글·바깥 여백만큼 뺌), iframe 이 남는 높이를 flex 로 채운다 —
+              게임은 반응형이라 어떤 높이든 그 안에 맞춰 든다. 머리글도 작게 줄여 게임 자리를 넓힌다.
+            */
+            <section className="flex h-[calc(100dvh-200px)] min-h-[320px] flex-col gap-3">
+              {/*
+                대기 머리글은 한 줄로 짧게 — 게임 자리를 넓힌다. game.body(대기 게임 설명)는
+                보통 기다림 안내라 이 화면에선 접고(데이터엔 남음), 제목과 "저절로 넘어가요"만 둔다.
+              */}
+              <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-lg bg-lime px-4 py-2">
+                <h2 className="t-subhead">{session.game.heading || "기다리는 동안"}</h2>
+                <span className="t-caption">시작하면 이 화면은 저절로 넘어가요</span>
               </div>
 
-              <div className="overflow-hidden rounded-lg border border-line">
+              <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-line">
                 <iframe
                   src={session.game.url}
                   title={session.game.heading || "대기 중 게임"}
-                  className="h-[70vh] w-full"
+                  className="h-full w-full"
                   allow="fullscreen"
                 />
               </div>
