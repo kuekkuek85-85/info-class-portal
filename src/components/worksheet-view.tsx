@@ -570,7 +570,8 @@ export function WorksheetView({
               {named(question.label, studentName, studentId)}
             </label>
           )}
-          {question.hint && (
+          {/* imageSide 가 있으면 설명과 그림을 한 묶음(좌우 배치)으로 그리므로 여기선 설명을 뺀다 */}
+          {question.hint && !(question.imageSide && question.imageUrl) && (
             <p className="t-note whitespace-pre-line">
               {named(question.hint, studentName, studentId)}
             </p>
@@ -581,14 +582,41 @@ export function WorksheetView({
 
             답하는 칸 바로 위에 둔다. 새 창으로 띄우면 학생이 그 창에서 안 돌아오고,
             돌아와도 그림을 다시 못 찾는다.
+
+            imageSide 가 있으면 넓은 화면(md+)에서 설명과 그림을 좌우로 나눈다 — 설명은
+            늘 먼저(모바일에선 위), 그림은 오른쪽(또는 왼쪽) 절반. 스마트폰 폭에선 세로로
+            쌓인다. 없으면 지금처럼 설명 아래에 그림을 깐다(imageWidth 가 너비를 정한다).
           */}
-          {question.imageUrl && (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={question.imageUrl}
-              alt={question.imageAlt || question.label || "참고 그림"}
-              className="h-auto w-full rounded-lg border border-line bg-white"
-            />
+          {question.imageSide && question.imageUrl ? (
+            <div
+              className={`flex flex-col gap-3 md:items-start md:gap-5 ${
+                question.imageSide === "left" ? "md:flex-row-reverse" : "md:flex-row"
+              }`}
+            >
+              {question.hint && (
+                <p className="t-note whitespace-pre-line md:flex-1">
+                  {named(question.hint, studentName, studentId)}
+                </p>
+              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={question.imageUrl}
+                alt={question.imageAlt || question.label || "참고 그림"}
+                className="h-auto w-full rounded-lg border border-line bg-white md:w-1/2 md:shrink-0"
+              />
+            </div>
+          ) : (
+            question.imageUrl && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={question.imageUrl}
+                alt={question.imageAlt || question.label || "참고 그림"}
+                // 기본은 카드 너비를 꽉 채운다. "half" 면 절반만 — 작은 도식이 화면을 다 먹지 않게.
+                className={`h-auto rounded-lg border border-line bg-white ${
+                  question.imageWidth === "half" ? "w-full max-w-[50%]" : "w-full"
+                }`}
+              />
+            )
           )}
 
           {/*
