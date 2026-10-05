@@ -22,6 +22,7 @@ import {
   LESSON_PHASES,
   PHASE_LABELS,
   type LessonPhase,
+  type RewardGame,
   type Stroke,
   type TextItem,
   type WorksheetQuestion,
@@ -81,6 +82,8 @@ interface LessonData {
     moodCheckEnabled: boolean;
     game: Content;
     gameExplainer: Content;
+    /** 보상 게임 — 성찰 제출 후(조건 충족 시) 상으로 뜬다 */
+    rewardGame?: RewardGame;
     progress: Content;
     assessment: Content;
     video: Content;
@@ -199,6 +202,12 @@ export default function LessonPage() {
   const [answers, setAnswers] = useState<string[]>([]);
   const [reflectionState, setReflectionState] = useState<"idle" | "saving" | "saved" | "done">(
     "idle",
+  );
+  /** 보상 게임이 열렸는가(성찰 제출 + 구현 제출 조건 충족) */
+  const [rewardUnlocked, setRewardUnlocked] = useState(false);
+  /** 제출이 빠진 구현 단계 안내 팝업 (null 이면 안 뜸) */
+  const [rewardMissing, setRewardMissing] = useState<{ label: string; phase: LessonPhase }[] | null>(
+    null,
   );
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaved = useRef("");
@@ -592,6 +601,27 @@ export default function LessonPage() {
       return;
     }
     setArtifact((prev) => (prev ? { ...prev, status: "submitted" } : prev));
+  }
+
+  /*
+   * 성찰 제출 — 누르면 성찰을 저장하고, 보상 게임(rewardGame)이 있으면 조건(requires)을 본다.
+   * 구현 1·2·3단계 제출 칸이 다 채워졌으면 게임을 연다(rewardUnlocked). 빠진 게 있으면 그 단계
+   * 안내 팝업(rewardMissing)을 띄운다 — 학생은 거기서 그 단계로 바로 갈 수 있다. (요청: 17차)
+   */
+  async function handleReflectionSubmit() {
+    await saveReflection(answers, true);
+    const reward = session.rewardGame;
+    if (!reward) return;
+    const missing = (reward.requires ?? []).filter(
+      (req) => !(worksheet.answers[req.key] ?? "").trim(),
+    );
+    if (missing.length > 0) {
+      setRewardUnlocked(false);
+      setRewardMissing(missing.map((req) => ({ label: req.label, phase: req.phase })));
+    } else {
+      setRewardMissing(null);
+      setRewardUnlocked(true);
+    }
   }
 
   async function pickQuizChoice(choiceIndex: number) {
@@ -1090,6 +1120,29 @@ export default function LessonPage() {
                 </div>
               );
             })()
+          ) : (session.game.url ?? "").startsWith("link:") ? (
+            /*
+              대기 화면에 게임 대신 '파이썬 타자 도우미' 링크 카드 — 설명/취지 + 새 탭 링크 버튼.
+              게임은 성찰 보상(rewardGame)으로 옮겼다. game.url 이 "link:<주소>" 면 이 카드가 뜬다.
+              새 탭으로 열면 수업 탭은 그대로 남아, 선생님이 시작하면 저절로 넘어간다(focusExempt waiting).
+            */
+            <section className="flex flex-col gap-4">
+              <div className="block bg-lime">
+                <h2 className="t-headline">{session.game.heading || "기다리는 동안"}</h2>
+                {session.game.body && (
+                  <p className="t-body mt-2 whitespace-pre-wrap">{session.game.body}</p>
+                )}
+                <a
+                  href={(session.game.url ?? "").slice("link:".length)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="pill pill-primary pill-block mt-4 text-center text-lg"
+                >
+                  ▶ 파이썬 타자 도우미 열기 (새 탭)
+                </a>
+                <p className="t-caption mt-3">수업이 시작되면 이 화면은 저절로 넘어가요.</p>
+              </div>
+            </section>
           ) : session.game.url ? (
             /*
               기분 체크를 마쳤거나 안 쓰는 차시 — 먼저 온 학생이 5분을 기다리기도 한다
@@ -1516,7 +1569,31 @@ export default function LessonPage() {
           <GalleryView disabled={closed} noun={workNoun} />
         )}
 
-        {viewPhase === "reflection" && (
+        {/*
+          보상 게임 — 성찰을 제출하고 구현 1·2·3단계 제출까지 다 마친 학생에게만 열린다.
+          대기 자리에 있던 게임이 여기로 옮겨 와, 활동을 끝낸 상으로 쉬는 시간을 준다 (요청: 17차).
+        */}
+        {viewPhase === "reflection" && rewardUnlocked && session.rewardGame && (
+          <section className="flex flex-col gap-3">
+            <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-lg bg-lime px-4 py-2">
+              <h2 className="t-subhead">🎉 {session.rewardGame.heading || "보상 게임"}</h2>
+              <span className="t-caption">성찰 제출 완료 — 쉬는 시간이에요</span>
+            </div>
+            {session.rewardGame.body && (
+              <p className="t-body-sm whitespace-pre-wrap">{session.rewardGame.body}</p>
+            )}
+            <div className="h-[calc(100dvh-230px)] min-h-[320px] overflow-hidden rounded-lg border border-line">
+              <iframe
+                src={session.rewardGame.url}
+                title={session.rewardGame.heading || "보상 게임"}
+                className="h-full w-full"
+                allow="fullscreen"
+              />
+            </div>
+          </section>
+        )}
+
+        {viewPhase === "reflection" && !(rewardUnlocked && session.rewardGame) && (
           <section className="flex flex-col gap-6">
             <div>
               <h2 className="t-display">오늘의 성찰</h2>
@@ -1585,11 +1662,15 @@ export default function LessonPage() {
 
             <button
               type="button"
-              onClick={() => saveReflection(answers, true)}
+              onClick={() => void handleReflectionSubmit()}
               disabled={answered === 0 || reflectionState === "saving" || closed}
               className="pill pill-primary pill-block"
             >
-              {reflectionState === "done" ? "다시 제출하기" : "제출하기"}
+              {session.rewardGame
+                ? "제출하고 게임하기"
+                : reflectionState === "done"
+                  ? "다시 제출하기"
+                  : "제출하기"}
             </button>
 
             {answered < total && answered > 0 && (
@@ -1642,6 +1723,48 @@ export default function LessonPage() {
           </section>
         )}
       </main>
+
+      {/*
+        보상 게임 잠금 안내 — 성찰을 냈지만 구현 제출이 빠진 학생에게 뜬다. 어느 단계가 빠졌는지
+        알려 주고, 누르면 그 단계로 바로 데려간다(freeNav). 채워 돌아와 다시 제출하면 게임이 열린다.
+      */}
+      {rewardMissing && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+        >
+          <div className="flex w-full max-w-md flex-col gap-4 rounded-xl border-2 border-ink bg-canvas p-6">
+            <h2 className="t-headline">🎮 게임은 조금만 더!</h2>
+            <p className="t-body">
+              아래 단계의 <b>완성한 코드 제출</b>이 아직 비어 있어요. 먼저 제출하면 게임이 열려요.
+            </p>
+            <ul className="flex flex-col gap-2">
+              {rewardMissing.map((item) => (
+                <li key={item.phase}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setViewPhase(item.phase);
+                      setRewardMissing(null);
+                    }}
+                    className="pill pill-primary pill-block text-center"
+                  >
+                    {item.label} 로 가기 →
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => setRewardMissing(null)}
+              className="pill pill-secondary pill-block"
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
 
       {/*
         수업 화면에도 방침 링크를 둔다. 다만 그리기 화면에서는 감춘다 —

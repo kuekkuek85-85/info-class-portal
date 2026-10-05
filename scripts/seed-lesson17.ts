@@ -33,7 +33,7 @@
  * 포털 단계 순서(LESSON_PHASES)는 assessment(안내) → worksheet(활동지)로 흐르고, 실제
  * 진행은 교사가 단추로 몬다(freeNavigation). 교사 뼈대 순서:
  *
- *   0–3   대기(테트리스) · 기분 · 출석
+ *   0–3   대기(파이썬 타자 도우미 링크) · 기분 · 출석
  *   3–8   안내 보드(assessment) — 오늘: 분석 → 구현(1·2·3단계)
  *   8–13  좌표 개념 note (화면은 x·y, 주인공은 (x,y))
  *   13–23 게임 분석 — 구성요소 빈칸 4지선다 드롭다운 + AI 채점(cloze)
@@ -390,17 +390,32 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   title: "똥피하기 게임 — 분석 + 구현",
   moodCheckEnabled: true,
 
-  // 대기 게임 — 17차는 '테트리스'. 오늘 분석 대상인 똥피하기와 겹치지 않게 다른 게임을 둔다
-  // (똥피하기 다시하기 링크는 아래 게임 분석 카드에 따로 붙어 대기 게임과 별개다).
+  // 대기 화면 = 파이썬 타자 도우미 (게임 대신). url 이 "link:" 로 시작하면 설명+새 탭 링크 카드로 뜬다.
+  // 게임(테트리스)은 성찰 단계 보상(rewardGame)으로 옮겼다 — 활동을 마친 상으로 준다.
   game: {
-    heading: "기다리는 동안 — 테트리스",
+    heading: "기다리는 동안 — 파이썬 타자 연습",
     body:
-      "수업이 시작되길 기다리는 동안 잠깐 쉬어요.\n" +
-      "떨어지는 블록을 돌리고 옮겨 줄을 채워 봐요.\n" +
-      "수업이 시작되면 이 화면은 저절로 넘어가요.",
-    url: "https://tetris-game-seven-nu.vercel.app/",
+      "오늘은 코드를 직접 타이핑해요. 그 전에 파이썬 타자 도우미로 손을 풀어 봐요.\n" +
+      "import, def, player.goto 같은 파이썬 낱말을 빠르고 정확하게 치는 연습이에요.\n" +
+      "아래 버튼을 누르면 새 탭에서 열려요. 수업이 시작되면 이 화면은 저절로 넘어가요.",
+    url: "link:https://python-typing-helper.vercel.app/",
   },
   gameExplainer: empty(),
+
+  /*
+   * 보상 게임 — 성찰 '제출하고 게임하기' 를 누르면, 구현 1·2·3단계 제출 칸이 다 채워졌을 때만
+   * 테트리스가 열린다. 빠진 게 있으면 그 단계로 바로 가는 안내 팝업이 뜬다 (요청: 17차).
+   */
+  rewardGame: {
+    heading: "테트리스",
+    body: "오늘 활동을 다 끝냈어요 — 쉬는 시간으로 테트리스 한 판! 수업이 끝나면 정리해요.",
+    url: "https://tetris-game-seven-nu.vercel.app/",
+    requires: [
+      { key: "dg_impl1_submit", label: "구현 1단계", phase: "build" },
+      { key: "dg_impl2_submit", label: "구현 2단계", phase: "grill" },
+      { key: "dg_impl3_submit", label: "구현 3단계", phase: "wrapmap" },
+    ],
+  },
 
   // 다음 시간(progress) 단계는 두지 않는다 — 안내(assessment)가 이미 있어 중복이다.
   progress: empty(),
@@ -461,7 +476,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 분석(problem)엔 똥피하기 시뮬레이션 링크, 구현 세 단계(build·grill·wrapmap)엔 OneCompiler
    * 터틀 링크가 있다.
    */
-  focusExempt: ["problem", "build", "grill", "wrapmap"],
+  // waiting 도 추가 — 대기 화면 파이썬 타자 도우미를 새 탭으로 열어도 이탈로 안 센다.
+  focusExempt: ["waiting", "problem", "build", "grill", "wrapmap"],
   /*
    * 기분(mood)은 단계에서 뺀다 — 기분은 대기 화면에서 먼저 받으므로(moodCheckEnabled 켜 둠)
    * 별도 단계가 중복이다. phaseOrder 에 mood 를 안 적으면 교사 대시보드 단추(availablePhase)도,
@@ -578,7 +594,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (게임 제작 아크 공용 통 — 이후 구현 차시가 이어 씀. 입문/맛보기 통 python-intro·직접 타이핑 통 python-typing 과 분리)`);
-  console.log("단계: 대기(테트리스) → 안내(assessment) → 분석(problem) → 구현 1단계(build) → 구현 2단계(grill) → 구현 3단계(wrapmap) → 성찰. 설계(만들 순서)는 뺌 — 구현 순서는 교사가 미리 정함. 기분은 대기 화면에서만 받고 별도 단계는 없음(phaseOrder 에서 뺌, moodCheckEnabled 는 켜 둠).");
+  console.log("단계: 대기(파이썬 타자 도우미 링크) → 안내(assessment) → 분석(problem) → 구현 1단계(build) → 구현 2단계(grill) → 구현 3단계(wrapmap) → 성찰(보상 게임: 구현 3단계 제출 다 하면 테트리스). 설계는 뺌. 기분은 대기 화면에서만.");
   console.log("분석(problem): 먼저 함께 보기(똥피하기 시뮬레이션 /demo 링크, 맨 위) + 좌표 note + 게임 분석 설명 + 구성요소 빈칸 채우기(cloze, 4지선다 드롭다운 + AI 채점). 구현: 1단계 배치 / 2단계 왼쪽(답제시) / 3단계 오른쪽(직접 채우기) — 각각 교사가 단추로 넘기는 별도 단계.");
   console.log("focusExempt: problem·build·grill·wrapmap(외부 링크 있는 단계). 모든 단계가 같은 통(python-dodge-game) 한 artifact 에 함께 저장. freeNavigation.");
   console.log("분석 칸(dg_components, cloze): 6문장의 빈칸을 4지선다 드롭다운으로 고르고 [AI 채점 받기](제미나이) — 맞음/틀림은 서버가 정답 대조, 틀린 칸은 AI 힌트. 정답은 서버 전용(student/lesson 이 뗌). 주인공=좌우/똥=위·아래/좌표=x·y/충돌=똥·주인공/점수=피한 만큼/화면 경계=주인공.");

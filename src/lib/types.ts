@@ -1382,6 +1382,22 @@ export interface ProgressChecks {
   stages: string[];
 }
 
+/**
+ * 보상 게임 — 활동을 마친 학생에게 성찰 단계에서 상으로 주는 게임.
+ *
+ * 성찰 '제출하기' 를 누를 때, requires 의 활동지 칸이 **모두 채워져 있어야** 게임이 열린다.
+ * 하나라도 비어 있으면 그 단계(phase)로 바로 갈 수 있는 안내를 띄운다. 17차: 구현 1·2·3단계
+ * 제출을 다 해야 게임이 열린다.
+ */
+export interface RewardGame {
+  heading?: string;
+  body?: string;
+  /** 보상으로 띄울 게임 iframe 주소 */
+  url: string;
+  /** 이 활동지 칸들이 모두 채워져야 게임이 열린다 (label·phase 는 누락 안내·이동용) */
+  requires?: { key: string; label: string; phase: LessonPhase }[];
+}
+
 /** 수업 내용. 반과 무관하게 한 번만 등록해 4반에 공용으로 쓴다. */
 export interface LessonPlan {
   id: string;
@@ -1397,6 +1413,8 @@ export interface LessonPlan {
   game: PhaseContent;
   /** 수업을 시작할 때 띄우는 "방금 그 게임의 원리" 팝업. 게임으로만 끝나지 않게 한다. */
   gameExplainer: PhaseContent;
+  /** 보상 게임 — 성찰 단계에서 활동을 마친 학생에게 상으로 준다 (17차) */
+  rewardGame?: RewardGame;
   progress: PhaseContent;
   assessment: PhaseContent;
   video: PhaseContent;
@@ -1512,6 +1530,8 @@ export interface ClassSession {
   moodCheckEnabled: boolean;
   game: PhaseContent;
   gameExplainer: PhaseContent;
+  /** 보상 게임 — 성찰 단계에서 활동을 마친 학생에게 상으로 준다 (17차) */
+  rewardGame?: RewardGame;
   progress: PhaseContent;
   assessment: PhaseContent;
   video: PhaseContent;

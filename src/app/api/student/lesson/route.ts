@@ -90,6 +90,8 @@ export async function GET() {
         moodCheckEnabled: session.moodCheckEnabled,
         game: present(session.game),
         gameExplainer: present(session.gameExplainer),
+        // 보상 게임(성찰 단계) — 구조가 PhaseContent 와 달라 그대로 실어 보낸다
+        rewardGame: session.rewardGame,
         progress: present(session.progress),
         assessment: present(session.assessment),
         // 영상 주소는 학생에게 내려보내지 않는다. 전자칠판으로 같이 보는 구조라
