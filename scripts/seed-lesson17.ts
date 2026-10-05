@@ -124,13 +124,30 @@ function empty(): PhaseContent {
 
 // ─────────────────────────────────────────────────────────────
 // 활동지 — 세 단계로 나눠 교사가 단추로 몬다(한 단계가 너무 길지 않게).
-//   · 분석(problem) — 좌표 note + 게임 분석 설명 + 구성요소 적기(rows)
+//   · 분석(problem) — 먼저 함께 보기(똥피하기 시뮬레이션 링크, 맨 위) + 좌표 note + 게임 분석 설명 + 구성요소 적기(rows)
 //   · 설계(mvp)     — 만들 순서 설명 + 만들 순서 적기(list)
 //   · 첫 기능(build) — 주인공 좌우 이동(터틀 코드)
 // 세 단계가 같은 활동 통(python-dodge-game) 한 문서에 함께 저장된다 — 답 묶음은 단계와 무관하게
 // 한 artifact 에 쌓인다. 오늘 남기는 기록: 분석 표 · 만들 순서.
 // ─────────────────────────────────────────────────────────────
 const WORKSHEET: WorksheetQuestion[] = [
+  /* ── ⓪ 먼저 다 같이 보기 — 똥피하기 시뮬레이션 (분석 단계 맨 위) ──
+   * 교사가 "먼저 다 같이 보고 진행" 하려고 맨 위에 둔 짧은 안내. 버튼은 카드 아래에 뜨므로
+   * 설명을 짧게 둬 버튼이 분석 단계 거의 꼭대기에 오게 한다. 링크는 이 카드에만 둔다
+   * (아래 분석 설명 카드에서는 뺐다 — 같은 버튼이 두 번 뜨지 않게). ────────────── */
+  {
+    key: "_dg_watch",
+    phase: "problem",
+    label: "먼저 다 같이 봐요 — 똥피하기",
+    hint:
+      "오늘 우리가 뜯어볼 게임이에요. 아래 버튼을 눌러 똥피하기가 어떻게 움직이는지\n" +
+      "다 같이 잠깐 보고 시작해요. 무엇무엇이 필요한지 눈으로 먼저 익혀 둡니다.",
+    kind: "note",
+    linkUrl: "https://dodge-poop-game.vercel.app/demo",
+    linkLabel: "똥피하기 시뮬레이션 보기 (새 탭)",
+    maxLength: 0,
+  },
+
   /* ── ① 좌표 개념 note (화면은 x·y, 주인공은 (x,y) 위치) ── */
   {
     key: "_dg_coord",
@@ -154,8 +171,8 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "problem",
     label: "② 게임을 뜯어보기 — 무엇이 필요할까?",
     hint:
-      "똥피하기 게임을 만들려면 무엇무엇이 필요한지 '구성요소' 로 뜯어봐요. 지난 시간까지\n" +
-      "여러 번 해 본 똥피하기를 떠올리면 쉬워요(아래 [똥피하기 시뮬레이션 보기] 로 다시 봐도 돼요).\n" +
+      "똥피하기 게임을 만들려면 무엇무엇이 필요한지 '구성요소' 로 뜯어봐요. 방금 다 같이 본\n" +
+      "똥피하기를 떠올리면 쉬워요(맨 위 [똥피하기 시뮬레이션 보기] 로 다시 봐도 돼요).\n" +
       "예를 들면:\n\n" +
       "  · 주인공(플레이어) — 좌우로 움직여 똥을 피한다\n" +
       "  · 똥(장애물) — 위에서 아래로 떨어진다\n" +
@@ -165,8 +182,6 @@ const WORKSHEET: WorksheetQuestion[] = [
       "아래 표에 '이 게임에 필요한 것' 과 '그게 하는 일' 을 나눠 적어 봐요. 위 예시를 참고해\n" +
       "내 말로 적으면 됩니다.",
     kind: "note",
-    linkUrl: "https://dodge-poop-game.vercel.app/demo",
-    linkLabel: "똥피하기 시뮬레이션 보기 (새 탭)",
     maxLength: 0,
   },
   {
@@ -438,7 +453,7 @@ async function main(): Promise<void> {
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (게임 제작 아크 공용 통 — 이후 구현 차시가 이어 씀. 입문/맛보기 통 python-intro·직접 타이핑 통 python-typing 과 분리)`);
   console.log("단계: 대기(테트리스) → 안내(assessment) → 분석(problem) → 설계(mvp) → 첫 기능(build) → 성찰. 활동지를 셋으로 나눠 교사가 단추로 몬다. 기분은 대기 화면에서만 받고 별도 단계는 없음(phaseOrder 에서 뺌, moodCheckEnabled 는 켜 둠).");
-  console.log("분석(problem): 좌표 note + 게임 분석 설명(똥피하기 시뮬레이션 보기 링크 /demo) + 구성요소 적기(rows). 설계(mvp): 만들 순서 설명 + 순서 적기(list). 첫 기능(build): 주인공 좌우 이동(터틀 코드 + OneCompiler 링크).");
+  console.log("분석(problem): 먼저 함께 보기(똥피하기 시뮬레이션 /demo 링크, 맨 위) + 좌표 note + 게임 분석 설명 + 구성요소 적기(rows). 설계(mvp): 만들 순서 설명 + 순서 적기(list). 첫 기능(build): 주인공 좌우 이동(터틀 코드 + OneCompiler 링크).");
   console.log("focusExempt: problem·build(외부 링크 있는 단계). 세 단계가 같은 통(python-dodge-game) 한 artifact 에 함께 저장. freeNavigation.");
   console.log("분석 칸(dg_components, rows): 필요한 것(구성요소) / 하는 일 (maxRows 6). 설계 칸(dg_build_order, list): 만들 순서 4~6칸.");
   console.log("첫 기능: 주인공 좌우 이동 — 터틀 onkeypress(Left/Right)로 x 좌표 ±20. code 필드로 제시(등폭 readonly, 복사 단추). 14·15·16·17차 모두 터틀로 일관.");
