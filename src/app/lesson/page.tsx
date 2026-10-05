@@ -960,7 +960,7 @@ export default function LessonPage() {
       )}
 
       <header className="sticky top-0 z-10 border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
+        <div className="flex w-full items-center justify-between gap-3">
           <div className="min-w-0">
             {/*
               분반으로 여는 수업(선택과목)에서는 반도 차시 번호도 감춘다.
@@ -982,19 +982,11 @@ export default function LessonPage() {
       </header>
 
       {/*
-        읽는 화면은 폭을 좁게 묶는다 — 글줄이 길면 중1이 눈으로 따라가지 못한다.
-
-        그림을 보는 화면은 예외다. 그리기는 캔버스가 화면 한구석의 작은 상자가 되고,
-        작품 감상은 왼쪽 필터를 빼고 나면 격자에 530px밖에 남지 않아 썸네일이
-        엄지손톱만 해진다. 둘 다 폭이 곧 쓸모인 화면이다.
+        폭을 묶지 않고 브라우저 너비에 꽉 채운다 — 교사가 교실에서 띄울 때 좌우 여백 없이
+        글자가 크게 보이게 하기 위함이다(교사 요청). 과거·현재·미래 모든 수업에 함께 적용된다.
+        좌우는 px 로만 숨 쉴 틈을 준다(화면이 넓어질수록 조금 더 벌린다).
       */}
-      <main
-        className={`mx-auto w-full flex-1 px-4 py-5 ${
-          viewPhase === "draw" || viewPhase === "worksheet" || viewPhase === "gallery"
-            ? "max-w-[1600px]"
-            : "max-w-3xl"
-        }`}
-      >
+      <main className="w-full flex-1 px-4 py-5 sm:px-6 lg:px-8">
         {/*
           되돌아가기 — 교사가 켰을 때만 나온다.
 
