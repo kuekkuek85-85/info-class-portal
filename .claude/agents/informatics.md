@@ -35,12 +35,22 @@ model: inherit
   이미 들어와 있는 반은 `backfill-carryover.ts` 로 맞춘다.
 - 반마다 진도가 다를 수 있다(예: 2반이 한 차시 뒤진 적 있음). **열기 전에 반드시 Firestore 로 각 반 상태를 확인**한다.
 
+## 앞으로 만드는 수업의 표준 — 대기=파이썬 타자, 성찰=게임 (교사 확정)
+
+**앞으로 만드는** 정보 수업은 아래로 통일한다(기존 수행평가 career-plan·digital-ethics 의 통과→게임 doneLinks 흐름은 그대로 둔다).
+
+- **대기 화면 = 게임이 아니라 파이썬 타자 도우미.** `game.url = "link:https://python-typing-helper.vercel.app/"` 로 두면 설명(heading·body)+새 탭 링크 카드로 뜬다(lesson/page.tsx 의 "link:" 분기). `waiting` 을 **focusExempt** 에 넣어 새 탭을 열어도 이탈로 안 세게 한다.
+- **게임은 성찰 단계 보상으로.** `rewardGame = { heading, body, url:<게임 주소>, requires:[{key,label,phase}…] }`. 성찰 버튼이 '제출하고 게임하기' 가 되고, 누르면 `requires`(그 차시의 핵심 제출 칸들)가 **다 채워졌을 때만** 게임이 열린다. 빠진 게 있으면 팝업으로 알리고 그 단계(phase)로 바로 보낸다.
+  - `requires` 게이트를 걸면 학생이 그 단계에 갔다가 성찰로 **돌아와야** 하므로 `freeNavigation: true` 가 필요하다(게이트 없이 보상만 줄 거면 상관없다).
+  - 타입: `RewardGame`(types.ts). `/api/student/lesson` 가 `rewardGame` 을 그대로 실어 보낸다.
+- 예: 17차(seed-lesson17.ts) — 대기=타자 링크, rewardGame=테트리스, requires=구현 1·2·3단계 제출(dg_impl1/2/3_submit).
+
 ## 늘 지키는 방법
 
 - 새 차시를 짓기 전에 **실제 Firestore 데이터를 먼저 재 본다.** 문항 phase 배정, 활동 통 공유 여부, 반별 진도를 확인하고 시작한다.
 - `/api/student/lesson` 는 activity 를 필드별로 조립한다 — 새 ActivityContent 필드를 넣으면 거기도 넣어야 학생 화면까지 온다.
 - **수업 시간(교시)에는 배포하지 않는다.** `Get-Date` 로 확인한다. 세션 데이터만 고치는 것은 배포와 무관하니 상관없지만, 코드 배포는 학생 화면을 흔든다.
 - 세션 계획을 고친 뒤에는 리허설 세션으로 학생 화면을 실제로 확인하고, 흔적을 지운다.
-- 게임 포털 URL 세 개(하노이탑·2048·똥 피하기)는 doneLinks 에, 대기 게임은 game 에 둔다.
+- (기존 수행평가 career-plan·digital-ethics 한정) 게임 포털 URL 세 개(하노이탑·2048·똥 피하기)는 doneLinks 에 둔다. 앞으로 만드는 수업의 대기·게임은 위 「앞으로 만드는 수업의 표준」을 따른다(대기=타자 링크, 게임=성찰 rewardGame).
 
 작업을 마치면 **무엇을 바꿨고, 무엇을 확인했고, 남은 것이 무엇인지**를 짧게 보고한다.
