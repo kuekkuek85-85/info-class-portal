@@ -310,6 +310,12 @@ export function WorksheetView({
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaved = useRef(JSON.stringify(value));
 
+  /*
+   * 아직 서버에 안 올라간 변경이 있는가(디바운스 대기 중이거나 저장 중). AI 채점은 서버에 저장된
+   * 답을 읽으므로, 저장이 끝나기 전에 누르면 옛 코드로 채점된다 — 저장될 때까지 채점 단추를 막는다.
+   */
+  const savePending = JSON.stringify(value) !== lastSaved.current;
+
   // 입력이 멈추면 조용히 올린다. 학생은 저장 버튼을 누를 생각을 하지 않는다.
   useEffect(() => {
     if (disabled) return;
@@ -1000,6 +1006,7 @@ export function WorksheetView({
               onResult={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}
               codeMode={question.feedbackVariant === "code"}
+              savePending={savePending}
             />
           ) : question.kind === "dilemma_game" ? (
             /*

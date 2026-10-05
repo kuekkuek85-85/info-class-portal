@@ -35,6 +35,7 @@ export function AiFeedbackPanel({
   onResult,
   disabled,
   codeMode,
+  savePending,
 }: {
   questionKey: string;
   raw: string;
@@ -42,6 +43,8 @@ export function AiFeedbackPanel({
   disabled?: boolean;
   /** 코드 채점 모드(정보 구현) — 통과/힌트 말투. 기본은 감정 피드백 말투 */
   codeMode?: boolean;
+  /** 아직 서버에 저장 안 된 변경이 있으면 단추를 막는다 — 서버가 옛 답을 읽는 것을 막는다 */
+  savePending?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -115,20 +118,22 @@ export function AiFeedbackPanel({
         <button
           type="button"
           onClick={() => void run()}
-          disabled={disabled || loading}
+          disabled={disabled || loading || savePending}
           className="pill pill-primary pill-block disabled:opacity-60"
         >
           {loading
             ? codeMode
               ? "AI가 채점하고 있어요…"
               : "AI가 읽고 있어요…"
-            : result
-              ? codeMode
-                ? "다시 채점받기"
-                : "다시 받기"
-              : codeMode
-                ? "AI 채점 받기"
-                : "AI 피드백 받기"}
+            : savePending
+              ? "저장 중… 잠시 후 눌러요"
+              : result
+                ? codeMode
+                  ? "다시 채점받기"
+                  : "다시 받기"
+                : codeMode
+                  ? "AI 채점 받기"
+                  : "AI 피드백 받기"}
         </button>
       )}
 
