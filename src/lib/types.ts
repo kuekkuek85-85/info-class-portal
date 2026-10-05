@@ -709,6 +709,11 @@ export interface WorksheetQuestion {
   /** 그 그림의 대체 텍스트. 안 적으면 문항 이름표를 쓴다 */
   imageAlt?: string;
   /**
+   * 그림 너비. 기본("full")은 카드 너비를 꽉 채운다. "half" 면 절반만 차지한다
+   * (작은 도식 — 예: 17차 좌표평면 — 이 화면을 다 먹지 않게). 안 적으면 full.
+   */
+  imageWidth?: "full" | "half";
+  /**
    * rows 가 한 줄에 받을 칸들. `emojis` 가 있으면 글칸 대신 이모지 고르기가 된다.
    */
   rowColumns?: RowColumn[];

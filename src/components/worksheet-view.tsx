@@ -587,7 +587,10 @@ export function WorksheetView({
             <img
               src={question.imageUrl}
               alt={question.imageAlt || question.label || "참고 그림"}
-              className="h-auto w-full rounded-lg border border-line bg-white"
+              // 기본은 카드 너비를 꽉 채운다. "half" 면 절반만 — 작은 도식이 화면을 다 먹지 않게.
+              className={`h-auto rounded-lg border border-line bg-white ${
+                question.imageWidth === "half" ? "w-full max-w-[50%]" : "w-full"
+              }`}
             />
           )}
 
