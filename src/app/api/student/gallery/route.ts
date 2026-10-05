@@ -41,7 +41,7 @@ function facetValuesOf(row: Artifact, session: ClassSession): Record<string, str
   const config = session.activity?.galleryFacets;
   if (config?.length) {
     return Object.fromEntries(
-      config.map((facet) => [facet.key, answerValues(row, facet.answerKeys)]),
+      config.map((facet) => [facet.key, answerValues(row, facet.answerKeys, facet.firstToken)]),
     );
   }
   return { traits: row.traits ?? [], place: row.place ? [row.place] : [] };
@@ -52,8 +52,14 @@ function facetValuesOf(row: Artifact, session: ClassSession): Record<string, str
  *
  * 키가 "<rows칸>.<열>" 꼴이면(예: "rule_ideas.type") 그 rows 답(JSON 배열)을 파싱해 그 열의
  * 값들만 모은다 — 상점/벌점처럼 rows 안 한 열로 필터를 세우는 차시(마음 톡톡 7회기 규칙)에 쓴다.
+ *
+ * firstToken 이 켜지면 각 값의 **첫 낱말만** 쓴다(공백·쉼표·하이픈·콜론·가운뎃점 앞까지).
+ * "존중 - 이유…" 같은 자유서술에서 덕목(존중/배려/…)으로 묶을 때(마음 톡톡 6회기 캘리그래피).
  */
-function answerValues(row: Artifact, keys: string[]): string[] {
+function firstTokenOf(value: string): string {
+  return (value.split(/[\s,\-:·]+/)[0] ?? value).trim();
+}
+function answerValues(row: Artifact, keys: string[], firstToken = false): string[] {
   const seen = new Set<string>();
   for (const key of keys) {
     const dot = key.indexOf(".");
@@ -83,7 +89,14 @@ function answerValues(row: Artifact, keys: string[]): string[] {
     // 한 사람이 같은 말을 두 칸에 적으면 한 번만 센다
     if (value) seen.add(value);
   }
-  return [...seen];
+  if (!firstToken) return [...seen];
+  // 첫 낱말만 (덕목) — 중복은 한 번으로
+  const tokens = new Set<string>();
+  for (const v of seen) {
+    const t = firstTokenOf(v);
+    if (t) tokens.add(t);
+  }
+  return [...tokens];
 }
 
 /**
@@ -102,7 +115,7 @@ function facetsFor(session: ClassSession, visible: Artifact[]) {
     return config.map((facet) => {
       const counts = new Map<string, number>();
       for (const row of visible) {
-        for (const value of answerValues(row, facet.answerKeys)) {
+        for (const value of answerValues(row, facet.answerKeys, facet.firstToken)) {
           counts.set(value, (counts.get(value) ?? 0) + 1);
         }
       }

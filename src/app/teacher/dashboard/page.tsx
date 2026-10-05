@@ -1022,12 +1022,18 @@ function Dashboard() {
 
             <div className="flex flex-wrap gap-2">
               {/*
-                「미리 피드백」은 인간과 인공지능 전용이라 헤더 전역 탭에서 빼고, 이 수업을
-                보고 있을 때만 여기에 띄운다. 활동 통 이름이 hai- 로 시작하는 수업이 그것이다.
+                「미리 피드백」·「발표 평가」는 진로탐색(인간과 인공지능) 전용이라 헤더 전역 탭에서
+                빼고, 그 수업을 보고 있을 때만 여기에 버튼으로 띄운다. 미리 피드백은 모든 hai 차시,
+                발표 평가는 발표 차시(7·8차, lessonNo 107·108)에서만 뜬다.
               */}
               {session.activity?.activityId?.startsWith("hai-") && (
                 <Link href="/teacher/pre-review" className="pill pill-primary t-body-sm">
                   미리 피드백
+                </Link>
+              )}
+              {(session.lessonNo === 107 || session.lessonNo === 108) && (
+                <Link href="/teacher/eval" className="pill pill-primary t-body-sm">
+                  발표 평가
                 </Link>
               )}
               <button

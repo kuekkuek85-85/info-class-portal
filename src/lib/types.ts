@@ -1131,8 +1131,13 @@ export interface ActivityContent {
    *
    * `answerKeys` 는 활동지 답의 키다. 그 칸들에 적힌 말이 그대로 필터 항목이 된다.
    * 많이 나온 순으로 세운다.
+   *
+   * `firstToken` 을 켜면 답의 **첫 낱말만** 필터 항목으로 쓴다. 덕목처럼 "존중 - 이유…" 로
+   * 덕목 뒤에 설명을 함께 쓰는 자유서술 칸에서, 문장 전체가 아니라 덕목(존중/배려/…)으로 묶는다.
+   * (공백·쉼표·하이픈·콜론·가운뎃점 앞까지를 첫 낱말로 본다 — 마음 톡톡 6회기 캘리그래피 덕목.)
+   * `rowsKey.column` 형태(예: rule_ideas.type)로 rows 칸의 한 열만 집어낼 수도 있다(gallery 라우트).
    */
-  galleryFacets?: { key: string; label: string; answerKeys: string[] }[];
+  galleryFacets?: { key: string; label: string; answerKeys: string[]; firstToken?: boolean }[];
   /**
    * 서로 구경하기를 여는가. 안 적으면 열린다 (지금까지의 차시가 전부 그렇다).
    *
