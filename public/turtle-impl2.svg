@@ -1,8 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 320" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 360" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
   <text x="140" y="22" text-anchor="middle" font-size="14" fill="#64748b">실행 결과 — 왼쪽 키(←)로 이동</text>
-  <rect x="40" y="36" width="200" height="250" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6 4"/>
-  <text x="78" y="166" text-anchor="middle" font-size="26" fill="#94a3b8">←</text>
-  <rect x="127" y="248" width="26" height="26" rx="4" fill="#f97316" stroke="#9a3412" stroke-width="2">
-    <animate attributeName="x" values="127;60;127" keyTimes="0;0.5;1" dur="2.2s" repeatCount="indefinite"/>
+  <rect x="40" y="30" width="200" height="240" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <!-- 주인공(검정) : 왼쪽으로 미끄러진 뒤 사라졌다 가운데에서 다시 나타나 반복 -->
+  <rect x="127" y="232" width="26" height="26" rx="4" fill="#171717" stroke="#000" stroke-width="1.5">
+    <animate attributeName="x" values="127;70;70;127;127" keyTimes="0;0.4;0.64;0.65;1" dur="2.6s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;1;0;0;1;1" keyTimes="0;0.58;0.63;0.67;0.82;1" dur="2.6s" repeatCount="indefinite"/>
   </rect>
+
+  <!-- ← 키 : 주인공이 왼쪽으로 가는 동안 눌린 것처럼(내려가고 노랗게) -->
+  <rect x="120" y="303" width="40" height="34" rx="7" fill="#94a3b8"/>
+  <g>
+    <rect x="120" y="300" width="40" height="34" rx="7" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5">
+      <animate attributeName="fill" values="#fbbf24;#fbbf24;#f1f5f9;#f1f5f9" keyTimes="0;0.6;0.64;1" dur="2.6s" repeatCount="indefinite"/>
+    </rect>
+    <text x="140" y="324" text-anchor="middle" font-size="22" fill="#334155">←</text>
+    <animateTransform attributeName="transform" type="translate" values="0 3;0 3;0 0;0 0" keyTimes="0;0.6;0.64;1" dur="2.6s" repeatCount="indefinite"/>
+  </g>
 </svg>
