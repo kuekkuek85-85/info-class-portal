@@ -36,7 +36,7 @@
  *   0–3   대기(테트리스) · 기분 · 출석
  *   3–8   안내 보드(assessment) — 오늘: 분석 → 설계 → 첫 기능
  *   8–13  좌표 개념 note (화면은 x·y, 주인공은 (x,y))
- *   13–23 게임 분석 — 필요한 구성요소와 하는 일 적기(rows)
+ *   13–23 게임 분석 — 구성요소가 하는 일 빈칸 채우기(cloze)
  *   23–30 게임 설계 — 만들 순서 정하기(note + 순서 적기 list)
  *   30–38 첫 기능 구현 — 주인공 좌우 이동(터틀 예제 따라 치기)
  *   38–40 성찰 → 정리
@@ -124,7 +124,7 @@ function empty(): PhaseContent {
 
 // ─────────────────────────────────────────────────────────────
 // 활동지 — 세 단계로 나눠 교사가 단추로 몬다(한 단계가 너무 길지 않게).
-//   · 분석(problem) — 먼저 함께 보기(똥피하기 시뮬레이션 링크, 맨 위) + 좌표 note + 게임 분석 설명 + 구성요소 적기(rows)
+//   · 분석(problem) — 먼저 함께 보기(똥피하기 시뮬레이션 링크, 맨 위) + 좌표 note + 게임 분석 설명 + 구성요소 빈칸 채우기(cloze)
 //   · 설계(mvp)     — 만들 순서 설명 + 만들 순서 적기(list)
 //   · 첫 기능(build) — 주인공 좌우 이동(터틀 코드)
 // 세 단계가 같은 활동 통(python-dodge-game) 한 문서에 함께 저장된다 — 답 묶음은 단계와 무관하게
@@ -178,8 +178,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "똥피하기 게임을 만들려면 무엇무엇이 필요한지 '구성요소' 로 뜯어봐요. 방금 다 같이 본\n" +
       "똥피하기를 떠올리면 쉬워요(맨 위 [똥피하기 시뮬레이션 보기] 로 다시 봐도 돼요).\n\n" +
-      "아래 표에는 게임에 필요한 구성요소가 미리 적혀 있어요. 각 구성요소가 '하는 일' 을\n" +
-      "문장 말고 낱말로 짧게 적어 봐요.",
+      "아래 문장은 각 구성요소가 '하는 일' 을 설명한 거예요. 빈칸에 알맞은 낱말을 채워 봐요.",
     kind: "note",
     maxLength: 0,
   },
@@ -187,26 +186,20 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "dg_components",
     phase: "problem",
     label: "게임 구성요소 분석",
-    hint:
-      "왼쪽에 게임에 필요한 것(구성요소)이 적혀 있어요. 오른쪽 칸에 그게 '하는 일' 을 " +
-      "문장 말고 낱말로 짧게 적어 봐요.",
-    kind: "rows",
-    rowColumns: [
-      // 왼쪽은 미리 채워 잠그고(읽기 전용), 오른쪽 '하는 일' 만 낱말로 받는다(16자 제한).
-      { key: "part", label: "구성요소", locked: true },
-      { key: "role", label: "하는 일 (낱말로)", placeholder: "낱말로 짧게", maxLength: 16 },
+    hint: "각 구성요소가 게임에서 하는 일이에요. 빈칸(□)에 알맞은 낱말을 채워 봐요.",
+    kind: "cloze",
+    // 문장은 그대로 보이고, 정해진 낱말 자리(□)만 입력칸이 된다. 정답은 넣지 않는다(학생이 채운다).
+    // 기대 답: 주인공=좌우 / 똥=위·아래 / 좌표=x·y / 충돌=똥·주인공 / 점수=피한 만큼 / 화면 경계=주인공.
+    clozeLines: [
+      { key: "player", text: "주인공(플레이어) — □로 움직여 똥을 피한다" },
+      { key: "poop", text: "똥(장애물) — □에서 □로 떨어진다" },
+      { key: "coord", text: "좌표(위치) — 주인공·똥이 화면 어디에 있는지 (□, □)" },
+      { key: "collision", text: "충돌(부딪힘) — □이 □에게 닿았는지" },
+      { key: "score", text: "점수 — □ 올라간다" },
+      { key: "bound", text: "화면 경계 — □이 밖으로 못 나가게" },
     ],
-    // 6개 구성요소로 고정 — 줄 추가·삭제 없음. 정답(좌우·위·아래 등)은 넣지 않는다(학생이 채운다).
-    fixedRows: [
-      { part: "주인공" },
-      { part: "똥" },
-      { part: "좌표" },
-      { part: "충돌" },
-      { part: "점수" },
-      { part: "화면 경계" },
-    ],
-    // JSON 배열로 한 칸에 담긴다 (rows-field). 여섯 줄 × 두 칸이라 넉넉히 잡아도 2,000 안쪽
-    maxLength: 2000,
+    // 빈칸 값들을 줄 key 별 배열로 묶어 JSON 한 칸에 저장(cloze-field). 넉넉히 1,000 안쪽.
+    maxLength: 1000,
   },
 
   /* ── ③ 게임 설계 (만들 순서 정하기) ── */
@@ -461,9 +454,9 @@ async function main(): Promise<void> {
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (게임 제작 아크 공용 통 — 이후 구현 차시가 이어 씀. 입문/맛보기 통 python-intro·직접 타이핑 통 python-typing 과 분리)`);
   console.log("단계: 대기(테트리스) → 안내(assessment) → 분석(problem) → 설계(mvp) → 첫 기능(build) → 성찰. 활동지를 셋으로 나눠 교사가 단추로 몬다. 기분은 대기 화면에서만 받고 별도 단계는 없음(phaseOrder 에서 뺌, moodCheckEnabled 는 켜 둠).");
-  console.log("분석(problem): 먼저 함께 보기(똥피하기 시뮬레이션 /demo 링크, 맨 위) + 좌표 note + 게임 분석 설명 + 구성요소 적기(rows). 설계(mvp): 만들 순서 설명 + 순서 적기(list). 첫 기능(build): 주인공 좌우 이동(터틀 코드 + OneCompiler 링크).");
+  console.log("분석(problem): 먼저 함께 보기(똥피하기 시뮬레이션 /demo 링크, 맨 위) + 좌표 note + 게임 분석 설명 + 구성요소 빈칸 채우기(cloze). 설계(mvp): 만들 순서 설명 + 순서 적기(list). 첫 기능(build): 주인공 좌우 이동(터틀 코드 + OneCompiler 링크).");
   console.log("focusExempt: problem·build(외부 링크 있는 단계). 세 단계가 같은 통(python-dodge-game) 한 artifact 에 함께 저장. freeNavigation.");
-  console.log("분석 칸(dg_components, rows): 필요한 것(구성요소) / 하는 일 (maxRows 6). 설계 칸(dg_build_order, list): 만들 순서 4~6칸.");
+  console.log("분석 칸(dg_components, cloze): 6개 구성요소 문장의 빈칸(□) 채우기 — 주인공=좌우/똥=위·아래/좌표=x·y/충돌=똥·주인공/점수=피한 만큼/화면 경계=주인공. 설계 칸(dg_build_order, list): 만들 순서 4~6칸.");
   console.log("첫 기능: 주인공 좌우 이동 — 터틀 onkeypress(Left/Right)로 x 좌표 ±20. code 필드로 제시(등폭 readonly, 복사 단추). 14·15·16·17차 모두 터틀로 일관.");
   console.log("파이썬 터틀 실행: OneCompiler 터틀(https://onecompiler.com/turtle) — _dg_feature_move note 에 새 탭 링크로 붙음. 14·15·16차와 같은 편집기.");
   console.log("성찰 2문항(뜯어본 소감 · 다음에 붙이고 싶은 기능). 진도 팝업 없음. quiz 없음. galleryEnabled: false.");

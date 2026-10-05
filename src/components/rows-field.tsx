@@ -47,37 +47,18 @@ export function RowsField({
   value,
   columns,
   maxRows,
-  fixedRows,
   onChange,
   disabled,
 }: {
   value: string;
   columns: RowColumn[];
   maxRows: number;
-  /** 있으면 줄이 이 목록으로 고정된다 (줄 추가·삭제 없음, locked 칸은 읽기 전용) */
-  fixedRows?: Row[];
   onChange: (next: string) => void;
   disabled?: boolean;
 }) {
-  const saved = parse(value);
-  const fixed = Boolean(fixedRows && fixedRows.length > 0);
-
-  /*
-   * 고정 표면 줄이 fixedRows 로 못 박힌다 — locked 칸은 fixedRows 값으로 채우고, 잠기지 않은
-   * 칸만 학생이 저장한 값(saved[i])을 얹는다. 그렇지 않으면 지금처럼, 처음 열면 빈 줄 하나를
-   * 보여준다(「추가」부터 눌러야 하면 무엇을 하는 칸인지 안 보인다).
-   */
-  const shown: Row[] = fixed
-    ? fixedRows!.map((fr, i) => {
-        const merged: Row = { ...fr };
-        for (const column of columns) {
-          if (!column.locked) merged[column.key] = saved[i]?.[column.key] ?? "";
-        }
-        return merged;
-      })
-    : saved.length > 0
-      ? saved
-      : [{}];
+  const rows = parse(value);
+  /* 처음 열면 빈 줄 하나를 보여준다. 「추가」부터 눌러야 하면 무엇을 하는 칸인지 안 보인다 */
+  const shown = rows.length > 0 ? rows : [{}];
 
   const write = useCallback(
     (next: Row[]) => onChange(hasAny(next) ? JSON.stringify(next) : ""),
@@ -95,37 +76,26 @@ export function RowsField({
           key={index}
           className="flex flex-col gap-2 rounded-lg border border-line p-3"
         >
-          {/* 고정 표에서는 줄 번호·지우기 줄을 뺀다 — 왼쪽 잠긴 칸(구성요소)이 그 줄의 이름이다 */}
-          {!fixed && (
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="t-caption text-muted">{index + 1}</span>
-              {/*
-                줄이 하나뿐일 때는 지우기를 막는다. 다 지우고 나면 무엇을 하는 칸인지
-                모르는 빈 화면이 남는다 — 그때는 칸을 비우면 그만이다.
-              */}
-              {shown.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => write(shown.filter((_, i) => i !== index))}
-                  disabled={disabled}
-                  className="pill pill-secondary t-caption"
-                >
-                  이 줄 지우기
-                </button>
-              )}
-            </div>
-          )}
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="t-caption text-muted">{index + 1}</span>
+            {/*
+              줄이 하나뿐일 때는 지우기를 막는다. 다 지우고 나면 무엇을 하는 칸인지
+              모르는 빈 화면이 남는다 — 그때는 칸을 비우면 그만이다.
+            */}
+            {shown.length > 1 && (
+              <button
+                type="button"
+                onClick={() => write(shown.filter((_, i) => i !== index))}
+                disabled={disabled}
+                className="pill pill-secondary t-caption"
+              >
+                이 줄 지우기
+              </button>
+            )}
+          </div>
 
           {columns.map((column) =>
-            column.locked ? (
-              /* 미리 채워진 읽기 전용 칸 (고정 표의 왼쪽) */
-              <div key={column.key} className="flex flex-col gap-1">
-                <span className="t-caption">{column.label}</span>
-                <span className="field t-body-sm flex items-center bg-surface font-semibold">
-                  {row[column.key] ?? ""}
-                </span>
-              </div>
-            ) : column.emojis && column.emojis.length > 0 ? (
+            column.emojis && column.emojis.length > 0 ? (
               <div key={column.key} className="flex flex-col gap-1">
                 <span className="t-caption">{column.label}</span>
                 <div className="flex flex-wrap gap-1.5">
@@ -153,9 +123,7 @@ export function RowsField({
                 <span className="t-caption">{column.label}</span>
                 <input
                   value={row[column.key] ?? ""}
-                  onChange={(event) =>
-                    setCell(index, column.key, event.target.value.slice(0, column.maxLength ?? 40))
-                  }
+                  onChange={(event) => setCell(index, column.key, event.target.value.slice(0, 40))}
                   placeholder={column.placeholder}
                   disabled={disabled}
                   className="field t-body-sm disabled:opacity-60"
@@ -166,22 +134,19 @@ export function RowsField({
         </div>
       ))}
 
-      {/* 고정 표는 줄 추가가 없다 — 줄 수가 못 박혀 있다 */}
-      {!fixed && (
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => write([...shown, {}])}
-            disabled={disabled || shown.length >= maxRows}
-            className="pill pill-secondary t-body-sm disabled:opacity-35"
-          >
-            + 줄 추가
-          </button>
-          <span className="t-caption text-muted">
-            {shown.length} / {maxRows}
-          </span>
-        </div>
-      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => write([...shown, {}])}
+          disabled={disabled || shown.length >= maxRows}
+          className="pill pill-secondary t-body-sm disabled:opacity-35"
+        >
+          + 줄 추가
+        </button>
+        <span className="t-caption text-muted">
+          {shown.length} / {maxRows}
+        </span>
+      </div>
     </div>
   );
 }

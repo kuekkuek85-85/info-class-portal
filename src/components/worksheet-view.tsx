@@ -14,6 +14,7 @@ import { EmotionQuiz } from "@/components/emotion-quiz";
 import { ImageField } from "@/components/image-field";
 import { ListField } from "@/components/list-field";
 import { RowsField } from "@/components/rows-field";
+import { ClozeField } from "@/components/cloze-field";
 import { MoodRecheck } from "@/components/mood-recheck";
 import { ReceivedFeedbackPanel } from "@/components/received-feedback-panel";
 import { DiagnosticQuiz } from "@/components/diagnostic-quiz";
@@ -887,7 +888,6 @@ export function WorksheetView({
               value={value.answers[question.key] ?? ""}
               columns={question.rowColumns ?? []}
               maxRows={question.maxRows ?? 10}
-              fixedRows={question.fixedRows}
               onChange={(next) => setAnswer(question.key, next)}
               disabled={disabled}
             />
@@ -898,6 +898,13 @@ export function WorksheetView({
               maxItems={question.maxItems ?? 6}
               placeholder={question.itemPlaceholder}
               noPaste={question.noPaste}
+              onChange={(next) => setAnswer(question.key, next)}
+              disabled={disabled}
+            />
+          ) : question.kind === "cloze" ? (
+            <ClozeField
+              value={value.answers[question.key] ?? ""}
+              lines={question.clozeLines ?? []}
               onChange={(next) => setAnswer(question.key, next)}
               disabled={disabled}
             />
