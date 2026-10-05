@@ -92,6 +92,8 @@ interface LessonData {
     reflectionPublic: boolean;
     /** 학생이 지나온 단계로 되돌아갈 수 있는가 */
     freeNavigation?: boolean;
+    /** 단계 순서(차시가 정함). 되돌아가기 줄이 존중 — 여기 없는 단계(예: 기분)는 안 띄운다 */
+    phaseOrder?: LessonPhase[];
     /** 이 차시에서만 쓰는 단계 이름 (되돌아가기 줄에 쓴다) */
     phaseLabels?: Partial<Record<LessonPhase, string>>;
     /** 라이브 발표 진행을 띄우는 단계 (hai7 은 grill). 이 단계는 활동지 대신 발표 화면 */
@@ -877,6 +879,12 @@ export default function LessonPage() {
     LESSON_PHASES.indexOf(phase) + 1,
   ).filter((item) => {
     if (item === "waiting" || item === "done") return false;
+    /*
+     * 차시가 단계 순서를 명시하면 그걸 존중한다 — phaseOrder 에 없는 단계는 되돌아가기에도 안
+     * 띄운다(교사 대시보드 availablePhase 와 같은 기준). 기분을 대기 화면으로만 돌린 차시(정보 17·
+     * 마음 톡톡 6 등)에서 '기분' 되돌아가기 단추가 새는 것을 막는다.
+     */
+    if (session.phaseOrder?.length && !session.phaseOrder.includes(item)) return false;
     if (item === "mood") return session.moodCheckEnabled;
     if (item === "quiz") return session.quizQuestions.length > 0;
     /*

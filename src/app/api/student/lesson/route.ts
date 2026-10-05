@@ -102,6 +102,9 @@ export async function GET() {
         reflectionImage: session.reflectionImage,
         reflectionPublic: session.reflectionPublic,
         freeNavigation: session.freeNavigation ?? false,
+        // 단계 순서(차시가 정함). 되돌아가기 줄이 이걸 존중해 phaseOrder 에 없는 단계(예: 기분)는
+        // 안 띄운다 — 교사 대시보드 단추(availablePhase)와 같은 기준.
+        phaseOrder: session.phaseOrder ?? [],
         phaseLabels: session.phaseLabels ?? {},
         // 라이브 발표 진행을 띄우는 단계(정적 설정). 이 단계에서는 활동지 대신 발표 화면을 그린다.
         presentationPhase: session.presentationPhase,
