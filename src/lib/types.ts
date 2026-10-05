@@ -371,13 +371,18 @@ export interface RowColumn {
   placeholder?: string;
   /** 있으면 글칸 대신 이 이모지들 중 하나를 고르게 한다 */
   emojis?: string[];
-  /**
-   * 고정 표(fixedRows)에서 이 칸은 **미리 채워져 읽기 전용**이다 — 학생이 못 고친다.
-   * 예: 17차 구성요소 분석의 왼쪽 "구성요소" 칸(주인공·똥…)은 잠그고 "하는 일"만 받는다.
-   */
-  locked?: boolean;
-  /** 이 칸이 받는 최대 글자 수 (기본 40). 낱말만 받고 싶을 때 짧게 둔다 */
-  maxLength?: number;
+}
+
+/**
+ * cloze(빈칸 채우기) 한 줄.
+ *
+ * `text` 안에 □(U+25A1) 를 넣은 자리마다 입력칸이 뜬다. 나머지 글자는 그대로 문장으로 보인다.
+ * 예: "주인공(플레이어) — □로 움직여 똥을 피한다" → '좌우' 를 받는 빈칸 하나.
+ * 답은 이 줄 key 밑에 빈칸 값 배열로 묶인다(왼→오 순서).
+ */
+export interface ClozeLine {
+  key: string;
+  text: string;
 }
 
 /**
@@ -641,6 +646,13 @@ export interface WorksheetQuestion {
      * (relay-panel · relay-canvas · /api/student/relay · /api/teacher/relay · relay.ts).
      */
     | "relay_draw"
+    /**
+     * cloze — 빈칸 채우기. 문장을 쭉 보여주되 정해진 낱말 자리만 네모 입력칸으로 비운다
+     * (17차 구성요소 분석: "주인공 — □로 움직여 똥을 피한다"). 한 문항에 여러 줄을 담고,
+     * 각 줄에 빈칸이 하나 이상 있을 수 있다. 답은 줄key→빈칸 값 배열로 묶어 answers[key] 에
+     * JSON 으로 한 칸에 저장한다(rows·list 와 같은 방식). 자동 채점은 없다 (cloze-field · clozeLines).
+     */
+    | "cloze"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
@@ -733,12 +745,8 @@ export interface WorksheetQuestion {
   rowColumns?: RowColumn[];
   /** rows 에서 늘릴 수 있는 줄 수 (기본 10) */
   maxRows?: number;
-  /**
-   * 고정 표. 있으면 줄이 이 목록으로 **고정**된다 — 줄 추가·삭제 단추가 사라지고, 각 줄의
-   * locked 칸은 여기 값으로 미리 채워 읽기 전용이 된다. 학생은 잠기지 않은 칸만 채운다.
-   * 예: 17차 구성요소 분석 — [{part:"주인공"}, {part:"똥"}, …] 로 왼쪽을 고정하고 "하는 일"만 받는다.
-   */
-  fixedRows?: Record<string, string>[];
+  /** cloze(빈칸 채우기)가 보여줄 문장들. 각 줄의 □ 자리가 입력칸이 된다 */
+  clozeLines?: ClozeLine[];
   /**
    * submit 이 **최종 제출을 마친 학생에게만** 띄우는 링크.
    *

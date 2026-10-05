@@ -34,12 +34,13 @@
  * 진행은 교사가 단추로 몬다(freeNavigation). 교사 뼈대 순서:
  *
  *   0–3   대기(테트리스) · 기분 · 출석
- *   3–8   안내 보드(assessment) — 오늘: 분석 → 설계 → 첫 기능
+ *   3–8   안내 보드(assessment) — 오늘: 분석 → 구현
  *   8–13  좌표 개념 note (화면은 x·y, 주인공은 (x,y))
- *   13–23 게임 분석 — 필요한 구성요소와 하는 일 적기(rows)
- *   23–30 게임 설계 — 만들 순서 정하기(note + 순서 적기 list)
- *   30–38 첫 기능 구현 — 주인공 좌우 이동(터틀 예제 따라 치기)
- *   38–40 성찰 → 정리
+ *   13–23 게임 분석 — 구성요소가 하는 일 빈칸 채우기(cloze)
+ *   23–33 구현 — 주인공 좌우 이동(터틀 예제 따라 치기)
+ *   33–40 성찰 → 정리
+ *
+ * 설계(만들 순서 정하기) 단계는 뺐다 — 구현 순서는 교사가 이미 정해 뒀다(아크 설계).
  *
  * 점수·자동채점은 없다. 진도 팝업(progressChecks)은 없다.
  *
@@ -86,11 +87,13 @@ const FORCE = process.argv.includes("--force");
 const ACTIVITY_ID = "python-dodge-game";
 
 /* ──────────────────────────────────────────────────────────────
- * 첫 기능 예제 코드 — 주인공 좌우 이동. code 필드로 준다(등폭 readonly, 들여쓰기 보존 + 복사).
- * 14·15·16차와 같은 **터틀**로 일관한다. 방향키(Left/Right)로 주인공의 x 좌표를 바꿔 움직인다 —
- * 좌표 개념 note 와 바로 이어진다(왼쪽 = x 줄이기, 오른쪽 = x 늘리기).
+ * 구현 예제 코드 — 한 번에 다 치지 않고 **세 단계로 쌓아** 완성한다(code 필드, 등폭 readonly,
+ * 복사 가능). 14·15·16차와 같은 **터틀**. 방향키(Left/Right)로 주인공 x 좌표를 바꿔 움직인다.
+ *   1단계: 플레이어를 가운데 하단에 놓기
+ *   2단계: 앞 코드 + go_left(왼쪽 이동, 답 제시) + 왼쪽 방향키 연결
+ *   3단계: 앞 코드 + go_right 를 **빈 함수로 두고** 학생이 직접 채우기(go_left 를 본떠 x 를 +20)
  * ────────────────────────────────────────────────────────────── */
-const CODE_PLAYER_MOVE = `import turtle
+const CODE_IMPL_PLACE = `import turtle
 
 screen = turtle.Screen()
 screen.setup(400, 500)          # 게임 화면 크기(가로 400, 세로 500)
@@ -101,17 +104,52 @@ player.shape("square")          # 네모 모양
 player.penup()                  # 선을 안 그리고 이동만
 player.goto(0, -200)            # 화면 아래쪽 가운데 (x=0, y=-200)
 
+screen.mainloop()`;
+
+const CODE_IMPL_LEFT = `import turtle
+
+screen = turtle.Screen()
+screen.setup(400, 500)
+
+# 주인공 만들기
+player = turtle.Turtle()
+player.shape("square")
+player.penup()
+player.goto(0, -200)
+
 # 왼쪽으로 — x 좌표를 20만큼 줄인다
 def go_left():
     x = player.xcor()           # 지금 x 좌표를 읽어서
     player.setx(x - 20)         # 20만큼 왼쪽으로
 
-# 오른쪽으로 — x 좌표를 20만큼 늘린다
-def go_right():
-    x = player.xcor()
-    player.setx(x + 20)         # 20만큼 오른쪽으로
-
 # 방향키를 누르면 위 함수가 실행되게 연결
+screen.listen()
+screen.onkeypress(go_left, "Left")
+
+screen.mainloop()`;
+
+const CODE_IMPL_RIGHT = `import turtle
+
+screen = turtle.Screen()
+screen.setup(400, 500)
+
+# 주인공 만들기
+player = turtle.Turtle()
+player.shape("square")
+player.penup()
+player.goto(0, -200)
+
+# 왼쪽으로 — x 좌표를 20만큼 줄인다 (앞 단계에서 만든 것)
+def go_left():
+    x = player.xcor()
+    player.setx(x - 20)
+
+# 오른쪽으로 — go_left 를 본떠 직접 채워요 (x 를 20 늘리기)
+def go_right():
+    # ★★★ 여기를 채우세요 (아래 pass 를 지우고 두 줄을 넣어요)
+    pass
+
+# 방향키 연결 — 왼쪽은 go_left, 오른쪽은 go_right
 screen.listen()
 screen.onkeypress(go_left, "Left")
 screen.onkeypress(go_right, "Right")
@@ -123,12 +161,12 @@ function empty(): PhaseContent {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 활동지 — 세 단계로 나눠 교사가 단추로 몬다(한 단계가 너무 길지 않게).
-//   · 분석(problem) — 먼저 함께 보기(똥피하기 시뮬레이션 링크, 맨 위) + 좌표 note + 게임 분석 설명 + 구성요소 적기(rows)
-//   · 설계(mvp)     — 만들 순서 설명 + 만들 순서 적기(list)
-//   · 첫 기능(build) — 주인공 좌우 이동(터틀 코드)
-// 세 단계가 같은 활동 통(python-dodge-game) 한 문서에 함께 저장된다 — 답 묶음은 단계와 무관하게
-// 한 artifact 에 쌓인다. 오늘 남기는 기록: 분석 표 · 만들 순서.
+// 활동지 — 두 단계로 나눠 교사가 단추로 몬다(한 단계가 너무 길지 않게).
+//   · 분석(problem) — 먼저 함께 보기(똥피하기 시뮬레이션 링크, 맨 위) + 좌표 note + 게임 분석 설명 + 구성요소 빈칸 채우기(cloze)
+//   · 구현(build)   — 주인공 좌우 이동, 3단계로 쌓기(배치 → 왼쪽 답제시 → 오른쪽 직접 채우기)
+// 설계(만들 순서 정하기)는 뺐다 — 구현 순서는 교사가 이미 정해 뒀다(아크 설계).
+// 두 단계가 같은 활동 통(python-dodge-game) 한 문서에 함께 저장된다 — 답 묶음은 단계와 무관하게
+// 한 artifact 에 쌓인다. 오늘 남기는 기록: 구성요소 빈칸.
 // ─────────────────────────────────────────────────────────────
 const WORKSHEET: WorksheetQuestion[] = [
   /* ── ⓪ 먼저 다 같이 보기 — 똥피하기 시뮬레이션 (분석 단계 맨 위) ──
@@ -178,8 +216,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "똥피하기 게임을 만들려면 무엇무엇이 필요한지 '구성요소' 로 뜯어봐요. 방금 다 같이 본\n" +
       "똥피하기를 떠올리면 쉬워요(맨 위 [똥피하기 시뮬레이션 보기] 로 다시 봐도 돼요).\n\n" +
-      "아래 표에는 게임에 필요한 구성요소가 미리 적혀 있어요. 각 구성요소가 '하는 일' 을\n" +
-      "문장 말고 낱말로 짧게 적어 봐요.",
+      "아래 문장은 각 구성요소가 '하는 일' 을 설명한 거예요. 빈칸에 알맞은 낱말을 채워 봐요.",
     kind: "note",
     maxLength: 0,
   },
@@ -187,79 +224,71 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "dg_components",
     phase: "problem",
     label: "게임 구성요소 분석",
-    hint:
-      "왼쪽에 게임에 필요한 것(구성요소)이 적혀 있어요. 오른쪽 칸에 그게 '하는 일' 을 " +
-      "문장 말고 낱말로 짧게 적어 봐요.",
-    kind: "rows",
-    rowColumns: [
-      // 왼쪽은 미리 채워 잠그고(읽기 전용), 오른쪽 '하는 일' 만 낱말로 받는다(16자 제한).
-      { key: "part", label: "구성요소", locked: true },
-      { key: "role", label: "하는 일 (낱말로)", placeholder: "낱말로 짧게", maxLength: 16 },
+    hint: "각 구성요소가 게임에서 하는 일이에요. 빈칸(□)에 알맞은 낱말을 채워 봐요.",
+    kind: "cloze",
+    // 문장은 그대로 보이고, 정해진 낱말 자리(□)만 입력칸이 된다. 정답은 넣지 않는다(학생이 채운다).
+    // 기대 답: 주인공=좌우 / 똥=위·아래 / 좌표=x·y / 충돌=똥·주인공 / 점수=피한 만큼 / 화면 경계=주인공.
+    clozeLines: [
+      { key: "player", text: "주인공(플레이어) — □로 움직여 똥을 피한다" },
+      { key: "poop", text: "똥(장애물) — □에서 □로 떨어진다" },
+      { key: "coord", text: "좌표(위치) — 주인공·똥이 화면 어디에 있는지 (□, □)" },
+      { key: "collision", text: "충돌(부딪힘) — □이 □에게 닿았는지" },
+      { key: "score", text: "점수 — □ 올라간다" },
+      { key: "bound", text: "화면 경계 — □이 밖으로 못 나가게" },
     ],
-    // 6개 구성요소로 고정 — 줄 추가·삭제 없음. 정답(좌우·위·아래 등)은 넣지 않는다(학생이 채운다).
-    fixedRows: [
-      { part: "주인공" },
-      { part: "똥" },
-      { part: "좌표" },
-      { part: "충돌" },
-      { part: "점수" },
-      { part: "화면 경계" },
-    ],
-    // JSON 배열로 한 칸에 담긴다 (rows-field). 여섯 줄 × 두 칸이라 넉넉히 잡아도 2,000 안쪽
-    maxLength: 2000,
+    // 빈칸 값들을 줄 key 별 배열로 묶어 JSON 한 칸에 저장(cloze-field). 넉넉히 1,000 안쪽.
+    maxLength: 1000,
   },
 
-  /* ── ③ 게임 설계 (만들 순서 정하기) ── */
+  /* ── 구현 — 세 단계로 쌓아 완성한다 (터틀 예제) ──
+   * 설계(만들 순서 정하기) 단계는 뺐다 — 구현 순서는 교사가 이미 정해 뒀다(아크 설계). 분석 다음
+   * 바로 구현으로 간다. 한 번에 다 치면 벅차서, 1) 배치 → 2) 왼쪽(답 제시) → 3) 오른쪽(직접 채우기)
+   * 로 쌓는다. 각 단계 코드는 앞 단계를 포함한 '지금까지의 전체 코드' 다(복사해 실행하면 바로 돈다).
+   *
+   * 실행 편집기 = OneCompiler 터틀(https://onecompiler.com/turtle) — 교사 확정, 14·15·16차와 동일.
+   * 링크가 붙어도 이 단계(build)는 focusExempt 라 새 탭 이탈 오탐이 안 난다. 세 카드 모두 링크를 둔다.
+   */
   {
-    key: "_dg_design_intro",
-    phase: "mvp",
-    label: "③ 만들 순서를 정하기 — 한 번에 다 만들지 않아요",
+    key: "_dg_impl_place",
+    phase: "build",
+    label: "구현 1단계 — 플레이어를 가운데 하단에 놓기",
     hint:
-      "게임은 한 번에 통째로 만들지 않아요. 쉬운 것부터 하나씩 붙여 갑니다. 보통 이 순서예요:\n\n" +
-      "  ① 주인공 그리기 + 좌우로 움직이기   ← 오늘 여기까지!\n" +
-      "  ② 똥을 위에서 아래로 떨어뜨리기\n" +
-      "  ③ 똥이 주인공에 닿았는지 확인하기(충돌 처리)\n" +
-      "  ④ 점수 세기 · 게임 끝내기\n\n" +
-      "이렇게 순서를 정해 두면, 한 기능이 될 때마다 게임이 조금씩 완성돼요. 아래 칸에 '내가\n" +
-      "생각한 만들 순서' 를 적어 봐요. 위 순서를 그대로 써도 되고, 내 생각대로 바꿔도 좋아요.",
+      "먼저 주인공(네모)을 화면 아래 가운데에 놓아요. 아래 [OneCompiler 터틀 열기] 로 편집기를\n" +
+      "새 탭에서 열고, 코드를 복사해 붙여넣어 실행합니다. 네모 주인공이 화면 아래 가운데에 뜨면 성공!\n\n" +
+      "· player.goto(0, -200) — (x=0, y=-200), 가로는 가운데·세로는 아래쪽에 놓아요.",
     kind: "note",
+    code: CODE_IMPL_PLACE,
+    linkUrl: "https://onecompiler.com/turtle",
+    linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
     maxLength: 0,
   },
   {
-    key: "dg_build_order",
-    phase: "mvp",
-    label: "내가 만들 순서",
-    hint: "한 칸에 기능 하나씩, 만들 순서대로 적어 봐요. [+ 칸 추가] 로 늘릴 수 있어요.",
-    kind: "list",
-    minItems: 4,
-    maxItems: 6,
-    itemPlaceholder: "예) 1. 주인공을 그리고 좌우로 움직이게 하기",
-    // 문자열 배열을 JSON 으로 한 칸에 담는다(list-field). 여섯 칸이라 넉넉히 잡아도 1,500 안쪽
-    maxLength: 1500,
-  },
-
-  /* ── ④ 첫 기능 구현 — 주인공 좌우 이동 (터틀 예제) ── */
-  /*
-   * 실행 편집기 = OneCompiler 터틀(https://onecompiler.com/turtle) — 교사 확정, 14·15·16차와 동일.
-   * 브라우저에서 파이썬 터틀 그래픽이 바로 뜬다(설치 불필요). 아래 note 에 linkUrl 로 붙였다.
-   * 링크가 붙어도 이 문항은 focusExempt(worksheet)라 새 탭 이탈 오탐이 안 난다.
-   */
-  {
-    key: "_dg_feature_move",
+    key: "_dg_impl_left",
     phase: "build",
-    label: "④ 첫 기능 만들기 — 주인공 좌우 이동",
+    label: "구현 2단계 — 왼쪽으로 이동하기",
     hint:
-      "설계한 ①번(주인공 좌우 이동)을 오늘 만들어 봐요. 아래 [OneCompiler 터틀 열기] 로 편집기를\n" +
-      "새 탭에서 열고, 코드를 복사해 붙여넣어 실행합니다. 네모 주인공이 뜨고, 방향키(왼쪽·오른쪽)로\n" +
-      "좌우로 움직이면 성공!\n\n" +
-      "· player.goto(0, -200) — 주인공을 화면 아래 가운데에 놓아요.\n" +
-      "· go_left / go_right — 방향키를 누르면 x 좌표를 20씩 줄이거나 늘려요(왼쪽/오른쪽).\n" +
-      "· onkeypress(go_left, \"Left\") — 왼쪽 방향키에 그 동작을 연결해요.\n\n" +
-      "성공했으면 한 군데 바꿔 봐요: setx(x - 20) 의 20 을 크게(40)/작게(10) 바꾸면 움직이는\n" +
-      "폭이 달라져요. 다음 시간엔 여기에 '똥 떨어뜨리기(②)' 를 붙입니다.",
+      "이제 왼쪽 이동을 더해요. 아래 코드에는 go_left 함수와, 왼쪽 방향키에 연결하는 줄이 들어 있어요.\n" +
+      "복사해 실행하고 왼쪽 방향키(←)를 눌러 봐요. 주인공이 왼쪽으로 움직이면 성공!\n\n" +
+      "· go_left() — 지금 x 를 읽어서 20 줄여요(setx(x - 20)) → 왼쪽으로.\n" +
+      "· onkeypress(go_left, \"Left\") — 왼쪽 방향키에 그 동작을 연결해요.",
     kind: "note",
-    code: CODE_PLAYER_MOVE,
-    // 파이썬 터틀을 브라우저에서 바로 실행 — OneCompiler 터틀 모드(14·15·16차와 같은 편집기).
+    code: CODE_IMPL_LEFT,
+    linkUrl: "https://onecompiler.com/turtle",
+    linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
+    maxLength: 0,
+  },
+  {
+    key: "_dg_impl_right",
+    phase: "build",
+    label: "구현 3단계 — 오른쪽으로 이동하기 (직접 채우기)",
+    hint:
+      "마지막은 직접 만들어요! 아래 코드의 go_right 함수 안이 비어 있어요(★★★ 자리의 pass).\n" +
+      "go_left 를 본떠, 오른쪽으로 가려면 어떻게 할지 생각해 채워 봐요. 오른쪽은 x 를 20 '늘리면' 돼요.\n\n" +
+      "· go_left 는 setx(x - 20) 이었죠? 오른쪽은 setx(x + 20) 이에요.\n" +
+      "· pass 를 지우고 두 줄(x 읽기 → setx(x + 20))을 넣어요.\n\n" +
+      "복사해 채워 실행하고, 오른쪽 방향키(→)로도 움직이면 완성! 다음 시간엔 여기에 '똥 떨어뜨리기' 를 붙여요.",
+    kind: "note",
+    code: CODE_IMPL_RIGHT,
     linkUrl: "https://onecompiler.com/turtle",
     linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
     maxLength: 0,
@@ -268,7 +297,7 @@ const WORKSHEET: WorksheetQuestion[] = [
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   lessonNo: LESSON_NO,
-  title: "똥피하기 게임 — 분석·설계 + 첫 기능",
+  title: "똥피하기 게임 — 분석 + 구현",
   moodCheckEnabled: true,
 
   // 대기 게임 — 17차는 '테트리스'. 오늘 분석 대상인 똥피하기와 겹치지 않게 다른 게임을 둔다
@@ -287,7 +316,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   progress: empty(),
 
   /*
-   * 안내 보드 — 오늘 순서(분석 → 설계 → 첫 기능). 활동 중 되돌아와 볼 수 있다.
+   * 안내 보드 — 오늘 순서(분석 → 구현). 활동 중 되돌아와 볼 수 있다.
    */
   assessment: {
     heading: "오늘 할 일 — 똥피하기를 뜯어보고, 만들기 시작",
@@ -296,34 +325,32 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     tabs: [
       {
         label: "오늘은 이런 날",
-        subtitle: "만들기 전에 뜯어보고, 순서를 정해요",
+        subtitle: "뜯어보고, 바로 만들어요",
         note:
           "지난 세 시간에 파이썬을 맛보고, 게임에 쓸 터틀 함수를 찍어보고 직접 타이핑해 봤죠? 오늘부터\n" +
           "그 함수들을 합쳐 익숙한 똥피하기 게임을 직접 만들기 시작해요. 오늘은 게임을 뜯어보고(분석),\n" +
-          "만들 순서를 정하고(설계), 첫 기능 하나(주인공 좌우 이동)까지 만듭니다.",
+          "첫 기능 하나(주인공 좌우 이동)를 구현합니다.",
         rows: [
           { label: "분석", value: "게임을 구성요소로 뜯어보기 — 무엇이 필요한가" },
-          { label: "설계", value: "기능을 어떤 순서로 붙일지 정하기" },
-          { label: "첫 기능", value: "주인공을 그리고 방향키로 좌우로 움직이기" },
+          { label: "구현", value: "주인공을 그리고 방향키로 좌우로 움직이기" },
           { label: "채점은", value: "점수·자동채점 없어요. 뜯어보고 따라 만들면 됩니다" },
         ],
         highlights: [
-          "코드부터 치지 않아요. 뜯어보고 순서를 정하는 것도 '만들기' 의 중요한 부분이에요.",
+          "코드부터 치지 않아요. 먼저 게임을 구성요소로 뜯어보는 것도 '만들기' 의 중요한 부분이에요.",
         ],
       },
       {
         label: "오늘 순서",
-        subtitle: "좌표 → 분석 → 설계 → 첫 기능",
+        subtitle: "좌표 → 분석 → 구현",
         note: "활동지가 위에서 아래로 이어져요. 순서대로 내려오면 됩니다.",
         rows: [
           { label: "1", value: "화면 좌표(x·y) 알기 — 어디에 있는지 숫자로 말하기" },
-          { label: "2", value: "게임 분석 — 필요한 구성요소와 하는 일 적기" },
-          { label: "3", value: "게임 설계 — 만들 순서 정하기" },
-          { label: "4", value: "첫 기능 — 주인공 좌우 이동(터틀 코드 따라 치기)" },
+          { label: "2", value: "게임 분석 — 구성요소가 하는 일 빈칸 채우기" },
+          { label: "3", value: "구현 — 주인공 좌우 이동(터틀 코드 따라 치기)" },
           { label: "마지막", value: "성찰 한두 줄" },
         ],
         highlights: [
-          "오늘은 ①번 기능(좌우 이동)까지만 만들어요. 나머지는 다음 시간부터 하나씩 붙여요.",
+          "오늘은 첫 기능(좌우 이동)까지만 만들어요. 나머지는 다음 시간부터 하나씩 붙여요.",
         ],
       },
     ],
@@ -351,19 +378,19 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 별도 단계가 중복이다. phaseOrder 에 mood 를 안 적으면 교사 대시보드 단추(availablePhase)도,
    * 학생 되돌아가기 줄(backPhases 가 phaseOrder 를 존중)도 기분을 안 띄운다. 마음 톡톡 6회기와 같은 방식.
    *
-   * 활동지는 한 단계가 길어 셋으로 나눴다 — 분석(problem)·설계(mvp)·첫 기능(build). 선택과목이
-   * 쓰는 범용 단계 슬롯을 빌려 쓰고 이름은 phaseLabels 로 붙인다. 문항이 있는 단계만 뜬다(STEP_PHASES).
+   * 활동지는 분석(problem)·구현(build) 두 단계로 나눈다. 설계(만들 순서 정하기)는 뺐다 — 구현
+   * 순서는 교사가 이미 정해 뒀다(아크 설계). 선택과목이 쓰는 범용 단계 슬롯을 빌려 쓰고 이름은
+   * phaseLabels 로 붙인다. 문항이 있는 단계만 뜬다(STEP_PHASES).
    */
-  phaseOrder: ["waiting", "assessment", "problem", "mvp", "build", "reflection"],
+  phaseOrder: ["waiting", "assessment", "problem", "build", "reflection"],
   phaseLabels: {
     assessment: "안내",
     problem: "분석",
-    mvp: "설계",
-    build: "첫 기능",
+    build: "구현",
   },
   /*
-   * 되돌아가기 켬 — 학생이 안내·활동지 사이를 스스로 오갈 수 있다. 교사는 좌표 → 분석 →
-   * 설계 → 첫 기능 순으로 단추로 몬다.
+   * 되돌아가기 켬 — 학생이 안내·활동지 사이를 스스로 오갈 수 있다. 교사는 분석 → 구현 순으로
+   * 단추로 몬다.
    */
   freeNavigation: true,
 
@@ -373,9 +400,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     places: [],
     year: 2036,
     worksheetIntro: {
-      heading: "똥피하기 게임 — 뜯어보고, 순서 정하고, 첫 기능 만들기",
+      heading: "똥피하기 게임 — 뜯어보고, 첫 기능 만들기",
       body:
-        "위에서부터 순서대로 해요. 좌표를 알고, 게임을 구성요소로 뜯어본 뒤, 만들 순서를 정하고,\n" +
+        "위에서부터 순서대로 해요. 좌표를 알고, 게임을 구성요소로 뜯어본 뒤,\n" +
         "첫 기능(주인공 좌우 이동)을 터틀로 만들어 봅니다.",
     },
     worksheet: WORKSHEET,
@@ -460,12 +487,12 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (게임 제작 아크 공용 통 — 이후 구현 차시가 이어 씀. 입문/맛보기 통 python-intro·직접 타이핑 통 python-typing 과 분리)`);
-  console.log("단계: 대기(테트리스) → 안내(assessment) → 분석(problem) → 설계(mvp) → 첫 기능(build) → 성찰. 활동지를 셋으로 나눠 교사가 단추로 몬다. 기분은 대기 화면에서만 받고 별도 단계는 없음(phaseOrder 에서 뺌, moodCheckEnabled 는 켜 둠).");
-  console.log("분석(problem): 먼저 함께 보기(똥피하기 시뮬레이션 /demo 링크, 맨 위) + 좌표 note + 게임 분석 설명 + 구성요소 적기(rows). 설계(mvp): 만들 순서 설명 + 순서 적기(list). 첫 기능(build): 주인공 좌우 이동(터틀 코드 + OneCompiler 링크).");
+  console.log("단계: 대기(테트리스) → 안내(assessment) → 분석(problem) → 구현(build) → 성찰. 활동지를 분석·구현 둘로 나눠 교사가 단추로 몬다. 설계(만들 순서)는 뺌 — 구현 순서는 교사가 미리 정함. 기분은 대기 화면에서만 받고 별도 단계는 없음(phaseOrder 에서 뺌, moodCheckEnabled 는 켜 둠).");
+  console.log("분석(problem): 먼저 함께 보기(똥피하기 시뮬레이션 /demo 링크, 맨 위) + 좌표 note + 게임 분석 설명 + 구성요소 빈칸 채우기(cloze). 구현(build): 3단계로 쌓기(1 배치 → 2 왼쪽 답제시 → 3 오른쪽 직접 채우기).");
   console.log("focusExempt: problem·build(외부 링크 있는 단계). 세 단계가 같은 통(python-dodge-game) 한 artifact 에 함께 저장. freeNavigation.");
-  console.log("분석 칸(dg_components, rows): 필요한 것(구성요소) / 하는 일 (maxRows 6). 설계 칸(dg_build_order, list): 만들 순서 4~6칸.");
-  console.log("첫 기능: 주인공 좌우 이동 — 터틀 onkeypress(Left/Right)로 x 좌표 ±20. code 필드로 제시(등폭 readonly, 복사 단추). 14·15·16·17차 모두 터틀로 일관.");
-  console.log("파이썬 터틀 실행: OneCompiler 터틀(https://onecompiler.com/turtle) — _dg_feature_move note 에 새 탭 링크로 붙음. 14·15·16차와 같은 편집기.");
+  console.log("분석 칸(dg_components, cloze): 6개 구성요소 문장의 빈칸(□) 채우기 — 주인공=좌우/똥=위·아래/좌표=x·y/충돌=똥·주인공/점수=피한 만큼/화면 경계=주인공.");
+  console.log("구현 3단계: 1 플레이어 배치(goto 0,-200) → 2 go_left(답 제시)+왼쪽키 연결 → 3 go_right(★★★ 빈 함수, 학생이 x+20 채움)+오른쪽키 연결. 각 단계 code 는 앞 단계 포함한 전체 코드. OneCompiler 터틀로 실행. 14·15·16·17차 모두 터틀로 일관.");
+  console.log("파이썬 터틀 실행: OneCompiler 터틀(https://onecompiler.com/turtle) — 구현 3단계 카드마다 새 탭 링크. 14·15·16차와 같은 편집기.");
   console.log("성찰 2문항(뜯어본 소감 · 다음에 붙이고 싶은 기능). 진도 팝업 없음. quiz 없음. galleryEnabled: false.");
   process.exit(0);
 }
