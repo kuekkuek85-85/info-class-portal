@@ -123,14 +123,18 @@ function empty(): PhaseContent {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 활동지 — 좌표 note → 게임 분석(rows) → 게임 설계(note + 순서 list) → 첫 기능(터틀 코드).
-// 한 worksheet 단계에 위→아래로 흐른다. 오늘 남기는 기록: 분석 표 · 만들 순서.
+// 활동지 — 세 단계로 나눠 교사가 단추로 몬다(한 단계가 너무 길지 않게).
+//   · 분석(problem) — 좌표 note + 게임 분석 설명 + 구성요소 적기(rows)
+//   · 설계(mvp)     — 만들 순서 설명 + 만들 순서 적기(list)
+//   · 첫 기능(build) — 주인공 좌우 이동(터틀 코드)
+// 세 단계가 같은 활동 통(python-dodge-game) 한 문서에 함께 저장된다 — 답 묶음은 단계와 무관하게
+// 한 artifact 에 쌓인다. 오늘 남기는 기록: 분석 표 · 만들 순서.
 // ─────────────────────────────────────────────────────────────
 const WORKSHEET: WorksheetQuestion[] = [
   /* ── ① 좌표 개념 note (화면은 x·y, 주인공은 (x,y) 위치) ── */
   {
     key: "_dg_coord",
-    phase: "worksheet",
+    phase: "problem",
     label: "① 화면은 좌표로 되어 있어요 (x · y)",
     hint:
       "게임을 만들려면 '어디에 있는지' 를 숫자로 말할 수 있어야 해요. 그게 '좌표' 예요.\n\n" +
@@ -147,7 +151,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   /* ── ② 게임 분석 (도메인 분석): 필요한 구성요소와 하는 일 ── */
   {
     key: "_dg_analyze_intro",
-    phase: "worksheet",
+    phase: "problem",
     label: "② 게임을 뜯어보기 — 무엇이 필요할까?",
     hint:
       "똥피하기 게임을 만들려면 무엇무엇이 필요한지 '구성요소' 로 뜯어봐요. 지난 시간까지\n" +
@@ -167,7 +171,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "dg_components",
-    phase: "worksheet",
+    phase: "problem",
     label: "게임 구성요소 분석",
     hint:
       "왼쪽 칸엔 필요한 것(구성요소) 이름을, 오른쪽 칸엔 그게 게임에서 하는 일을 한 줄로 적어요. " +
@@ -185,7 +189,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   /* ── ③ 게임 설계 (만들 순서 정하기) ── */
   {
     key: "_dg_design_intro",
-    phase: "worksheet",
+    phase: "mvp",
     label: "③ 만들 순서를 정하기 — 한 번에 다 만들지 않아요",
     hint:
       "게임은 한 번에 통째로 만들지 않아요. 쉬운 것부터 하나씩 붙여 갑니다. 보통 이 순서예요:\n\n" +
@@ -200,7 +204,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "dg_build_order",
-    phase: "worksheet",
+    phase: "mvp",
     label: "내가 만들 순서",
     hint: "한 칸에 기능 하나씩, 만들 순서대로 적어 봐요. [+ 칸 추가] 로 늘릴 수 있어요.",
     kind: "list",
@@ -219,7 +223,7 @@ const WORKSHEET: WorksheetQuestion[] = [
    */
   {
     key: "_dg_feature_move",
-    phase: "worksheet",
+    phase: "build",
     label: "④ 첫 기능 만들기 — 주인공 좌우 이동",
     hint:
       "설계한 ①번(주인공 좌우 이동)을 오늘 만들어 봐요. 아래 [OneCompiler 터틀 열기] 로 편집기를\n" +
@@ -314,19 +318,25 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   reflectionPublic: false,
 
   /*
-   * 첫 기능 예제에 편집기 링크(외부 새 탭)가 붙어, worksheet 단계에서 창을 옮기는 것을
-   * 이탈로 세지 않는다 (14·15·16차 링크 단계를 focusExempt 로 둔 것과 같은 이유).
+   * 외부 새 탭 링크가 붙은 단계는 창을 옮겨도 이탈로 세지 않는다 (14·15·16차와 같은 이유).
+   * 분석(problem)엔 똥피하기 다시하기 링크, 첫 기능(build)엔 OneCompiler 터틀 링크가 있다.
+   * 설계(mvp)엔 링크가 없어 빼 둔다.
    */
-  focusExempt: ["worksheet"],
+  focusExempt: ["problem", "build"],
   /*
    * 기분(mood)은 단계에서 뺀다 — 기분은 대기 화면에서 먼저 받으므로(moodCheckEnabled 켜 둠)
    * 별도 단계가 중복이다. phaseOrder 에 mood 를 안 적으면 교사 대시보드 단추(availablePhase)도,
    * 학생 되돌아가기 줄(backPhases 가 phaseOrder 를 존중)도 기분을 안 띄운다. 마음 톡톡 6회기와 같은 방식.
+   *
+   * 활동지는 한 단계가 길어 셋으로 나눴다 — 분석(problem)·설계(mvp)·첫 기능(build). 선택과목이
+   * 쓰는 범용 단계 슬롯을 빌려 쓰고 이름은 phaseLabels 로 붙인다. 문항이 있는 단계만 뜬다(STEP_PHASES).
    */
-  phaseOrder: ["waiting", "assessment", "worksheet", "reflection"],
+  phaseOrder: ["waiting", "assessment", "problem", "mvp", "build", "reflection"],
   phaseLabels: {
     assessment: "안내",
-    worksheet: "분석·설계·첫 기능",
+    problem: "분석",
+    mvp: "설계",
+    build: "첫 기능",
   },
   /*
    * 되돌아가기 켬 — 학생이 안내·활동지 사이를 스스로 오갈 수 있다. 교사는 좌표 → 분석 →
@@ -427,8 +437,9 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (게임 제작 아크 공용 통 — 이후 구현 차시가 이어 씀. 입문/맛보기 통 python-intro·직접 타이핑 통 python-typing 과 분리)`);
-  console.log("단계: 대기(테트리스) → 안내(assessment) → 활동지(worksheet: 좌표·분석·설계·첫 기능) → 성찰. 기분은 대기 화면에서만 받고 별도 단계는 없음(phaseOrder 에서 뺌, moodCheckEnabled 는 켜 둠). 게임 분석 카드에 똥피하기 다시하기 링크.");
-  console.log("실제 진행: 안내 → 좌표 note → 게임 분석(rows) → 게임 설계(순서 list) → 첫 기능 주인공 좌우 이동(터틀 코드) → 성찰 (freeNavigation)");
+  console.log("단계: 대기(테트리스) → 안내(assessment) → 분석(problem) → 설계(mvp) → 첫 기능(build) → 성찰. 활동지를 셋으로 나눠 교사가 단추로 몬다. 기분은 대기 화면에서만 받고 별도 단계는 없음(phaseOrder 에서 뺌, moodCheckEnabled 는 켜 둠).");
+  console.log("분석(problem): 좌표 note + 게임 분석 설명(똥피하기 다시하기 링크) + 구성요소 적기(rows). 설계(mvp): 만들 순서 설명 + 순서 적기(list). 첫 기능(build): 주인공 좌우 이동(터틀 코드 + OneCompiler 링크).");
+  console.log("focusExempt: problem·build(외부 링크 있는 단계). 세 단계가 같은 통(python-dodge-game) 한 artifact 에 함께 저장. freeNavigation.");
   console.log("분석 칸(dg_components, rows): 필요한 것(구성요소) / 하는 일 (maxRows 6). 설계 칸(dg_build_order, list): 만들 순서 4~6칸.");
   console.log("첫 기능: 주인공 좌우 이동 — 터틀 onkeypress(Left/Right)로 x 좌표 ±20. code 필드로 제시(등폭 readonly, 복사 단추). 14·15·16·17차 모두 터틀로 일관.");
   console.log("파이썬 터틀 실행: OneCompiler 터틀(https://onecompiler.com/turtle) — _dg_feature_move note 에 새 탭 링크로 붙음. 14·15·16차와 같은 편집기.");
