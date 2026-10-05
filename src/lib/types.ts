@@ -758,6 +758,8 @@ export interface WorksheetQuestion {
    * 안 적으면 지금처럼 설명 아래에 그림을 가로로 깐다(imageWidth 가 너비를 정한다).
    */
   imageSide?: "left" | "right";
+  /** imageSide 일 때 그림이 차지하는 너비 — 기본 "half"(1/2), "third"(1/3). 높이는 비율대로 자동 */
+  imageSideWidth?: "half" | "third";
   /**
    * rows 가 한 줄에 받을 칸들. `emojis` 가 있으면 글칸 대신 이모지 고르기가 된다.
    */

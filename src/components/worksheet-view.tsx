@@ -603,7 +603,10 @@ export function WorksheetView({
               <img
                 src={question.imageUrl}
                 alt={question.imageAlt || question.label || "참고 그림"}
-                className="h-auto w-full rounded-lg border border-line bg-white md:w-1/2 md:shrink-0"
+                // 기본은 넓은 화면에서 1/2 너비, "third" 면 1/3. 높이는 h-auto 라 비율대로 줄어든다.
+                className={`h-auto w-full rounded-lg border border-line bg-white md:shrink-0 ${
+                  question.imageSideWidth === "third" ? "md:w-1/3" : "md:w-1/2"
+                }`}
               />
             </div>
           ) : (
