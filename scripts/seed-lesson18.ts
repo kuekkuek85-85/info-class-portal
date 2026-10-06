@@ -137,7 +137,7 @@ poop.color("brown")         # 갈색 똥 (1단계에서 넣은 것)
 # 똥 떨어뜨리기 — 조금씩 아래로, 계속 반복
 def fall():
     y = poop.★★★()           # 지금 똥의 y 좌표를 읽어서
-    poop.★★★(y - 10)         # 10만큼 아래로 (y 를 줄이면 아래로 내려가요)
+    poop.★★★(y - 5)          # 5만큼 아래로 (y 를 줄이면 아래로 내려가요)
     screen.ontimer(fall, 50) # 알람 맞추듯 0.05초 뒤에 fall 을 다시 — 그래서 계속 떨어져요
 
 screen.listen()
@@ -178,7 +178,7 @@ poop.color("brown")         # 갈색 똥 (1단계에서 넣은 것)
 # 똥 떨어뜨리기 + 바닥에 닿으면 다시 맨 위로
 def fall():
     y = poop.ycor()
-    poop.sety(y - 10)
+    poop.sety(y - 5)
     if poop.ycor() < ★★★:                        # 바닥(아래 끝)보다 더 내려가면
         poop.goto(random.randint(-180, 180), ★★★)  # 가로는 아무 데나(랜덤), 세로는 맨 위로
     screen.ontimer(fall, 50)
@@ -259,7 +259,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "이제 똥을 아래로 떨어뜨려요. fall 함수 안의 ★★★ 두 곳을 채우고 실행하면 똥이 쭉 내려가요.\n\n" +
       "· y = poop.★★★() — 똥의 '지금 y 좌표를 읽는' 함수 (y coordinate → ycor). 주인공 xcor 와 짝이에요.\n" +
-      "· poop.★★★(y - 10) — y 좌표를 그 값으로 '옮기는' 함수 (set y → sety). 10 줄이면 아래로 내려가요.\n\n" +
+      "· poop.★★★(y - 5) — y 좌표를 그 값으로 '옮기는' 함수 (set y → sety). 5 줄이면 아래로 내려가요.\n\n" +
       "※ 맨 아랫줄 screen.ontimer(fall, 50) 이 핵심이에요(이미 적혀 있어요). fall 은 똥을 '한 칸'\n" +
       "   내리는 동작이고, 이 줄은 '0.05초 뒤에 다시 한 번 내려라' 하고 알람을 맞추는 거예요. 그 알람이\n" +
       "   계속 울려서 fall → 조금 내려감 → 또 fall → 또 조금 내려감 … 이 반복되며 똥이 쉬지 않고 떨어져요.",
@@ -291,7 +291,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     feedbackFields: [{ key: "dg18_impl2_submit", label: "완성한 코드" }],
     checkGoal:
       "똥을 아래로 떨어뜨리는 fall 함수를 완성한 코드다. fall 안의 ★★★ 두 곳이 이렇게여야 맞다: " +
-      "y = poop.ycor()(지금 y 읽기), poop.sety(y - 10)(10 아래로). " +
+      "y = poop.ycor()(지금 y 읽기), poop.sety(y - 5)(5 아래로). " +
       "screen.ontimer(fall, 50) 은 이미 주어져 있다. ★★★ 가 남으면 틀림.",
     maxLength: 2000,
   },
