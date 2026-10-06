@@ -179,8 +179,8 @@ poop.color("brown")         # 갈색 똥 (1단계에서 넣은 것)
 def fall():
     y = poop.ycor()
     poop.sety(y - 5)
-    if poop.ycor() < ★★★:                        # 바닥(아래 끝)보다 더 내려가면
-        poop.goto(random.randint(-180, 180), ★★★)  # 가로는 아무 데나(랜덤), 세로는 맨 위로
+    if poop.★★★() < -250:                         # 바닥(아래 끝, -250)보다 더 내려가면
+        poop.goto(★★★.randint(-180, 180), 250)     # 가로는 아무 데나(랜덤), 세로는 맨 위로(250)
     screen.ontimer(fall, 50)
 
 screen.listen()
@@ -303,11 +303,11 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "바닥에 닿으면 다시 맨 위로",
     hint:
       "지금은 똥이 한 번 떨어지면 끝이에요. 바닥까지 내려가면 다시 맨 위에서 떨어지게 만들어요.\n" +
-      "fall 안의 if 부분 ★★★ 두 곳을 채워요(똥 만들기·떨어뜨리기 부분은 이미 채워진 상태예요).\n\n" +
-      "· if poop.ycor() < ★★★ — 똥이 화면 '아래 끝' 보다 더 내려갔는지 보는 조건. 화면 높이가 500이니\n" +
-      "  아래 끝은 대략 -250 이에요(y 는 아래로 갈수록 작아져요).\n" +
-      "· poop.goto(random.randint(-180, 180), ★★★) — 다시 맨 위로! 가로는 random 으로 아무 데나,\n" +
-      "  세로는 1단계에서 똥을 처음 놓았던 그 맨 위 값과 같아요.\n\n" +
+      "fall 안의 ★★★ 두 곳을 채워요(똥 만들기·떨어뜨리기 부분은 이미 채워진 상태예요).\n\n" +
+      "· if poop.★★★() < -250 — 똥이 화면 '아래 끝(-250)' 보다 더 내려갔는지 보는 조건. '지금 똥의 y 를\n" +
+      "  읽는' 함수예요 — 2단계 y = poop.___() 에서 쓴 것과 똑같아요(y coordinate → ycor).\n" +
+      "· poop.goto(★★★.randint(-180, 180), 250) — 다시 맨 위로(가로는 아무 데나, 세로는 맨 위 250).\n" +
+      "  '아무 숫자나 뽑아 주는' 도구예요 — 맨 윗줄 import random 의 바로 그 random!\n\n" +
       "[OneCompiler 터틀 열기] 로 채워 실행하면 똥이 바닥까지 떨어졌다가 위에서 다시 랜덤하게 떨어져요!\n" +
       "다음 시간엔 '주인공과 똥이 부딪혔는지(충돌)' 를 붙여요.",
     kind: "note",
@@ -332,14 +332,15 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "dg18_impl3_check",
     phase: "emotion",
     label: "AI 채점 — 맞게 채웠는지 확인",
-    hint: "위에 붙여넣은 코드를 AI가 봐줘요. if 조건의 ★★★ 두 곳을 바르게 채웠으면 통과! 틀리면 힌트를 줘요.",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. fall 안의 ★★★ 두 곳(ycor·random)을 바르게 채웠으면 통과! 틀리면 힌트를 줘요.",
     kind: "ai_feedback",
     feedbackVariant: "code",
     feedbackFields: [{ key: "dg18_impl3_submit", label: "완성한 코드" }],
     checkGoal:
-      "똥이 바닥에 닿으면 맨 위로 다시 보내는 코드다. 조건은 if poop.ycor() < -250(화면 아래 끝보다 내려가면), " +
-      "재등장은 poop.goto(random.randint(-180, 180), 250)(가로 랜덤, 세로 맨 위 250). " +
-      "★★★ 두 곳이 -250 과 250 이어야 맞다. random.randint 는 이미 주어져 있다. ★★★ 가 남으면 틀림.",
+      "똥이 바닥에 닿으면 맨 위로 다시 보내는 코드다. 두 곳의 ★★★ 가 이렇게 채워져야 맞다: " +
+      "if poop.★★★() < -250 의 ★★★ 는 ycor (poop.ycor() — 지금 똥의 y 읽기), " +
+      "poop.goto(★★★.randint(-180, 180), 250) 의 ★★★ 는 random (랜덤 모듈, 맨 위 import random 과 같음). " +
+      "-250·250·randint·goto 는 이미 주어져 있다. ★★★ 가 남거나 ycor·random 이 아니면 틀림.",
     maxLength: 2000,
   },
 ];
