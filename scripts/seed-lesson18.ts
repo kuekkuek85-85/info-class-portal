@@ -425,9 +425,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   video: empty(),
 
   /*
-   * 성찰 — 반복(ontimer)이 무엇을 해 주었는지 돌아본다. 개인적이라 비공개.
+   * 성찰 — 다음 시간(19차 충돌)에 어떤 기능이 더해질지 예상해 본다. 개인적이라 비공개.
    */
-  reflectionQuestions: ["똥이 계속 떨어지게 만들어 보니 어땠나요? (반복(ontimer)이 무엇을 해 주던가요?)"],
+  reflectionQuestions: ["오늘 똥이 떨어지게 만들었습니다. 다음 시간에는 어떤 기능이 추가될지 예상해 보세요."],
   reflectionPublic: false,
 
   /*
@@ -553,7 +553,7 @@ async function main(): Promise<void> {
   console.log("구현 3단계(모두 ★★★ 빈칸 직접 채우기, 누적 전체 코드): 1 똥 만들기(shape circle·penup·goto y) → 2 똥 떨어뜨리기(fall 안 ycor·sety + ontimer 반복) → 3 바닥 닿으면 다시 위로(if ycor < -250, goto random·250). 각 단계 code 는 앞 단계 포함 전체. OneCompiler 터틀로 실행.");
   console.log("focusExempt: waiting·build·grill·emotion(타자/외부 링크 단계). 모든 단계가 같은 통(python-dodge-game) 한 artifact 에 함께 저장. freeNavigation(보상 게이트 이동·복귀에 필요).");
   console.log("각 단계 AI 채점(제미나이, feedbackVariant code): 붙여넣은 코드를 checkGoal 로 판정(통과/힌트). 별표 코드 복붙 제출을 막는다. 보상 게이트는 '제출' 이 아니라 'AI 채점 통과(verdict good)' 로 본다.");
-  console.log("성찰 1문항(반복 ontimer 이 무엇을 해 주던가요). 진도 팝업 없음. quiz 없음. galleryEnabled: false. sourcesEnabled: false.");
+  console.log("성찰 1문항(다음 시간에 어떤 기능이 추가될지 예상). 진도 팝업 없음. quiz 없음. galleryEnabled: false. sourcesEnabled: false.");
   process.exit(0);
 }
 
