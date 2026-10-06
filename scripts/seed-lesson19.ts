@@ -105,7 +105,7 @@ poop.color("brown")         # 갈색 똥 (18차에서 넣은 것)
 # 똥 떨어뜨리기 + 바닥 닿으면 다시 위로 (18차에서 만든 것)
 def fall():
     y = poop.ycor()
-    poop.sety(y - 10)
+    poop.sety(y - 5)
     if poop.ycor() < -250:
         poop.goto(random.randint(-180, 180), 250)
     # 충돌 — 똥이 주인공에 닿으면(가까우면) 멈추기
@@ -151,7 +151,7 @@ poop.color("brown")         # 갈색 똥 (18차에서 넣은 것)
 # 똥 떨어뜨리기 + 바닥 닿으면 다시 위로 (18차에서 만든 것)
 def fall():
     y = poop.ycor()
-    poop.sety(y - 10)
+    poop.sety(y - 5)
     if poop.ycor() < -250:
         poop.goto(random.randint(-180, 180), 250)
     # 충돌 — 똥이 주인공에 닿으면 게임 오버! (1단계에서 distance·20 을 채운 상태)
@@ -206,7 +206,7 @@ poop.color("brown")         # 갈색 똥 (18차에서 넣은 것)
 # 똥 떨어뜨리기 + 바닥 닿으면 다시 위로 + 충돌 (1·2단계에서 채운 상태)
 def fall():
     y = poop.ycor()
-    poop.sety(y - 10)
+    poop.sety(y - 5)
     if poop.ycor() < -250:
         poop.goto(random.randint(-180, 180), 250)
     if poop.distance(player) < 20:
