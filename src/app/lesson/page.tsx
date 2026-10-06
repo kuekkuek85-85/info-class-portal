@@ -14,6 +14,7 @@ import { ReviewView } from "@/components/review-view";
 import { SiteFooter } from "@/components/site-footer";
 import { useFocusTracker } from "@/hooks/use-focus-tracker";
 import { ProgressCheckModal } from "@/components/progress-check-modal";
+import { RewardGameFrame } from "@/components/reward-game-frame";
 import { ReviewDescModal } from "@/components/review-desc-modal";
 import { RulesResultPanel } from "@/components/rules-result-panel";
 import { WorksheetView, type WorksheetValue } from "@/components/worksheet-view";
@@ -1595,15 +1596,11 @@ export default function LessonPage() {
           대기 자리에 있던 게임이 여기로 옮겨 와, 활동을 끝낸 상으로 쉬는 시간을 준다 (요청: 17차).
         */}
         {viewPhase === "reflection" && rewardUnlocked && session.rewardGame && (
-          /* 보상 게임은 머리글·설명 없이 iframe 하나만 — 세로 스크롤이 안 생기게 뷰포트에 꽉 채운다 */
-          <section className="h-[calc(100dvh-200px)] min-h-[320px] overflow-hidden rounded-lg border border-line">
-            <iframe
-              src={session.rewardGame.url}
-              title={session.rewardGame.heading || "보상 게임"}
-              className="h-full w-full"
-              allow="fullscreen"
-            />
-          </section>
+          /* 보상 게임은 머리글·설명 없이 iframe 하나만 — 상자에 맞춰 %로 줄여 세로 스크롤을 없앤다 */
+          <RewardGameFrame
+            url={session.rewardGame.url}
+            title={session.rewardGame.heading || "보상 게임"}
+          />
         )}
 
         {viewPhase === "reflection" && !(rewardUnlocked && session.rewardGame) && (
