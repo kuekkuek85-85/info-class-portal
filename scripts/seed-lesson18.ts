@@ -99,7 +99,7 @@ poop = turtle.Turtle()
 poop.shape("★★★")          # 동그라미 모양
 poop.★★★()                  # 선을 안 그리고 이동만 (주인공과 똑같이)
 poop.goto(0, ★★★)            # 화면 맨 위 가운데 (y 는 위로 갈수록 커요)
-poop.color("brown")         # 갈색 똥 (이미 적혀 있어요 — 검정 주인공과 구분돼요)
+poop.★★★("brown")          # 갈색으로 색칠해요 (검정 주인공과 구분)
 
 screen.listen()
 screen.onkeypress(go_left, "Left")
@@ -210,11 +210,12 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "build",
     label: "똥을 화면 맨 위에 만들기",
     hint:
-      "17차에서 만든 주인공 코드 위에 '똥' 을 하나 더 놓아요. 아래 코드에 ★★★ 세 곳이 비어 있어요.\n" +
+      "17차에서 만든 주인공 코드 위에 '똥' 을 하나 더 놓아요. 아래 코드에 ★★★ 네 곳이 비어 있어요.\n" +
       "[OneCompiler 터틀 열기] 로 편집기를 새 탭에서 열고, 채워 실행해 봐요(주석이 힌트!).\n\n" +
       "· poop.shape(\"★★★\") — 동그라미의 영어 이름 (주인공은 네모 square 였죠).\n" +
       "· poop.★★★() — 선을 안 그리고 이동만. 주인공을 놓을 때 썼던 바로 그 함수예요.\n" +
-      "· poop.goto(0, ★★★) — 화면 맨 위 가운데. y 는 위로 갈수록 커져요(맨 위는 +250쯤).\n\n" +
+      "· poop.goto(0, ★★★) — 화면 맨 위 가운데. y 는 위로 갈수록 커져요(맨 위는 +250쯤).\n" +
+      "· poop.★★★(\"brown\") — 색을 칠하는 함수. 갈색(brown)으로 칠해 검정 주인공과 구분해요.\n\n" +
       "동그라미 똥이 화면 맨 위 가운데에 뜨면 성공!",
     kind: "note",
     // 설명(왼쪽) · 실행 결과 그림(오른쪽 1/3), 그 아래 코드 — 17차와 같은 배치. 갈색 똥·검정 주인공으로 구분.
@@ -239,14 +240,14 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "dg18_impl1_check",
     phase: "build",
     label: "AI 채점 — 맞게 채웠는지 확인",
-    hint: "위에 붙여넣은 코드를 AI가 봐줘요. 똥을 만드는 ★★★ 세 곳을 바르게 다 채웠으면 통과! 틀리면 힌트를 줘요.",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. 똥을 만드는 ★★★ 네 곳을 바르게 다 채웠으면 통과! 틀리면 힌트를 줘요.",
     kind: "ai_feedback",
     feedbackVariant: "code",
     feedbackFields: [{ key: "dg18_impl1_submit", label: "완성한 코드" }],
     checkGoal:
-      "똥(turtle)을 화면 맨 위에 만드는 코드다. 세 곳의 ★★★ 가 이렇게 채워져야 맞다: " +
+      "똥(turtle)을 화면 맨 위에 만드는 코드다. 네 곳의 ★★★ 가 이렇게 채워져야 맞다: " +
       'poop.shape("circle")(동그라미), 선을 안 그리고 이동만 하려면 poop.penup(), 위치는 poop.goto(0, 250)' +
-      "(가로 가운데·세로는 맨 위, y 는 위로 갈수록 큼). ★★★ 가 하나라도 남아 있으면 틀림.",
+      '(가로 가운데·세로는 맨 위, y 는 위로 갈수록 큼), 그리고 poop.color("brown")(갈색으로 색칠). ★★★ 가 하나라도 남아 있으면 틀림.',
     maxLength: 2000,
   },
 
