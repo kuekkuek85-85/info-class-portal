@@ -334,6 +334,26 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
 
   /* ── 구현 3단계 — (선택) 게임 끝나면 주인공도 멈추기 ── */
+  /* 개념 설명 note — 코드 빈칸 앞에 참/거짓과 = vs == 를 쉬운 말로 짚는다(중1). */
+  {
+    key: "_dg19_impl_stop_concept",
+    phase: "emotion",
+    label: "잠깐 — 참/거짓(True/False) 과 = vs == 알고 가기",
+    hint:
+      "3단계에는 새 낱말이 나와요. 코드를 채우기 전에 셋만 쉽게 알고 가요.\n\n" +
+      "1) True 와 False = 참 과 거짓. 전등 스위치처럼 생각해요 — True 는 켜짐, False 는 꺼짐.\n" +
+      "   게임 처음엔 over = False (아직 안 끝남, 꺼짐), 똥에 닿으면 over = True (끝남, 켜짐) 로 바꿔요.\n\n" +
+      "2) = 와 == 는 완전히 달라요 (여기서 제일 중요해요).\n" +
+      "   · = 는 '넣기(저장)' 예요. over = True 는 over 라는 상자에 True 를 넣는 거예요.\n" +
+      "   · == 는 '같은지 물어보기(비교)' 예요. over == True 는 'over 가 True 랑 같아?' 하고 확인해서\n" +
+      "     참이나 거짓을 내놓아요. (== 를 비교 연산자라고 불러요.)\n\n" +
+      "3) if over: 는 'over 가 참이면 아래를 실행해' 라는 뜻이에요. over 자체가 이미 참/거짓 값이라,\n" +
+      "   if over: 와 if over == True: 는 같은 뜻이에요. 그래서 3단계 빈칸은 둘 다 정답이고,\n" +
+      "   짧게 if over: 라고만 써도 충분해요.\n\n" +
+      "이제 아래 코드의 ★★★ 세 곳(가드 둘, 그리고 over = True)을 채워 봐요.",
+    kind: "note",
+    maxLength: 0,
+  },
   {
     key: "_dg19_impl_stop",
     phase: "emotion",
