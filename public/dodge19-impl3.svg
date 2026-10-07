@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 300" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <text x="140" y="22" text-anchor="middle" font-size="14" fill="#64748b">실행 결과 — 게임 끝, 모두 멈춤</text>
+  <rect x="40" y="30" width="200" height="240" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <!-- 화면 가운데(0,0)에 GAME OVER! -->
+  <text x="140" y="150" text-anchor="middle" font-size="22" font-weight="700" fill="#171717">GAME OVER!</text>
+
+  <!-- 똥(갈색) : 멈춤 -->
+  <circle cx="140" cy="222" r="12" fill="#8B4513" stroke="#5c2e0e" stroke-width="1.5"/>
+  <!-- 주인공(검정) : 더는 안 움직임 -->
+  <rect x="127" y="232" width="26" height="26" rx="4" fill="#171717" stroke="#000" stroke-width="1.5"/>
+
+  <!-- 멈춤 표시 (주인공도 고정) -->
+  <text x="140" y="286" text-anchor="middle" font-size="12" font-weight="600" fill="#334155">주인공도 멈춤 (키 눌러도 그대로)</text>
+</svg>

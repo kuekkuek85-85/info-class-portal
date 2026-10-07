@@ -71,8 +71,8 @@ const ACTIVITY_ID = "python-dodge-game";
 /* ──────────────────────────────────────────────────────────────
  * 구현 예제 코드 — 18차 결과(주인공 + 똥 떨어뜨리기/재등장) 위에 충돌 처리를 **세 단계로 쌓아** 붙인다.
  * 각 단계 code 는 앞 단계를 포함한 '지금까지의 전체 코드' 다.
- *   1단계: 충돌 감지해서 멈추기 — fall 안 ★★★(distance·20) 채우기 (가까우면 return)
- *   2단계: "게임 오버!" 글씨 — 충돌 if 안 ★★★(글자 내용) 채우기 (write)
+ *   1단계: 충돌 감지해서 멈추기 — fall 안 ★★★(distance·return) 채우기 (20은 주어짐, 가까우면 멈춤)
+ *   2단계: "게임 오버!" 글씨 — 충돌 if 안 ★★★(write·28) 채우기 (GAME OVER! 주어짐, 터틀 한글 깨짐 → 영문)
  *   3단계: (선택) 게임 끝나면 주인공도 멈추기 — over 가드 ★★★(over·over·True) 채우기 (global)
  * ────────────────────────────────────────────────────────────── */
 const CODE_IMPL_HIT = `import turtle
@@ -109,8 +109,8 @@ def fall():
     if poop.ycor() < -250:
         poop.goto(random.randint(-180, 180), 250)
     # 충돌 — 똥이 주인공에 닿으면(가까우면) 멈추기
-    if poop.★★★(player) < ★★★:    # 똥과 주인공 거리를 재서 20보다 가까우면 = 닿은 것
-        return                      # ontimer 를 안 부르니 똥이 그 자리에 멈춰요
+    if poop.★★★(player) < 20:      # 똥과 주인공 거리를 재서 20보다 가까우면 = 닿은 것 (20은 이미 적혀 있어요)
+        ★★★                        # 여기서 멈추는 핵심 — ontimer 를 안 부르니 똥이 그 자리에 멈춰요
     screen.ontimer(fall, 50)
 
 screen.listen()
@@ -154,11 +154,11 @@ def fall():
     poop.sety(y - 5)
     if poop.ycor() < -250:
         poop.goto(random.randint(-180, 180), 250)
-    # 충돌 — 똥이 주인공에 닿으면 게임 오버! (1단계에서 distance·20 을 채운 상태)
+    # 충돌 — 똥이 주인공에 닿으면 게임 오버! (1단계에서 distance·return 을 채운 상태)
     if poop.distance(player) < 20:
         over_writer = turtle.Turtle()
         over_writer.hideturtle()
-        over_writer.write("★★★", align="center", font=("", 28, "bold"))  # 화면 가운데(0,0)에 크게
+        over_writer.★★★("GAME OVER!", align="center", font=("", ★★★, "bold"))  # 화면 가운데(0,0)에 크게
         return
     screen.ontimer(fall, 50)
 
@@ -232,8 +232,8 @@ function empty(): PhaseContent {
 
 // ─────────────────────────────────────────────────────────────
 // 활동지 — 분석(cloze) 단계 없음. 구현 3단계만, 교사가 단추로 하나씩 몬다.
-//   · 구현 1단계(build)   — 충돌 감지해서 멈추기 (distance·20 ★★★, 가까우면 return)
-//   · 구현 2단계(grill)   — "GAME OVER!" 글씨 (write 의 글자 ★★★; 터틀 한글 깨짐 → 영문)
+//   · 구현 1단계(build)   — 충돌 감지해서 멈추기 (distance·return ★★★, 20은 주어짐, 가까우면 멈춤)
+//   · 구현 2단계(grill)   — "GAME OVER!" 글씨 (write·28 ★★★; GAME OVER! 주어짐, 터틀 한글 깨짐 → 영문)
 //   · 구현 3단계(emotion) — (선택) 게임 끝나면 주인공도 멈추기 (over 가드·True ★★★, global)
 // 각 단계 = note(누적 전체 코드 + OneCompiler 터틀 링크) + 제출칸(long) + AI 채점(ai_feedback, code).
 // 모든 단계가 같은 활동 통(python-dodge-game) 한 문서에 함께 저장된다 (18차 기록 위에 쌓임).
@@ -248,10 +248,16 @@ const WORKSHEET: WorksheetQuestion[] = [
       "18차에서 만든 똥 떨어뜨리기 코드 위에 '충돌' 을 붙여요. 똥이 주인공에 닿으면 멈추게 만들어요.\n" +
       "fall 함수 안(재등장 if 다음, ontimer 앞)의 ★★★ 두 곳을 채우고 실행해 봐요(주석이 힌트!).\n\n" +
       "· poop.★★★(player) — 똥과 주인공 '사이 거리를 재 주는' 함수 (distance).\n" +
-      "· < ★★★ — 그 거리가 이 값보다 작으면 '닿은 것'. 똥·주인공이 20쯤 가까우면 부딪힌 거예요(20).\n\n" +
-      "※ if 안의 return 이 핵심이에요(이미 적혀 있어요). return 하면 그 아래 screen.ontimer(fall, 50)\n" +
-      "   을 안 불러요. ontimer 를 안 부르면 fall 이 다시 예약되지 않아 똥이 그 자리에 뚝 멈춰요.",
+      "· < 20 — 그 거리가 20보다 작으면 '닿은 것' (20은 이미 적혀 있어요).\n" +
+      "· 그 아래 줄 ★★★ — 여기서 멈추는 핵심! return 을 적어요.\n\n" +
+      "※ return 하면 그 아래 screen.ontimer(fall, 50) 을 안 불러요. ontimer 를 안 부르면 fall 이\n" +
+      "   다시 예약되지 않아 똥이 그 자리에 뚝 멈춰요.",
     kind: "note",
+    // 설명(왼쪽) · 실행 결과 그림(오른쪽 1/3), 그 아래 코드 — 18차와 같은 배치. 갈색 똥·검정 주인공으로 구분.
+    imageUrl: "/dodge19-impl1.svg",
+    imageAlt: "실행 결과 — 갈색 동그라미 똥이 아래 가운데의 검정 네모 주인공에 닿아 그 자리에 멈춘 모습.",
+    imageSide: "right",
+    imageSideWidth: "third",
     code: CODE_IMPL_HIT,
     linkUrl: "https://onecompiler.com/turtle",
     linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
@@ -269,14 +275,14 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "dg19_impl1_check",
     phase: "build",
     label: "AI 채점 — 맞게 채웠는지 확인",
-    hint: "위에 붙여넣은 코드를 AI가 봐줘요. 충돌 감지 ★★★ 두 곳을 바르게 채웠으면 통과! 틀리면 힌트를 줘요. distance 는 두 거북 사이 거리를 재 주는 함수, return 하면 ontimer 를 안 불러 멈춰요.",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. 충돌 감지 ★★★ 두 곳(distance 와 return)을 바르게 채웠으면 통과! 20은 이미 적혀 있어요. distance 는 두 거북 사이 거리를 재 주는 함수, return 하면 ontimer 를 안 불러 멈춰요.",
     kind: "ai_feedback",
     feedbackVariant: "code",
     feedbackFields: [{ key: "dg19_impl1_submit", label: "완성한 코드" }],
     checkGoal:
-      "똥이 주인공에 닿았는지 보고 닿으면 멈추는 코드다. 두 ★★★ 가 이렇게 채워져야 맞다: " +
-      "poop.distance(player)(두 거북 사이 거리), 20(이보다 가까우면 닿은 것). 즉 if poop.distance(player) < 20: 이고 " +
-      "그 안에서 return(ontimer 안 부름 → 멈춤). ★★★ 가 남으면 틀림.",
+      "똥이 주인공에 닿았는지 보고 닿으면 멈추는 코드다. 20 은 이미 주어졌고, 두 ★★★ 가 이렇게 채워져야 맞다: " +
+      "poop.distance(player)(두 거북 사이 거리) 와 return(멈추는 핵심). 즉 if poop.distance(player) < 20: 다음 줄이 return " +
+      "(ontimer 안 부름 → 멈춤). ★★★ 가 남으면 틀림.",
     maxLength: 2000,
   },
 
@@ -286,13 +292,19 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "grill",
     label: "\"GAME OVER!\" 글씨 띄우기",
     hint:
-      "이제 똥이 닿으면 화면 가운데에 'GAME OVER!' 라고 크게 써요. 충돌 if 안의 ★★★ 한 곳을 채워요\n" +
-      "(멈추기 return 은 그대로, 충돌 감지 distance·20 은 1단계에서 채운 상태예요).\n\n" +
-      "· over_writer.write(\"★★★\", ...) — 화면에 쓸 '글자 내용'. 큰따옴표 안에 GAME OVER! 라고 적어요.\n" +
-      "  (※ OneCompiler 터틀은 한글을 네모(□)로 깨뜨려요 — 그래서 글씨는 영어로 써요.)\n\n" +
-      "write 는 거북이 있는 자리(여기선 0,0 = 화면 가운데)에 글씨를 써 주는 함수예요.\n" +
-      "align=\"center\", font=(\"\", 28, \"bold\") 은 이미 적혀 있어요(가운데 정렬, 28 크기 굵게).",
+      "이제 똥이 닿으면 화면 가운데에 'GAME OVER!' 라고 크게 써요. 충돌 if 안의 ★★★ 두 곳을 채워요\n" +
+      "(멈추기 return 과 충돌 감지 distance 는 1단계에서 채운 상태예요).\n\n" +
+      "· over_writer.★★★(\"GAME OVER!\", ...) — 화면에 글씨를 써 주는 함수 (write).\n" +
+      "· font=(\"\", ★★★, \"bold\") — 글자 크기(폰트 크기)예요. 크게 보이게 28 을 넣어요.\n\n" +
+      "글자 내용 'GAME OVER!' 는 이미 적혀 있어요 — 영어예요. (OneCompiler 터틀은 한글을 네모(□)로\n" +
+      "깨뜨려서, 글씨는 영어로 줬어요.)\n" +
+      "write 는 거북이 있는 자리(여기선 0,0 = 화면 가운데)에 글씨를 써 주고, align=\"center\" 는 가운데 정렬이에요.",
     kind: "note",
+    // 설명(왼쪽) · 실행 결과 그림(오른쪽 1/3), 그 아래 코드 — 18차와 같은 배치.
+    imageUrl: "/dodge19-impl2.svg",
+    imageAlt: "실행 결과 — 똥이 주인공에 닿고 화면 가운데에 GAME OVER! 글씨가 크게 뜬 모습.",
+    imageSide: "right",
+    imageSideWidth: "third",
     code: CODE_IMPL_OVER,
     linkUrl: "https://onecompiler.com/turtle",
     linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
@@ -310,13 +322,14 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "dg19_impl2_check",
     phase: "grill",
     label: "AI 채점 — 맞게 채웠는지 확인",
-    hint: "위에 붙여넣은 코드를 AI가 봐줘요. write 의 ★★★(게임 오버 글씨)를 바르게 채웠으면 통과! 틀리면 힌트를 줘요.",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. ★★★ 두 곳(write 와 28)을 바르게 채웠으면 통과! GAME OVER! 는 이미 주어졌어요. write 는 화면에 글씨를 쓰는 함수, 28 은 글자 크기예요.",
     kind: "ai_feedback",
     feedbackVariant: "code",
     feedbackFields: [{ key: "dg19_impl2_submit", label: "완성한 코드" }],
     checkGoal:
-      "똥이 닿으면 화면 가운데에 게임 오버 글씨를 쓰는 코드다. ★★★ 자리에 \"GAME OVER!\" 가 들어가야 맞다" +
-      "(큰따옴표 안 글자, 영문). write 로 화면에 쓴다. ★★★ 가 남으면 틀림.",
+      "똥이 닿으면 화면 가운데에 게임 오버 글씨를 쓰는 코드다. \"GAME OVER!\" 는 이미 주어졌고, 두 ★★★ 가 " +
+      "write(화면에 글씨 쓰는 함수) 와 28(글자 크기)로 채워져야 맞다. 즉 over_writer.write(\"GAME OVER!\", " +
+      "align=\"center\", font=(\"\", 28, \"bold\")). ★★★ 가 남으면 틀림.",
     maxLength: 2000,
   },
 
@@ -331,10 +344,16 @@ const WORKSHEET: WorksheetQuestion[] = [
       "over 라는 '스위치' 를 하나 두고, 충돌하면 켜요(True). 주인공 이동 함수는 스위치가 켜져 있으면\n" +
       "안 움직이게 막아요. ★★★ 세 곳(go_left·go_right 맨 위 둘, 충돌 때 하나)을 채워요.\n\n" +
       "· go_left·go_right 맨 위 if ★★★: return — '게임이 끝났으면 안 움직이기'. 스위치 이름 그대로 over.\n" +
+      "  (over 만 써도 되고 over == True 라고 써도 돼요 — if over: 와 if over == True: 는 같은 뜻이에요.)\n" +
       "· 충돌 때 over = ★★★ — 게임 끝! 스위치를 참으로 켜요(True). 바깥 변수를 함수 안에서 바꾸려면\n" +
       "  바로 윗줄 global over 가 필요해요(이미 적혀 있어요).\n\n" +
-      "세 ★★★ 가 over · over · True 면 성공! 이제 똥에 닿으면 주인공이 더는 안 움직여요.",
+      "세 ★★★ 가 over · over · True (또는 앞 둘을 over == True)면 성공! 이제 똥에 닿으면 주인공이 더는 안 움직여요.",
     kind: "note",
+    // 설명(왼쪽) · 실행 결과 그림(오른쪽 1/3), 그 아래 코드 — 18차와 같은 배치. (선택 단계)
+    imageUrl: "/dodge19-impl3.svg",
+    imageAlt: "실행 결과 — 게임이 끝나 GAME OVER! 가 뜨고 주인공과 똥이 모두 멈춘 모습.",
+    imageSide: "right",
+    imageSideWidth: "third",
     code: CODE_IMPL_STOP,
     linkUrl: "https://onecompiler.com/turtle",
     linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
@@ -352,13 +371,14 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "dg19_impl3_check",
     phase: "emotion",
     label: "AI 채점 — 맞게 채웠는지 확인 (선택)",
-    hint: "위에 붙여넣은 코드를 AI가 봐줘요. over 가드·True ★★★ 세 곳을 바르게 채웠으면 통과! over 는 게임이 끝났는지 기억하는 스위치, 바깥 변수를 함수 안에서 바꾸려면 global over, 끝나면 주인공 움직임을 if over: return 으로 막아요. (이 단계는 선택이에요 — 못 해도 게임은 열려요.)",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. over 가드·True ★★★ 세 곳을 바르게 채웠으면 통과! over 는 게임이 끝났는지 기억하는 스위치, 바깥 변수를 함수 안에서 바꾸려면 global over, 끝나면 주인공 움직임을 if over: return 으로 막아요. (if over: 와 if over == True: 는 같은 뜻이라 둘 다 정답. 이 단계는 선택이에요 — 못 해도 게임은 열려요.)",
     kind: "ai_feedback",
     feedbackVariant: "code",
     feedbackFields: [{ key: "dg19_impl3_submit", label: "완성한 코드" }],
     checkGoal:
-      "게임이 끝나면 주인공도 못 움직이게 하는 코드다. go_left·go_right 맨 위의 ★★★ 는 over(즉 if over: return), " +
-      "충돌 때 ★★★ 는 True(global over 로 바꿈). 세 ★★★ 가 over·over·True 여야 맞다. ★★★ 가 남으면 틀림.",
+      "게임이 끝나면 주인공도 못 움직이게 하는 코드다. go_left·go_right 맨 위의 if 조건 ★★★ 는 over 또는 over == True 둘 다 맞다" +
+      "(파이썬에서 if over: 와 if over == True: 는 같은 뜻). 충돌 때 세 번째 ★★★ 는 True(over = True 로 게임 종료 표시, global over 로 바꿈). " +
+      "즉 앞의 두 가드는 over(또는 over == True), 마지막은 True 여야 맞다. ★★★ 가 남으면 틀림.",
     maxLength: 2000,
   },
 ];
@@ -569,7 +589,7 @@ async function main(): Promise<void> {
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (게임 제작 아크 공용 통 — 17·18차와 같은 통. 오늘 '충돌 처리' 기록이 18차 똥 떨어뜨리기 기록 위에 같은 문서에 쌓임)`);
   console.log("단계: 대기(파이썬 타자 도우미 링크) → 안내(assessment) → 구현 1단계(build) → 구현 2단계(grill) → 구현 3단계·선택(emotion) → 성찰(보상 게임: 구현 1·2단계 AI 채점 통과하면 테트리스 — 3단계는 선택이라 게이트에 없음). 분석(cloze)은 17차에서 끝냄. 기분은 대기 화면에서만.");
-  console.log("구현 3단계(모두 ★★★ 빈칸 직접 채우기, 누적 전체 코드): 1 충돌 감지(distance·20 + return 으로 멈춤) → 2 게임 오버 글씨(write 의 \"GAME OVER!\" — OneCompiler 터틀 한글 깨짐 확인해 영문) → 3 선택: 주인공 멈추기(over·over·True + global). 각 단계 code 는 앞 단계 포함 전체. OneCompiler 터틀로 실행.");
+  console.log("구현 3단계(모두 ★★★ 빈칸 직접 채우기, 누적 전체 코드): 1 충돌 감지(distance·return 으로 멈춤, 20은 주어짐) → 2 게임 오버 글씨(write·28 채우기, \"GAME OVER!\" 주어짐 — OneCompiler 터틀 한글 깨짐 → 영문) → 3 선택: 주인공 멈추기(over·over·True + global). 각 단계 code 는 앞 단계 포함 전체. OneCompiler 터틀로 실행.");
   console.log("focusExempt: waiting·build·grill·emotion(타자/외부 링크 단계). 모든 단계가 같은 통(python-dodge-game) 한 artifact 에 함께 저장. freeNavigation(보상 게이트 이동·복귀에 필요).");
   console.log("각 단계 AI 채점(제미나이, feedbackVariant code): 붙여넣은 코드를 checkGoal 로 판정(통과/힌트). 별표 코드 복붙 제출을 막는다. 보상 게이트는 '제출' 이 아니라 'AI 채점 통과(verdict good)' 로 본다. 3단계는 선택이라 게이트 밖.");
   console.log("성찰 1문항(거리로 충돌을 어떻게 알아챘나요). 진도 팝업 없음. quiz 없음. galleryEnabled: false. sourcesEnabled: false.");
