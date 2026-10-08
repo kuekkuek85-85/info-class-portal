@@ -247,10 +247,10 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "18차에서 만든 똥 떨어뜨리기 코드 위에 '충돌' 을 붙여요. 똥이 주인공에 닿으면 멈추게 만들어요.\n" +
       "fall 함수 안(재등장 if 다음, ontimer 앞)의 ★★★ 두 곳을 채우고 실행해 봐요(주석이 힌트!).\n\n" +
-      "· poop.★★★(player) — 똥과 주인공 '사이 거리를 재 주는' 함수 (distance).\n" +
+      "· poop.★★★(player) — 똥과 주인공이 얼마나 '떨어져 있는지(거리)' 를 재 주는 함수예요 — '거리' 를 뜻하는 영어 단어.\n" +
       "· < 20 — 그 거리가 20보다 작으면 '닿은 것' (20은 이미 적혀 있어요).\n" +
-      "· 그 아래 줄 ★★★ — 여기서 멈추는 핵심! return 을 적어요.\n\n" +
-      "※ return 하면 그 아래 screen.ontimer(fall, 50) 을 안 불러요. ontimer 를 안 부르면 fall 이\n" +
+      "· 그 아래 줄 ★★★ — 여기서 멈추는 핵심! 함수를 끝내고 빠져나가는, '되돌아 나가다' 를 뜻하는 영어 단어예요.\n\n" +
+      "※ 이 낱말을 쓰면 그 아래 screen.ontimer(fall, 50) 을 안 불러요. ontimer 를 안 부르면 fall 이\n" +
       "   다시 예약되지 않아 똥이 그 자리에 뚝 멈춰요.",
     kind: "note",
     // 설명(왼쪽) · 실행 결과 그림(오른쪽 1/3), 그 아래 코드 — 18차와 같은 배치. 갈색 똥·검정 주인공으로 구분.
@@ -275,7 +275,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "dg19_impl1_check",
     phase: "build",
     label: "AI 채점 — 맞게 채웠는지 확인",
-    hint: "위에 붙여넣은 코드를 AI가 봐줘요. 충돌 감지 ★★★ 두 곳(distance 와 return)을 바르게 채웠으면 통과! 20은 이미 적혀 있어요. distance 는 두 거북 사이 거리를 재 주는 함수, return 하면 ontimer 를 안 불러 멈춰요.",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. 충돌 감지 ★★★ 두 곳(거리를 재는 함수 · 함수를 끝내고 빠져나가는 낱말)을 바르게 채웠으면 통과! 20은 이미 적혀 있어요. 첫 칸은 두 거북이 얼마나 떨어져 있는지 재 주는 함수, 둘째 칸은 그 낱말을 쓰면 ontimer 를 안 불러 멈춰요.",
     kind: "ai_feedback",
     feedbackVariant: "code",
     feedbackFields: [{ key: "dg19_impl1_submit", label: "완성한 코드" }],
@@ -293,12 +293,12 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "\"GAME OVER!\" 글씨 띄우기",
     hint:
       "이제 똥이 닿으면 화면 가운데에 'GAME OVER!' 라고 크게 써요. 충돌 if 안의 ★★★ 두 곳을 채워요\n" +
-      "(멈추기 return 과 충돌 감지 distance 는 1단계에서 채운 상태예요).\n\n" +
-      "· over_writer.★★★(\"GAME OVER!\", ...) — 화면에 글씨를 써 주는 함수 (write).\n" +
+      "(멈추기·충돌 감지는 1단계에서 채운 상태예요).\n\n" +
+      "· over_writer.★★★(\"GAME OVER!\", ...) — 화면에 글씨를 '쓰는' 함수 — '쓰다' 를 뜻하는 영어 단어.\n" +
       "· font=(\"\", ★★★, \"bold\") — 글자 크기(폰트 크기)예요. 크게 보이게 28 을 넣어요.\n\n" +
       "글자 내용 'GAME OVER!' 는 이미 적혀 있어요 — 영어예요. (OneCompiler 터틀은 한글을 네모(□)로\n" +
       "깨뜨려서, 글씨는 영어로 줬어요.)\n" +
-      "write 는 거북이 있는 자리(여기선 0,0 = 화면 가운데)에 글씨를 써 주고, align=\"center\" 는 가운데 정렬이에요.",
+      "그 함수는 거북이 있는 자리(여기선 0,0 = 화면 가운데)에 글씨를 써 주고, align=\"center\" 는 가운데 정렬이에요.",
     kind: "note",
     // 설명(왼쪽) · 실행 결과 그림(오른쪽 1/3), 그 아래 코드 — 18차와 같은 배치.
     imageUrl: "/dodge19-impl2.svg",
@@ -322,7 +322,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "dg19_impl2_check",
     phase: "grill",
     label: "AI 채점 — 맞게 채웠는지 확인",
-    hint: "위에 붙여넣은 코드를 AI가 봐줘요. ★★★ 두 곳(write 와 28)을 바르게 채웠으면 통과! GAME OVER! 는 이미 주어졌어요. write 는 화면에 글씨를 쓰는 함수, 28 은 글자 크기예요.",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. ★★★ 두 곳(화면에 글씨를 쓰는 함수 · 28)을 바르게 채웠으면 통과! GAME OVER! 는 이미 주어졌어요. 첫 칸은 화면에 글씨를 '쓰다' 를 뜻하는 영어 함수, 28 은 글자 크기예요.",
     kind: "ai_feedback",
     feedbackVariant: "code",
     feedbackFields: [{ key: "dg19_impl2_submit", label: "완성한 코드" }],
@@ -341,16 +341,17 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "잠깐 — 참/거짓(True/False) 과 = vs == 알고 가기",
     hint:
       "3단계에는 새 낱말이 나와요. 코드를 채우기 전에 셋만 쉽게 알고 가요.\n\n" +
-      "1) True 와 False = 참 과 거짓. 전등 스위치처럼 생각해요 — True 는 켜짐, False 는 꺼짐.\n" +
-      "   게임 처음엔 over = False (아직 안 끝남, 꺼짐), 똥에 닿으면 over = True (끝남, 켜짐) 로 바꿔요.\n\n" +
+      "1) 참 과 거짓. 전등 스위치처럼 생각해요 — '참' 은 켜짐, '거짓' 은 꺼짐. 파이썬에서는 이 둘을\n" +
+      "   각각 특별한 영어 낱말로 써요(둘 다 첫 글자가 대문자예요, 사람 이름처럼). 게임 처음엔 아직\n" +
+      "   안 끝났으니 over = '거짓'(꺼짐), 똥에 닿으면 over = '참'(켜짐) 으로 바꿔요.\n\n" +
       "2) = 와 == 는 완전히 달라요 (여기서 제일 중요해요).\n" +
-      "   · = 는 '넣기(저장)' 예요. over = True 는 over 라는 상자에 True 를 넣는 거예요.\n" +
-      "   · == 는 '같은지 물어보기(비교)' 예요. over == True 는 'over 가 True 랑 같아?' 하고 확인해서\n" +
+      "   · = 는 '넣기(저장)' 예요. over = '참' 은 over 라는 상자에 '참' 값을 넣는 거예요.\n" +
+      "   · == 는 '같은지 물어보기(비교)' 예요. over == '참' 은 'over 가 참이랑 같아?' 하고 확인해서\n" +
       "     참이나 거짓을 내놓아요. (== 를 비교 연산자라고 불러요.)\n\n" +
       "3) if over: 는 'over 가 참이면 아래를 실행해' 라는 뜻이에요. over 자체가 이미 참/거짓 값이라,\n" +
-      "   if over: 와 if over == True: 는 같은 뜻이에요. 그래서 3단계 빈칸은 둘 다 정답이고,\n" +
+      "   if over: 와 if over == '참': 은 같은 뜻이에요. 그래서 3단계 빈칸은 둘 다 정답이고,\n" +
       "   짧게 if over: 라고만 써도 충분해요.\n\n" +
-      "이제 아래 코드의 ★★★ 세 곳(가드 둘, 그리고 over = True)을 채워 봐요.",
+      "이제 아래 코드의 ★★★ 세 곳(가드 둘, 그리고 over = ★★★)을 채워 봐요.",
     kind: "note",
     maxLength: 0,
   },
@@ -361,13 +362,13 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "이 단계까지 완성해야 게임이 열려요.\n\n" +
       "지금은 게임 오버 글씨가 떠도 주인공은 계속 움직여요. 게임이 끝나면 주인공도 멈추게 만들어요.\n" +
-      "over 라는 '스위치' 를 하나 두고, 충돌하면 켜요(True). 주인공 이동 함수는 스위치가 켜져 있으면\n" +
+      "over 라는 '스위치' 를 하나 두고, 충돌하면 '참' 으로 켜요. 주인공 이동 함수는 스위치가 켜져 있으면\n" +
       "안 움직이게 막아요. ★★★ 세 곳(go_left·go_right 맨 위 둘, 충돌 때 하나)을 채워요.\n\n" +
       "· go_left·go_right 맨 위 if ★★★: return — '게임이 끝났으면 안 움직이기'. 스위치 이름 그대로 over.\n" +
-      "  (over 만 써도 되고 over == True 라고 써도 돼요 — if over: 와 if over == True: 는 같은 뜻이에요.)\n" +
-      "· 충돌 때 over = ★★★ — 게임 끝! 스위치를 참으로 켜요(True). 바깥 변수를 함수 안에서 바꾸려면\n" +
-      "  바로 윗줄 global over 가 필요해요(이미 적혀 있어요).\n\n" +
-      "세 ★★★ 가 over · over · True (또는 앞 둘을 over == True)면 성공! 이제 똥에 닿으면 주인공이 더는 안 움직여요.",
+      "  (over 만 써도 되고 over == '참' 이라고 써도 돼요 — if over: 와 if over == '참': 은 같은 뜻이에요.)\n" +
+      "· 충돌 때 over = ★★★ — 게임 끝! 스위치를 '참' 으로 켜요 — '참' 을 뜻하는 영어 낱말(첫 글자 대문자)이에요.\n" +
+      "  함수 밖에 있는 변수를 함수 안에서 바꾸려면 바로 윗줄에 '전역' 선언 키워드가 필요해요(이미 적혀 있어요).\n\n" +
+      "세 ★★★ 는 앞의 둘이 스위치 이름 over(또는 over == '참'), 마지막이 '참' 을 뜻하는 낱말이면 성공! 이제 똥에 닿으면 주인공이 더는 안 움직여요.",
     kind: "note",
     // 설명(왼쪽) · 실행 결과 그림(오른쪽 1/3), 그 아래 코드 — 18차와 같은 배치.
     imageUrl: "/dodge19-impl3.svg",
@@ -391,7 +392,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "dg19_impl3_check",
     phase: "emotion",
     label: "AI 채점 — 맞게 채웠는지 확인",
-    hint: "위에 붙여넣은 코드를 AI가 봐줘요. over 가드·True ★★★ 세 곳을 바르게 채웠으면 통과! over 는 게임이 끝났는지 기억하는 스위치, 바깥 변수를 함수 안에서 바꾸려면 global over, 끝나면 주인공 움직임을 if over: return 으로 막아요. (if over: 와 if over == True: 는 같은 뜻이라 둘 다 정답.)",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. 스위치(over) 가드 둘과 '참' ★★★ 세 곳을 바르게 채웠으면 통과! over 는 게임이 끝났는지 기억하는 스위치, 바깥 변수를 함수 안에서 바꾸려면 바로 윗줄에 '전역' 선언, 끝나면 주인공 움직임을 if over: return 으로 막아요. (if over: 와 if over == '참': 은 같은 뜻이라 둘 다 정답.)",
     kind: "ai_feedback",
     feedbackVariant: "code",
     feedbackFields: [{ key: "dg19_impl3_submit", label: "완성한 코드" }],
