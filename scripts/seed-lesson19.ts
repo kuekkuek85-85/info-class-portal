@@ -484,9 +484,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   video: empty(),
 
   /*
-   * 성찰 — 거리로 충돌을 어떻게 알아챘는지 돌아본다. 개인적이라 비공개.
+   * 성찰 — 두 개체의 충돌을 알려면 무엇(거리)을 측정해야 하는지 돌아본다. 개인적이라 비공개.
    */
-  reflectionQuestions: ["똥에 닿으면 게임이 끝나게 만들어 보니 어땠나요? (거리로 충돌을 어떻게 알아챘나요?)"],
+  reflectionQuestions: ["두 개체 간의 충돌 여부는 무엇을 측정해야 알 수 있나요?"],
   reflectionPublic: false,
 
   /*
@@ -612,7 +612,7 @@ async function main(): Promise<void> {
   console.log("구현 3단계(모두 ★★★ 빈칸 직접 채우기, 누적 전체 코드): 1 충돌 감지(distance·return 으로 멈춤, 20은 주어짐) → 2 게임 오버 글씨(write·28 채우기, \"GAME OVER!\" 주어짐 — OneCompiler 터틀 한글 깨짐 → 영문) → 3 선택: 주인공 멈추기(over·over·True + global). 각 단계 code 는 앞 단계 포함 전체. OneCompiler 터틀로 실행.");
   console.log("focusExempt: waiting·build·grill·emotion(타자/외부 링크 단계). 모든 단계가 같은 통(python-dodge-game) 한 artifact 에 함께 저장. freeNavigation(보상 게이트 이동·복귀에 필요).");
   console.log("각 단계 AI 채점(제미나이, feedbackVariant code): 붙여넣은 코드를 checkGoal 로 판정(통과/힌트). 별표 코드 복붙 제출을 막는다. 보상 게이트는 '제출' 이 아니라 'AI 채점 통과(verdict good)' 로 본다. 3단계는 선택이라 게이트 밖.");
-  console.log("성찰 1문항(거리로 충돌을 어떻게 알아챘나요). 진도 팝업 없음. quiz 없음. galleryEnabled: false. sourcesEnabled: false.");
+  console.log("성찰 1문항(두 개체 충돌 여부는 무엇을 측정해야 아나 = 거리). 진도 팝업 없음. quiz 없음. galleryEnabled: false. sourcesEnabled: false.");
   process.exit(0);
 }
 
