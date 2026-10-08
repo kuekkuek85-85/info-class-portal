@@ -17,7 +17,8 @@ import type { AiFeedback } from "@/lib/ai-feedback";
  */
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
-const TIMEOUT_MS = 12_000;
+// 수업(여러 명 동시 채점) 중엔 Gemini 응답이 느려질 수 있어 넉넉히 둔다(12초면 전원 타임아웃).
+const TIMEOUT_MS = 30_000;
 
 export interface ClozeLineEval {
   /** 화면에 보이는 그대로의 구성요소 번호 (1~6) */
@@ -76,7 +77,12 @@ export async function gradeClozeAi(items: ClozeLineEval[]): Promise<AiFeedback |
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify({
           contents: [{ parts: [{ text: buildPrompt(items) }] }],
-          generationConfig: { temperature: 0.5, responseMimeType: "application/json" },
+          // thinkingBudget: 0 — '생각' 단계를 꺼 응답을 크게 빠르게(수업 중 지연·타임아웃 방지).
+          generationConfig: {
+            temperature: 0.5,
+            responseMimeType: "application/json",
+            thinkingConfig: { thinkingBudget: 0 },
+          },
         }),
         signal: controller.signal,
       },

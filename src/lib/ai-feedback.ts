@@ -25,7 +25,8 @@ import "server-only";
  */
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
-const TIMEOUT_MS = 12_000;
+// 수업(여러 명 동시 채점) 중엔 Gemini 응답이 느려질 수 있어 넉넉히 둔다(12초면 전원 타임아웃났다).
+const TIMEOUT_MS = 30_000;
 
 export type FeedbackVariant = "imessage" | "empathy" | "conflict" | "code";
 export type FeedbackVerdict = "good" | "revise";
@@ -191,7 +192,13 @@ export async function reviewFeedback(
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify({
           contents: [{ parts: [{ text: buildPrompt(variant, fields, goal) }] }],
-          generationConfig: { temperature: 0.5, responseMimeType: "application/json" },
+          // thinkingBudget: 0 — '생각' 단계를 꺼 응답을 크게 빠르게(수업 중 지연·타임아웃 방지).
+          // 빈칸 채점·형식 피드백엔 추론 과정이 필요 없다.
+          generationConfig: {
+            temperature: 0.5,
+            responseMimeType: "application/json",
+            thinkingConfig: { thinkingBudget: 0 },
+          },
         }),
         signal: controller.signal,
       },
