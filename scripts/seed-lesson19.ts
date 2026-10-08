@@ -415,7 +415,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     heading: "기다리는 동안 — 파이썬 타자 연습",
     body:
       "오늘도 코드를 직접 타이핑해요. 그 전에 파이썬 타자 도우미로 손을 풀어 봐요.\n" +
-      "poop.distance, GAME OVER!, global over 처럼 오늘 쓸 파이썬 낱말을 빠르고 정확하게 치는 연습이에요.\n" +
+      "poop.goto, screen.onkeypress, GAME OVER! 처럼 오늘 쓸 파이썬 낱말을 빠르고 정확하게 치는 연습이에요.\n" +
       "아래 버튼을 누르면 새 탭에서 열려요. 수업이 시작되면 이 화면은 저절로 넘어가요.",
     url: "link:https://python-typing-helper.vercel.app/",
   },
