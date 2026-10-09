@@ -84,6 +84,8 @@ interface SessionRow {
   presenters?: { studentId: string; name: string }[];
   presenterIndex?: number;
   presentationPhase?: LessonPhase;
+  /** 발표자 자료 열기 버튼이 먼저 여는 것 ("app"=앱 우선, 기본 "slides"). 7차는 미설정→slides */
+  presentPrimary?: "app" | "slides";
   activity?: {
     activityId: string;
     places?: string[];
@@ -1246,15 +1248,17 @@ function Dashboard() {
                       </button>
                     </div>
                     {/*
-                      현재 발표자의 슬라이드를 교사가 한 번 눌러 새 탭으로 연다 (A안).
+                      현재 발표자의 자료를 교사가 한 번 눌러 새 탭으로 연다.
                       링크는 학생 payload(presenters)에 넣지 않고 교사 전용 /api/teacher/eval 로만
-                      가져온다 — 남의 슬라이드 주소가 학생 화면에 실리지 않게. cur 이 있을 때만 뜬다.
+                      가져온다 — 남의 주소가 학생 화면에 실리지 않게. cur 이 있을 때만 뜬다.
+                      presentPrimary 로 "앱 우선(8차)" / "슬라이드 우선(7차 기본)" 를 가른다.
                     */}
                     {cur && (
                       <PresenterSlidesButton
                         studentId={cur.studentId}
                         activityId={session.activity?.activityId}
                         groupKey={session.groupKey}
+                        primary={session.presentPrimary ?? "slides"}
                       />
                     )}
                     <ol className="flex flex-col gap-1">
@@ -1905,10 +1909,13 @@ function PresenterSlidesButton({
   studentId,
   activityId,
   groupKey,
+  primary = "slides",
 }: {
   studentId: string;
   activityId?: string;
   groupKey?: string;
+  /** "app" = 앱(build_url) 우선 + 슬라이드 백업(8차). "slides" = 슬라이드 우선(7차 기본) */
+  primary?: "app" | "slides";
 }) {
   const [links, setLinks] = useState<Record<string, { slidesUrl: string; buildUrl: string }>>({});
 
@@ -1942,18 +1949,48 @@ function PresenterSlidesButton({
   }, [activityId, groupKey]);
 
   const cur = links[studentId];
-  // 슬라이드가 우선, 없으면 앱 링크로 폴백. 스킴이 빠졌어도 눌리게 https:// 를 채운다
-  const url = normalizeUrl(cur?.slidesUrl || cur?.buildUrl || "");
-  const openable = /^https?:\/\//i.test(url);
+  // 스킴이 빠졌어도 눌리게 https:// 를 채운다
+  const appUrl = normalizeUrl(cur?.buildUrl || "");
+  const slidesUrl = normalizeUrl(cur?.slidesUrl || "");
+  const appOk = /^https?:\/\//i.test(appUrl);
+  const slidesOk = /^https?:\/\//i.test(slidesUrl);
+  const open = (url: string) => window.open(url, "_blank", "noopener,noreferrer");
 
+  if (primary === "app") {
+    // 8차: 앱 라이브 시연 — 앱(build_url) 메인, 슬라이드(slides_url)는 백업 보조 버튼
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={!appOk}
+          onClick={() => appOk && open(appUrl)}
+          className="pill pill-primary self-start disabled:opacity-60"
+        >
+          ▶ 이 발표자 앱 열기 (새 탭)
+        </button>
+        {slidesOk && (
+          <button
+            type="button"
+            onClick={() => open(slidesUrl)}
+            className="pill pill-secondary self-start"
+          >
+            슬라이드 열기 (백업)
+          </button>
+        )}
+        {!appOk && <span className="t-caption text-muted">제출한 앱 링크 없음</span>}
+      </div>
+    );
+  }
+
+  // 7차 기본: 슬라이드 우선, 없으면 앱으로 폴백 (기존 동작 그대로)
+  const url = slidesOk ? slidesUrl : appUrl;
+  const openable = slidesOk || appOk;
   return (
     <div className="flex flex-col gap-1">
       <button
         type="button"
         disabled={!openable}
-        onClick={() => {
-          if (openable) window.open(url, "_blank", "noopener,noreferrer");
-        }}
+        onClick={() => openable && open(url)}
         className="pill pill-primary self-start disabled:opacity-60"
       >
         ▶ 이 발표자 슬라이드 열기 (새 탭)

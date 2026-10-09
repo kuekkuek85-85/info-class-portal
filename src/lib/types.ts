@@ -1470,6 +1470,17 @@ export interface LessonPlan {
   phaseOrder?: LessonPhase[];
   /** 라이브 발표 진행을 띄우는 단계 (hai7 은 grill). 세션 스냅샷으로도 실린다 */
   presentationPhase?: LessonPhase;
+  /**
+   * 라이브 발표에서 "발표자 자료 열기" 버튼이 **무엇을 먼저 여는가** (교사 대시보드 전용).
+   *
+   *  - "slides"(기본·안 적으면 이것) — 슬라이드(slides_url) 우선, 없으면 앱(build_url)로 폴백.
+   *    7차(발표 파트 1)가 이 동작이다 — 플래그를 안 두면 지금 그대로다.
+   *  - "app" — **앱(build_url) 우선**("앱 열기")에 슬라이드(slides_url)는 "슬라이드 열기(백업)"
+   *    보조 버튼으로. 8차(발표 파트 2)가 앱 라이브 시연이라 이 값을 쓴다.
+   *
+   * 링크 자체는 학생과 동기화되는 presenters 에 넣지 않고 교사 전용 경로로만 가져온다(프라이버시).
+   */
+  presentPrimary?: "app" | "slides";
   /** 이 차시에서만 이탈을 세지 않을 단계 */
   focusExempt?: LessonPhase[];
   /**
@@ -1617,6 +1628,8 @@ export interface ClassSession {
   presenters?: { studentId: string; name: string }[];
   presenterIndex?: number;
   presentationPhase?: LessonPhase;
+  /** 발표자 자료 열기 버튼이 먼저 여는 것 ("app"=앱 우선, 기본 "slides"). LessonPlan 참조 */
+  presentPrimary?: "app" | "slides";
   /**
    * 교사가 혼자 걸어보는 리허설 수업.
    *
