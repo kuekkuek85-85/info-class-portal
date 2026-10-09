@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 300" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <text x="140" y="22" text-anchor="middle" font-size="14" fill="#64748b">실행 결과 — 점수 높을수록 똥이 빨라짐</text>
+  <rect x="40" y="30" width="200" height="240" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <!-- 점수 글씨 (높은 점수) -->
+  <text x="140" y="58" text-anchor="middle" font-size="18" font-weight="700" fill="#171717">Score: 15</text>
+
+  <!-- 똥(갈색) : 더 빠르게(짧은 dur) 내려옴 — 뒤에 속도선으로 빠름 표현 -->
+  <g stroke="#c7a27a" stroke-width="2" stroke-linecap="round">
+    <line x1="90" y1="70" x2="90" y2="86"/>
+    <line x1="150" y1="92" x2="150" y2="108"/>
+    <line x1="200" y1="78" x2="200" y2="94"/>
+  </g>
+  <circle cx="90" r="12" fill="#8B4513" stroke="#5c2e0e" stroke-width="1.5">
+    <animate attributeName="cy" values="100;258" dur="0.8s" begin="0s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="150" r="12" fill="#8B4513" stroke="#5c2e0e" stroke-width="1.5">
+    <animate attributeName="cy" values="122;258" dur="0.8s" begin="0.3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="200" r="12" fill="#8B4513" stroke="#5c2e0e" stroke-width="1.5">
+    <animate attributeName="cy" values="108;258" dur="0.8s" begin="0.55s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- 주인공(검정) : 아래 가운데 -->
+  <rect x="127" y="232" width="26" height="26" rx="4" fill="#171717" stroke="#000" stroke-width="1.5"/>
+</svg>

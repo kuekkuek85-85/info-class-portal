@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 300" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <text x="140" y="22" text-anchor="middle" font-size="14" fill="#64748b">실행 결과 — 피할 때마다 점수가 올라감</text>
+  <rect x="40" y="30" width="200" height="240" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <!-- 점수 글씨 (화면 위쪽, 영어) -->
+  <text x="140" y="58" text-anchor="middle" font-size="18" font-weight="700" fill="#171717">Score: 3</text>
+
+  <!-- 똥(갈색) 여러 개 : 내려오는 중 -->
+  <circle cx="90" cy="92" r="12" fill="#8B4513" stroke="#5c2e0e" stroke-width="1.5"/>
+  <circle cx="178" cy="130" r="12" fill="#8B4513" stroke="#5c2e0e" stroke-width="1.5"/>
+  <circle cx="128" cy="168" r="12" fill="#8B4513" stroke="#5c2e0e" stroke-width="1.5"/>
+
+  <!-- 주인공(검정) : 아래 가운데 -->
+  <rect x="127" y="232" width="26" height="26" rx="4" fill="#171717" stroke="#000" stroke-width="1.5"/>
+</svg>
