@@ -672,6 +672,14 @@ export interface WorksheetQuestion {
      * JSON 으로 한 칸에 저장한다(rows·list 와 같은 방식). 자동 채점은 없다 (cloze-field · clozeLines).
      */
     | "cloze"
+    /**
+     * vibe_code — 바이브 코딩 (22차 복습+바이브 코딩). 학생이 '완성 게임(vibeBaseCode)에 기능 하나
+     * 추가'를 프롬프트로 요청하면 서버가 Gemini 를 불러 전체 실행 가능한 파이썬 turtle 코드 + 쉬운
+     * 설명을 돌려준다. 프롬프트·AI 답은 answers[key] 에 JSON(VibeCodeLog)으로 저장되고 교사만 열람한다
+     * (api/teacher/vibe-code + requireTeacher). 학번·이름은 Gemini 로 안 보낸다. 화면에 "선생님이 볼 수
+     * 있어요" 를 띄운다 (vibe-code-panel · /api/student/vibe-code · vibe-code.ts).
+     */
+    | "vibe_code"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
@@ -842,6 +850,12 @@ export interface WorksheetQuestion {
    * 문항은 복사 단추가 그대로 뜬다(순수 추가).
    */
   noCopy?: boolean;
+  /**
+   * vibe_code 가 Gemini 에게 바탕으로 줄 '현재 게임 코드' (22차 완성 게임 = 21차 최종). 서버가 이 값을
+   * 시스템 프롬프트에 심어 학생 프롬프트대로 기능을 더한다. 클라이언트가 보낸 코드는 신뢰하지 않는다 —
+   * 서버가 이 필드에서만 읽는다. 학생 화면 code 블록과 달리 이건 서버 전용 입력이다(화면엔 안 그린다).
+   */
+  vibeBaseCode?: string;
   /**
    * ai_review 가 AI 에게 보낼 답들. 순서대로 이름표를 붙여 함께 보낸다.
    * 안 쓴 칸은 자동으로 빠진다 — 학생이 비워 둔 것까지 "왜 안 썼냐"고 묻지 않는다.

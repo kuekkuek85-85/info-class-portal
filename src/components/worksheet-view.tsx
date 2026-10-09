@@ -10,6 +10,7 @@ import { EmotionLensPanel } from "@/components/emotion-lens-panel";
 import { RelayPanel } from "@/components/relay-panel";
 import { RulesResultPanel } from "@/components/rules-result-panel";
 import { StreamsSolo } from "@/components/streams-solo";
+import { VibeCodePanel } from "@/components/vibe-code-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
 import { ImageField } from "@/components/image-field";
 import { ListField } from "@/components/list-field";
@@ -992,6 +993,18 @@ export function WorksheetView({
               onResult={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}
               notice={question.botNotice}
+            />
+          ) : question.kind === "vibe_code" ? (
+            /*
+              바이브 코딩 — 학생이 원하는 기능을 프롬프트로 적으면 서버가 Gemini 를 불러 전체 코드 +
+              설명을 돌려준다. 프롬프트·답은 저장되고 교사가 열람하며, "선생님이 볼 수 있어요" 를 항상
+              띄운다(투명성). 학번·이름은 Gemini 로 안 보낸다 (vibe-code-panel · /api/student/vibe-code).
+            */
+            <VibeCodePanel
+              questionKey={question.key}
+              raw={value.answers[question.key] ?? ""}
+              onResult={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
             />
           ) : question.kind === "ai_feedback" ? (
             /*

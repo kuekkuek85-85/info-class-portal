@@ -9,6 +9,7 @@ import { RulesCompilePanel } from "@/components/rules-compile-panel";
 import { TeacherArtifactPanel } from "@/components/teacher-artifact-panel";
 import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
 import { TeacherReviewPanel } from "@/components/teacher-review-panel";
+import { VibeCodeReviewPanel } from "@/components/vibe-code-review-panel";
 import { TeacherShell } from "@/components/teacher-shell";
 import { useTeacherDate } from "@/lib/teacher-date";
 import { takeTeacherJump } from "@/lib/teacher-jump";
@@ -1352,6 +1353,12 @@ function Dashboard() {
           {session.activity &&
             (session.activity.worksheet ?? []).some((q) => q.kind === "comfort_bot") && (
               <ComfortBotReviewPanel sessionId={session.id} />
+            )}
+
+          {/* 바이브 코딩 — 학생이 AI에게 보낸 프롬프트·받은 코드를 교사가 열람(읽기 전용). 교사가 펼칠 때만 읽는다. */}
+          {session.activity &&
+            (session.activity.worksheet ?? []).some((q) => q.kind === "vibe_code") && (
+              <VibeCodeReviewPanel sessionId={session.id} />
             )}
 
           {/*
