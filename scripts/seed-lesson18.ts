@@ -258,8 +258,8 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "똥 떨어뜨리기 (계속 반복)",
     hint:
       "이제 똥을 아래로 떨어뜨려요. fall 함수 안의 ★★★ 두 곳을 채우고 실행하면 똥이 쭉 내려가요.\n\n" +
-      "· y = poop.★★★() — 똥의 '지금 y 좌표를 읽는' 함수 (y coordinate → ycor). 주인공 xcor 와 짝이에요.\n" +
-      "· poop.★★★(y - 5) — y 좌표를 그 값으로 '옮기는' 함수 (set y → sety). 5 줄이면 아래로 내려가요.\n\n" +
+      "· y = poop.★★★() — 똥의 '지금 세로(y) 위치를 읽어 오는' 함수예요. 17차에서 주인공의 '가로' 위치를 읽을 때 쓴 함수의 세로 짝이에요.\n" +
+      "· poop.★★★(y - 5) — 읽은 y 값으로 '세로 위치를 ~로 정하는' 함수 — '세로를 정하다' 를 뜻하는 영어 함수. 5 줄이면 아래로 내려가요.\n\n" +
       "※ 맨 아랫줄 screen.ontimer(fall, 50) 이 핵심이에요(이미 적혀 있어요). fall 은 똥을 '한 칸'\n" +
       "   내리는 동작이고, 이 줄은 '0.05초 뒤에 다시 한 번 내려라' 하고 알람을 맞추는 거예요. 그 알람이\n" +
       "   계속 울려서 fall → 조금 내려감 → 또 fall → 또 조금 내려감 … 이 반복되며 똥이 쉬지 않고 떨어져요.",
@@ -304,10 +304,10 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "지금은 똥이 한 번 떨어지면 끝이에요. 바닥까지 내려가면 다시 맨 위에서 떨어지게 만들어요.\n" +
       "fall 안의 ★★★ 두 곳을 채워요(똥 만들기·떨어뜨리기 부분은 이미 채워진 상태예요).\n\n" +
-      "· if poop.★★★() < -250 — 똥이 화면 '아래 끝(-250)' 보다 더 내려갔는지 보는 조건. '지금 똥의 y 를\n" +
-      "  읽는' 함수예요 — 2단계 y = poop.___() 에서 쓴 것과 똑같아요(y coordinate → ycor).\n" +
+      "· if poop.★★★() < -250 — 똥이 화면 '아래 끝(-250)' 보다 더 내려갔는지 보는 조건. '지금 똥의 세로(y)\n" +
+      "  위치를 읽어 오는' 함수예요 — 2단계 y = poop.___() 에서 쓴 것과 똑같아요.\n" +
       "· poop.goto(★★★.randint(-180, 180), 250) — 다시 맨 위로(가로는 아무 데나, 세로는 맨 위 250).\n" +
-      "  '아무 숫자나 뽑아 주는' 도구예요 — 맨 윗줄 import random 의 바로 그 random!\n\n" +
+      "  '무작위로 아무거나' 뽑을 때 쓰는 도구의 이름이에요 — 맨 윗줄에서 import 로 불러온 바로 그 도구!\n\n" +
       "[OneCompiler 터틀 열기] 로 채워 실행하면 똥이 바닥까지 떨어졌다가 위에서 다시 랜덤하게 떨어져요!\n" +
       "다음 시간엔 '주인공과 똥이 부딪혔는지(충돌)' 를 붙여요.",
     kind: "note",
@@ -332,7 +332,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "dg18_impl3_check",
     phase: "emotion",
     label: "AI 채점 — 맞게 채웠는지 확인",
-    hint: "위에 붙여넣은 코드를 AI가 봐줘요. fall 안의 ★★★ 두 곳(ycor·random)을 바르게 채웠으면 통과! 틀리면 힌트를 줘요.",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. fall 안의 ★★★ 두 곳(지금 세로 위치 읽기 · 무작위 뽑기 도구)을 바르게 채웠으면 통과! 틀리면 힌트를 줘요.",
     kind: "ai_feedback",
     feedbackVariant: "code",
     feedbackFields: [{ key: "dg18_impl3_submit", label: "완성한 코드" }],
@@ -356,7 +356,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     heading: "기다리는 동안 — 파이썬 타자 연습",
     body:
       "오늘도 코드를 직접 타이핑해요. 그 전에 파이썬 타자 도우미로 손을 풀어 봐요.\n" +
-      "import random, poop.goto, ontimer 같은 파이썬 낱말을 빠르고 정확하게 치는 연습이에요.\n" +
+      "import turtle, poop.goto, ontimer 같은 파이썬 낱말을 빠르고 정확하게 치는 연습이에요.\n" +
       "아래 버튼을 누르면 새 탭에서 열려요. 수업이 시작되면 이 화면은 저절로 넘어가요.",
     url: "link:https://python-typing-helper.vercel.app/",
   },
