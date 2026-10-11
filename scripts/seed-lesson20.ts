@@ -10,8 +10,8 @@
  * **똥을 리스트(list)로 여러 개** 만들어 다 같이 떨어뜨린다. '노가다 → 리스트 개념 → 구현' 네 단계로 간다:
  *   문제 인식(problem) — 리스트/반복 없이 똥 3개를 poop1·poop2·poop3 로 '따로' 만든 완성본의 문제점 찾기(서술, AI 채점 없음)
  *   리스트 개념(mvp)   — 변수 여러 개 vs 리스트(개념 자료 + 미니 예시 nums=[10,20,30]·for) + 형성평가 객관식 1문항(cloze+AI 채점)
- *   구현 2단계(build)  — 똥 여러 개 만들기(리스트에 담기): poops=[] · for range(3) · append
- *   구현 3단계(grill)  — 리스트의 똥을 다 떨어뜨리기 + 각자 충돌: for poop in poops · distance(19차 재사용)
+ *   구현 1단계(build)  — 똥 여러 개 만들기(리스트에 담기): poops=[] · for range(3) · append
+ *   구현 2단계(grill)  — 리스트의 똥을 다 떨어뜨리기 + 각자 충돌: for poop in poops · distance(19차 재사용)
  *
  * ## 활동 통(activityId) — 17·18·19차와 같은 통을 이어 씀
  *
@@ -22,7 +22,7 @@
  * ## 표준 — 19차와 동일
  *
  * 대기 화면은 파이썬 타자 도우미 링크(game.url="link:..."). 게임(테트리스)은 성찰 '제출하고 게임하기'
- * 보상(rewardGame)으로 주되, 구현 2·3단계 AI 채점을 통과해야 열린다(코딩 두 단계가 핵심이라 둘 다 게이트).
+ * 보상(rewardGame)으로 주되, 구현 1·2단계 AI 채점을 통과해야 열린다(코딩 두 단계가 핵심이라 둘 다 게이트).
  * 구현은 ★★★ 빈칸 + AI 채점(ai_feedback, feedbackVariant "code", checkGoal 서버전용). freeNavigation 켬.
  * 각 구현 단계 note 는 18·19차식 '설명 왼쪽·실행결과 그림 오른쪽'(imageSide right, imageSideWidth third).
  *
@@ -136,8 +136,8 @@ for n in nums:
 /* ──────────────────────────────────────────────────────────────
  * 구현 예제 코드 — 19차 결과(단일 똥 + 충돌/게임오버/주인공 멈춤) 위에 '똥 여러 개(리스트)'를 두 단계로 쌓는다.
  * 각 단계 code 는 앞 단계를 포함한 '지금까지의 전체 코드' 다.
- *   구현 2단계: 똥 여러 개 만들기 — ★★★(poops=[] · append) 채우기 (range(3) 주어짐). 3개가 흩어져 생김(아직 안 떨어짐).
- *   구현 3단계: 다 떨어뜨리기 + 충돌 — ★★★(for poop in poops · distance) 채우기 (20 주어짐). 3개 동시에 내려오며 각자 충돌.
+ *   구현 1단계: 똥 여러 개 만들기 — ★★★(poops=[] · append) 채우기 (range(3) 주어짐). 3개가 흩어져 생김(아직 안 떨어짐).
+ *   구현 2단계: 다 떨어뜨리기 + 충돌 — ★★★(for poop in poops · distance) 채우기 (20 주어짐). 3개 동시에 내려오며 각자 충돌.
  * ────────────────────────────────────────────────────────────── */
 const CODE_IMPL_LIST = `import turtle
 import random
@@ -249,8 +249,8 @@ function empty(): PhaseContent {
 // 활동지 — 분석(cloze) 단계 없음(17차에서 끝냄). 네 단계를 교사가 단추로 하나씩 몬다.
 //   · 문제 인식(problem) — '노가다' 완성본(리스트 없이 똥 3개 따로 만들기)의 문제점 찾기 (서술, AI 채점 없음)
 //   · 리스트 개념(mvp)   — 개념 자료 + 미니 예시(리스트+for) + 형성평가 객관식 1문항(cloze 드롭다운 + AI 채점)
-//   · 구현 2단계(build)  — 똥 여러 개 만들기(리스트): poops=[] · append ★★★ (range(3) 주어짐)
-//   · 구현 3단계(grill)  — 리스트의 똥을 다 떨어뜨리기 + 충돌: for poop in poops · distance ★★★ (20 주어짐)
+//   · 구현 1단계(build)  — 똥 여러 개 만들기(리스트): poops=[] · append ★★★ (range(3) 주어짐)
+//   · 구현 2단계(grill)  — 리스트의 똥을 다 떨어뜨리기 + 충돌: for poop in poops · distance ★★★ (20 주어짐)
 // 구현 두 단계 = note(누적 전체 코드 + 실행결과 그림(오른쪽 1/3) + OneCompiler 터틀 링크) + 제출칸(long) + AI 채점(code).
 // 모든 단계가 같은 활동 통(python-dodge-game) 한 문서에 함께 저장된다 (19차 기록 위에 쌓임).
 // ─────────────────────────────────────────────────────────────
@@ -342,7 +342,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
 
-  /* ── 구현 2단계 — 똥 여러 개 만들기(리스트에 담기) ── */
+  /* ── 구현 1단계 — 똥 여러 개 만들기(리스트에 담기) ── */
   {
     key: "_dg20_impl_list",
     phase: "build",
@@ -370,7 +370,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "dg20_impl1_submit",
     phase: "build",
-    label: "✍ 완성한 코드 제출 (구현 2단계)",
+    label: "✍ 완성한 코드 제출 (구현 1단계)",
     hint: "OneCompiler 에서 완성한 코드를 복사해 붙여넣어 주세요.",
     kind: "long",
     maxLength: 900,
@@ -417,7 +417,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "dg20_impl2_submit",
     phase: "grill",
-    label: "✍ 완성한 코드 제출 (구현 3단계)",
+    label: "✍ 완성한 코드 제출 (구현 2단계)",
     hint: "OneCompiler 에서 완성한 코드를 복사해 붙여넣어 주세요.",
     kind: "long",
     maxLength: 900,
@@ -465,11 +465,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     body: "오늘 활동을 다 끝냈어요 — 쉬는 시간으로 테트리스 한 판! 수업이 끝나면 정리해요.",
     url: "https://tetris-game-seven-nu.vercel.app/",
     // 게이트는 '제출' 이 아니라 'AI 채점 통과(verdict good)' 로 본다 — 별표 코드 복붙 제출을 막는다.
-    // 코딩 구현 두 단계(2·3단계)의 AI 채점 통과로만 연다. 문제 인식(서술)·형성평가(cloze AI 채점)는
+    // 코딩 구현 두 단계(1·2단계)의 AI 채점 통과로만 연다. 문제 인식(서술)·형성평가(cloze AI 채점)는
     // 통과 상태를 서버에 저장하지 않아(화면에만 즉석 표시) 게이트로 쓸 수 없다 — 기존 17~19차 표준과 같다.
     requires: [
-      { key: "dg20_impl1_check", label: "구현 2단계", phase: "build" },
-      { key: "dg20_impl2_check", label: "구현 3단계", phase: "grill" },
+      { key: "dg20_impl1_check", label: "구현 1단계", phase: "build" },
+      { key: "dg20_impl2_check", label: "구현 2단계", phase: "grill" },
     ],
   },
 
@@ -508,9 +508,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         rows: [
           { label: "1 문제 인식", value: "노가다 코드(똥 3개 따로 만들기)를 읽고, 어떤 점이 불편한지 한 줄 적기" },
           { label: "2 리스트 개념", value: "변수 여러 개 vs 리스트 — 개념·예시 보고 형성평가 1문항 풀기" },
-          { label: "3 구현 2단계", value: "똥 여러 개 만들기 — 빈 리스트로 시작해 똥 3개를 리스트에 덧붙여 담기(★★★)" },
-          { label: "4 구현 3단계", value: "다 떨어뜨리기 — 리스트의 똥을 for 로 하나씩 꺼내 내리고 충돌 검사(★★★)" },
-          { label: "마지막", value: "성찰 한 줄 → 구현 2·3단계 통과하면 테트리스!" },
+          { label: "3 구현 1단계", value: "똥 여러 개 만들기 — 빈 리스트로 시작해 똥 3개를 리스트에 덧붙여 담기(★★★)" },
+          { label: "4 구현 2단계", value: "다 떨어뜨리기 — 리스트의 똥을 for 로 하나씩 꺼내 내리고 충돌 검사(★★★)" },
+          { label: "마지막", value: "성찰 한 줄 → 구현 1·2단계 통과하면 테트리스!" },
         ],
         highlights: [
           "오늘로 '여러 개의 똥을 피하는' 진짜 게임에 한 발 더 가까워져요.",
@@ -539,7 +539,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 기분(mood)은 단계에서 뺀다 — 기분은 대기 화면에서 먼저 받으므로(moodCheckEnabled 켜 둠) 별도
    * 단계가 중복이다.
    *
-   * 단계: 안내(assessment) → 문제 인식(problem) → 리스트 개념(mvp) → 구현 2단계(build) → 구현 3단계(grill) → 성찰(reflection).
+   * 단계: 안내(assessment) → 문제 인식(problem) → 리스트 개념(mvp) → 구현 1단계(build) → 구현 2단계(grill) → 성찰(reflection).
    * 범용 STEP 슬롯을 빌려 쓰되(problem·mvp·build·grill) 이름은 phaseLabels 로 붙인다. 이 넷은 LESSON_PHASES 에서
    * problem→mvp→build→grill 순서라, phaseOrder 에 그대로 적으면 교사 단추 줄·학생 되돌아가기 줄 모두 이 차례로 뜬다.
    */
@@ -548,8 +548,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     assessment: "안내",
     problem: "문제 인식",
     mvp: "리스트 개념",
-    build: "구현 2단계",
-    grill: "구현 3단계",
+    build: "구현 1단계",
+    grill: "구현 2단계",
   },
   /*
    * 되돌아가기 켬 — 보상 게이트가 빠진 단계로 보냈다가 성찰로 돌아오게 하려면 필요하다.
@@ -650,12 +650,12 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (게임 제작 아크 공용 통 — 17·18·19차와 같은 통. 오늘 '똥 여러 개(리스트)' 기록이 19차 충돌 기록 위에 같은 문서에 쌓임)`);
-  console.log("단계: 대기(파이썬 타자 링크) → 안내(assessment) → 문제 인식(problem) → 리스트 개념(mvp) → 구현 2단계(build) → 구현 3단계(grill) → 성찰(보상 게임: 구현 2·3단계 AI 채점 통과하면 테트리스). 기분은 대기 화면에서만.");
+  console.log("단계: 대기(파이썬 타자 링크) → 안내(assessment) → 문제 인식(problem) → 리스트 개념(mvp) → 구현 1단계(build) → 구현 2단계(grill) → 성찰(보상 게임: 구현 1·2단계 AI 채점 통과하면 테트리스). 기분은 대기 화면에서만.");
   console.log("문제 인식(problem): 리스트/반복문 없이 똥 3개를 poop1·poop2·poop3 로 따로 만든 '노가다' 완성본(★★★ 없음, 실행됨)을 읽고 문제점을 서술(long, AI 채점 없음 — 열린 생각이라 교사가 봄).");
   console.log("리스트 개념(mvp): 개념 자료(변수 여러 개 vs 리스트, /list-concept-boxes.svg) + 미니 예시 코드(nums=[10,20,30] · for, /list-concept-run.svg) + 형성평가 객관식 1문항(cloze 드롭다운 보기 4개 + AI 채점 clozeGrade, 정답='중복 코드가 줄고 여러 개를 한꺼번에').");
-  console.log("구현 2단계(★★★ 빈칸 직접 채우기, 누적 전체 코드): 2단계 똥 여러 개 만들기(poops=[] · append, range(3) 주어짐, build) → 3단계 다 떨어뜨리기+충돌(for poop in poops · distance, 20 주어짐, grill). 각 단계 code 는 앞 단계 포함 전체. 실행결과 그림(dodge20-impl1/2.svg 오른쪽 1/3). OneCompiler 터틀로 실행.");
+  console.log("구현 1단계(★★★ 빈칸 직접 채우기, 누적 전체 코드): 1단계 똥 여러 개 만들기(poops=[] · append, range(3) 주어짐, build) → 2단계 다 떨어뜨리기+충돌(for poop in poops · distance, 20 주어짐, grill). 각 단계 code 는 앞 단계 포함 전체. 실행결과 그림(dodge20-impl1/2.svg 오른쪽 1/3). OneCompiler 터틀로 실행.");
   console.log("focusExempt: waiting·build·grill(타자/외부 링크 단계). problem·mvp 는 외부 링크 없어 제외. 모든 단계가 같은 통(python-dodge-game) 한 artifact 에 함께 저장. freeNavigation(보상 게이트 이동·복귀에 필요).");
-  console.log("구현 AI 채점(제미나이, feedbackVariant code): 붙여넣은 코드를 checkGoal 로 판정(통과/힌트). 보상 게이트는 'AI 채점 통과(verdict good)' 로 본다 — 구현 2·3단계만(문제 인식·형성평가는 통과 상태 미저장이라 게이트 불가).");
+  console.log("구현 AI 채점(제미나이, feedbackVariant code): 붙여넣은 코드를 checkGoal 로 판정(통과/힌트). 보상 게이트는 'AI 채점 통과(verdict good)' 로 본다 — 구현 1·2단계만(문제 인식·형성평가는 통과 상태 미저장이라 게이트 불가).");
   console.log("성찰 1문항(따로 만들기 vs 리스트+for — 무엇이 편했나). 진도 팝업 없음. 세션 quiz 필드 없음(형성평가는 cloze 로 활동지 안에). galleryEnabled: false. sourcesEnabled: false.");
   process.exit(0);
 }
