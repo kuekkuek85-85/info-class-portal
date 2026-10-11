@@ -79,13 +79,12 @@ import random
 screen = turtle.Screen()
 screen.setup(400, 500)
 
-# 주인공 (17차에서 만든 것)
 player = turtle.Turtle()
 player.shape("square")
 player.penup()
 player.goto(0, -200)
 
-over = False   # 게임이 끝났나? (19차에서 만든 것)
+over = False
 
 def go_left():
     if over:
@@ -99,21 +98,18 @@ def go_right():
     x = player.xcor()
     player.setx(x + 20)
 
-# 똥 1번 만들기
 poop1 = turtle.Turtle()
 poop1.shape("circle")
 poop1.penup()
 poop1.color("brown")
 poop1.goto(-120, 200)
 
-# 똥 2번 만들기 (위와 거의 똑같은 걸 또…)
 poop2 = turtle.Turtle()
 poop2.shape("circle")
 poop2.penup()
 poop2.color("brown")
 poop2.goto(0, 200)
 
-# 똥 3번 만들기 (또 똑같은 걸 세 번째로…)
 poop3 = turtle.Turtle()
 poop3.shape("circle")
 poop3.penup()
@@ -278,7 +274,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "dg20_nogada_problem",
     phase: "problem",
     label: "✍ 이 코드의 어떤 점이 문제이거나 비효율적인가요?",
-    hint: "정답은 없어요 — 떠오른 생각을 한두 줄로 자유롭게 적어 주세요. (예: 똥을 더 늘리면 코드가 너무 길어진다 / 똑같은 걸 여러 번 쓴다 …)",
+    hint: "정답은 없어요 — 떠오른 생각을 한두 줄로 자유롭게 적어 주세요.",
     kind: "long",
     maxLength: 500,
   },
