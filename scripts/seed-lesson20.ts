@@ -105,7 +105,7 @@ for i in range(3):
     poop.shape("circle")
     poop.penup()
     poop.color("brown")
-    poop.goto(random.randint(-180, 180), random.randint(250, 400))  # 각자 다른 자리에서
+    poop.goto(random.randint(-180, 180), 200)  # 맨 위(y=200)에, x만 서로 다른 자리에서
     poops.★★★(poop)          # 방금 만든 똥을 리스트에 담기
 
 screen.listen()
@@ -147,12 +147,12 @@ for i in range(3):
     poop.shape("circle")
     poop.penup()
     poop.color("brown")
-    poop.goto(random.randint(-180, 180), random.randint(250, 400))
+    poop.goto(random.randint(-180, 180), 200)
     poops.append(poop)
 
 # 리스트의 똥을 하나씩 다 떨어뜨리기 + 각자 충돌 검사
 def fall():
-    for poop in ★★★:             # 리스트 poops 에서 똥을 하나씩 꺼내 반복
+    for poop in ★★★:             # 앞에서 똥을 담아 둔 그 리스트에서 똥을 하나씩 꺼내 반복
         y = poop.ycor()
         poop.sety(y - 5)
         if poop.ycor() < -250:
@@ -193,16 +193,17 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "똥 여러 개 만들기 (리스트에 담기)",
     hint:
       "19차에서 똥 하나(poop)로 게임을 만들었죠? 이번엔 똥을 여러 개로 늘려요. 하나하나 따로 두면\n" +
-      "복잡하니, '리스트' 라는 상자에 똥 여러 개를 담아요. fall 안 재등장 if 다음의 ★★★ 두 곳을 채워요.\n\n" +
-      "· poops = ★★★ — 빈 리스트를 만들어요. 대괄호 두 개 [] 가 '빈 리스트(아직 아무것도 없음)' 예요.\n" +
+      "복잡하니, '리스트' 라는 상자에 똥 여러 개를 담아요. 똥을 만드는 곳(poops = ... 와 for 반복)의 ★★★ 두 곳을 채워요.\n\n" +
+      "· poops = ★★★ — 아무것도 안 든 '빈 리스트' 로 시작해요. 리스트는 대괄호로 묶죠? 아무것도\n" +
+      "  안 넣고 대괄호만 열었다 바로 닫으면 '빈 리스트(아직 아무것도 없음)' 예요.\n" +
       "· for i in range(3): — 아래를 3번 되풀이해서 똥을 3개 만들어요 (range(3) 은 이미 적혀 있어요).\n" +
-      "· poops.★★★(poop) — 방금 만든 똥을 리스트에 담는(추가하는) 함수 (append).\n\n" +
-      "random.randint 으로 각 똥이 서로 다른 자리에서 시작해요. 실행하면 갈색 똥 3개가 화면에\n" +
-      "흩어져 생기면 성공! (아직 안 떨어져요 — 떨어뜨리기는 다음 단계예요.)",
+      "· poops.★★★(poop) — 방금 만든 똥을 리스트 맨 뒤에 '덧붙이는(추가하는)' 함수예요 — '덧붙이다' 를 뜻하는 영어 단어.\n\n" +
+      "x 는 랜덤이고 y 는 200(화면 맨 위)으로 고정해 둬서, 실행하면 갈색 똥 3개가 화면 맨 위에\n" +
+      "가로로 흩어져 나란히 생기면 성공! (아직 안 떨어져요 — 떨어뜨리기는 다음 단계예요.)",
     kind: "note",
     // 설명(왼쪽) · 실행 결과 그림(오른쪽 1/3), 그 아래 코드 — 18·19차와 같은 배치. 갈색 똥·검정 주인공.
     imageUrl: "/dodge20-impl1.svg",
-    imageAlt: "실행 결과 — 갈색 동그라미 똥 3개가 화면 위쪽 여러 자리에 흩어져 생기고, 아래 가운데에 검정 네모 주인공이 있는 모습(아직 안 떨어짐).",
+    imageAlt: "실행 결과 — 갈색 동그라미 똥 3개가 화면 맨 위 한 줄에 서로 다른 x 자리로 나란히 생기고, 아래 가운데에 검정 네모 주인공이 있는 모습(아직 안 떨어짐).",
     imageSide: "right",
     imageSideWidth: "third",
     code: CODE_IMPL_LIST,
@@ -222,7 +223,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "dg20_impl1_check",
     phase: "build",
     label: "AI 채점 — 맞게 채웠는지 확인",
-    hint: "위에 붙여넣은 코드를 AI가 봐줘요. 리스트 ★★★ 두 곳(빈 리스트 [] 와 append)을 바르게 채웠으면 통과! range(3) 은 이미 적혀 있어요. [] 는 빈 리스트, append 는 리스트에 담는 함수예요.",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. 리스트 ★★★ 두 곳(빈 리스트로 시작하기 · 리스트에 덧붙이는 함수)을 바르게 채웠으면 통과! range(3) 은 이미 적혀 있어요. 첫 칸은 아무것도 안 든 빈 리스트(대괄호만 열었다 닫기), 둘째 칸은 리스트 맨 뒤에 '덧붙이다' 를 뜻하는 영어 함수예요.",
     kind: "ai_feedback",
     feedbackVariant: "code",
     feedbackFields: [{ key: "dg20_impl1_submit", label: "완성한 코드" }],
@@ -241,9 +242,10 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "이제 리스트에 담은 똥을 '하나씩 다' 떨어뜨려요. 반복문 for 로 리스트의 똥을 하나하나 꺼내\n" +
       "똑같이 처리해요 (19차에서 똥 하나에 하던 걸, 이번엔 여러 개에 다 해 주는 거예요). ★★★ 두 곳을 채워요.\n\n" +
-      "· for poop in ★★★: — 리스트 poops 에서 똥을 하나씩 꺼내 poop 이라고 부르며 반복해요 (poops).\n" +
+      "· for poop in ★★★: — 앞에서 똥들을 담아 둔 그 '리스트의 이름' 을 넣어요. 거기서 똥을 하나씩 꺼내\n" +
+      "  poop 이라고 부르며 반복해요 (위 코드에서 똥을 담은 리스트 이름을 그대로 보고 쓰면 돼요).\n" +
       "  이 아래 줄들은 들여쓰기(안쪽)로 써서 '각 똥마다' 실행돼요.\n" +
-      "· if poop.★★★(player) < 20: — 그 똥과 주인공 거리를 재서 20보다 가까우면 닿은 것 (distance, 19차에서 배운 것).\n\n" +
+      "· if poop.★★★(player) < 20: — 그 똥과 주인공이 얼마나 '떨어져 있는지(거리)' 를 재 주는 함수예요 — '거리' 를 뜻하는 영어 단어(19차에서 배운 것). 20보다 가까우면 닿은 것.\n\n" +
       "닿으면 over 를 True 로 바꾸고 GAME OVER! 를 써요 (19차에서 한 것 그대로, 이미 적혀 있어요).\n" +
       "실행하면 똥 3개가 동시에 내려오고, 아무 똥에나 닿으면 게임 오버가 되면 성공!",
     kind: "note",
@@ -268,7 +270,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     key: "dg20_impl2_check",
     phase: "grill",
     label: "AI 채점 — 맞게 채웠는지 확인",
-    hint: "위에 붙여넣은 코드를 AI가 봐줘요. ★★★ 두 곳(for poop in poops 의 poops 와 distance)을 바르게 채웠으면 통과! 20 은 이미 적혀 있어요. for poop in poops 는 리스트를 하나씩 반복, distance 는 두 거북 사이 거리예요.",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. ★★★ 두 곳(반복할 리스트 이름 · 두 거북 사이 거리를 재는 함수)을 바르게 채웠으면 통과! 20 은 이미 적혀 있어요. 첫 칸은 앞에서 똥을 담아 둔 리스트 이름(for 로 하나씩 반복), 둘째 칸은 두 거북이 얼마나 떨어져 있는지 재 주는 함수예요.",
     kind: "ai_feedback",
     feedbackVariant: "code",
     feedbackFields: [{ key: "dg20_impl2_submit", label: "완성한 코드" }],
@@ -292,7 +294,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     heading: "기다리는 동안 — 파이썬 타자 연습",
     body:
       "오늘도 코드를 직접 타이핑해요. 그 전에 파이썬 타자 도우미로 손을 풀어 봐요.\n" +
-      "poops = [], append, for poop in poops 처럼 오늘 쓸 파이썬 낱말을 빠르고 정확하게 치는 연습이에요.\n" +
+      "turtle.Turtle(), for i in range(3), random.randint 처럼 오늘 쓸 파이썬 낱말을 빠르고 정확하게 치는 연습이에요.\n" +
       "아래 버튼을 누르면 새 탭에서 열려요. 수업이 시작되면 이 화면은 저절로 넘어가요.",
     url: "link:https://python-typing-helper.vercel.app/",
   },
@@ -345,8 +347,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         subtitle: "똥 여러 개 만들기 → 다 떨어뜨리기",
         note: "선생님이 한 단계씩 넘겨 줘요. 각 단계에서 활동지의 ★★★ 를 채워 실행하면 됩니다.",
         rows: [
-          { label: "1", value: "똥 여러 개 만들기 — 빈 리스트 [] 에 똥 3개를 append 로 담기(★★★ 채우기)" },
-          { label: "2", value: "다 떨어뜨리기 — for poop in poops 로 각 똥을 내리고 충돌 검사(★★★ 채우기)" },
+          { label: "1", value: "똥 여러 개 만들기 — 빈 리스트로 시작해 똥 3개를 리스트에 덧붙여 담기(★★★ 채우기)" },
+          { label: "2", value: "다 떨어뜨리기 — 리스트의 똥을 for 로 하나씩 꺼내 내리고 충돌 검사(★★★ 채우기)" },
           { label: "마지막", value: "성찰 한 줄 → 1·2단계 통과하면 테트리스!" },
         ],
         highlights: [
