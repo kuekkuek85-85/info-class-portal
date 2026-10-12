@@ -108,6 +108,17 @@ export async function POST(request: Request) {
           : question.feedbackVariant === "empathy"
             ? "empathy"
             : "imessage";
+    /*
+     * 코드 채점 — 답(채운 값)만 몇 개 적고 통과하는 것을 막는다. 완성된 전체 코드(프로그램 전부)를
+     * 내야 한다. 공백 뺀 길이가 너무 짧으면 애초에 전체 코드일 수 없으니 Gemini 를 부르기 전에 막는다.
+     * (가장 짧은 완성 코드도 수백 자다 — 답만 나열하면 이 문턱을 못 넘는다.)
+     */
+    if (variant === "code" && combined.replace(/\s+/g, "").length < 100) {
+      return fail(
+        "invalid_input",
+        "답만 적지 말고, OneCompiler 에서 완성한 전체 코드를 통째로 복사해 붙여넣어 주세요.",
+      );
+    }
     const feedback = await reviewFeedback(variant, fields, question.checkGoal);
     if (!feedback) {
       return fail("server_error", "AI가 잠시 대답하지 못하고 있어요. 조금 뒤에 다시 눌러 보세요.");
