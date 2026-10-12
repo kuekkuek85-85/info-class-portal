@@ -362,9 +362,13 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   assessment: empty(),
   video: empty(),
 
+  /*
+   * 8차는 「인간과 인공지능」의 마지막 차시(발표 2)다. 그래서 성찰을 오늘 한 활동이 아니라
+   * 2~8차 전체 과정(문제 찾기 → 앱 기획 → 만들기 → 발표)을 돌아보는 '마무리 회고' 한 문항으로 둔다.
+   * "전체적으로 무엇을 배웠고 무엇을 느꼈는지"를 솔직하게 적게 한다(중학생 눈높이).
+   */
   reflectionQuestions: [
-    "오늘 친구들의 발표를 들으며 새로 배운 점이나 인상 깊었던 점을 적어 보세요.",
-    "내가 발표했다면, 잘된 점과 다음에 고치고 싶은 점을 한 가지씩 적어 보세요.",
+    "인간과 인공지능 수업을 모두 마쳤어요 — 문제를 찾고, 앱을 기획하고 만들고, 친구들 앞에서 발표하기까지 왔어요. 이 전체 과정에서 내가 새로 배운 것은 무엇이고, 어떤 점이 기억에 남거나 어떤 마음이 들었는지 솔직하게 적어 봐요.",
   ],
   reflectionPublic: false,
 
@@ -432,6 +436,14 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   },
 };
 
+/*
+ * --force : 이미 시작한(scheduled 아닌 — active·ended) 세션에도 계획을 반영한다.
+ * 기본은 건너뛴다(진행 중 수업을 안 흔들려고). 성찰처럼 발표 뒤 단계만 바뀔 때,
+ * 오늘 라이브 세션에 반영하려고 교사가 의도적으로 붙인다. presenters·현재 단계·코드 등
+ * 세션 전용 값은 PLAN 에 없어 merge 로도 안 건드린다.
+ */
+const FORCE = process.argv.includes("--force");
+
 async function main(): Promise<void> {
   const existing = await db.collection("lessonPlans").where("lessonNo", "==", LESSON_NO).get();
   const now = Date.now();
@@ -453,10 +465,18 @@ async function main(): Promise<void> {
 
       for (const s of all.docs.filter((x) => (x.data() as { status: string }).status !== "scheduled")) {
         const x = s.data() as { status: string; code: string };
-        console.warn(
-          `   ⚠ ${s.id} (코드 ${x.code}) 는 ${x.status} 상태라 건너뛰었습니다.\n` +
-            `     학생 화면은 옛 내용 그대로입니다.`,
-        );
+        if (FORCE) {
+          await s.ref.set({ ...PLAN }, { merge: true });
+          console.warn(
+            `   ⚡ --force · ${s.id} (코드 ${x.code}, ${x.status}) 에도 계획을 반영했습니다.\n` +
+              `     성찰 질문 등 계획 변경이 이 세션에 적용됩니다. presenters·현재 단계·코드는 그대로.`,
+          );
+        } else {
+          console.warn(
+            `   ⚠ ${s.id} (코드 ${x.code}) 는 ${x.status} 상태라 건너뛰었습니다.\n` +
+              `     학생 화면은 옛 내용 그대로입니다. (오늘 라이브 세션에도 반영하려면 --force)`,
+          );
+        }
       }
     }
   }
