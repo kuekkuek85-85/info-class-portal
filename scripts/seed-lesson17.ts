@@ -325,7 +325,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "✍ 완성한 코드 제출 (1단계)",
     hint: "OneCompiler 에서 완성한 코드를 복사해 붙여넣어 주세요.",
     kind: "long",
-    maxLength: 800,
+    maxLength: 6000,
   },
   {
     // AI 채점 — 위 제출 코드를 보고 맞는지 판정(통과/힌트). 별표 코드를 그대로 붙여넣는 것을 막는다.
@@ -368,7 +368,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "✍ 완성한 코드 제출 (2단계)",
     hint: "OneCompiler 에서 완성한 코드를 복사해 붙여넣어 주세요.",
     kind: "long",
-    maxLength: 800,
+    maxLength: 6000,
   },
   {
     key: "dg_impl2_check",
@@ -410,7 +410,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "✍ 완성한 코드 제출 (3단계)",
     hint: "OneCompiler 에서 완성한 코드를 복사해 붙여넣어 주세요.",
     kind: "long",
-    maxLength: 800,
+    maxLength: 6000,
   },
   {
     key: "dg_impl3_check",

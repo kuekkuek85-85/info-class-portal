@@ -269,7 +269,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "✍ 완성한 코드 제출 (1단계)",
     hint: "OneCompiler 에서 완성한 코드를 복사해 붙여넣어 주세요.",
     kind: "long",
-    maxLength: 900,
+    maxLength: 6000,
   },
   {
     key: "dg19_impl1_check",
@@ -316,7 +316,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "✍ 완성한 코드 제출 (2단계)",
     hint: "OneCompiler 에서 완성한 코드를 복사해 붙여넣어 주세요.",
     kind: "long",
-    maxLength: 900,
+    maxLength: 6000,
   },
   {
     key: "dg19_impl2_check",
@@ -386,7 +386,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "✍ 완성한 코드 제출 (3단계)",
     hint: "OneCompiler 에서 완성한 코드를 복사해 붙여넣어 주세요.",
     kind: "long",
-    maxLength: 900,
+    maxLength: 6000,
   },
   {
     key: "dg19_impl3_check",
