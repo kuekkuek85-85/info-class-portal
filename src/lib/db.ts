@@ -398,12 +398,17 @@ export async function listSessionsByClass(classNo: ClassNo): Promise<ClassSessio
   const sessions = await collectAll<ClassSession>(
     db().collection(COLLECTIONS.classSessions).where("classNo", "==", classNo),
   );
-  return sessions.sort((a, b) => a.date.localeCompare(b.date) || a.period - b.period);
+  return sessions.sort(
+    (a, b) => (a.date ?? "").localeCompare(b.date ?? "") || (a.period ?? 0) - (b.period ?? 0),
+  );
 }
 
 export async function listAllSessions(): Promise<ClassSession[]> {
   const sessions = await collectAll<ClassSession>(db().collection(COLLECTIONS.classSessions));
-  return sessions.sort((a, b) => a.date.localeCompare(b.date) || a.period - b.period);
+  // 날짜/교시가 빠진 비정상 doc 이 섞여도 정렬이 터지지 않게 null-safe (orphan stub 방어)
+  return sessions.sort(
+    (a, b) => (a.date ?? "").localeCompare(b.date ?? "") || (a.period ?? 0) - (b.period ?? 0),
+  );
 }
 
 /**
