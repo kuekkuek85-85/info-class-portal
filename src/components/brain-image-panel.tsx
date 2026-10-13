@@ -45,24 +45,98 @@ async function compressForStore(dataUrl: string, maxSide = 768, quality = 0.82):
   return canvas.toDataURL("image/jpeg", quality);
 }
 
-/**
- * 저장된 답에서 감정·색이 있는 줄이 하나라도 있는지 — 버튼 활성 판정(클라이언트 1차, 서버가 재확인).
- * 활동지 개편으로 한 줄에 내용·감정·색·마음 크기가 함께 들어 있다(별도 '상황' 칸 없음).
- */
-function isReady(answers: Record<string, string>): boolean {
+/** 활동지 한 줄 — 내용·감정·색·마음 크기 */
+interface EmotionRow {
+  content: string;
+  emotion: string;
+  color: string;
+  size: string;
+}
+
+/** brain_emotions(rows JSON) 을 파싱해 감정·색이 있는 줄만 돌려준다(버튼 판정·범례 공용). */
+function parseEmotionRows(answers: Record<string, string>): EmotionRow[] {
   const raw = (answers.brain_emotions ?? "").trim();
-  if (!raw) return false;
+  if (!raw) return [];
+  let rows: unknown;
   try {
-    const rows = JSON.parse(raw);
-    if (!Array.isArray(rows)) return false;
-    return rows.some((row) => {
-      if (!row || typeof row !== "object") return false;
-      const r = row as { emotion?: unknown; color?: unknown };
-      return String(r.emotion ?? "").trim() && String(r.color ?? "").trim();
-    });
+    rows = JSON.parse(raw);
   } catch {
-    return false;
+    return [];
   }
+  if (!Array.isArray(rows)) return [];
+  const out: EmotionRow[] = [];
+  for (const row of rows) {
+    if (!row || typeof row !== "object") continue;
+    const r = row as Record<string, unknown>;
+    const emotion = String(r.emotion ?? "").trim();
+    const color = String(r.color ?? "").trim();
+    if (!emotion || !color) continue;
+    out.push({
+      content: String(r.content ?? "").trim(),
+      emotion,
+      color,
+      size: String(r.size ?? "").trim(),
+    });
+  }
+  return out.slice(0, 6);
+}
+
+/**
+ * 색 라벨(한글)을 범례 스와치용 CSS 색으로. 활동지 보기("빨강(분노)" 등)와 '기타: 직접입력'
+ * 의 흔한 색 이름을 포함한 글자로 맞춘다. 못 맞추면 중립 회색(글자로 무슨 색인지 보이므로 무방).
+ */
+function swatchColor(label: string): string {
+  const s = label.replace(/^기타\s*:/, "").trim();
+  const map: [string, string][] = [
+    ["빨강", "#ef4444"], ["빨간", "#ef4444"], ["red", "#ef4444"],
+    ["주황", "#fb923c"], ["주홍", "#fb923c"], ["orange", "#fb923c"],
+    ["노랑", "#facc15"], ["노란", "#facc15"], ["yellow", "#facc15"],
+    ["초록", "#22c55e"], ["녹색", "#22c55e"], ["green", "#22c55e"],
+    ["하늘", "#38bdf8"], ["파랑", "#3b82f6"], ["파란", "#3b82f6"], ["blue", "#3b82f6"],
+    ["보라", "#a855f7"], ["자주", "#a855f7"], ["purple", "#a855f7"],
+    ["분홍", "#f472b6"], ["핑크", "#f472b6"], ["pink", "#f472b6"],
+    ["회색", "#9ca3af"], ["회", "#9ca3af"], ["gray", "#9ca3af"], ["grey", "#9ca3af"],
+    ["검정", "#374151"], ["검은", "#374151"], ["black", "#374151"],
+    ["흰", "#f3f4f6"], ["하양", "#f3f4f6"], ["white", "#f3f4f6"],
+    ["갈색", "#92400e"], ["brown", "#92400e"],
+  ];
+  const lower = s.toLowerCase();
+  for (const [key, css] of map) if (s.includes(key) || lower.includes(key)) return css;
+  return "#cbd5e1";
+}
+
+/** 색 라벨에서 괄호 안 뜻(예: "빨강(분노)")·"기타:" 머리말을 떼고 보기 좋게 */
+function colorName(label: string): string {
+  return label.replace(/^기타\s*:/, "").replace(/\s*\(.*\)\s*$/, "").trim() || label;
+}
+
+/**
+ * 범례 — AI 이미지는 한글 글자를 못 쓰므로, 색·감정·내용·마음 크기를 코드로 또렷하게 적어 준다.
+ * 본인 화면 전용(galleryEnabled:false)이라 내용을 그대로 보여도 프라이버시 문제 없다.
+ */
+function BrainLegend({ rows }: { rows: EmotionRow[] }) {
+  if (rows.length === 0) return null;
+  return (
+    <ul className="flex flex-col gap-1.5 rounded-lg border border-line bg-surface p-3">
+      {rows.map((r, i) => (
+        <li key={i} className="flex items-start gap-2 text-sm">
+          <span
+            className="mt-0.5 inline-block h-4 w-4 shrink-0 rounded border border-line"
+            style={{ backgroundColor: swatchColor(r.color) }}
+            aria-hidden
+          />
+          <span className="leading-snug">
+            <b>{r.emotion}</b>
+            {r.content && <span className="text-muted"> · {r.content}</span>}
+            <span className="text-muted">
+              {" "}({colorName(r.color)}
+              {r.size ? ` · ${r.size}` : ""})
+            </span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 export function BrainImagePanel({
@@ -85,7 +159,8 @@ export function BrainImagePanel({
   const [image, setImage] = useState<string>(initial?.dataUrl ?? "");
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "blocked">("idle");
   const [message, setMessage] = useState("");
-  const ready = isReady(answers);
+  const rows = parseEmotionRows(answers);
+  const ready = rows.length > 0;
 
   async function generate() {
     if (disabled || status === "loading") return;
@@ -218,6 +293,8 @@ export function BrainImagePanel({
             내가 적은 내용·감정·색·마음 크기로 AI가 그린 나의 뇌구조예요. 마음에 안 들면
             <b> 다시 만들기</b> 를 눌러요.
           </figcaption>
+          {/* AI 그림엔 글자가 없으므로, 어떤 색이 어떤 감정·내용인지 아래에 적어 준다 */}
+          <BrainLegend rows={rows} />
         </figure>
       )}
     </div>
