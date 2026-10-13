@@ -142,6 +142,9 @@ const WORKSHEET: WorksheetQuestion[] = [
         key: "color",
         label: "색",
         emojis: ["빨강(분노)", "하늘(기쁨)", "노랑(설렘)", "회색(슬픔)", "초록(편안)", "주황(불안)", "기타"],
+        // '기타' 를 고르면 아래에 직접 색 이름을 적는 칸이 뜬다(보기에 없는 색). 입력값은 `기타: <색>` 으로 함께 저장된다.
+        otherOption: "기타",
+        placeholder: "직접 색 이름을 적어요 (예: 보라색, 분홍색)",
       },
       { key: "size", label: "마음 크기(%)", placeholder: "예) 40%" },
     ],
