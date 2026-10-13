@@ -1187,6 +1187,18 @@ export interface ActivityContent {
    */
   drawBackground?: DrawBackground;
   /**
+   * 그리기(draw) 단계를 **손그림 대신 AI 이미지 생성**으로 바꾼다 (마음 톡톡 8회기 뇌구조).
+   *
+   * 켜면 draw 단계의 '그림 그리기' 탭이 DrawBoard 대신 뇌구조 이미지 패널을 띄운다. 학생이
+   * 활동지(상황·감정·색·마음 크기)를 채우면 버튼이 켜지고, 누르면 서버가 그 학생 artifact 의
+   * 답을 읽어 프롬프트를 조립해 Gemini(이미지 모델)로 그림을 그려 저장한다(/api/student/brain-image).
+   *
+   * 그림(artifact.brainImage)은 본인 것이고 친구에게 안 나간다. 이 값이 없으면 지금까지처럼
+   * DrawBoard 로 손그림을 그린다(다른 그리기 차시엔 영향 없음). wrapheal 의 두 번째 그림판
+   * (secondDraw, 인생 그래프)은 이 값과 무관하게 늘 손그림이다.
+   */
+  brainImage?: boolean;
+  /**
    * 회고 뒤 그리기(wrapheal) 단계에 두는 **두 번째 그림판**(백지).
    *
    * 그림(artifact)은 활동당 하나만 저장되므로(activityId__학번), 한 차시에 그림을 둘
@@ -2072,6 +2084,16 @@ export interface Artifact {
    * 일이 없다 (인간과 인공지능 4차시).
    */
   aiFeedbackDraft?: string;
+
+  /**
+   * 나의 뇌구조 AI 이미지 (마음 톡톡 8회기). base64 PNG data URL.
+   *
+   * **answers 가 아니라 전용 필드로 둔다** — 클라이언트 자동저장(artifact 라우트)이 못 덮고
+   * (그 라우트는 place/year/answers/traits/sources/strokes/texts 만 건드린다), 갤러리 카드
+   * (toCard)는 answers·strokes·texts 만 싣기에 이미지가 친구에게 나가는 경로를 아예 안 지난다.
+   * 서버 라우트(/api/student/brain-image)만 쓴다. 재생성하면 교체된다.
+   */
+  brainImage?: { dataUrl: string; at: number };
 
   /** 교사가 숨김 처리했는지. 갤러리에서 빠진다 */
   hidden: boolean;

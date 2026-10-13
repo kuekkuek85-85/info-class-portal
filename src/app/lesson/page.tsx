@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { BrainImagePanel } from "@/components/brain-image-panel";
 import { ContentView, type Content } from "@/components/content-view";
 import { DonePortal } from "@/components/done-portal";
 import { DrawBoard } from "@/components/draw-board";
@@ -59,8 +60,10 @@ export interface ActivityInfo {
   galleryAnswerKeys?: string[];
   /** 그림 제목의 틀. 비면 "○○년의 △△" (artifact-title.ts) */
   artifactTitle?: string;
-  /** 그림판 밑그림. "head" 면 머리 윤곽선을 획 밑에 깐다 (8회기 뇌구조) */
+  /** 그림판 밑그림. "head" 면 머리 윤곽선을 획 밑에 깐다 */
   drawBackground?: DrawBackground | null;
+  /** 그리기 단계를 손그림 대신 AI 이미지 생성으로 바꾼다 (8회기 뇌구조) */
+  brainImage?: boolean;
   /** 회고 뒤 두 번째 그림판(백지) — 8회기 인생 그래프. 있으면 wrapheal 이 이 그림판만 띄운다 */
   secondDraw?: { heading: string; body: string; title: string; background?: DrawBackground } | null;
   /** 포트폴리오(지난 회기 돌아보기)를 wrapmap 단계에 띄운다 (8회기 성찰) */
@@ -183,6 +186,8 @@ export default function LessonPage() {
     status: string;
     /** 서버가 마지막으로 받아들인 저장 순번 */
     saveRev: number;
+    /** 뇌구조 AI 이미지 (8회기). 없으면 null */
+    brainImage?: { dataUrl: string; at: number } | null;
   } | null>(null);
   /**
    * 두 번째 그림판(인생 그래프) — 8회기 wrapheal. 기본 그림(artifact)과 다른 슬롯
@@ -585,6 +590,7 @@ export default function LessonPage() {
         texts: result.artifact.texts,
         status: result.artifact.status,
         saveRev: result.artifact.saveRev ?? 0,
+        brainImage: result.artifact.brainImage ?? null,
       });
       setWorksheet({
         answers: result.artifact.answers ?? {},
@@ -1517,7 +1523,7 @@ export default function LessonPage() {
                 onClick={() => setWorkTab("draw")}
                 className={`pill flex-1 ${activeTab === "draw" ? "pill-primary" : "pill-secondary"}`}
               >
-                그림 그리기
+                {session.activity?.brainImage ? "뇌구조 이미지" : "그림 그리기"}
               </button>
             )}
             <button
@@ -1536,7 +1542,7 @@ export default function LessonPage() {
                 onClick={() => setWorkTab("draw")}
                 className={`pill flex-1 ${activeTab === "draw" ? "pill-primary" : "pill-secondary"}`}
               >
-                그림 그리기
+                {session.activity?.brainImage ? "뇌구조 이미지" : "그림 그리기"}
               </button>
             )}
             {/*
@@ -1593,7 +1599,29 @@ export default function LessonPage() {
           !showDone &&
           !inGraphDraw &&
           activeTab === "draw" &&
-          (session.activity && artifact ? (
+          /*
+            뇌구조(8회기)는 손그림 대신 AI 이미지 생성이다. 활동지(상황·감정·색·마음 크기)를
+            채우면 패널의 버튼이 켜지고, 서버가 그 학생 artifact 의 답을 읽어 그림을 그려 준다.
+            이 분기 없는 다른 그리기 차시는 지금까지처럼 DrawBoard 로 손그림을 그린다.
+          */
+          (session.activity?.brainImage ? (
+            session.activity && artifact ? (
+              <BrainImagePanel
+                key={`${session.activity.activityId}::brain`}
+                answers={worksheet.answers}
+                initial={artifact.brainImage}
+                prompt={session.activity.drawPrompt}
+                disabled={closed}
+                onGenerated={(dataUrl) =>
+                  setArtifact((prev) =>
+                    prev ? { ...prev, brainImage: { dataUrl, at: Date.now() } } : prev,
+                  )
+                }
+              />
+            ) : (
+              <Placeholder title="준비하고 있어요" description="잠시만 기다려 주세요." />
+            )
+          ) : session.activity && artifact ? (
             <DrawBoard
               key={session.activity.activityId}
               initialStrokes={artifact.strokes}

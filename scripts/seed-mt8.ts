@@ -6,7 +6,7 @@
  * ## 무엇인가 — 학기를 닫는 마무리 회기
  *
  * 교사 구성안을 포털 기능으로 옮긴 것이다. 네 묶음 + 성찰로 짠다:
- *   ① 나의 뇌구조 그리기   — 포털 내장 그림판(DrawBoard)으로 '상황→감정→색·크기' 표현
+ *   ① 나의 뇌구조         — 활동지(상황→감정→색·크기)를 채우면 AI(Gemini 이미지)가 뇌구조 그림 생성
  *   ② 나의 행복?           — 영상 시청 + 가치관·행복한 삶·노력·나에게 보내는 응원
  *   ③ 마음 건강            — 자가진단(외부 링크) · 인생 그래프 · 마음건강 OX · 실천방안 · 도움 요청
  *   ④ 성찰(포트폴리오)     — 지난 8주 활동을 떠올리며 그때의 마음 적기
@@ -19,8 +19,17 @@
  *   · galleryEnabled: false  — 서버 갤러리 라우트가 응답 자체를 막는다(화면뿐 아니라 데이터로도 안 샘).
  *   · galleryAnswerKeys: []  — 켜져 있지 않으므로 빈 목록이 위험하지 않다(열기 스크립트가 false 를 재확인).
  *   · reflectionPublic: false — 마음일기는 각자에게만.
- * AI(Gemini)로 보내는 기능은 이 회기에 **하나도 넣지 않았다** — 감정 렌즈·챗봇 같은 것을 뺐다.
  * 마음 건강 자가진단 결과(민감정보)는 **포털에 저장하지 않는다** — 외부 사이트에서 각자 보기만 한다.
+ *
+ * ## ★ 뇌구조 AI 이미지 (brainImage) — 교사 승인 아래 감정을 Gemini 로 보낸다
+ *
+ * '나의 뇌구조'는 손그림 대신 AI 이미지 생성이다(brainImage:true). 학생이 활동지(상황·감정·색·
+ * 마음 크기)를 채우면 서버(/api/student/brain-image)가 **그 학생 artifact 의 답을 읽어** 프롬프트를
+ * 조립해 Gemini 이미지 모델로 그림을 그린다. 보내는 것은 상황 서술·감정·색·퍼센트뿐 —
+ * **학번·이름은 안 보낸다**(기존 ai-feedback 원칙). 상황 서술에 위기 신호가 있으면 Gemini 를 부르기
+ * 전에 멈추고(checkCrisis) 교사에게 사실만 알린다. 생성 그림은 본인 artifact 의 전용 필드
+ * (brainImage)에 저장돼 answers·갤러리 카드 경로를 아예 안 지난다 — 친구에게 나갈 길이 없다.
+ * 감정 렌즈·챗봇 같은 다른 AI 기능은 이 회기에 넣지 않았다.
  *
  * ## ★ 위기/민감 — 안전장치를 활동 안에 녹였다
  *
@@ -28,15 +37,15 @@
  * 박아 두고, OX 한 문항은 '친구가 죽고 싶다고 하면 꼭 어른에게 알린다'(정답)로 또래 위기 대응을
  * 가르친다. 학생 글을 AI로 보내는 곳이 없어 checkCrisis 호출 지점도 없다(보낼 데가 없으므로 샐 데도 없음).
  *
- * ## ★ 그림판 둘 — 배경만 다르게 (교사 지시 반영)
+ * ## ★ 산출물 둘 — AI 이미지 + 손그림 (교사 지시 반영)
  *
- * 뇌구조·인생 그래프를 **둘 다 그림판**으로 한다. 작품(artifact)은 활동당 하나(activityId__학번)
- * 만 저장되므로, 두 번째 그림은 **슬롯**(activityId::graph__학번)에 따로 저장한다
- * (gallery.ts 의 activityIdForSlot · artifact 라우트의 slot · DrawBoard 의 saveSlot).
- *   · 뇌구조(draw 단계)  — 머리 옆모습 윤곽선(껍데기) 밑그림을 깔고(drawBackground:"head")
- *     그 안을 감정 색으로 채운다. 밑그림은 저장되는 획이 아니라 화면 가이드다.
- *   · 인생 그래프(wrapheal 단계) — 백지(밑그림 없음)에서 손으로 굴곡 그래프를 그린다.
- *     plan.activity.secondDraw 로 둔다. 장소 선택 없이 바로 캔버스가 뜬다(places 없음).
+ *   · 뇌구조(draw 단계)  — **AI 이미지 생성**(brainImage:true). 활동지를 채우면 Gemini 가 머리
+ *     옆모습 안을 감정 색으로 채운 그림을 그려 artifact.brainImage 에 저장한다(재생성 가능).
+ *     손그림(DrawBoard)이 아니므로 drawBackground("head") 밑그림은 쓰지 않는다.
+ *   · 인생 그래프(wrapheal 단계) — **손그림 그대로**. 백지(밑그림 없음)에서 손으로 굴곡 그래프를
+ *     그린다(plan.activity.secondDraw). 작품은 슬롯(activityId::graph__학번)에 따로 저장된다
+ *     (gallery.ts 의 activityIdForSlot · artifact 라우트의 slot). 장소 선택 없이 바로 캔버스가 뜬다.
+ *   · places(SITUATIONS)는 draw 단계의 그리기 탭을 띄우기 위해 남겨 둔다(그리기가 있다고 판정).
  *
  * ## 활동통·차시번호
  *
@@ -114,7 +123,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "요즘 내 머릿속을 차지하고 있는 감정들을 색과 크기로 표현해 볼 거예요.\n" +
       "먼저 아래에 '어떤 일'과 '그때 감정·색·마음 크기'를 정하고,\n" +
-      "오른쪽 [그림 그리기] 에서 머리 모양을 그린 뒤 그 안을 감정 색으로 칠해요.\n\n" +
+      "오른쪽 [뇌구조 이미지] 에서 버튼을 누르면 AI가 내 머릿속을 그림으로 만들어 줘요.\n\n" +
       COLOR_MAP_NOTE,
     kind: "note",
     maxLength: 0,
@@ -153,11 +162,11 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "_brain_draw_guide",
     phase: "worksheet",
-    label: "이제 오른쪽 [그림 그리기] 에서 그려요",
+    label: "이제 오른쪽 [뇌구조 이미지] 에서 그림을 만들어요",
     hint:
-      "① 머리(얼굴·뇌) 모양을 크게 하나 그려요.\n" +
-      "② 위에서 정한 감정들을 그 안에 색으로 칠해요 — 마음 크기가 큰 감정일수록 넓게.\n" +
-      "③ 잘 그리는 시간이 아니에요. 색과 크기로 '지금 내 머릿속'이 보이면 충분해요.",
+      "① 위 '상황'과 '감정·색·마음 크기'를 다 채우면 [뇌구조 이미지] 탭의 버튼이 켜져요.\n" +
+      "② 버튼을 누르면 AI가 내가 적은 감정·색·크기로 머릿속 그림을 그려 줘요(최대 40초).\n" +
+      "③ 마음에 안 들면 [다시 만들기] 로 다시 그릴 수 있어요. 잘 그리는 시간이 아니라, 지금 내 머릿속을 보는 시간이에요.",
     kind: "note",
     maxLength: 0,
   },
@@ -455,10 +464,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   reflectionPublic: false,
 
   /*
-   * 이탈 면제 — 뇌구조 그림판(draw)은 다른 화면처럼 잡히고, 자가진단(mvp)은 외부 사이트를 새 탭으로 연다.
+   * 이탈 면제 — 자가진단(mvp)은 외부 사이트를 새 탭으로 열고, draw(뇌구조 이미지 생성)·
+   * wrapheal(인생 그래프 손그림)은 포털 안 화면이라 이탈로 안 잡히게 둔다.
    * 영상(video)은 포털 안 임베드라 면제가 필요 없다.
    */
-  // draw(뇌구조)·wrapheal(인생 그래프)은 포털 내장 그림판이라 이탈로 안 잡히게, mvp 는 외부 새 탭.
   focusExempt: ["draw", "wrapheal", "mvp"],
 
   // 되돌아가기 기본 off (새 수업 표준).
@@ -491,34 +500,37 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   activity: {
     activityId: ACTIVITY_ID,
-    // 뇌구조 그림판을 켠다(장소=상황 갈래). 비우면 그림판이 아예 안 뜬다.
+    /*
+     * 장소(상황 갈래)를 남겨 둔다 — draw 단계가 '그리기 탭'을 띄우려면 그리기가 있다고
+     * 판정돼야 하고(canDraw = places.length>0), 그 탭에 손그림 대신 뇌구조 이미지 패널을
+     * 띄운다. 비우면 탭 자체가 안 생겨 이미지 생성으로 들어갈 길이 사라진다.
+     */
     places: SITUATIONS,
     year: 2026,
     worksheet: WORKSHEET,
 
-    // 그림 제목 틀. {장소} 자리에 고른 '상황'이 들어간다.
+    // 작품 제목 틀(교사 화면 등). {장소} 자리에 고른 '상황'이 들어간다.
     artifactTitle: "나의 뇌구조 ({장소})",
 
     /*
-     * ★ #3-가 뇌구조 그림판 배경 — 빈 머리 옆모습 윤곽선(껍데기)을 깔아 준다.
-     * 학생은 이 윤곽 안을 감정 색으로 채운다. 밑그림은 저장되는 획이 아니라 화면 가이드다
-     * (artifact-canvas 의 drawHeadOutline). 캔버스는 활동당 하나뿐이라, 두 번째 그림판
-     * (인생 그래프, 백지)은 아래 secondDraw 로 wrapheal 단계에 따로 둔다.
+     * ★ 뇌구조는 손그림이 아니라 AI 이미지 생성이다. 활동지(상황·감정·색·마음 크기)를 채우면
+     * 서버(/api/student/brain-image)가 그 학생 artifact 의 답을 읽어 Gemini 이미지 모델로
+     * 그림을 그려 artifact.brainImage 에 저장한다(재생성 가능). 손그림(DrawBoard)이 아니므로
+     * drawBackground("head") 밑그림은 쓰지 않는다. 두 번째 그림판(인생 그래프)은 아래 secondDraw.
      */
-    drawBackground: "head",
+    brainImage: true,
 
-    // 활동지(상황·감정·색·크기 준비)를 먼저, 그림을 나중에.
+    // 활동지(상황·감정·색·크기 준비)를 먼저, 이미지 생성을 나중에.
     worksheetFirst: true,
 
     drawPrompt: {
-      heading: "나의 뇌구조",
+      heading: "나의 뇌구조 이미지 만들기",
       body:
-        "왼쪽 [활동지 쓰기] 에 정한 감정·색·크기대로, 화면에 그려진 '머리 윤곽선 안'을 채워요.\n" +
-        "① 머리 모양은 이미 깔려 있어요(옅은 회색 윤곽). 그 안을 감정 색으로 칠해요.\n" +
-        "② 마음 크기가 큰 감정일수록 넓게 칠해요.\n\n" +
+        "왼쪽 [활동지 쓰기] 에 '상황'과 '감정·색·마음 크기'를 다 채우면 아래 버튼이 켜져요.\n" +
+        "버튼을 누르면 AI가 내가 적은 감정·색·크기로 '지금 내 머릿속'을 그림으로 그려 줘요.\n" +
+        "마음 크기가 큰 감정일수록 그림에서 넓게 칠해져요.\n\n" +
         COLOR_MAP_NOTE +
-        "\n잘 그리는 시간이 아니에요. 색과 크기로 '지금 내 머릿속'이 보이면 충분합니다.\n" +
-        "먼저 어떤 '상황(최근의 일)'에 대한 머릿속인지 골라 주세요.",
+        "\n잘 그리는 시간이 아니에요. 마음에 안 들면 [다시 만들기] 로 다시 그릴 수 있어요.",
     },
 
     /*
@@ -539,7 +551,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
     worksheetIntro: {
       heading: "나의 뇌구조 준비",
-      body: "먼저 여기에 상황·감정·색·마음 크기를 적어요. 그 다음 오른쪽 [그림 그리기] 에서 그대로 그려요.",
+      body: "먼저 여기에 상황·감정·색·마음 크기를 적어요. 그 다음 오른쪽 [뇌구조 이미지] 에서 AI가 그림으로 만들어 줘요.",
     },
 
     /*
@@ -599,11 +611,12 @@ async function main(): Promise<void> {
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} · 차시 번호 ${LESSON_NO} (8회기 마지막)`);
   console.log("교사 버튼 순서: 대기(마음 체크인) →");
-  console.log("  [draw] 나의 뇌구조 그리기(머리 윤곽선 배경) → [video] 나의 행복? 영상 → [problem] 가치·행복·응원");
-  console.log("  → [mvp] 마음 건강 자가진단(외부, 저장X) → [wrapheal] 나의 인생 그래프 그리기(백지) → [build] 인생 그래프 돌아보기");
+  console.log("  [draw] 나의 뇌구조(AI 이미지 생성) → [video] 나의 행복? 영상 → [problem] 가치·행복·응원");
+  console.log("  → [mvp] 마음 건강 자가진단(외부, 저장X) → [wrapheal] 나의 인생 그래프 그리기(백지 손그림) → [build] 인생 그래프 돌아보기");
   console.log("  → [quiz] 마음 건강 OX → [grill] 실천방안·도움 요청 → [wrapmap] 지난 8주 돌아보기(포트폴리오) → [reflection] 마음일기(제출→테트리스)");
-  console.log("\n★ 그림판 둘: 뇌구조(draw, head 배경) + 인생 그래프(wrapheal, 백지·graph 슬롯). 포트폴리오: wrapmap 에서 본인 지난 작품·기분 추이.");
-  console.log("★ 프라이버시: galleryEnabled: false (전면 비공개) · reflectionPublic: false · AI 전송 기능 없음 · 포트폴리오도 본인 것만.");
+  console.log("\n★ 산출물 둘: 뇌구조(draw, brainImage AI 이미지) + 인생 그래프(wrapheal, 백지 손그림·graph 슬롯). 포트폴리오: wrapmap 에서 본인 지난 작품·기분 추이.");
+  console.log("★ 프라이버시: galleryEnabled: false (전면 비공개) · reflectionPublic: false · 포트폴리오도 본인 것만.");
+  console.log("  뇌구조 이미지: 서버가 artifact 답(상황·감정·색·%)만 Gemini 로 보냄 — 학번·이름 안 보냄, 위기 신호는 호출 전 차단, 결과는 본인 전용 필드 저장(친구 비노출).");
   console.log("  자가진단 결과는 포털에 저장하지 않음(외부 새 탭). 도움 요청 안내·OX 로 위기 대응 녹임.");
   console.log("⚠ 교사 확인 필요: 유튜브 영상·mentalhealth.go.kr 자가진단의 학교망 접속 여부(7회기 메모: 외부 사이트 차단 사례).");
   console.log("세션 열기(화요일 1기): node --env-file=.env.local scripts/open-mt8-tue1.ts  (리허설: --rehearsal)");

@@ -166,6 +166,9 @@ export async function GET() {
               // 그림판 밑그림(머리 윤곽선 등)·두 번째 그림판·포트폴리오. 안 실으면 화면에 안 닿는다
               // (위 artifactTitle 과 같은 함정 — 이 자리에서 필드를 하나씩 골라 내보낸다)
               drawBackground: session.activity.drawBackground ?? null,
+              // 그리기 단계를 AI 이미지 생성으로 바꾸는 플래그(8회기 뇌구조). 안 실으면 화면이
+              // undefined 로 읽어 DrawBoard 로 물러난다 (위 함정들과 같다).
+              brainImage: session.activity.brainImage ?? false,
               secondDraw: session.activity.secondDraw ?? null,
               portfolio: session.activity.portfolio ?? false,
               // 활동지를 그리기 앞에 두는가. 위와 같은 이유로 여기 실어야 화면에 닿는다

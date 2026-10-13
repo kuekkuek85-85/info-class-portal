@@ -83,7 +83,12 @@ interface SaveBody {
   answers?: Record<string, string>;
   traits?: string[];
   sources?: { site?: string; ai?: string };
+  /** 뇌구조 AI 이미지(8회기). 클라이언트가 작게 줄인 JPEG data URL. 전용 필드로 저장한다 */
+  brainImage?: string;
 }
+
+/** 뇌구조 이미지 data URL 저장 상한. Firestore 문서 1MB 한도에 여유를 두고 자른다 */
+const BRAIN_IMAGE_LIMIT = 900_000;
 
 export async function GET(request: Request) {
   return guard(async () => {
@@ -127,6 +132,8 @@ export async function GET(request: Request) {
         answers: artifact.answers ?? {},
         traits: artifact.traits ?? [],
         sources: artifact.sources ?? { site: "", ai: "" },
+        // 뇌구조 AI 이미지(마음 톡톡 8회기). 없으면 null — 화면이 '아직 안 만듦'으로 뜬다.
+        brainImage: artifact.brainImage ?? null,
         status: artifact.status,
         // 클라이언트는 이 번호 다음부터 세어 올린다. 0부터 다시 세면 새로고침한 학생의
         // 저장이 전부 "옛 요청"으로 버려진다.
@@ -250,6 +257,20 @@ export async function POST(request: Request) {
       };
     }
 
+    /*
+     * 뇌구조 AI 이미지(8회기) — brainImage 가 켜진 활동에서만, data URL 하나를 전용 필드에 저장한다.
+     * 재생성하면 교체된다. 문서 1MB 한도를 넘는 값(클라이언트가 덜 줄였거나 조작)은 조용히 버린다 —
+     * 통째로 쓰면 Firestore 가 문서를 거부해 다른 저장까지 함께 깨진다. 슬롯(두 번째 그림판)엔 안 붙인다.
+     */
+    let brainSaved = false;
+    if (!slot && typeof body.brainImage === "string" && activity.brainImage) {
+      const dataUrl = body.brainImage;
+      if (dataUrl.startsWith("data:image/") && dataUrl.length <= BRAIN_IMAGE_LIMIT) {
+        patch.brainImage = { dataUrl, at: Date.now() };
+        brainSaved = true;
+      }
+    }
+
     const hasStrokes = Array.isArray(body.strokes);
     const texts = Array.isArray(body.texts) ? normalizeTexts(body.texts) : undefined;
 
@@ -280,7 +301,7 @@ export async function POST(request: Request) {
       // 슬롯(두 번째 그림판)은 진도 기록을 건드리지 않는다 — 출석 문서의 strokeCount·
       // answeredKeys 는 기본 활동(뇌구조) 신호등이라, 그래프 저장이 그걸 덮으면 안 된다.
       if (!slot) await recordWorkProgress(me.sessionId, me.studentId, { answeredKeys });
-      return ok({ size: roughSize(artifact.strokes ?? []), warn: false, rejected: false });
+      return ok({ size: roughSize(artifact.strokes ?? []), warn: false, rejected: false, brainSaved });
     }
 
     const rev = Number(body.rev);
