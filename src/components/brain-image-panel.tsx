@@ -110,6 +110,12 @@ function colorName(label: string): string {
   return label.replace(/^기타\s*:/, "").replace(/\s*\(.*\)\s*$/, "").trim() || label;
 }
 
+/** 마음 크기 표시 — 숫자만 적었으면(예 "80") % 를 붙여 준다 */
+function sizeText(size: string): string {
+  const s = size.trim();
+  return /^\d+$/.test(s) ? `${s}%` : s;
+}
+
 /**
  * 범례 — AI 이미지는 한글 글자를 못 쓰므로, 색·감정·내용·마음 크기를 코드로 또렷하게 적어 준다.
  * 본인 화면 전용(galleryEnabled:false)이라 내용을 그대로 보여도 프라이버시 문제 없다.
@@ -130,7 +136,7 @@ function BrainLegend({ rows }: { rows: EmotionRow[] }) {
             {r.content && <span className="text-muted"> · {r.content}</span>}
             <span className="text-muted">
               {" "}({colorName(r.color)}
-              {r.size ? ` · ${r.size}` : ""})
+              {r.size ? ` · ${sizeText(r.size)}` : ""})
             </span>
           </span>
         </li>
@@ -293,9 +299,16 @@ export function BrainImagePanel({
             내가 적은 내용·감정·색·마음 크기로 AI가 그린 나의 뇌구조예요. 마음에 안 들면
             <b> 다시 만들기</b> 를 눌러요.
           </figcaption>
-          {/* AI 그림엔 글자가 없으므로, 어떤 색이 어떤 감정·내용인지 아래에 적어 준다 */}
-          <BrainLegend rows={rows} />
         </figure>
+      )}
+
+      {/* AI 그림엔 글자가 없으므로, 어떤 색이 어떤 감정·내용인지 코드로 또렷하게 적어 준다.
+          이미지 유무와 무관하게 답을 채웠으면 보인다. */}
+      {ready && (
+        <div className="flex flex-col gap-1.5">
+          <p className="t-caption text-muted">내가 적은 색 · 감정 · 내용 · 마음 크기</p>
+          <BrainLegend rows={rows} />
+        </div>
       )}
     </div>
   );
