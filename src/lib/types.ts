@@ -78,6 +78,14 @@ export type LessonPhase =
    * (LESSON_PHASES 참조).
    */
   | "wrapmap"
+  /*
+   * 「디지털 마음 톡톡」 8회기(마지막)의 '마음일기' 단계.
+   *
+   * 학기 내내 고른 마음 체크인(mood)을 모아 계산·시각화해 보여 주는 리포트다 — 본인만 본다.
+   * 기분 분석을 포트폴리오(지난 8주 돌아보기)에서 떼어 이리로 옮겼다. moodReport 를 켠
+   * 차시에서만 교사 버튼에 뜬다 (availablePhase 참조).
+   */
+  | "mooddiary"
   | "wrapheal"
   | "done";
 
@@ -156,6 +164,8 @@ export const LESSON_PHASES: readonly LessonPhase[] = [
    * 단계다. 그림판은 활동지·감상과 한 묶음이라 따로 열어야 한다.
    */
   "wrapmap",
+  // 포트폴리오(돌아보기) 바로 뒤, 전체 후기(reflection) 앞. 마음 체크인 리포트를 본다.
+  "mooddiary",
   "wrapheal",
   "done",
 ];
@@ -185,6 +195,7 @@ export const PHASE_LABELS: Record<LessonPhase, string> = {
   gallery: "작품 감상",
   reflection: "성찰",
   wrapmap: "마무리 활동",
+  mooddiary: "마음일기",
   wrapheal: "마무리 그리기",
   done: "마침",
 };
@@ -1419,6 +1430,18 @@ export interface ActivityContent {
    * 지난 회기 통(mt-2026-2/3/5/6/7)에서 리허설 꼬리표(__rehearsal)는 걸러 낸다.
    */
   portfolio?: boolean;
+  /**
+   * 마음일기(마음 체크인 리포트) 단계를 연다 — 마음 톡톡 8회기(마지막).
+   *
+   * 켜면 mooddiary 단계에서 **학생 본인의** 회기별 마음 체크인(mood)을 모아 계산·시각화한
+   * 리포트를 읽기 전용으로 띄운다(/api/student/mood-report → MoodReportView). 회기별 기분
+   * 추이 그래프·평균·가장 많이 고른 기분 같은 계산은 서버가 하고, 따뜻한 한두 문장 총평만
+   * Gemini 로 받는다(실패하면 계산 리포트만 보여 준다).
+   *
+   * ★ 프라이버시: 철저히 본인 것만. Gemini 로는 기분 라벨·valence/arousal·회기 번호만 보낸다 —
+   * 학번·이름·기분 이유(moodEntries.reason)는 보내지 않는다. 위기 신호는 호출 전 checkCrisis 로 멈춘다.
+   */
+  moodReport?: boolean;
 }
 
 /** 출처 두 칸의 기본 예시. 차시가 따로 정하지 않으면 이것을 쓴다 (그림 활동 기준) */

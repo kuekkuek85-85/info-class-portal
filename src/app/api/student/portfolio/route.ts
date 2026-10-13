@@ -1,160 +1,224 @@
 import { fail, guard, ok } from "@/lib/api";
-import { listAllSessions, listArtifactsByStudent, listMoodEntriesByStudent } from "@/lib/db";
-import { getMood, moodCellStyle } from "@/lib/mood";
+import { listAllSessions, listArtifactsByStudent, listReflectionsByStudent } from "@/lib/db";
 import { readStudentSession } from "@/lib/session";
-import type { Stroke, TextItem } from "@/lib/types";
+import type { Artifact, ClassSession, WorksheetQuestion } from "@/lib/types";
 
 /**
- * 포트폴리오 — 학생 '본인'의 지난 회기 활동/작품 + 회기별 기분 추이 (마음 톡톡 8회기 성찰).
+ * 포트폴리오 — 학생 '본인'의 지난 회기 활동을 **회기별 아코디언**으로 모은다 (마음 톡톡 8회기 성찰).
  *
  * ## ★ 프라이버시 (이 과목 1순위)
  *
  * 철저히 **본인 것만** 모은다. 학번(me.studentId)으로만 조회하고, 친구 것은 한 건도 섞지
  * 않는다. 친구에게 나가는 경로가 아니라 자기 화면에만 뜨므로 갤러리·동료와 무관하다.
- * AI(Gemini)로 보내는 것은 없다 — 지난 답을 그대로 읽어 보여줄 뿐이다.
+ * **AI(Gemini)로 보내는 것은 없다** — 지난 답을 그대로 읽어 보여줄 뿐이다.
  *
- * 리허설 흔적(activityId 가 __rehearsal 로 끝나는 통)과 두 번째 그림판 슬롯(::graph)은
- * 거른다 — 전자는 교사 테스트, 후자는 8회기 인생 그래프(지난 작품이 아니다).
+ * 리허설 흔적(activityId 가 __rehearsal 를 포함)과 두 번째 그림판 슬롯(activityId 에 `::` 포함,
+ * 예: ::graph)은 거른다 — 전자는 교사 테스트, 후자는 인생 그래프(지난 '답'이 아니다).
  *
- * ## 무엇을 모으나 (합리적 스코프)
+ * ## 무엇을 모으나 — 회기(활동통)별로 '본인이 쓴 답 전부'
  *
- * 지난 회기(2·3/4/5/6/7)에서 **본인이 쓴 글 몇 줄 + 그때의 기분**을 회기별로 모은다.
- * 지난 회기 산출물은 대부분 캔바·수노 같은 외부 링크라 포털에 그림이 없다. 단 2·3회기의
- * '힐링 스페이스'만 포털 내장 그림판이라 strokes 가 있어, 그 그림만 읽기 전용으로 다시 띄운다.
- * (기획 선택: 지난 작품 '원본 로딩' 은 포털에 그림이 있는 힐링 스페이스 하나로 한정.)
+ * 특정 키를 하드코딩하지 않는다. 마음 톡톡 세션(제목에 "마음 톡톡")의 activity.worksheet 에서
+ * key→label 을 읽어, 그 회기 artifact.answers 를 **일반적으로 순회**한다. 학생이 직접 쓴 답
+ * (text·long·choice·multi·rows·list·cloze)만 담고, 안내(note)·AI 결과·게임·이미지 같은
+ * 표시용/비서술 칸과 빈 답은 건너뛴다. 성찰(reflection) 답도 그 회기 질문과 짝지어 함께 담는다.
+ *
+ * 기분(mood)은 더 이상 여기서 다루지 않는다 — '마음일기'(mood-report) 단계로 옮겼다.
+ * 지금 수업 중인 회기(현재 세션의 activityId)는 '지난' 돌아보기에서 제외한다.
  */
 
-/** 회기별로 떠올려 보여줄 것 — 통 ID → 라벨 + 본인이 쓴 글 칸 몇 개 */
-interface PortfolioBin {
-  activityId: string;
+/** 학생이 직접 쓴 답만 (안내·AI·게임·이미지 칸은 제외) */
+const WRITTEN_KINDS: ReadonlySet<string> = new Set([
+  "text",
+  "long",
+  "choice",
+  "multi",
+  "rows",
+  "list",
+  "cloze",
+]);
+
+/** 한 칸에 보여줄 글자 상한 (본인 것이라 전문은 아니어도 됨) */
+const MAX_VALUE = 1200;
+
+interface PortfolioItem {
   label: string;
-  /** 포털 내장 그림(strokes)이 있는 통인가 — 2·3회기 힐링 스페이스만 true */
-  hasDrawing?: boolean;
-  keys: { key: string; label: string; link?: boolean }[];
+  value: string;
+  link: boolean;
+}
+interface PortfolioSession {
+  activityId: string;
+  /** 아코디언 머리말 — "2·3회기" 같은 회기 라벨 */
+  heading: string;
+  /** 머리말 옆 소제목 — 그 회기의 주제 */
+  subhead: string;
+  /** 정렬용 (가장 이른 회기 번호) */
+  lessonNo: number;
+  items: PortfolioItem[];
+  reflections: { question: string; answer: string }[];
 }
 
-const PORTFOLIO_BINS: PortfolioBin[] = [
-  {
-    activityId: "mt-2026-2",
-    label: "2·3회기 — 내 감정 알아차리기",
-    hasDrawing: true, // 힐링 스페이스 그림
-    keys: [
-      { key: "word1", label: "내가 찾은 감정말 ①" },
-      { key: "word2", label: "내가 찾은 감정말 ②" },
-      { key: "word3", label: "내가 찾은 감정말 ③" },
-      { key: "map_mine", label: "나만의 감정 조절법" },
-      { key: "heal_place", label: "나의 힐링 공간" },
-    ],
-  },
-  {
-    activityId: "mt-2026-3",
-    label: "4회기 — 실패를 노래로 자랑하기",
-    keys: [
-      { key: "brag_title", label: "내 실패 자랑 제목" },
-      { key: "lyric_line", label: "내 노래 가사 한 줄" },
-      { key: "learn_line", label: "실패에서 배운 것" },
-      { key: "song_url", label: "내가 만든 노래", link: true },
-    ],
-  },
-  {
-    activityId: "mt-2026-5",
-    label: "5회기 — 관점과 감정 읽기",
-    keys: [
-      { key: "persp_reflect", label: "관점에 대해 느낀 점" },
-      { key: "a2_tm_reflect", label: "AI 감정 분석 소감" },
-    ],
-  },
-  {
-    activityId: "mt-2026-6",
-    label: "6회기 — 의사소통과 공감",
-    keys: [
-      { key: "a4_imsg", label: "내가 쓴 '나 전달법'" },
-      { key: "a5_empathy", label: "내가 쓴 공감 문장" },
-      { key: "a4_virtue", label: "내가 고른 관계 덕목" },
-    ],
-  },
-  {
-    activityId: "mt-2026-7",
-    label: "7회기 — 그림으로 마음 전하기 · 규칙 만들기",
-    keys: [
-      { key: "sk_feel", label: "그림 게임에서 느낀 점" },
-      { key: "sk_perspective", label: "관점에 대해 알게 된 것" },
-      { key: "pd_reflect", label: "협력 게임 소감" },
-    ],
-  },
-];
+/** 회기 번호 라벨 — 마음 톡톡은 lessonNo 202~208 → "2회기"~"8회기" */
+function sessionLabel(lessonNo: number): string {
+  return lessonNo > 200 && lessonNo < 221 ? `${lessonNo - 200}회기` : `${lessonNo}차시`;
+}
 
-/** 화면에 보여줄 한 칸 길이 상한 (긴 글은 잘라 보여준다 — 본인 것이라 전문은 지난 기록에서) */
-const MAX_VALUE = 400;
+/** 제목에서 "디지털 마음 톡톡 N회기 —" 머리말을 떼어 주제만 남긴다 */
+function topicOf(title: string): string {
+  const tail = title.split(/[—-]/).slice(1).join("-").trim();
+  return tail || title.trim();
+}
+
+function looksLikeLink(value: string): boolean {
+  return /^https?:\/\//i.test(value.trim());
+}
+
+/** 한 문항(쓴 답 종류)의 raw 답을 화면용 값으로 — 못 쓸 답이면 null */
+function renderAnswer(question: WorksheetQuestion, raw: string): string | null {
+  const value = (raw ?? "").trim();
+  if (!value) return null;
+
+  if (question.kind === "rows") {
+    try {
+      const rows = JSON.parse(value) as Record<string, string>[];
+      if (!Array.isArray(rows)) return null;
+      const lines = rows
+        .map((row) =>
+          (question.rowColumns ?? [])
+            .map((c) => String(row?.[c.key] ?? "").trim())
+            .filter(Boolean)
+            .join(" · "),
+        )
+        .filter(Boolean);
+      return lines.length ? lines.join("\n").slice(0, MAX_VALUE) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  if (question.kind === "list") {
+    try {
+      const items = JSON.parse(value) as string[];
+      if (!Array.isArray(items)) return null;
+      const lines = items.map((s) => String(s ?? "").trim()).filter(Boolean);
+      return lines.length ? lines.map((s) => `· ${s}`).join("\n").slice(0, MAX_VALUE) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  if (question.kind === "cloze") {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      const flat = Array.isArray(parsed)
+        ? parsed
+        : parsed && typeof parsed === "object"
+          ? Object.values(parsed as Record<string, unknown>).flat()
+          : [];
+      const words = flat.map((s) => String(s ?? "").trim()).filter(Boolean);
+      return words.length ? words.join(" · ").slice(0, MAX_VALUE) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return value.slice(0, MAX_VALUE);
+}
 
 export async function GET() {
   return guard(async () => {
     const me = await readStudentSession();
     if (!me) return fail("session_expired");
 
-    const [artifacts, moods, sessions] = await Promise.all([
+    const [artifacts, reflections, sessions] = await Promise.all([
       listArtifactsByStudent(me.studentId),
-      listMoodEntriesByStudent(me.studentId),
+      listReflectionsByStudent(me.studentId),
       listAllSessions(),
     ]);
 
-    // 리허설·슬롯을 뺀 '진짜 지난 작품' 만 activityId 로 찾는다
-    const realArtifact = (activityId: string) =>
-      artifacts.find(
-        (a) => a.activityId === activityId && !a.activityId.includes("__rehearsal"),
-      );
+    // 지금 수업 중인 회기(활동통)는 '지난' 돌아보기에서 뺀다
+    const currentActivityId = sessions.find((s) => s.id === me.sessionId)?.activity?.activityId ?? "";
 
-    const works = PORTFOLIO_BINS.flatMap((bin) => {
-      const artifact = realArtifact(bin.activityId);
-      if (!artifact) return [];
+    /* ── 마음 톡톡 세션을 활동통(activityId)별로 묶는다 (한 통을 2·3회기가 나눠 쓰기도 한다) ── */
+    const groups = new Map<string, ClassSession[]>();
+    for (const s of sessions) {
+      if (!String(s.title ?? "").includes("마음 톡톡")) continue;
+      const activityId = s.activity?.activityId ?? "";
+      if (!activityId) continue;
+      if (activityId.includes("__rehearsal") || activityId.includes("::")) continue;
+      if (activityId === currentActivityId) continue; // 지난 것만
+      const list = groups.get(activityId) ?? [];
+      list.push(s);
+      groups.set(activityId, list);
+    }
 
-      const answers = artifact.answers ?? {};
-      const highlights = bin.keys
-        .map((k) => ({
-          label: k.label,
-          value: String(answers[k.key] ?? "").trim().slice(0, MAX_VALUE),
-          link: k.link ?? false,
-        }))
-        .filter((h) => h.value);
+    /* ── 본인 reflection 을 sessionId 로 찾을 수 있게 모은다 (draft 든 제출이든 본인 것) ── */
+    const reflectionBySession = new Map(reflections.map((r) => [r.sessionId, r]));
 
-      const drawing =
-        bin.hasDrawing && (artifact.strokes?.length ?? 0) > 0
-          ? {
-              strokes: artifact.strokes as Stroke[],
-              texts: (artifact.texts ?? []) as TextItem[],
-              title: artifact.place ? `힐링 스페이스 · ${artifact.place}` : "힐링 스페이스",
-            }
-          : null;
+    const realArtifact = (activityId: string): Artifact | undefined =>
+      artifacts.find((a) => a.activityId === activityId);
 
-      // 쓴 글도 그림도 없으면 빈 카드가 되므로 뺀다
-      if (highlights.length === 0 && !drawing) return [];
-      return [{ activityId: bin.activityId, label: bin.label, highlights, drawing }];
-    });
+    const out: PortfolioSession[] = [];
+    for (const [activityId, groupSessions] of groups) {
+      const artifact = realArtifact(activityId);
 
-    /* ── 회기별 기분 추이 — 마음 톡톡 세션의 mood 만 (정보 수업 mood 는 제외) ── */
-    const sessionById = new Map(sessions.map((s) => [s.id, s]));
-    const moodTrend = moods
-      .map((m) => {
-        const session = sessionById.get(m.sessionId);
-        if (!session) return null;
-        // 마음 톡톡 세션만 (제목으로 거른다 — 정보·진로탐색 mood 가 섞이지 않게)
-        if (!String(session.title ?? "").includes("마음 톡톡")) return null;
-        const option = getMood(m.mood);
-        const style = option ? moodCellStyle(option) : null;
-        return {
-          lessonNo: session.lessonNo ?? 0,
-          title: String(session.title ?? ""),
-          date: session.date ?? m.date ?? "",
-          moodLabel: option?.label ?? m.mood,
-          valence: m.valence ?? 0,
-          arousal: m.arousal ?? 0,
-          color: style?.background ?? "#cccccc",
-        };
-      })
-      .filter((x): x is NonNullable<typeof x> => x !== null)
-      // 회기 번호 → 날짜 순. 같은 통을 두 회기가 나눠 쓰므로 세션별로 각각 한 점이 된다
-      .sort((a, b) => a.lessonNo - b.lessonNo || a.date.localeCompare(b.date));
+      // 라벨용 worksheet 는 이 통을 쓴 세션들의 문항을 key 로 합친다(뒤 세션이 덮어씀)
+      const questionByKey = new Map<string, WorksheetQuestion>();
+      const orderedKeys: string[] = [];
+      for (const s of groupSessions) {
+        for (const q of s.activity?.worksheet ?? []) {
+          if (!questionByKey.has(q.key)) orderedKeys.push(q.key);
+          questionByKey.set(q.key, q);
+        }
+      }
 
-    return ok({ works, moodTrend });
+      /* 쓴 답만, worksheet 순서대로. note(키가 `_`로 시작)·표시용·빈 답은 건너뛴다 */
+      const items: PortfolioItem[] = [];
+      const answers = artifact?.answers ?? {};
+      for (const key of orderedKeys) {
+        if (key.startsWith("_")) continue;
+        const question = questionByKey.get(key);
+        if (!question || !WRITTEN_KINDS.has(question.kind)) continue;
+        const value = renderAnswer(question, answers[key] ?? "");
+        if (!value) continue;
+        items.push({ label: question.label, value, link: looksLikeLink(value) });
+      }
+
+      /* 성찰 답 — 이 통을 쓴 세션들의 본인 reflection 을 질문과 짝지어 담는다 */
+      const reflectionItems: { question: string; answer: string }[] = [];
+      for (const s of groupSessions) {
+        const r = reflectionBySession.get(s.id);
+        if (!r) continue;
+        const questions = s.reflectionQuestions ?? [];
+        (r.answers ?? []).forEach((ans, i) => {
+          const answer = String(ans ?? "").trim();
+          if (!answer) return;
+          reflectionItems.push({
+            question: questions[i] ?? `질문 ${i + 1}`,
+            answer: answer.slice(0, MAX_VALUE),
+          });
+        });
+      }
+
+      if (items.length === 0 && reflectionItems.length === 0) continue;
+
+      const lessonNos = [...new Set(groupSessions.map((s) => s.lessonNo ?? 0))].sort((a, b) => a - b);
+      const heading = lessonNos.map(sessionLabel).join("·");
+      // 소제목은 가장 문항이 많은(대표) 세션의 주제
+      const rep = [...groupSessions].sort(
+        (a, b) => (b.activity?.worksheet?.length ?? 0) - (a.activity?.worksheet?.length ?? 0),
+      )[0];
+      out.push({
+        activityId,
+        heading,
+        subhead: topicOf(String(rep?.title ?? "")),
+        lessonNo: lessonNos[0] ?? 0,
+        items,
+        reflections: reflectionItems,
+      });
+    }
+
+    out.sort((a, b) => a.lessonNo - b.lessonNo);
+
+    return ok({ sessions: out });
   });
 }

@@ -9,9 +9,9 @@
  *   ① 나의 뇌구조         — 활동지(한 줄에 내용·감정·색·크기)를 채우면 AI(Gemini 이미지)가 뇌구조 그림 생성
  *   ② 나의 행복?           — 영상 시청 + 가치관·행복한 삶·노력·나에게 보내는 응원
  *   ③ 마음 건강            — 자가진단(외부 링크) · 인생 그래프 · 마음건강 OX · 실천방안 · 도움 요청
- *   ④ 성찰(포트폴리오)     — 지난 8주 활동을 떠올리며 그때의 마음 적기
- *   ⑤ 마음일기             — 전체 수업 후기·배운 점·앞으로의 다짐
- *   → 다 하면 보상으로 테트리스(rewardGame).
+ *   ④ 돌아보기(포트폴리오) — 지난 8주 활동을 회기별 아코디언으로 펼쳐 보며 그때의 마음 적기
+ *   ⑤ 마음일기             — 학기 내내 고른 마음 체크인을 모아 계산·시각화 + AI 한두 문장 총평(본인만)
+ *   ⑥ 전체 후기(성찰)      — 전체 수업 후기·배운 점·앞으로의 다짐 → 제출하면 보상 테트리스(rewardGame).
  *
  * ## ★ 프라이버시 (이 과목 1순위) — 전면 비공개
  *
@@ -337,12 +337,13 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 150,
   },
 
-  /* ═══════════ ④ 성찰(포트폴리오) — 지난 8주 돌아보기 (wrapmap) ═══════════
+  /* ═══════════ ④ 돌아보기(포트폴리오) — 지난 8주 돌아보기 (wrapmap) ═══════════
    *
-   * ★ #2 포트폴리오 — activity.portfolio:true 를 켜면 이 단계 맨 위에 학생 '본인'의 지난
-   * 활동/작품과 회기별 기분 추이가 읽기 전용으로 뜬다(/api/student/portfolio → PortfolioView).
-   * 그 아래 아래 rows 에 '그때 마음'을 떠올려 적는다 — 작품을 보며 쓰므로 회상이 구체적이다.
-   * 철저히 본인 것만, 친구에게 안 나가고 AI 전송 없음(리허설 꼬리표는 서버가 걸러 낸다).
+   * ★ #2 포트폴리오 — activity.portfolio:true 를 켜면 이 단계 맨 위에 학생 '본인'의 지난 회기
+   * 활동이 **회기별 아코디언**으로 뜬다(/api/student/portfolio → PortfolioView). 회기를 누르면
+   * 그때 쓴 활동지 답과 성찰이 라벨과 함께 펼쳐진다. 그 아래 rows 에 '그때 마음'을 떠올려 적는다.
+   * 철저히 본인 것만, 친구에게 안 나가고 AI 전송 없음(리허설·::슬롯은 서버가 걸러 낸다).
+   * 기분(mood) 분석은 여기서 떼어 ⑤ 마음일기(mooddiary) 로 옮겼다.
    */
   {
     key: "_portfolio_intro",
@@ -489,7 +490,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    */
   phaseOrder: [
     "waiting", "draw", "video", "problem", "mvp",
-    "wrapheal", "build", "quiz", "grill", "wrapmap", "reflection",
+    "wrapheal", "build", "quiz", "grill", "wrapmap", "mooddiary", "reflection",
   ],
 
   // 단계명 — 화면에 'draw'·'wrapheal'·'wrapmap' 같은 말은 안 보인다.
@@ -503,7 +504,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     quiz: "마음 건강 OX",
     grill: "마음 건강 실천 · 도움 요청",
     wrapmap: "지난 8주 돌아보기",
-    reflection: "마음일기 · 전체 후기",
+    // 포트폴리오(돌아보기)에서 떼어낸 기분 분석 — 마음 체크인 리포트
+    mooddiary: "마음일기 (마음 체크인 리포트)",
+    reflection: "전체 후기",
   },
 
   quiz: QUIZ,
@@ -579,6 +582,14 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
      */
     portfolio: true,
 
+    /*
+     * ★ 마음일기 — mooddiary(포트폴리오 바로 뒤) 단계에서 학생 '본인'의 회기별 마음 체크인을
+     * 모아 계산·시각화한 리포트를 보여준다(/api/student/mood-report → MoodReportView). 그래프·평균·
+     * 최다 기분은 서버 계산, 따뜻한 한두 문장 총평만 Gemini. 본인 것만 — Gemini 로는 기분 라벨·
+     * valence/arousal·회기 번호만 보내고 학번·이름·기분 이유(reason)는 보내지 않는다.
+     */
+    moodReport: true,
+
     // 정보과 수행평가용 출처 두 칸은 이 수업과 무관하므로 끈다.
     sourcesEnabled: false,
   },
@@ -623,7 +634,8 @@ async function main(): Promise<void> {
   console.log("교사 버튼 순서: 대기(마음 체크인) →");
   console.log("  [draw] 나의 뇌구조(AI 이미지 생성) → [video] 나의 행복? 영상 → [problem] 가치·행복·응원");
   console.log("  → [mvp] 마음 건강 자가진단(외부, 저장X) → [wrapheal] 나의 인생 그래프 그리기(백지 손그림) → [build] 인생 그래프 돌아보기");
-  console.log("  → [quiz] 마음 건강 OX → [grill] 실천방안·도움 요청 → [wrapmap] 지난 8주 돌아보기(포트폴리오) → [reflection] 마음일기(제출→테트리스)");
+  console.log("  → [quiz] 마음 건강 OX → [grill] 실천방안·도움 요청 → [wrapmap] 지난 8주 돌아보기(포트폴리오, 회기별 아코디언)");
+  console.log("  → [mooddiary] 마음일기(마음 체크인 리포트: 계산 + AI 한두 문장 총평) → [reflection] 전체 후기(제출→테트리스)");
   console.log("\n★ 산출물 둘: 뇌구조(draw, brainImage AI 이미지) + 인생 그래프(wrapheal, 백지 손그림·graph 슬롯). 포트폴리오: wrapmap 에서 본인 지난 작품·기분 추이.");
   console.log("★ 프라이버시: galleryEnabled: false (전면 비공개) · reflectionPublic: false · 포트폴리오도 본인 것만.");
   console.log("  뇌구조 이미지: 서버가 artifact 답(각 줄의 내용·감정·색·%)만 Gemini 로 보냄 — 학번·이름 안 보냄, 위기 신호는 호출 전 차단, 결과는 본인 전용 필드 저장(친구 비노출).");

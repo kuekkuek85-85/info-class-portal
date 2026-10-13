@@ -10,6 +10,7 @@ import { DonePortal } from "@/components/done-portal";
 import { DrawBoard } from "@/components/draw-board";
 import { GalleryView } from "@/components/gallery-view";
 import { MoodPicker } from "@/components/mood-picker";
+import { MoodReportView } from "@/components/mood-report-view";
 import { PortfolioView } from "@/components/portfolio-view";
 import { QuizView, type QuizState } from "@/components/quiz-view";
 import { ReviewView } from "@/components/review-view";
@@ -68,6 +69,8 @@ export interface ActivityInfo {
   secondDraw?: { heading: string; body: string; title: string; background?: DrawBackground } | null;
   /** 포트폴리오(지난 회기 돌아보기)를 wrapmap 단계에 띄운다 (8회기 성찰) */
   portfolio?: boolean;
+  /** 마음일기(마음 체크인 리포트)를 mooddiary 단계에 띄운다 (8회기) */
+  moodReport?: boolean;
   /** 활동지를 그리기 앞에 두는가. 안 오면 그리기가 앞 (지금까지의 차시) */
   worksheetFirst?: boolean;
   /** 그리기 첫 화면(장소 고르기) 문구. 비면 기본값 */
@@ -1007,6 +1010,8 @@ export default function LessonPage() {
     if (item === "draw") return !wrapDraw && (session.activity?.places.length ?? 0) > 0;
     if (item === "wrapheal") return wrapDraw;
     if (item === "reflection") return session.reflectionQuestions.length > 0;
+    // 마음일기(마음 체크인 리포트) — moodReport 를 켠 차시에서만
+    if (item === "mooddiary") return Boolean(session.activity?.moodReport);
 
     const content =
       item === "progress"
@@ -1458,6 +1463,15 @@ export default function LessonPage() {
           <div className="mb-5">
             <PortfolioView />
           </div>
+        )}
+
+        {/*
+          마음일기 — 마음 톡톡 8회기(마지막). 학기 내내 고른 마음 체크인을 모아 계산·시각화한
+          리포트를 읽기 전용으로 띄운다(/api/student/mood-report → MoodReportView). 본인 것만 —
+          친구에게 안 나가고, AI 총평은 기분 라벨·숫자만 보고 쓴 것(학번·이름·이유 비전송).
+        */}
+        {!showDone && !inPresentation && viewPhase === "mooddiary" && session.activity?.moodReport && (
+          <MoodReportView />
         )}
 
         {!showDone && !inPresentation && STEP_PHASES.includes(viewPhase) && !(quiz && viewPhase === phase) &&

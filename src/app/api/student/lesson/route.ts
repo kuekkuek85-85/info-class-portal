@@ -171,6 +171,9 @@ export async function GET() {
               brainImage: session.activity.brainImage ?? false,
               secondDraw: session.activity.secondDraw ?? null,
               portfolio: session.activity.portfolio ?? false,
+              // 마음일기(마음 체크인 리포트) 단계 플래그. 위 함정과 같다 — 여기 실어야
+              // 학생 화면(mooddiary)에서 MoodReportView 가 뜬다.
+              moodReport: session.activity.moodReport ?? false,
               // 활동지를 그리기 앞에 두는가. 위와 같은 이유로 여기 실어야 화면에 닿는다
               worksheetFirst: session.activity.worksheetFirst ?? false,
               // 활동지 첫 화면 문구. 안 보내면 "무엇을 그렸는지 적어 주세요" 가 그대로

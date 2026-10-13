@@ -197,7 +197,8 @@ function report(id: string, code: string, kept: WorksheetQuestion[]): void {
   console.log("교사 버튼 순서: 대기(마음 체크인) →");
   console.log("  [draw] 뇌구조 그리기 → [video] 행복? 영상 → [problem] 가치·행복·응원 →");
   console.log("  [mvp] 자가진단(외부, 저장X) → [build] 인생 그래프 → [quiz] 마음 건강 OX →");
-  console.log("  [grill] 실천방안·도움 요청 → [wrapmap] 지난 8주 돌아보기 → [reflection] 마음일기(제출→테트리스)\n");
+  console.log("  [grill] 실천방안·도움 요청 → [wrapmap] 지난 8주 돌아보기(포트폴리오 아코디언) →");
+  console.log("  [mooddiary] 마음일기(마음 체크인 리포트+AI 총평) → [reflection] 전체 후기(제출→테트리스)\n");
   console.log(`활동지 문항 ${kept.length}개 · 마음 건강 OX 퀴즈 5문항.`);
 
   /*
@@ -207,7 +208,8 @@ function report(id: string, code: string, kept: WorksheetQuestion[]): void {
   console.log("\n★ 서로의 마음 읽기(갤러리): 끔 (galleryEnabled: false · galleryAnswerKeys: [])");
   console.log("   ✓ 전면 비공개 — 뇌구조·인생 그래프·마음 건강·자가진단 소감·마음일기 어느 것도 친구에게 안 나감.");
   console.log(`   남의 분반 토큰 실림: ${JSON.stringify(kept).includes("linkUrlByGroup") ? "예 ← 문제" : "아니오"}`);
-  console.log("   AI(Gemini) 전송 기능: 없음(감정 렌즈·챗봇 등 미포함) · 자가진단 결과 포털 저장: 안 함(외부 새 탭).");
+  console.log("   AI(Gemini) 전송: 뇌구조 이미지(answers 답)·마음일기 총평(기분 라벨·valence/arousal·회기 번호만)뿐 —");
+  console.log("     둘 다 학번·이름·기분 이유(reason) 비전송, 위기 신호는 호출 전 checkCrisis 로 차단. 자가진단 결과 포털 저장: 안 함(외부 새 탭).");
   console.log(
     REHEARSAL
       ? "\n리허설 모드 — 아무 때나 열립니다. 화요일 1기 번호로 로그인해 테스트하고, 끝나면\n  node --env-file=.env.local scripts/clear-rehearsals.ts --write 로 정리하세요."
