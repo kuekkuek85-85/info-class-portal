@@ -17,7 +17,7 @@ import {
   UNDO_LIMIT,
   simplifyPoints,
 } from "@/lib/drawing";
-import type { Stroke, TextItem } from "@/lib/types";
+import type { DrawBackground, Stroke, TextItem } from "@/lib/types";
 
 /**
  * 2040년 그림판.
@@ -62,6 +62,14 @@ export interface DrawBoardProps {
   onExit?: (strokes: Stroke[], texts: TextItem[], rev: number) => void;
   /** 수업이 끝났으면 읽기 전용 */
   disabled?: boolean;
+  /** 밑그림(가이드). "head" 면 머리 옆모습 윤곽선을 획 밑에 깐다 */
+  background?: DrawBackground;
+  /**
+   * 저장 슬롯. 비면 기본 그림(activityId__학번). "graph" 면 두 번째 그림판으로
+   * 따로 저장된다(activityId::graph__학번) — 한 차시에 그림을 둘 그리는 8회기 인생 그래프.
+   * 서버가 화이트리스트(DRAW_SLOTS)로 검사한다.
+   */
+  saveSlot?: string;
 }
 
 type Tool = "pen" | "eraser" | "text";
@@ -127,8 +135,21 @@ export function DrawBoard({
   onPlaceChange,
   onExit,
   disabled,
+  background,
+  saveSlot,
 }: DrawBoardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  /**
+   * 장소 선택을 쓰는가. places 가 비어 있으면(백지 그림판 — 8회기 인생 그래프) 장소 고르기
+   * 없이 바로 캔버스가 뜬다. 장소가 있는 기존 차시는 지금까지 그대로다.
+   */
+  const needsPlace = places.length > 0;
+
+  /** 저장 주소 — 슬롯이 있으면 ?slot=… 을 붙인다(서버가 화이트리스트로 검사) */
+  const saveUrl = saveSlot
+    ? `/api/student/artifact?slot=${encodeURIComponent(saveSlot)}`
+    : "/api/student/artifact";
 
   // 그리는 동안 매 프레임 React 상태를 갱신하면 28명 태블릿에서 눈에 띄게 끊긴다.
   // 캔버스에 직접 그리고, 획이 끝났을 때만 상태를 올린다.
@@ -228,7 +249,7 @@ export function DrawBoard({
     const ctx = canvas?.getContext("2d");
     if (!ctx) return;
 
-    drawArtifact(ctx, strokesRef.current, textsRef.current);
+    drawArtifact(ctx, strokesRef.current, textsRef.current, background);
 
     // 그리는 중인 획은 아직 배열에 없으므로 따로 얹는다
     const points = currentRef.current;
@@ -244,7 +265,7 @@ export function DrawBoard({
       ctx.stroke();
       ctx.restore();
     }
-  }, [color, width]);
+  }, [color, width, background]);
 
   /*
    * repicking 이 목록에 들어 있는 이유.
@@ -564,7 +585,7 @@ export function DrawBoard({
       let resend = false;
 
       try {
-        const response = await fetch("/api/student/artifact", {
+        const response = await fetch(saveUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -663,7 +684,7 @@ export function DrawBoard({
         }
       }
     },
-    [scheduleSave, hasUnsavedWork],
+    [scheduleSave, hasUnsavedWork, saveUrl],
   );
 
   useEffect(() => {
@@ -772,7 +793,7 @@ export function DrawBoard({
     function onPageHide() {
       // 여기서부터는 페이지가 정리될 수 있다. 직렬화를 기다릴 여유가 없으므로 바로 보낸다.
       if (!hasUnsavedWork()) return;
-      sendFinalSave(strokesRef.current, textsRef.current, (saveRevRef.current += 1));
+      sendFinalSave(saveUrl, strokesRef.current, textsRef.current, (saveRevRef.current += 1));
     }
 
     document.addEventListener("visibilitychange", onHidden);
@@ -782,7 +803,7 @@ export function DrawBoard({
       document.removeEventListener("visibilitychange", onHidden);
       window.removeEventListener("pagehide", onPageHide);
     };
-  }, [disabled, save, hasUnsavedWork]);
+  }, [disabled, save, hasUnsavedWork, saveUrl]);
 
   // 화면을 벗어날 때 마지막으로 한 번. 교사가 단계를 넘기면 이 컴포넌트가 사라진다.
   // 정리 함수가 옛 onExit 을 붙잡지 않도록 ref 로 최신 값을 들고 있는다.
@@ -812,18 +833,18 @@ export function DrawBoard({
 
       if (hasUnsavedWork()) {
         rev = saveRevRef.current += 1;
-        sendFinalSave(strokes, texts, rev);
+        sendFinalSave(saveUrl, strokes, texts, rev);
       }
 
       // 순번도 함께 넘긴다. 다시 그리기로 돌아왔을 때 0부터 세면 저장이 한동안
       // "옛 요청"으로 버려진다.
       exitRef.current?.(strokes, texts, rev);
     };
-  }, [hasUnsavedWork]);
+  }, [hasUnsavedWork, saveUrl]);
 
   // ------------------------------------------------------------- 장소 선택
 
-  if (!place || repicking) {
+  if ((needsPlace && !place) || repicking) {
     return (
       <section className="flex flex-col gap-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -958,16 +979,18 @@ export function DrawBoard({
             가 있는 곳이 제목이다. 도구 쪽에 섞어 두면 찾지 못한다.
             누르는 자리는 44px 로 잡는다. 중1 손가락에 아이콘 크기 그대로는 작다.
           */}
-          <button
-            type="button"
-            onClick={() => setRepicking(true)}
-            disabled={disabled}
-            title="장소 다시 고르기"
-            aria-label="장소 다시 고르기"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-line bg-canvas text-lg"
-          >
-            ✏️
-          </button>
+          {needsPlace && (
+            <button
+              type="button"
+              onClick={() => setRepicking(true)}
+              disabled={disabled}
+              title="장소 다시 고르기"
+              aria-label="장소 다시 고르기"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-line bg-canvas text-lg"
+            >
+              ✏️
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
@@ -1297,14 +1320,14 @@ export function DrawBoard({
  * 항상 전체를 보내고(replace) 가장 큰 순번을 붙이므로, 앞서 출발한 요청이 뒤늦게
  * 도착해도 서버가 그것을 버린다. 순서가 뒤집혀도 결과가 어긋나지 않는다.
  */
-function sendFinalSave(strokes: Stroke[], texts: TextItem[], rev: number): void {
+function sendFinalSave(url: string, strokes: Stroke[], texts: TextItem[], rev: number): void {
   const body = JSON.stringify({ mode: "replace", strokes, texts, rev });
 
   // 한도는 문자 수가 아니라 바이트 수다. 한글은 한 글자가 3바이트라, 글자 수로 재면
   // 한도를 넘긴 요청에 keepalive 를 붙여 통째로 거절당한다.
   const bytes = new TextEncoder().encode(body).byteLength;
 
-  void fetch("/api/student/artifact", {
+  void fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body,

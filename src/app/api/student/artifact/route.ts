@@ -19,7 +19,7 @@ import {
   isValidWidthIndex,
   quantize,
 } from "@/lib/drawing";
-import { activityIdFor } from "@/lib/gallery";
+import { activityIdForSlot } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
 import { isTrait, type Stroke, type TextItem } from "@/lib/types";
 import { normalizeUrl, URL_ANSWER_KEYS } from "@/lib/url";
@@ -85,7 +85,7 @@ interface SaveBody {
   sources?: { site?: string; ai?: string };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   return guard(async () => {
     const me = await readStudentSession();
     if (!me) return fail("session_expired");
@@ -96,21 +96,25 @@ export async function GET() {
     const activity = session.activity;
     if (!activity?.activityId) return fail("not_found", "이 차시에는 그리기 활동이 없어요.");
 
+    // 두 번째 그림판(인생 그래프) 슬롯. 서버가 화이트리스트로 검사한 꼬리표만 붙는다.
+    const slot = new URL(request.url).searchParams.get("slot");
+
     const artifact = await ensureArtifact({
-      activityId: activityIdFor(session),
+      activityId: activityIdForSlot(session, slot),
       studentId: me.studentId,
       classNo: session.classNo,
       year: activity.year ?? 2040,
     });
 
     /*
-     * 지난 차시에 쓴 답 (읽기 전용).
+     * 지난 차시에 쓴 답 (읽기 전용). 슬롯(두 번째 그림판)에는 붙이지 않는다 —
+     * carryOver 는 기본 활동 하나를 전제한다.
      *
      * 읽기 한 번이 늘지만 폴링이 아니라 활동지에 들어올 때 한 번뿐이다 (PRD 10장 D2).
      * 아무것도 안 적었으면 통째로 빼고 보낸다 — 빈 상자가 활동지 위에 붙어 있으면
      * 무엇이 들어올 자리인지 알 수 없다.
      */
-    const carried = await carryOverOf(session, me.studentId);
+    const carried = slot ? null : await carryOverOf(session, me.studentId);
 
     return ok({
       carried,
@@ -153,11 +157,14 @@ export async function POST(request: Request) {
     const activity = session.activity;
     if (!activity?.activityId) return fail("not_found", "이 차시에는 그리기 활동이 없어요.");
 
+    // 두 번째 그림판(인생 그래프) 슬롯. 화이트리스트로 검사한 꼬리표만 붙는다.
+    const slot = new URL(request.url).searchParams.get("slot");
+
     const body = await readJson<SaveBody>(request);
     if (!body) return fail("invalid_input");
 
     const artifact = await ensureArtifact({
-      activityId: activityIdFor(session),
+      activityId: activityIdForSlot(session, slot),
       studentId: me.studentId,
       classNo: session.classNo,
       year: activity.year ?? 2040,
@@ -270,7 +277,9 @@ export async function POST(request: Request) {
     // -------------------------------------------------------------- 그림
 
     if (!hasStrokes) {
-      await recordWorkProgress(me.sessionId, me.studentId, { answeredKeys });
+      // 슬롯(두 번째 그림판)은 진도 기록을 건드리지 않는다 — 출석 문서의 strokeCount·
+      // answeredKeys 는 기본 활동(뇌구조) 신호등이라, 그래프 저장이 그걸 덮으면 안 된다.
+      if (!slot) await recordWorkProgress(me.sessionId, me.studentId, { answeredKeys });
       return ok({ size: roughSize(artifact.strokes ?? []), warn: false, rejected: false });
     }
 
@@ -290,10 +299,13 @@ export async function POST(request: Request) {
       { warn: SIZE_WARN_BYTES, reject: SIZE_REJECT_BYTES },
     );
 
-    await recordWorkProgress(me.sessionId, me.studentId, {
-      answeredKeys,
-      strokeCount: result.total,
-    });
+    // 슬롯(두 번째 그림판)은 기본 활동 진도 신호등을 건드리지 않는다 (위 설명)
+    if (!slot) {
+      await recordWorkProgress(me.sessionId, me.studentId, {
+        answeredKeys,
+        strokeCount: result.total,
+      });
+    }
 
     return ok({
       size: result.size,

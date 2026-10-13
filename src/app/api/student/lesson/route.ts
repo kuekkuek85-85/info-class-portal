@@ -163,6 +163,11 @@ export async function GET() {
                 바로 아래 sourceHints·galleryEnabled 와 같은 함정이다.
               */
               artifactTitle: session.activity.artifactTitle ?? "",
+              // 그림판 밑그림(머리 윤곽선 등)·두 번째 그림판·포트폴리오. 안 실으면 화면에 안 닿는다
+              // (위 artifactTitle 과 같은 함정 — 이 자리에서 필드를 하나씩 골라 내보낸다)
+              drawBackground: session.activity.drawBackground ?? null,
+              secondDraw: session.activity.secondDraw ?? null,
+              portfolio: session.activity.portfolio ?? false,
               // 활동지를 그리기 앞에 두는가. 위와 같은 이유로 여기 실어야 화면에 닿는다
               worksheetFirst: session.activity.worksheetFirst ?? false,
               // 활동지 첫 화면 문구. 안 보내면 "무엇을 그렸는지 적어 주세요" 가 그대로

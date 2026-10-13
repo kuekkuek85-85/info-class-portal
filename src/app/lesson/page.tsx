@@ -9,6 +9,7 @@ import { DonePortal } from "@/components/done-portal";
 import { DrawBoard } from "@/components/draw-board";
 import { GalleryView } from "@/components/gallery-view";
 import { MoodPicker } from "@/components/mood-picker";
+import { PortfolioView } from "@/components/portfolio-view";
 import { QuizView, type QuizState } from "@/components/quiz-view";
 import { ReviewView } from "@/components/review-view";
 import { SiteFooter } from "@/components/site-footer";
@@ -22,6 +23,7 @@ import { artifactTitle } from "@/lib/artifact-title";
 import {
   LESSON_PHASES,
   PHASE_LABELS,
+  type DrawBackground,
   type LessonPhase,
   type RewardGame,
   type Stroke,
@@ -57,6 +59,12 @@ export interface ActivityInfo {
   galleryAnswerKeys?: string[];
   /** 그림 제목의 틀. 비면 "○○년의 △△" (artifact-title.ts) */
   artifactTitle?: string;
+  /** 그림판 밑그림. "head" 면 머리 윤곽선을 획 밑에 깐다 (8회기 뇌구조) */
+  drawBackground?: DrawBackground | null;
+  /** 회고 뒤 두 번째 그림판(백지) — 8회기 인생 그래프. 있으면 wrapheal 이 이 그림판만 띄운다 */
+  secondDraw?: { heading: string; body: string; title: string; background?: DrawBackground } | null;
+  /** 포트폴리오(지난 회기 돌아보기)를 wrapmap 단계에 띄운다 (8회기 성찰) */
+  portfolio?: boolean;
   /** 활동지를 그리기 앞에 두는가. 안 오면 그리기가 앞 (지금까지의 차시) */
   worksheetFirst?: boolean;
   /** 그리기 첫 화면(장소 고르기) 문구. 비면 기본값 */
@@ -174,6 +182,15 @@ export default function LessonPage() {
     texts: TextItem[];
     status: string;
     /** 서버가 마지막으로 받아들인 저장 순번 */
+    saveRev: number;
+  } | null>(null);
+  /**
+   * 두 번째 그림판(인생 그래프) — 8회기 wrapheal. 기본 그림(artifact)과 다른 슬롯
+   * (activityId::graph) 에 저장된다. secondDraw 가 있는 차시에서만 받아 온다.
+   */
+  const [graphArtifact, setGraphArtifact] = useState<{
+    strokes: Stroke[];
+    texts: TextItem[];
     saveRev: number;
   } | null>(null);
   const [worksheet, setWorksheet] = useState<WorksheetValue>({
@@ -575,6 +592,19 @@ export default function LessonPage() {
         sources: result.artifact.sources ?? { site: "", ai: "" },
       });
       setCarried(result.carried ?? null);
+
+      // 두 번째 그림판(인생 그래프)이 있는 차시면 그 슬롯 그림도 받아 온다
+      if (data?.session.activity?.secondDraw) {
+        const graphRes = await fetch("/api/student/artifact?slot=graph");
+        const graph = await graphRes.json();
+        if (!cancelled && graph.ok) {
+          setGraphArtifact({
+            strokes: graph.artifact.strokes ?? [],
+            texts: graph.artifact.texts ?? [],
+            saveRev: graph.artifact.saveRev ?? 0,
+          });
+        }
+      }
     }
 
     void loadArtifact();
@@ -769,6 +799,15 @@ export default function LessonPage() {
 
   /** 활동지를 그리기 앞에 두는 차시인가 (ActivityContent 의 worksheetFirst) */
   const worksheetFirst = Boolean(session.activity?.worksheetFirst);
+
+  /*
+   * 회고 뒤 두 번째 그림판(백지) 단계인가 — 8회기 인생 그래프.
+   *
+   * 이 단계에서는 탭(그림/활동지/감상) 없이 두 번째 그림판 하나만 띄운다. 그래서
+   * 아래 탭 줄과 세 탭 블록을 모두 건너뛰고(!inGraphDraw), 전용 그림판을 그린다.
+   */
+  const inGraphDraw =
+    isWorkPhase && !showDone && viewPhase === "wrapheal" && Boolean(session.activity?.secondDraw);
 
   /*
    * 실제로 보여 줄 탭.
@@ -1404,6 +1443,17 @@ export default function LessonPage() {
           )
         )}
 
+        {/*
+          포트폴리오(지난 회기 돌아보기) — 마음 톡톡 8회기 성찰. wrapmap 단계 맨 위에
+          학생 '본인'의 지난 활동/작품과 기분 추이를 읽기 전용으로 띄우고, 바로 아래 활동지
+          (그때 마음 적기)에 쓰게 한다. 본인 것만 — 친구에게 안 나가고 AI 전송 없음.
+        */}
+        {!showDone && !inPresentation && viewPhase === "wrapmap" && session.activity?.portfolio && (
+          <div className="mb-5">
+            <PortfolioView />
+          </div>
+        )}
+
         {!showDone && !inPresentation && STEP_PHASES.includes(viewPhase) && !(quiz && viewPhase === phase) &&
           (session.activity && artifact && stepQuestions.length > 0 ? (
             <WorksheetView
@@ -1449,7 +1499,7 @@ export default function LessonPage() {
           누를 곳이 아니라 지금 보고 있는 화면의 이름이다. 누르면 아무 일도 안 나는
           단추가 화면 맨 위에 있으면 학생은 그것부터 눌러 본다.
         */}
-        {isWorkPhase && !showDone && session.activity && Number(canDraw) + Number(canShare) > 0 && (
+        {isWorkPhase && !showDone && !inGraphDraw && session.activity && Number(canDraw) + Number(canShare) > 0 && (
           <div className="mb-5 flex gap-2">
             {/*
               그리기가 없는 차시도 있다 (4차시 직업 조사처럼 글만 쓰는 활동).
@@ -1508,8 +1558,40 @@ export default function LessonPage() {
           </div>
         )}
 
+        {/*
+          두 번째 그림판(인생 그래프) — wrapheal 단계 전용. 백지에서 손으로 그래프를
+          그린다. 장소 선택 없이(places 비움) 바로 캔버스가 뜨고, graph 슬롯에 저장된다.
+        */}
+        {inGraphDraw &&
+          (session.activity?.secondDraw && graphArtifact ? (
+            <DrawBoard
+              key={`${session.activity.activityId}::graph`}
+              initialStrokes={graphArtifact.strokes}
+              initialTexts={graphArtifact.texts}
+              initialRev={graphArtifact.saveRev}
+              places={[]}
+              place=""
+              year={session.activity.year}
+              drawPrompt={{
+                heading: session.activity.secondDraw.heading,
+                body: session.activity.secondDraw.body,
+              }}
+              title={session.activity.secondDraw.title}
+              background={session.activity.secondDraw.background}
+              saveSlot="graph"
+              onPlaceChange={() => undefined}
+              onExit={(strokes, texts, saveRev) =>
+                setGraphArtifact((prev) => (prev ? { ...prev, strokes, texts, saveRev } : prev))
+              }
+              disabled={closed}
+            />
+          ) : (
+            <Placeholder title="그림판을 준비하고 있어요" description="잠시만 기다려 주세요." />
+          ))}
+
         {isWorkPhase &&
           !showDone &&
+          !inGraphDraw &&
           activeTab === "draw" &&
           (session.activity && artifact ? (
             <DrawBoard
@@ -1522,6 +1604,7 @@ export default function LessonPage() {
               year={artifact.year}
               techExamples={session.activity.techExamples}
               drawPrompt={session.activity.drawPrompt}
+              background={session.activity.drawBackground ?? undefined}
               title={artifactTitle(
                 session.activity.artifactTitle,
                 artifact.year,
@@ -1539,6 +1622,7 @@ export default function LessonPage() {
 
         {isWorkPhase &&
           !showDone &&
+          !inGraphDraw &&
           activeTab === "worksheet" &&
           (session.activity && artifact ? (
             <WorksheetView
@@ -1587,7 +1671,7 @@ export default function LessonPage() {
             <Placeholder title="활동지를 준비하고 있어요" description="잠시만 기다려 주세요." />
           ))}
 
-        {isWorkPhase && !showDone && activeTab === "gallery" && (
+        {isWorkPhase && !showDone && !inGraphDraw && activeTab === "gallery" && (
           <GalleryView disabled={closed} noun={workNoun} />
         )}
 

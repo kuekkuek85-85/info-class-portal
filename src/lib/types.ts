@@ -1117,6 +1117,14 @@ export interface WorksheetQuestion {
  */
 export type PeerAssignMode = "cyclic" | "random";
 
+/**
+ * 그림판 캔버스의 밑그림(가이드).
+ *
+ * 저장되는 획이 아니라 **화면에만** 그려진다 — 학생이 그 위에/안에 그린다. 지금은 머리
+ * 옆모습 윤곽선("head") 하나뿐이다(마음 톡톡 8회기 '나의 뇌구조'). 없으면 흰 배경.
+ */
+export type DrawBackground = "head";
+
 export interface ActivityContent {
   /**
    * 그림을 묶는 열쇠. **2차시와 3차시 차시 계획에 같은 값을 넣는다.**
@@ -1161,6 +1169,33 @@ export interface ActivityContent {
    * 그림판 제목과 작품 카드 제목에 함께 쓴다.
    */
   artifactTitle?: string;
+  /**
+   * 그림판 캔버스 **배경 밑그림**. 안 적으면 흰 배경(지금까지의 차시).
+   *
+   * "head" 면 빈 머리 옆모습 윤곽선(껍데기)을 옅은 회색으로 깔아 준다. 마음 톡톡 8회기
+   * '나의 뇌구조'가 그 안을 감정 색으로 채우는 활동이라 켠다. 밑그림은 저장되는 획이
+   * 아니라 **화면에만** 그려지는 가이드다(artifact-canvas 의 drawArtifact 가 strokes 밑에 깐다).
+   */
+  drawBackground?: DrawBackground;
+  /**
+   * 회고 뒤 그리기(wrapheal) 단계에 두는 **두 번째 그림판**(백지).
+   *
+   * 그림(artifact)은 활동당 하나만 저장되므로(activityId__학번), 한 차시에 그림을 둘
+   * 그리려면 두 번째 것은 **슬롯**(activityId::graph)으로 따로 저장한다(gallery.ts 의
+   * activityIdForSlot, artifact 라우트의 slot). 마음 톡톡 8회기 '인생 그래프'가 이것이다 —
+   * 백지에서 손으로 굴곡 그래프를 그린다. 장소 선택 없이 바로 캔버스가 뜬다(places 가 비어 있음).
+   *
+   * 있으면 wrapheal 단계가 이 그림판 하나만 띄운다(탭 없음). 없으면 wrapheal 은 지금까지처럼
+   * 활동지/그림 탭을 쓴다(마음 톡톡 3회기 힐링 스페이스는 이 값 없이 기존 방식 그대로).
+   */
+  secondDraw?: {
+    heading: string;
+    body: string;
+    /** 그림판 제목 (예: "나의 인생 그래프") */
+    title: string;
+    /** 두 번째 캔버스 배경 밑그림 — 인생 그래프는 백지라 보통 생략 */
+    background?: DrawBackground;
+  };
   /**
    * 활동지를 그리기 **앞에** 둔다 (기본은 그리기가 앞).
    *
@@ -1353,6 +1388,16 @@ export interface ActivityContent {
     phases?: LessonPhase[];
     fields: { key: string; label: string; maxLength?: number; multiline?: boolean }[];
   };
+  /**
+   * 포트폴리오(지난 회기 돌아보기)를 연다 — 마음 톡톡 8회기(마지막) 성찰.
+   *
+   * 켜면 wrapmap(지난 8주 돌아보기) 단계에서 **학생 본인의** 지난 활동/작품과 회기별 기분
+   * 추이를 읽기 전용으로 띄운다(/api/student/portfolio 가 이 학생 것만 모은다).
+   *
+   * ★ 프라이버시: 철저히 본인 것만. 친구에게 안 나가고(갤러리 무관), AI 전송도 없다.
+   * 지난 회기 통(mt-2026-2/3/5/6/7)에서 리허설 꼬리표(__rehearsal)는 걸러 낸다.
+   */
+  portfolio?: boolean;
 }
 
 /** 출처 두 칸의 기본 예시. 차시가 따로 정하지 않으면 이것을 쓴다 (그림 활동 기준) */

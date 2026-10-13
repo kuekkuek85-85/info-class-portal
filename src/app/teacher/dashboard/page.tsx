@@ -105,6 +105,8 @@ interface SessionRow {
     }[];
     /** 감정을 쓰는 차시는 감상을 막는다 (types.ts 의 galleryEnabled) */
     galleryEnabled?: boolean;
+    /** 회고 뒤 두 번째 그림판(백지) — 있으면 wrapheal 단추를 연다 (8회기 인생 그래프) */
+    secondDraw?: { heading: string; body: string; title: string } | null;
   };
   /** 지난 차시 복습 — 학생이 기분 체크를 마치면 서버가 만들어 넣는다. 여기서는 한 줄만 쓴다 */
   reviewCache?: { summary?: string } | null;
@@ -1737,7 +1739,14 @@ function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
     return !wrapDraw && (session.activity?.places?.length ?? 0) > 0;
   }
   if (phase === "wrapheal") {
-    return (session.activity?.worksheet ?? []).some((q) => q.phase === "wrapheal");
+    /*
+     * 회고 뒤 그림판은 두 꼴이다: 활동지 문항을 wrapheal 에 둔 차시(마음 톡톡 3회기)와,
+     * 두 번째 그림판(백지)을 secondDraw 로 둔 차시(8회기 인생 그래프). 둘 중 하나면 연다.
+     */
+    return (
+      Boolean(session.activity?.secondDraw) ||
+      (session.activity?.worksheet ?? []).some((q) => q.phase === "wrapheal")
+    );
   }
 
   /*

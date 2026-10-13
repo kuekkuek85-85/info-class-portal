@@ -19,6 +19,22 @@ export function activityIdFor(session: ClassSession): string {
 }
 
 /**
+ * 한 차시에 그림을 둘 그리는 차시(8회기: 뇌구조 + 인생 그래프)의 **두 번째 그림판** 슬롯.
+ *
+ * 작품은 activityId__학번 하나로 저장되므로, 두 번째 그림은 활동 ID 뒤에 슬롯 꼬리표를
+ * 붙여 완전히 다른 문서(activityId::graph__학번)에 저장한다. 꼬리표는 서버가 화이트리스트로
+ * 고정한다 — 학생이 값을 골라 보내 다른 활동 문서를 열 수 없게. 리허설 꼬리표(__rehearsal)
+ * 뒤에 붙으므로 리허설/실제가 여전히 갈린다.
+ */
+const DRAW_SLOTS = new Set(["graph"]);
+
+export function activityIdForSlot(session: ClassSession, slot?: string | null): string {
+  const base = activityIdFor(session);
+  if (!base) return "";
+  return slot && DRAW_SLOTS.has(slot) ? `${base}::${slot}` : base;
+}
+
+/**
  * 화면에 쓸 표시명 — 서버에서 조인해 문자열 하나로 만든다.
  *
  * 명렬표를 학생 클라이언트로 내려보내지 않는다는 원칙 때문에, 이름은 반드시 이 형태로만
