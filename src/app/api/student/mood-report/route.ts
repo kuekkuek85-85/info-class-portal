@@ -20,7 +20,8 @@ import { readStudentSession } from "@/lib/session";
  * - 철저히 **본인 것만**. 학번(me.studentId)으로만 조회하고, 친구 것은 한 건도 섞지 않는다.
  * - 마음 톡톡 세션의 mood 만 — 정보·진로탐색 mood 가 섞이지 않게 세션 제목으로 거른다.
  * - **Gemini 로는 기분 라벨 + valence/arousal 숫자 + 회기 번호만 보낸다.** 학번·이름·기분 이유
- *   (moodEntries.reason, 자유서술)는 **보내지 않는다** — reason 은 화면에도 싣지 않는다(교사 전용).
+ *   (moodEntries.reason, 자유서술)는 **AI 로 절대 보내지 않는다**(buildMoodPayload·checkCrisis 입력에서 제외).
+ *   reason 은 **본인 화면 표시용으로만** 응답에 담는다 — 친구에게 안 나가고 AI 로도 안 간다.
  * - 보낼 문자열을 checkCrisis 로 한 번 더 통과시킨 뒤에만 Gemini 를 부른다. 걸리면 호출하지
  *   않고 교사에게 사실만 알린다(flagCareAlert). 실패·상한 초과면 AI 총평은 생략하고 계산만 준다.
  */
@@ -50,7 +51,7 @@ export async function GET() {
 
     const sessionById = new Map(sessions.map((s) => [s.id, s]));
 
-    /* ── 회기별 기분 추이 — 마음 톡톡 세션의 mood 만 (reason 은 싣지 않는다) ── */
+    /* ── 회기별 기분 추이 — 마음 톡톡 세션의 mood 만. reason 은 본인 화면 표시용으로만 담는다 ── */
     const trend = moods
       .map((m) => {
         const s = sessionById.get(m.sessionId);
@@ -66,6 +67,8 @@ export async function GET() {
           valence: m.valence ?? 0,
           arousal: m.arousal ?? 0,
           color: style?.background ?? "#cccccc",
+          // ★ 본인 화면 표시용. AI(buildMoodPayload·checkCrisis·summarizeMood)에는 넣지 않는다.
+          reason: String(m.reason ?? "").trim(),
         };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null)

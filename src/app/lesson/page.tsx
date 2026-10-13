@@ -819,6 +819,20 @@ export default function LessonPage() {
     isWorkPhase && !showDone && viewPhase === "wrapheal" && Boolean(session.activity?.secondDraw);
 
   /*
+   * 뇌구조(8회기 draw) — 활동지와 이미지 패널을 한 화면으로 합친다(탭 없이).
+   *
+   * 활동지(내용·감정·색·마음 크기)를 쓰고, 바로 그 아래에서 [뇌구조 이미지 만들기] 를
+   * 누르는 하나의 흐름이다. 탭으로 나누면 학생이 둘을 오가느라 흐름이 끊긴다(교사 요청).
+   * brainImage 차시(뇌구조)에서만 합치고, 다른 그리기 차시는 지금까지처럼 탭을 쓴다.
+   */
+  const brainMerged =
+    isWorkPhase &&
+    !showDone &&
+    !inGraphDraw &&
+    viewPhase === "draw" &&
+    Boolean(session.activity?.brainImage);
+
+  /*
    * 실제로 보여 줄 탭.
    *
    * 그리기가 없는 차시에서는 그리기 탭에 머무를 수 없다. 교사가 "그리기" 단계를 눌러도
@@ -1519,7 +1533,7 @@ export default function LessonPage() {
           누를 곳이 아니라 지금 보고 있는 화면의 이름이다. 누르면 아무 일도 안 나는
           단추가 화면 맨 위에 있으면 학생은 그것부터 눌러 본다.
         */}
-        {isWorkPhase && !showDone && !inGraphDraw && session.activity && Number(canDraw) + Number(canShare) > 0 && (
+        {isWorkPhase && !showDone && !inGraphDraw && !brainMerged && session.activity && Number(canDraw) + Number(canShare) > 0 && (
           <div className="mb-5 flex gap-2">
             {/*
               그리기가 없는 차시도 있다 (4차시 직업 조사처럼 글만 쓰는 활동).
@@ -1582,6 +1596,50 @@ export default function LessonPage() {
           두 번째 그림판(인생 그래프) — wrapheal 단계 전용. 백지에서 손으로 그래프를
           그린다. 장소 선택 없이(places 비움) 바로 캔버스가 뜨고, graph 슬롯에 저장된다.
         */}
+        {/*
+          뇌구조(8회기) — 탭 없이 한 화면: 위에 활동지(내용·감정·색·마음 크기),
+          바로 아래에 뇌구조 이미지 패널. 둘을 오가는 탭을 없애 하나의 흐름으로 만든다(교사 요청).
+        */}
+        {brainMerged && session.activity && artifact && (
+          <div className="flex flex-col gap-6">
+            <WorksheetView
+              questions={plainWorksheetQuestions}
+              place={artifact.place}
+              year={artifact.year}
+              canDraw={canDraw}
+              sourceHints={session.activity.sourceHints ?? undefined}
+              carried={carried}
+              studentName={me.name}
+              studentId={me.studentId}
+              intro={session.activity.worksheetIntro}
+              strokes={artifact.strokes}
+              texts={artifact.texts}
+              value={worksheet}
+              onChange={setWorksheet}
+              onSubmit={submitArtifact}
+              onFeedback={handleFeedback}
+              submitted={artifact.status === "submitted"}
+              submitError={submitError}
+              disabled={closed}
+              hideSubmit={viewPhase !== finalWorkPhase}
+              hideSources={session.activity.sourcesEnabled === false}
+              heading={session.phaseLabels?.[viewPhase] ?? PHASE_LABELS[viewPhase]}
+            />
+            <BrainImagePanel
+              key={`${session.activity.activityId}::brain`}
+              answers={worksheet.answers}
+              initial={artifact.brainImage}
+              prompt={session.activity.drawPrompt}
+              disabled={closed}
+              onGenerated={(dataUrl) =>
+                setArtifact((prev) =>
+                  prev ? { ...prev, brainImage: { dataUrl, at: Date.now() } } : prev,
+                )
+              }
+            />
+          </div>
+        )}
+
         {inGraphDraw &&
           (session.activity?.secondDraw && graphArtifact ? (
             <DrawBoard
@@ -1612,6 +1670,7 @@ export default function LessonPage() {
         {isWorkPhase &&
           !showDone &&
           !inGraphDraw &&
+          !brainMerged &&
           activeTab === "draw" &&
           /*
             뇌구조(8회기)는 손그림 대신 AI 이미지 생성이다. 활동지(상황·감정·색·마음 크기)를
@@ -1665,6 +1724,7 @@ export default function LessonPage() {
         {isWorkPhase &&
           !showDone &&
           !inGraphDraw &&
+          !brainMerged &&
           activeTab === "worksheet" &&
           (session.activity && artifact ? (
             <WorksheetView

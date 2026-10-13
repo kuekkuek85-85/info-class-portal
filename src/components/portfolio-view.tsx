@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 
+import { ArtifactCanvas } from "@/components/artifact-canvas";
+import type { Stroke, TextItem } from "@/lib/types";
+
 /**
  * 포트폴리오 — 학생 본인의 지난 회기 활동을 **회기별 아코디언**으로 돌아본다 (마음 톡톡 8회기 성찰).
  *
@@ -22,6 +25,7 @@ interface PortfolioSession {
   lessonNo: number;
   items: PortfolioItem[];
   reflections: { question: string; answer: string }[];
+  drawing: { strokes: Stroke[]; texts: TextItem[]; title: string } | null;
 }
 
 export function PortfolioView() {
@@ -92,8 +96,20 @@ export function PortfolioView() {
 
                 {isOpen && (
                   <div className="flex flex-col gap-3 border-t border-line px-4 py-3">
-                    {s.items.length === 0 && s.reflections.length === 0 && (
+                    {s.items.length === 0 && s.reflections.length === 0 && !s.drawing && (
                       <p className="t-caption">이 회기에 저장된 답이 없어요.</p>
+                    )}
+
+                    {s.drawing && (
+                      <figure>
+                        <ArtifactCanvas
+                          strokes={s.drawing.strokes}
+                          texts={s.drawing.texts}
+                          pixelWidth={360}
+                          className="h-auto w-full max-w-sm rounded-lg border border-line bg-white"
+                        />
+                        <figcaption className="t-caption mt-1">{s.drawing.title}</figcaption>
+                      </figure>
                     )}
 
                     {s.items.map((item, i) => (

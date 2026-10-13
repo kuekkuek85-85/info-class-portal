@@ -18,6 +18,8 @@ interface MoodPoint {
   valence: number;
   arousal: number;
   color: string;
+  /** 그때 내가 쓴 기분 이유 — 본인 화면에만 (AI·친구 비전송). 없으면 빈 문자열 */
+  reason: string;
 }
 interface MoodStats {
   count: number;
@@ -122,6 +124,25 @@ export function MoodReportView() {
               <p className="t-caption mt-2 opacity-70">
                 이 한마디는 내가 고른 기분 낱말과 숫자만 보고 쓴 거예요. 이름이나 적은 이유는 보내지 않았어요.
               </p>
+            </div>
+          )}
+
+          {trend.some((t) => t.reason) && (
+            <div className="rounded-2xl border border-line bg-card px-4 py-3">
+              <h3 className="t-subhead">회기별 내가 쓴 기분 이유</h3>
+              <p className="t-caption mt-1">내가 그때 적은 이유예요 — 나만 봐요(친구·AI에게 보내지 않아요).</p>
+              <ul className="mt-2 flex flex-col gap-3">
+                {trend
+                  .filter((t) => t.reason)
+                  .map((t, i) => (
+                    <li key={`${t.lessonNo}-${i}`} className="flex flex-col">
+                      <span className="text-sm font-medium text-muted">
+                        {sessionLabel(t.lessonNo)} · {t.moodLabel}
+                      </span>
+                      <span className="mt-1 whitespace-pre-wrap text-base leading-relaxed">{t.reason}</span>
+                    </li>
+                  ))}
+              </ul>
             </div>
           )}
         </>

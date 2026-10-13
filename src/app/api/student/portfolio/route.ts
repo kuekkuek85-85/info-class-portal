@@ -1,7 +1,7 @@
 import { fail, guard, ok } from "@/lib/api";
 import { listAllSessions, listArtifactsByStudent, listReflectionsByStudent } from "@/lib/db";
 import { readStudentSession } from "@/lib/session";
-import type { Artifact, ClassSession, WorksheetQuestion } from "@/lib/types";
+import type { Artifact, ClassSession, Stroke, TextItem, WorksheetQuestion } from "@/lib/types";
 
 /**
  * 포트폴리오 — 학생 '본인'의 지난 회기 활동을 **회기별 아코디언**으로 모은다 (마음 톡톡 8회기 성찰).
@@ -14,6 +14,9 @@ import type { Artifact, ClassSession, WorksheetQuestion } from "@/lib/types";
  *
  * 리허설 흔적(activityId 가 __rehearsal 를 포함)과 두 번째 그림판 슬롯(activityId 에 `::` 포함,
  * 예: ::graph)은 거른다 — 전자는 교사 테스트, 후자는 인생 그래프(지난 '답'이 아니다).
+ *
+ * 포털 내장 그림(strokes)이 있는 통(2·3회기 힐링 스페이스)은 그 그림도 읽기 전용으로 함께 담는다.
+ * (지난 산출물 대부분은 캔바·수노 같은 외부 링크라 포털에 그림이 없고, 힐링 스페이스만 내장 그림이다.)
  *
  * ## 무엇을 모으나 — 회기(활동통)별로 '본인이 쓴 답 전부'
  *
@@ -55,6 +58,8 @@ interface PortfolioSession {
   lessonNo: number;
   items: PortfolioItem[];
   reflections: { question: string; answer: string }[];
+  /** 포털 내장 그림(힐링 스페이스 손그림) — 읽기 전용. 없으면 null */
+  drawing: { strokes: Stroke[]; texts: TextItem[]; title: string } | null;
 }
 
 /** 회기 번호 라벨 — 마음 톡톡은 lessonNo 202~208 → "2회기"~"8회기" */
@@ -70,6 +75,15 @@ function topicOf(title: string): string {
 
 function looksLikeLink(value: string): boolean {
   return /^https?:\/\//i.test(value.trim());
+}
+
+/** 그림 제목 — 세션의 artifactTitle 틀({장소}→place)을 쓰고, 없으면 place, 그것도 없으면 "내 그림" */
+function drawingTitle(groupSessions: ClassSession[], place: string): string {
+  const template = String(
+    groupSessions.find((s) => s.activity?.artifactTitle)?.activity?.artifactTitle ?? "",
+  ).trim();
+  const title = template ? template.replace(/\{장소\}/g, place || "").trim() : place.trim();
+  return title || "내 그림";
 }
 
 /** 한 문항(쓴 답 종류)의 raw 답을 화면용 값으로 — 못 쓸 답이면 null */
@@ -199,7 +213,17 @@ export async function GET() {
         });
       }
 
-      if (items.length === 0 && reflectionItems.length === 0) continue;
+      /* 포털 내장 그림(힐링 스페이스 손그림) — 있으면 읽기 전용으로 함께 담는다 */
+      const drawing =
+        artifact && (artifact.strokes?.length ?? 0) > 0
+          ? {
+              strokes: artifact.strokes as Stroke[],
+              texts: (artifact.texts ?? []) as TextItem[],
+              title: drawingTitle(groupSessions, String(artifact.place ?? "")),
+            }
+          : null;
+
+      if (items.length === 0 && reflectionItems.length === 0 && !drawing) continue;
 
       const lessonNos = [...new Set(groupSessions.map((s) => s.lessonNo ?? 0))].sort((a, b) => a - b);
       const heading = lessonNos.map(sessionLabel).join("·");
@@ -214,6 +238,7 @@ export async function GET() {
         lessonNo: lessonNos[0] ?? 0,
         items,
         reflections: reflectionItems,
+        drawing,
       });
     }
 
