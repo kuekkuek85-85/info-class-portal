@@ -12,15 +12,15 @@ import { activityIdFor } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
 
 /**
- * 나의 뇌구조 이미지 생성 — 학생이 활동지에 적은 '상황 · 감정 · 색 · 마음 크기'로 머리 옆모습
- * 안을 감정 색으로 채운 그림을 Gemini(gemini-2.5-flash-image)가 그려 준다 (마음 톡톡 8회기).
+ * 나의 뇌구조 이미지 생성 — 학생이 활동지에 한 줄씩 적은 '내용 · 감정 · 색 · 마음 크기'로 머리
+ * 옆모습 안을 감정 색으로 채운 그림을 Gemini(gemini-2.5-flash-image)가 그려 준다 (마음 톡톡 8회기).
  *
  * **학번·이름은 보내지 않는다.** 클라이언트가 보낸 텍스트를 그대로 태우지 않고, 서버가 그
- * 학생의 artifact 에서 상황·감정·색·퍼센트를 읽어 프롬프트를 조립한다(ai-feedback 패턴).
+ * 학생의 artifact 에서 각 줄의 내용·감정·색·퍼센트를 읽어 프롬프트를 조립한다(ai-feedback 패턴).
  *
  * ## 위기 신호는 Gemini 앞에서 멈춘다
  *
- * 상황 서술에 자·타해 암시가 있으면 호출 자체를 하지 않고(감정 렌즈와 같은 문턱) 교사에게
+ * 각 줄의 '내용'(그 일) 서술이나 감정 낱말에 자·타해 암시가 있으면 호출 자체를 하지 않고(감정 렌즈와 같은 문턱) 교사에게
  * "걸렸다"는 사실만 알린다 — **무엇을 썼는지는 로그에도 Gemini 에도 남기지 않는다.**
  *
  * ## 저장은 클라이언트가 줄여서 artifact 라우트로
@@ -48,7 +48,11 @@ function parsePercent(raw: string): number {
   return Math.max(0, Math.min(100, n));
 }
 
-/** brain_emotions(rows JSON)을 프롬프트용 감정 목록으로. 감정·색이 다 있는 줄만 남긴다. */
+/**
+ * brain_emotions(rows JSON)을 프롬프트용 감정 목록으로. 한 줄에 내용·감정·색·마음 크기가
+ * 함께 들어 있다(활동지 개편). 그림을 칠하려면 감정·색이 있어야 하므로 그 줄만 남기고,
+ * 내용(그 일)은 톤 맥락으로 함께 싣는다.
+ */
 function parseEmotions(raw: string): BrainEmotion[] {
   if (!raw.trim()) return [];
   let rows: unknown;
@@ -61,11 +65,12 @@ function parseEmotions(raw: string): BrainEmotion[] {
   const out: BrainEmotion[] = [];
   for (const row of rows) {
     if (!row || typeof row !== "object") continue;
-    const r = row as { emotion?: unknown; color?: unknown; size?: unknown };
+    const r = row as { content?: unknown; emotion?: unknown; color?: unknown; size?: unknown };
+    const content = String(r.content ?? "").trim();
     const emotion = String(r.emotion ?? "").trim();
     const color = String(r.color ?? "").trim();
     if (!emotion || !color) continue;
-    out.push({ emotion, color, percent: parsePercent(String(r.size ?? "")) });
+    out.push({ content, emotion, color, percent: parsePercent(String(r.size ?? "")) });
   }
   // 프롬프트가 지나치게 길어지지 않게 상한(활동지 maxRows 와 같은 6)
   return out.slice(0, 6);
@@ -88,22 +93,26 @@ export async function POST() {
 
     /*
      * 보낼 것은 **앞 단계에서 쓴 답**을 그대로 가져온다(클라이언트가 보낸 텍스트를 태우지
-     * 않는다). 상황·감정·색·마음 크기가 다 있어야 그림을 그릴 수 있다.
+     * 않는다). 한 줄에 내용·감정·색·마음 크기가 함께 들어 있고, 감정·색이 있는 줄이 하나라도
+     * 있어야 그림을 그릴 수 있다(활동지 개편 — 별도 '상황' 칸은 없어지고 각 줄의 '내용'이 대신).
      */
-    const situation = String(artifact.answers?.brain_situation ?? "").trim();
     const emotions = parseEmotions(String(artifact.answers?.brain_emotions ?? ""));
-    if (!situation || emotions.length === 0) {
+    if (emotions.length === 0) {
       return fail(
         "invalid_input",
-        "먼저 왼쪽 활동지에서 '상황'과 '감정·색·마음 크기'를 채워 주세요.",
+        "먼저 왼쪽 활동지에서 한 줄씩 '내용·감정·색·마음 크기'를 채워 주세요.",
       );
     }
 
     /*
      * 위기 신호 — Gemini 를 부르기 전에 멈춘다. 상한을 세기 전에 검사한다(걸리는 것 자체가
      * 학생 잘못이 아니라 횟수를 깎지 않는다). 학번·시각만 남기고 무엇을 썼는지는 남기지 않는다.
+     * 각 줄의 '내용'(그 일)과 감정 낱말을 모두 검사한다 — 자유 서술인 '내용'도 반드시 포함한다.
      */
-    const combined = [situation, ...emotions.map((e) => e.emotion)].join(" ");
+    const combined = [
+      ...emotions.map((e) => e.content),
+      ...emotions.map((e) => e.emotion),
+    ].join(" ");
     if (checkCrisis(combined)) {
       await logAiCall({
         studentId: me.studentId,
@@ -121,7 +130,7 @@ export async function POST() {
       return fail("too_many_attempts", "이 태블릿에서 너무 많이 눌렀어요. 선생님께 알려 주세요.");
     }
 
-    const dataUrl = await generateBrainImage(situation, emotions);
+    const dataUrl = await generateBrainImage(emotions);
     if (!dataUrl) {
       return fail("server_error", "AI가 그림을 그리지 못했어요. 잠시 뒤에 다시 눌러 보세요.");
     }

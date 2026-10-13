@@ -5,7 +5,7 @@ import { useState } from "react";
 /**
  * 나의 뇌구조 이미지 패널 (마음 톡톡 8회기) — DrawBoard(손그림) 자리를 대신한다.
  *
- * 왼쪽 활동지(상황·감정·색·마음 크기)를 다 채우면 「뇌구조 이미지 만들기」 버튼이 켜진다.
+ * 왼쪽 활동지(한 줄에 내용·감정·색·마음 크기)를 다 채우면 「뇌구조 이미지 만들기」 버튼이 켜진다.
  * 누르면 서버가 그 학생 artifact 의 답을 읽어 프롬프트를 조립해 Gemini 로 그림을 그려 저장하고,
  * 여기서 그 그림을 보여 준다. 다시 누르면 새로 그린다(재생성).
  *
@@ -45,10 +45,11 @@ async function compressForStore(dataUrl: string, maxSide = 768, quality = 0.82):
   return canvas.toDataURL("image/jpeg", quality);
 }
 
-/** 저장된 답에서 '상황'과 '감정 줄'이 다 있는지 — 버튼 활성 판정(클라이언트 1차, 서버가 재확인) */
+/**
+ * 저장된 답에서 감정·색이 있는 줄이 하나라도 있는지 — 버튼 활성 판정(클라이언트 1차, 서버가 재확인).
+ * 활동지 개편으로 한 줄에 내용·감정·색·마음 크기가 함께 들어 있다(별도 '상황' 칸 없음).
+ */
 function isReady(answers: Record<string, string>): boolean {
-  const situation = (answers.brain_situation ?? "").trim();
-  if (!situation) return false;
   const raw = (answers.brain_emotions ?? "").trim();
   if (!raw) return false;
   try {
@@ -92,15 +93,14 @@ export function BrainImagePanel({
     setMessage("");
     try {
       /*
-       * 먼저 지금 쓴 상황·감정을 저장해 둔다 — 활동지 자동저장이 아직 날아가는 중일 수 있어
-       * 서버가 옛 답을 읽는 것을 막는다. (서버는 answers 를 문항 키로 걸러 병합한다.)
+       * 먼저 지금 쓴 감정 줄(내용·감정·색·마음 크기)을 저장해 둔다 — 활동지 자동저장이 아직
+       * 날아가는 중일 수 있어 서버가 옛 답을 읽는 것을 막는다. (서버는 answers 를 문항 키로 걸러 병합한다.)
        */
       await fetch("/api/student/artifact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           answers: {
-            brain_situation: answers.brain_situation ?? "",
             brain_emotions: answers.brain_emotions ?? "",
           },
         }),
@@ -165,7 +165,7 @@ export function BrainImagePanel({
 
       {!ready && (
         <p className="t-body-sm rounded-lg border border-line bg-canvas p-3 text-muted">
-          먼저 왼쪽 <b>활동지 쓰기</b> 에서 ‘상황’과 ‘감정·색·마음 크기’를 채워 주세요.
+          먼저 왼쪽 <b>활동지 쓰기</b> 에서 한 줄씩 ‘내용·감정·색·마음 크기’를 채워 주세요.
           다 채우면 아래 버튼이 켜져요.
         </p>
       )}
@@ -215,7 +215,7 @@ export function BrainImagePanel({
             className="w-full max-w-md rounded-xl border border-line bg-white"
           />
           <figcaption className="t-caption text-muted">
-            내가 적은 상황·감정·색·마음 크기로 AI가 그린 나의 뇌구조예요. 마음에 안 들면
+            내가 적은 내용·감정·색·마음 크기로 AI가 그린 나의 뇌구조예요. 마음에 안 들면
             <b> 다시 만들기</b> 를 눌러요.
           </figcaption>
         </figure>
