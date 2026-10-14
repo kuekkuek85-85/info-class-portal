@@ -83,8 +83,9 @@ export function StreamsBroadcastTeacherPanel({ sessionId }: { sessionId: string 
   }
 
   const top3 = boards.slice(0, 3);
-  // podiumStep 만큼 아래 등수(3등)부터 공개 — top3.slice(3-step).
-  const revealed = top3.slice(Math.max(0, 3 - podiumStep));
+  // podiumStep 만큼 아래 등수부터 공개한다. 참가자가 3명 미만이어도(1~2명) 실제 인원 수에
+  // 맞춰 잘라, 마지막 단계에서 1등이 반드시 보이게 한다(top3.length 기준).
+  const revealed = top3.slice(Math.max(0, top3.length - podiumStep));
 
   return (
     <section className="card flex flex-col gap-4">
@@ -175,11 +176,12 @@ export function StreamsBroadcastTeacherPanel({ sessionId }: { sessionId: string 
             {revealRank && (
               <button
                 type="button"
-                onClick={() => setPodiumStep((s) => Math.min(3, s + 1))}
-                disabled={podiumStep >= Math.min(3, top3.length)}
+                onClick={() => setPodiumStep((s) => Math.min(top3.length, s + 1))}
+                disabled={podiumStep >= top3.length}
                 className="pill pill-primary t-body-sm disabled:opacity-60"
               >
-                {podiumStep === 0 ? "3등 공개" : podiumStep === 1 ? "2등 공개" : podiumStep === 2 ? "1등 공개" : "모두 공개됨"}
+                {/* 다음에 공개할 등수 = (실제 인원 − 지금까지 공개한 수). 3명이면 3→2→1등. */}
+                {podiumStep < top3.length ? `${top3.length - podiumStep}등 공개` : "모두 공개됨"}
               </button>
             )}
           </div>
@@ -188,7 +190,7 @@ export function StreamsBroadcastTeacherPanel({ sessionId }: { sessionId: string 
           {revealRank && (
             <div className="flex flex-col gap-3">
               {podiumStep === 0 && (
-                <p className="t-body-sm text-muted">‘3등 공개’ 부터 하나씩 눌러 발표해요.</p>
+                <p className="t-body-sm text-muted">아래 등수부터 버튼을 하나씩 눌러 발표해요.</p>
               )}
               {revealed
                 .slice()
