@@ -1176,11 +1176,17 @@ export default function LessonPage() {
               const raw = (worksheet.answers[relKey] ?? "").trim();
               const slides = raw ? (/^https?:\/\//i.test(raw) ? raw : "https://" + raw) : "";
               if (!slides) {
+                // 제출된 링크가 없으면(예: 진로탐색 발표에서 웹 앱 링크 미제출) 링크 대신
+                // 선생님께 알리라는 안내를 눈에 띄게 띄운다. 키에 따라 이름을 맞춘다.
+                const linkName = relKey === "build_url" ? "웹 앱 링크" : "발표 자료 링크";
                 return (
                   <div className="block bg-lime">
-                    <h2 className="t-headline">{session.game.heading || "발표 리허설"}</h2>
-                    <p className="t-body mt-2">
-                      아직 발표 자료 링크가 없어요. 선생님이 발표 단계로 넘기면 그때 낼 수 있어요.
+                    <h2 className="t-headline">⚠ 내 {linkName}가 없어요</h2>
+                    <p className="t-body mt-2 font-semibold">
+                      {linkName}가 제출되지 않았어요.
+                    </p>
+                    <p className="t-body mt-1">
+                      발표 순서가 되면 <b>선생님께 손을 들고</b> 말해 주세요.
                     </p>
                   </div>
                 );
