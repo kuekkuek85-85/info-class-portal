@@ -42,14 +42,31 @@ export async function GET() {
 
     const drawerId = currentDrawer(mine);
     const drawerIdx = mine.turnIndex;
+
+    /*
+     * 익명 모드(activity.relayAnonymous): 학생 화면에서 모둠원 이름을 숨기고 "N번째(친구)" 로만
+     * 보인다. 실명을 응답에 아예 싣지 않아(순서 라벨로 치환) 개발자 도구로도 이름이 새지 않는다.
+     * 동작(턴·제출·건너뛰기·공개)은 그대로 — 표시만 익명. 교사 패널은 별도 라우트라 실명 유지.
+     */
+    const anon = session.activity?.relayAnonymous === true;
+    const memberNames = anon
+      ? mine.memberNames.map((_, i) => `${i + 1}번째`)
+      : mine.memberNames;
+    const currentDrawerName = drawerId
+      ? anon
+        ? `${mine.turnIndex + 1}번째 친구`
+        : (mine.memberNames[mine.turnIndex] ?? "다음 사람")
+      : "";
+
     return ok({
       assigned: true,
       reveal,
       all,
+      anonymous: anon,
       group: {
         groupNo: mine.groupNo,
         topic: mine.topic,
-        memberNames: mine.memberNames,
+        memberNames,
         turnIndex: mine.turnIndex,
         status: mine.status,
         image: mine.image,
@@ -57,7 +74,7 @@ export async function GET() {
         isMyTurn: drawerId === me.studentId && mine.status === "drawing",
         // 첫 차례(빈 그림)면 주제를 직접 쓸 수 있다.
         canSetTopic: drawerIdx === 0 && drawerId === me.studentId,
-        currentDrawerName: drawerId ? (mine.memberNames[mine.turnIndex] ?? "다음 사람") : "",
+        currentDrawerName,
       },
     });
   });
