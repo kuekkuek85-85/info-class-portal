@@ -6,6 +6,7 @@ import {
   getStreamsMatch,
   listStreamsBoards,
   setStreamsReveal,
+  setStreamsRevealStep,
   setupStreamsMatch,
   studentNameMap,
 } from "@/lib/db";
@@ -60,6 +61,7 @@ export async function GET(request: Request) {
       boardSize: BOARD_SIZE,
       drawSeconds: match.drawSeconds,
       revealRank: match.revealRank,
+      revealStep: match.revealStep ?? 0,
       // 뽑힌 숫자만(교사도 뒷장은 미리 안 보이게 — 공정한 라이브 진행).
       drawn: match.deck.slice(0, match.drawCount),
       boards: ranked,
@@ -72,7 +74,12 @@ export async function POST(request: Request) {
     const me = await requireTeacher();
     if (!isTeacher(me)) return me;
 
-    const body = await readJson<{ sessionId?: string; action?: string; reveal?: boolean }>(request);
+    const body = await readJson<{
+      sessionId?: string;
+      action?: string;
+      reveal?: boolean;
+      step?: number;
+    }>(request);
     const sessionId = (body?.sessionId ?? "").trim();
     if (!sessionId) return fail("invalid_input");
     const session = await getSession(sessionId);
@@ -115,6 +122,12 @@ export async function POST(request: Request) {
       const done = await setStreamsReveal(sessionId, body?.reveal === true);
       if (!done) return fail("invalid_input", "먼저 게임을 시작해 주세요.");
       return ok({ revealRank: body?.reveal === true });
+    }
+
+    if (body?.action === "revealStep") {
+      const done = await setStreamsRevealStep(sessionId, Number(body?.step ?? 0));
+      if (!done) return fail("invalid_input", "먼저 ‘등수 발표 시작’을 눌러 주세요.");
+      return ok({ revealStep: Math.max(0, Math.min(3, Math.floor(Number(body?.step ?? 0)))) });
     }
 
     if (body?.action === "reset") {

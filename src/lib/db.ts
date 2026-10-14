@@ -1884,6 +1884,7 @@ export async function setupStreamsMatch(input: {
     drawSeconds: Math.max(0, Math.floor(input.drawSeconds)),
     status: "drawing",
     revealRank: false,
+    revealStep: 0,
     rev: 0,
     updatedAt: now,
   };
@@ -1933,14 +1934,31 @@ export async function drawStreamsCard(
   });
 }
 
-/** 교사가 등수 발표(공개)를 켜고 끈다. */
+/** 교사가 등수 발표(공개)를 켜고 끈다. 켜거나 끌 때 발표 단계는 0으로 되돌린다. */
 export async function setStreamsReveal(sessionId: string, reveal: boolean): Promise<boolean> {
   const ref = db().collection(COLLECTIONS.streamsMatches).doc(matchDocId(sessionId));
   return db().runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists) return false;
     const m = snap.data() as StreamsMatch;
-    tx.set(ref, { ...m, revealRank: reveal, rev: m.rev + 1, updatedAt: Date.now() });
+    tx.set(ref, { ...m, revealRank: reveal, revealStep: 0, rev: m.rev + 1, updatedAt: Date.now() });
+    return true;
+  });
+}
+
+/**
+ * 발표 단계를 정한다(0~3). 교사가 '3등 공개 → 2등 → 1등'을 누를 때마다 서버 단계를 올려,
+ * 대시보드와 교실 앞 공유 화면이 같은 단계를 보게 한다. 발표가 꺼져 있으면 변화 없이 false.
+ */
+export async function setStreamsRevealStep(sessionId: string, step: number): Promise<boolean> {
+  const ref = db().collection(COLLECTIONS.streamsMatches).doc(matchDocId(sessionId));
+  return db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return false;
+    const m = snap.data() as StreamsMatch;
+    if (!m.revealRank) return false;
+    const next = Math.max(0, Math.min(3, Math.floor(step)));
+    tx.set(ref, { ...m, revealStep: next, rev: m.rev + 1, updatedAt: Date.now() });
     return true;
   });
 }

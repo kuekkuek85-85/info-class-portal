@@ -44,6 +44,11 @@ export interface StreamsMatch {
   status: "drawing" | "finished";
   /** 교사가 등수 발표를 시작하면 true — 학생 화면에 "결과 발표 중" + 내 최종 판/점수를 띄운다. */
   revealRank: boolean;
+  /**
+   * 발표 단계(0=아무 등수도 안 보임, N=아래에서 N개 등수까지 공개). 서버에 두어 교사 대시보드와
+   * 교실 앞 공유 화면(/teacher/board)이 같은 단계를 보게 한다. 실제 참가 인원(최대 3)까지 올린다.
+   */
+  revealStep: number;
   /** 제출마다 +1. 동시 제출/뽑기 충돌 방지·폴링 변화 감지. */
   rev: number;
   updatedAt: number;

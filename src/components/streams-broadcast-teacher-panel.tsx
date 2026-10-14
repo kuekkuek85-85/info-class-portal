@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { StreamsBoardView } from "@/components/streams-board-view";
+import { StreamsPodium } from "@/components/streams-podium";
 import { usePolled } from "@/lib/use-polled";
 import { JOKER, type Slot } from "@/lib/streams";
 
@@ -32,6 +32,8 @@ interface Data {
   boardSize?: number;
   drawSeconds?: number;
   revealRank?: boolean;
+  /** 발표 단계(서버) — 0=없음 → N=아래 N개 등수까지 공개. 공유 화면과 같은 단계를 본다. */
+  revealStep?: number;
   drawn?: number[];
   boards?: BoardRow[];
 }
@@ -47,14 +49,14 @@ export function StreamsBroadcastTeacherPanel({ sessionId }: { sessionId: string 
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  // 등수 발표 단계(클라이언트). 0=없음 → 1:3등 → 2:2·3등 → 3:1·2·3등.
-  const [podiumStep, setPodiumStep] = useState(0);
 
   const started = data?.started === true;
   const drawCount = data?.drawCount ?? 0;
   const boardSize = data?.boardSize ?? 20;
   const drawSeconds = data?.drawSeconds ?? 0;
   const revealRank = data?.revealRank === true;
+  // 발표 단계는 서버에서 온다 — 대시보드와 교실 앞 공유 화면이 같은 단계를 본다.
+  const podiumStep = data?.revealStep ?? 0;
   const drawn = data?.drawn ?? [];
   const boards = data?.boards ?? [];
   const finished = data?.status === "finished";
@@ -82,10 +84,8 @@ export function StreamsBroadcastTeacherPanel({ sessionId }: { sessionId: string 
     }
   }
 
+  // 시상대에 올리는 상위 3명(버튼 상한·라벨 계산용). 실제 공개는 StreamsPodium 이 revealStep 으로.
   const top3 = boards.slice(0, 3);
-  // podiumStep 만큼 아래 등수부터 공개한다. 참가자가 3명 미만이어도(1~2명) 실제 인원 수에
-  // 맞춰 잘라, 마지막 단계에서 1등이 반드시 보이게 한다(top3.length 기준).
-  const revealed = top3.slice(Math.max(0, top3.length - podiumStep));
 
   return (
     <section className="card flex flex-col gap-4">
@@ -101,15 +101,14 @@ export function StreamsBroadcastTeacherPanel({ sessionId }: { sessionId: string 
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={() => {
-            setPodiumStep(0);
+          onClick={() =>
             void post(
               { action: "setup" },
               started
                 ? "새 게임을 시작하면 지금 판·점수가 모두 지워지고 새 덱으로 다시 시작해요. 계속할까요?"
                 : undefined,
-            );
-          }}
+            )
+          }
           disabled={busy}
           className="pill pill-primary t-body-sm disabled:opacity-60"
         >
@@ -118,10 +117,7 @@ export function StreamsBroadcastTeacherPanel({ sessionId }: { sessionId: string 
         {started && (
           <button
             type="button"
-            onClick={() => {
-              setPodiumStep(0);
-              void post({ action: "reset" }, "매치와 전원 판을 완전히 지울까요?");
-            }}
+            onClick={() => void post({ action: "reset" }, "매치와 전원 판을 완전히 지울까요?")}
             disabled={busy}
             className="pill pill-secondary t-body-sm disabled:opacity-60"
           >
@@ -163,11 +159,7 @@ export function StreamsBroadcastTeacherPanel({ sessionId }: { sessionId: string 
           <div className="flex flex-wrap items-center gap-2 border-t border-line pt-3">
             <button
               type="button"
-              onClick={() => {
-                const next = !revealRank;
-                if (next) setPodiumStep(0);
-                void post({ action: "reveal", reveal: next });
-              }}
+              onClick={() => void post({ action: "reveal", reveal: !revealRank })}
               disabled={busy || boards.length === 0}
               className={`pill t-body-sm ${revealRank ? "pill-secondary" : "pill-primary"} disabled:opacity-60`}
             >
@@ -176,8 +168,8 @@ export function StreamsBroadcastTeacherPanel({ sessionId }: { sessionId: string 
             {revealRank && (
               <button
                 type="button"
-                onClick={() => setPodiumStep((s) => Math.min(top3.length, s + 1))}
-                disabled={podiumStep >= top3.length}
+                onClick={() => void post({ action: "revealStep", step: podiumStep + 1 })}
+                disabled={busy || podiumStep >= top3.length}
                 className="pill pill-primary t-body-sm disabled:opacity-60"
               >
                 {/* 다음에 공개할 등수 = (실제 인원 − 지금까지 공개한 수). 3명이면 3→2→1등. */}
@@ -186,40 +178,8 @@ export function StreamsBroadcastTeacherPanel({ sessionId }: { sessionId: string 
             )}
           </div>
 
-          {/* 시상대 — 공개된 등수만, 1등이 가장 크게 */}
-          {revealRank && (
-            <div className="flex flex-col gap-3">
-              {podiumStep === 0 && (
-                <p className="t-body-sm text-muted">아래 등수부터 버튼을 하나씩 눌러 발표해요.</p>
-              )}
-              {revealed
-                .slice()
-                .sort((a, b) => b.score - a.score) // 1등이 위
-                .map((row) => {
-                  const place = boards.findIndex((x) => x.studentId === row.studentId) + 1;
-                  const medal = place === 1 ? "🥇" : place === 2 ? "🥈" : "🥉";
-                  return (
-                    <div
-                      key={row.studentId}
-                      className={`rounded-xl border-2 border-ink p-3 ${
-                        place === 1 ? "bg-lime" : place === 2 ? "bg-mint" : "bg-cream"
-                      }`}
-                    >
-                      <p className={`font-bold ${place === 1 ? "text-2xl" : "text-lg"}`}>
-                        {medal} {place}등 · {row.name} — {row.score}점
-                      </p>
-                      <div className="mt-2">
-                        <StreamsBoardView
-                          board={row.board}
-                          colorSegments
-                          cellSize={place === 1 ? 40 : 30}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          )}
+          {/* 시상대 — 공개된 등수만, 1등이 가장 크게. 교실 앞 공유 화면과 같은 단계(revealStep). */}
+          {revealRank && <StreamsPodium boards={boards} revealStep={podiumStep} />}
 
           {/* 전체 순위(교사 참고) */}
           {boards.length > 0 && (
