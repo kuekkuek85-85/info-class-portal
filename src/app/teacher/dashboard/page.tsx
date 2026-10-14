@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { ComfortBotReviewPanel } from "@/components/comfort-bot-review-panel";
 import { RelayTeacherPanel } from "@/components/relay-teacher-panel";
+import { StreamsBroadcastTeacherPanel } from "@/components/streams-broadcast-teacher-panel";
 import { RulesCompilePanel } from "@/components/rules-compile-panel";
 import { TeacherArtifactPanel } from "@/components/teacher-artifact-panel";
 import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
@@ -1384,6 +1385,14 @@ function Dashboard() {
           {session.activity &&
             (session.activity.worksheet ?? []).some((q) => q.kind === "relay_draw") && (
               <RelayTeacherPanel sessionId={session.id} />
+            )}
+
+          {/*
+            STREAMS 동기화 개인전 — 그 문항이 있는 세션에서만. 숫자 뽑기·진행·등수 발표를 제어한다.
+          */}
+          {session.activity &&
+            (session.activity.worksheet ?? []).some((q) => q.kind === "streams_broadcast") && (
+              <StreamsBroadcastTeacherPanel sessionId={session.id} />
             )}
 
           {/*

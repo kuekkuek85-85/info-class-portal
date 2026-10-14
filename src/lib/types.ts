@@ -678,6 +678,18 @@ export interface WorksheetQuestion {
      */
     | "streams_solo"
     /**
+     * streams_broadcast — STREAMS 보드게임 **동기화 개인전**(교사 주도). streams_solo 와 달리
+     * 교사가 대시보드에서 숫자 한 장을 뽑으면 **전원이 같은 순서의 같은 숫자**를 받는다(공용
+     * 셔플 덱). 판·점수는 학생별로 따로다(여전히 개인전) — 공용 덱 + 개인 판. 학생은 받은 숫자를
+     * 자기 20칸에 배치하고(놓으면 못 옮김), streamsDrawSeconds(기본 30) 초가 지나면 빈 칸 맨
+     * 왼쪽에 자동 배치된다(게임이 멈추지 않게). 20장을 다 뽑으면 solo 처럼 직접 계산·검증하고,
+     * 교사가 3→2→1등을 학번·이름·최종 판과 함께 발표한다. 상태는 서버(streamsMatches·
+     * streamsBoards)에 있고 학생·교사가 폴링으로 따라온다 — relayGroups 와 같은 아키텍처.
+     * answers(감정 글·갤러리)와 분리된 별도 경로라 감정 답이 새지 않는다. Gemini 미사용
+     * (streams-broadcast · streams-board-view · /api/student·teacher/streams-broadcast · streams-broadcast.ts).
+     */
+    | "streams_broadcast"
+    /**
      * relay_draw — 릴레이(한 장 이어) 그림 그리기(공동체·협력). 포털 내장 그림판으로 모둠이
      * 한 그림을 학번 순 턴제로 이어 그린다. 외부 사이트 없이 포털 안에서 끝난다. 모둠·턴·이미지는
      * 서버(relayGroups 컬렉션)에 있고 학생은 폴링으로 따라온다. 교사가 모둠 나누기·턴 건너뛰기·
@@ -996,6 +1008,13 @@ export interface WorksheetQuestion {
    * 기본 풀을 쓴다 (relay.ts 의 DEFAULT_RELAY_TOPICS).
    */
   relayTopics?: string[];
+  /**
+   * streams_broadcast(동기화 개인전)에서 **한 장당 학생 배치 제한 시간(초).** 교사가 숫자를
+   * 뽑고 다음 장을 뽑기 전까지 학생이 배치할 시간이다. 0이 되면 빈 칸 맨 왼쪽에 자동 배치된다.
+   * 안 주면 기본 30초(streams-broadcast.ts 의 DEFAULT_STREAMS_DRAW_SECONDS). 0이면 제한 없음.
+   * relay_draw 의 relayTurnSeconds 와 같은 컨벤션(클라이언트 카운트다운·자동 처리).
+   */
+  streamsDrawSeconds?: number;
   /**
    * comfort_bot 프리셋. "comfort"(기본)=학생이 고른 상황·설계로 만든 감정 위로 챗봇(6회기 grill).
    * "empathy_dialogue"=감정 대화 연습 봇(6회기 wrapheal ②) — 상황 선택·설계 없이, 봇이 감정 상황을

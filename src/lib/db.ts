@@ -5,7 +5,14 @@ import { FieldPath, FieldValue, type Query } from "firebase-admin/firestore";
 import { dateKeyKST } from "./datetime";
 import { db } from "./firebase-admin";
 import { DEFAULT_RELAY_TOPICS, splitIntoGroups, type RelayGroup } from "./relay";
-import { shuffle } from "./streams";
+import { BOARD_SIZE, emptyBoard, makeDeck, shuffle, type Slot } from "./streams";
+import {
+  boardDocId,
+  leftmostEmpty,
+  matchDocId,
+  type StreamsBoard,
+  type StreamsMatch,
+} from "./streams-broadcast";
 import { isPeriodOver, periodTime } from "./timetable";
 import type {
   Artifact,
@@ -43,6 +50,13 @@ export const COLLECTIONS = {
   artifactFeedbacks: "artifactFeedbacks",
   /** 릴레이 그림 모둠 상태 (relay_draw). 문서 ID = `수업ID__g모둠번호`. 이미지가 커서 세션 문서와 분리한다. */
   relayGroups: "relayGroups",
+  /**
+   * STREAMS 동기화 개인전(streams_broadcast)의 공유 매치 상태. 문서 ID = 세션ID.
+   * 공용 셔플 덱·뽑은 장수·타임스탬프를 담는다(교사만 쓰고 학생은 폴링으로 읽음).
+   */
+  streamsMatches: "streamsMatches",
+  /** STREAMS 동기화 개인전의 학생별 개인 판. 문서 ID = `세션ID__학번`. */
+  streamsBoards: "streamsBoards",
   /**
    * 교사 전용 발표 평가 (인간과 인공지능 7·8차시). 문서 ID = `활동ID__학번`.
    *
@@ -1844,4 +1858,238 @@ export async function skipRelayTurn(sessionId: string, groupNo: number): Promise
     tx.set(ref, { ...g, turnIndex, status, rev: g.rev + 1, updatedAt: Date.now() });
     return true;
   });
+}
+
+// ------------------------------------------- STREAMS 동기화 개인전 (streams_broadcast)
+
+/**
+ * 새 매치를 연다(또는 다시 연다). 공용 40장 덱을 셔플해 매치 문서에 담고, **이 세션의 기존
+ * 매치·모든 학생 판을 지운다**(새 판/리셋). 교사만 호출한다. 반환: 만든 매치.
+ */
+export async function setupStreamsMatch(input: {
+  sessionId: string;
+  classNo: ClassNo;
+  activityId: string;
+  drawSeconds: number;
+}): Promise<StreamsMatch> {
+  const now = Date.now();
+  const match: StreamsMatch = {
+    id: matchDocId(input.sessionId),
+    sessionId: input.sessionId,
+    classNo: input.classNo,
+    activityId: input.activityId,
+    deck: shuffle(makeDeck()),
+    drawCount: 0,
+    lastDrawAt: 0,
+    drawSeconds: Math.max(0, Math.floor(input.drawSeconds)),
+    status: "drawing",
+    revealRank: false,
+    rev: 0,
+    updatedAt: now,
+  };
+
+  // 기존 학생 판을 모두 지운다(이전 매치 흔적 제거). 매치 문서는 바로 덮어쓴다.
+  const boards = await db()
+    .collection(COLLECTIONS.streamsBoards)
+    .where("sessionId", "==", input.sessionId)
+    .get();
+  const batch = db().batch();
+  for (const d of boards.docs) batch.delete(d.ref);
+  batch.set(db().collection(COLLECTIONS.streamsMatches).doc(match.id), match);
+  await batch.commit();
+  return match;
+}
+
+/** 이 세션의 매치(없으면 null). */
+export async function getStreamsMatch(sessionId: string): Promise<StreamsMatch | null> {
+  const doc = await db().collection(COLLECTIONS.streamsMatches).doc(matchDocId(sessionId)).get();
+  return doc.exists ? (doc.data() as StreamsMatch) : null;
+}
+
+/**
+ * 교사가 다음 숫자 한 장을 뽑는다 — drawCount +1, lastDrawAt 갱신. 20장(BOARD_SIZE)을 다
+ * 뽑으면 status 가 finished 가 된다. 트랜잭션으로 동시 뽑기 중복을 막는다.
+ */
+export async function drawStreamsCard(
+  sessionId: string,
+): Promise<{ ok: boolean; reason?: string; match?: StreamsMatch }> {
+  const ref = db().collection(COLLECTIONS.streamsMatches).doc(matchDocId(sessionId));
+  return db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return { ok: false, reason: "no_match" };
+    const m = snap.data() as StreamsMatch;
+    if (m.drawCount >= BOARD_SIZE) return { ok: false, reason: "finished" };
+    const drawCount = m.drawCount + 1;
+    const updated: StreamsMatch = {
+      ...m,
+      drawCount,
+      lastDrawAt: Date.now(),
+      status: drawCount >= BOARD_SIZE ? "finished" : "drawing",
+      rev: m.rev + 1,
+      updatedAt: Date.now(),
+    };
+    tx.set(ref, updated);
+    return { ok: true, match: updated };
+  });
+}
+
+/** 교사가 등수 발표(공개)를 켜고 끈다. */
+export async function setStreamsReveal(sessionId: string, reveal: boolean): Promise<boolean> {
+  const ref = db().collection(COLLECTIONS.streamsMatches).doc(matchDocId(sessionId));
+  return db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return false;
+    const m = snap.data() as StreamsMatch;
+    tx.set(ref, { ...m, revealRank: reveal, rev: m.rev + 1, updatedAt: Date.now() });
+    return true;
+  });
+}
+
+/** 이 세션의 모든 학생 판(학번 순). 교사 등수 발표·집계에 쓴다. */
+export async function listStreamsBoards(sessionId: string): Promise<StreamsBoard[]> {
+  const snap = await db()
+    .collection(COLLECTIONS.streamsBoards)
+    .where("sessionId", "==", sessionId)
+    .get();
+  return snap.docs
+    .map((d) => d.data() as StreamsBoard)
+    .sort((a, b) => a.studentId.localeCompare(b.studentId));
+}
+
+/** 한 학생의 판(없으면 null). */
+export async function getStreamsBoard(
+  sessionId: string,
+  studentId: string,
+): Promise<StreamsBoard | null> {
+  const doc = await db()
+    .collection(COLLECTIONS.streamsBoards)
+    .doc(boardDocId(sessionId, studentId))
+    .get();
+  return doc.exists ? (doc.data() as StreamsBoard) : null;
+}
+
+/** 빈 학생 판을 만든다(공유 매치의 메타를 따른다). 내부용. */
+function freshStreamsBoard(match: StreamsMatch, studentId: string): StreamsBoard {
+  return {
+    id: boardDocId(match.sessionId, studentId),
+    sessionId: match.sessionId,
+    studentId,
+    classNo: match.classNo,
+    activityId: match.activityId,
+    board: emptyBoard(),
+    placed: 0,
+    rev: 0,
+    updatedAt: Date.now(),
+  };
+}
+
+/**
+ * 학생이 '지금 놓을 차례의 숫자'를 한 칸에 놓는다. **값은 서버가 정한다**(deck[placed]) —
+ * 모두가 같은 순서로 뽑으므로 학생이 다른 값을 심을 수 없다. 이미 놓인 칸·아직 안 뽑힌 장은
+ * 거부한다. 트랜잭션으로 매치·판을 함께 읽어 경쟁을 막는다.
+ */
+export async function placeStreamsCard(input: {
+  sessionId: string;
+  studentId: string;
+  slot: number;
+}): Promise<{ ok: boolean; reason?: string; board?: StreamsBoard }> {
+  const matchRef = db().collection(COLLECTIONS.streamsMatches).doc(matchDocId(input.sessionId));
+  const boardRef = db()
+    .collection(COLLECTIONS.streamsBoards)
+    .doc(boardDocId(input.sessionId, input.studentId));
+
+  return db().runTransaction(async (tx) => {
+    const matchSnap = await tx.get(matchRef);
+    if (!matchSnap.exists) return { ok: false, reason: "no_match" };
+    const match = matchSnap.data() as StreamsMatch;
+
+    const boardSnap = await tx.get(boardRef);
+    const current = boardSnap.exists
+      ? (boardSnap.data() as StreamsBoard)
+      : freshStreamsBoard(match, input.studentId);
+
+    if (current.placed >= match.drawCount) return { ok: false, reason: "no_card" };
+    if (current.placed >= BOARD_SIZE) return { ok: false, reason: "full" };
+    const slot = input.slot;
+    if (!Number.isInteger(slot) || slot < 0 || slot >= BOARD_SIZE) {
+      return { ok: false, reason: "bad_slot" };
+    }
+    if (current.board[slot] !== null) return { ok: false, reason: "occupied" };
+
+    const value = match.deck[current.placed];
+    if (value === undefined) return { ok: false, reason: "no_card" };
+
+    const board: Slot[] = current.board.slice();
+    board[slot] = value;
+    const updated: StreamsBoard = {
+      ...current,
+      board,
+      placed: current.placed + 1,
+      rev: current.rev + 1,
+      updatedAt: Date.now(),
+    };
+    tx.set(boardRef, updated);
+    return { ok: true, board: updated };
+  });
+}
+
+/**
+ * 타임아웃 자동 배치 — 아직 안 놓은(뽑혔지만 미배치) 숫자를 **빈 칸 중 맨 왼쪽**부터 차례로
+ * 모두 놓는다. 학생 클라이언트가 카운트다운 0에서 호출한다(게임이 멈추지 않게). 서버가 값을
+ * 정하므로(deck 순서) 조작 불가. 놓을 것이 없으면 변화 없이 ok.
+ */
+export async function autofillStreamsBoard(input: {
+  sessionId: string;
+  studentId: string;
+}): Promise<{ ok: boolean; reason?: string; board?: StreamsBoard; placedNow: number }> {
+  const matchRef = db().collection(COLLECTIONS.streamsMatches).doc(matchDocId(input.sessionId));
+  const boardRef = db()
+    .collection(COLLECTIONS.streamsBoards)
+    .doc(boardDocId(input.sessionId, input.studentId));
+
+  return db().runTransaction(async (tx) => {
+    const matchSnap = await tx.get(matchRef);
+    if (!matchSnap.exists) return { ok: false, reason: "no_match", placedNow: 0 };
+    const match = matchSnap.data() as StreamsMatch;
+
+    const boardSnap = await tx.get(boardRef);
+    const current = boardSnap.exists
+      ? (boardSnap.data() as StreamsBoard)
+      : freshStreamsBoard(match, input.studentId);
+
+    const board: Slot[] = current.board.slice();
+    let placed = current.placed;
+    let placedNow = 0;
+    // 뽑힌 만큼(placed < drawCount) 빈 칸 맨 왼쪽부터 메운다.
+    while (placed < match.drawCount && placed < BOARD_SIZE) {
+      const slot = leftmostEmpty(board);
+      if (slot < 0) break; // 빈 칸 없음(이론상 placed 와 함께 끝남)
+      board[slot] = match.deck[placed];
+      placed += 1;
+      placedNow += 1;
+    }
+    if (placedNow === 0) return { ok: true, board: current, placedNow: 0 };
+
+    const updated: StreamsBoard = {
+      ...current,
+      board,
+      placed,
+      rev: current.rev + 1,
+      updatedAt: Date.now(),
+    };
+    tx.set(boardRef, updated);
+    return { ok: true, board: updated, placedNow };
+  });
+}
+
+/** 이 세션의 매치와 모든 학생 판을 지운다(완전 리셋). */
+export async function clearStreamsMatch(sessionId: string): Promise<void> {
+  const [boards, matchExists] = await Promise.all([
+    db().collection(COLLECTIONS.streamsBoards).where("sessionId", "==", sessionId).get(),
+    db().collection(COLLECTIONS.streamsMatches).doc(matchDocId(sessionId)).get(),
+  ]);
+  const batch = db().batch();
+  for (const d of boards.docs) batch.delete(d.ref);
+  if (matchExists.exists) batch.delete(matchExists.ref);
+  await batch.commit();
 }
