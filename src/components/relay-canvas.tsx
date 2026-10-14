@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 /**
  * 릴레이 그림판 — 배경(지금까지의 모둠 그림) 위에 덧그리고, 합쳐진 이미지를 축소 저장한다.
@@ -23,17 +23,21 @@ interface Stroke {
   points: number[]; // x0,y0,x1,y1,...
 }
 
-export function RelayCanvas({
-  background,
-  onSubmit,
-  disabled,
-  submitting,
-}: {
-  background: string;
-  onSubmit: (dataUrl: string) => void;
-  disabled?: boolean;
-  submitting?: boolean;
-}) {
+/** 부모(릴레이 패널)가 타임아웃 자동 제출 때 현재 캔버스 이미지를 꺼내 쓰는 핸들. */
+export interface RelayCanvasHandle {
+  /** 지금 캔버스를 제출용 data URL 로 뽑는다(배경+내가 그린 것 합성). 준비 안 됐으면 null. */
+  getDataUrl: () => string | null;
+}
+
+export const RelayCanvas = forwardRef<
+  RelayCanvasHandle,
+  {
+    background: string;
+    onSubmit: (dataUrl: string) => void;
+    disabled?: boolean;
+    submitting?: boolean;
+  }
+>(function RelayCanvas({ background, onSubmit, disabled, submitting }, ref) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const bgRef = useRef<HTMLImageElement | null>(null);
   const strokesRef = useRef<Stroke[]>([]);
@@ -125,10 +129,17 @@ export function RelayCanvas({
     redraw();
   }
 
-  function submit() {
+  const getDataUrl = useCallback((): string | null => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    onSubmit(canvas.toDataURL("image/jpeg", 0.6));
+    return canvas ? canvas.toDataURL("image/jpeg", 0.6) : null;
+  }, []);
+
+  // 부모가 타임아웃 자동 제출 때 쓴다 — 지금 캔버스를 그대로 data URL 로 꺼낸다.
+  useImperativeHandle(ref, () => ({ getDataUrl }), [getDataUrl]);
+
+  function submit() {
+    const url = getDataUrl();
+    if (url) onSubmit(url);
   }
 
   return (
@@ -198,7 +209,7 @@ export function RelayCanvas({
       </div>
     </div>
   );
-}
+});
 
 function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke) {
   const p = stroke.points;

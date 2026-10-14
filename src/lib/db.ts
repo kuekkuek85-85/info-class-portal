@@ -1815,15 +1815,12 @@ export async function submitRelayTurn(input: {
 
     const turnIndex = g.turnIndex + 1;
     const status: RelayGroup["status"] = turnIndex >= g.members.length ? "done" : "drawing";
-    // 첫 차례 학생만 주제를 바꿀 수 있다(비었거나 직접 입력 시).
-    const topic =
-      g.turnIndex === 0 && input.topic && input.topic.trim()
-        ? input.topic.trim().slice(0, 40)
-        : g.topic;
+    // 주제는 모둠 나누기 때 배정된 것으로 고정 — 학생 제출의 topic 인자는 무시한다(부적절 입력
+    // 원천 차단). input.topic 은 하위호환으로 받되 반영하지 않는다.
     const updated: RelayGroup = {
       ...g,
       image: input.image,
-      topic,
+      topic: g.topic,
       turnIndex,
       status,
       rev: g.rev + 1,
