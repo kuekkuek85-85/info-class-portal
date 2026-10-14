@@ -71,6 +71,8 @@ export async function GET() {
         status: mine.status,
         image: mine.image,
         rev: mine.rev,
+        // 매 setup(새 판)마다 바뀐다 — 그림판 remount 키에 써서 새 판에 캔버스를 깨끗이 비운다.
+        updatedAt: mine.updatedAt,
         isMyTurn: drawerId === me.studentId && mine.status === "drawing",
         // 첫 차례(빈 그림)면 주제를 직접 쓸 수 있다.
         canSetTopic: drawerIdx === 0 && drawerId === me.studentId,

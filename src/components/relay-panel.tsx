@@ -22,6 +22,7 @@ interface GroupView {
   status: "drawing" | "done";
   image: string;
   rev: number;
+  updatedAt: number;
   isMyTurn: boolean;
   canSetTopic: boolean;
   currentDrawerName: string;
@@ -135,7 +136,7 @@ export function RelayPanel() {
             />
           )}
           <RelayCanvas
-            key={`turn-${g.turnIndex}-${g.rev}`}
+            key={`turn-${g.updatedAt}-${g.turnIndex}-${g.rev}`}
             background={g.image}
             onSubmit={submit}
             submitting={submitting}
