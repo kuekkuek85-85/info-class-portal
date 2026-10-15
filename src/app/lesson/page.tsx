@@ -1787,13 +1787,47 @@ export default function LessonPage() {
           보상 게임 — 성찰을 제출하고 구현 1·2·3단계 제출까지 다 마친 학생에게만 열린다.
           대기 자리에 있던 게임이 여기로 옮겨 와, 활동을 끝낸 상으로 쉬는 시간을 준다 (요청: 17차).
         */}
-        {viewPhase === "reflection" && rewardUnlocked && session.rewardGame && (
-          /* 보상 게임은 머리글·설명 없이 iframe 하나만 — 상자에 맞춰 %로 줄여 세로 스크롤을 없앤다 */
-          <RewardGameFrame
-            url={session.rewardGame.url}
-            title={session.rewardGame.heading || "보상 게임"}
-          />
-        )}
+        {viewPhase === "reflection" &&
+          rewardUnlocked &&
+          session.rewardGame &&
+          (session.rewardGame.games && session.rewardGame.games.length > 0 ? (
+            /*
+              여러 게임 '고르기' 창 (22차 — 그동안 정보 시간에 한 게임 모두 고르기). 게임이 여러 개라
+              iframe 하나로 못 담으니 카드 그리드로, 각 게임은 새 탭으로 연다 (done-portal 카드 스타일 재사용).
+            */
+            <section className="flex flex-col gap-5">
+              <div className="block flex flex-col gap-2 bg-lime">
+                <p className="t-display">{session.rewardGame.heading || "수고했어요! 🎮"}</p>
+                {session.rewardGame.body && (
+                  <p className="t-body-lg whitespace-pre-line">{session.rewardGame.body}</p>
+                )}
+              </div>
+              <div className="flex flex-col gap-3">
+                <h2 className="t-headline">게임 고르기</h2>
+                <p className="t-note">새 창으로 열려요. 선생님이 부르면 돌아오세요.</p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {session.rewardGame.games.map((game) => (
+                    <a
+                      key={game.url}
+                      href={game.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="card flex flex-col gap-1 text-center transition active:scale-[0.99]"
+                    >
+                      <span className="t-card-title">{game.label}</span>
+                      {game.hint && <span className="t-body-sm text-muted">{game.hint}</span>}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : session.rewardGame.url ? (
+            /* 단일 보상 게임 — 머리글·설명 없이 iframe 하나만 (상자에 맞춰 %로 줄여 세로 스크롤 없앰) */
+            <RewardGameFrame
+              url={session.rewardGame.url}
+              title={session.rewardGame.heading || "보상 게임"}
+            />
+          ) : null)}
 
         {viewPhase === "reflection" && !(rewardUnlocked && session.rewardGame) && (
           <section className="flex flex-col gap-6">
@@ -1865,7 +1899,15 @@ export default function LessonPage() {
             <button
               type="button"
               onClick={() => void handleReflectionSubmit()}
-              disabled={answered === 0 || reflectionState === "saving" || closed}
+              disabled={
+                /*
+                  보통은 한 개라도 써야 제출이 열린다. 다만 보상 게임이 requireReflection:false 면
+                  '오늘은 검사하지 않습니다' — 성찰을 비워도 버튼을 눌러 바로 게임을 연다 (22차).
+                */
+                (session.rewardGame?.requireReflection === false ? false : answered === 0) ||
+                reflectionState === "saving" ||
+                closed
+              }
               className="pill pill-primary pill-block"
             >
               {session.rewardGame

@@ -1540,8 +1540,18 @@ export interface ProgressChecks {
 export interface RewardGame {
   heading?: string;
   body?: string;
-  /** 보상으로 띄울 게임 iframe 주소 */
-  url: string;
+  /** 보상으로 띄울 게임 iframe 주소 (단일 게임). games 가 있으면 그쪽을 쓴다. */
+  url?: string;
+  /**
+   * 여러 게임을 '고르기 카드' 로 보여줄 목록 (22차 — 그동안 한 게임 모두 고르기).
+   * 있으면 iframe 하나 대신 카드 그리드(각 게임 새 탭 링크)로 뜬다.
+   */
+  games?: { label: string; url: string; hint?: string }[];
+  /**
+   * false 면 성찰을 쓰지 않아도 '제출하고 게임하기' 버튼이 눌리고 바로 게임이 열린다 (기본: true).
+   * 22차는 '오늘은 검사하지 않습니다' — 성찰 입력·requires 검사 없이 상으로 게임을 연다.
+   */
+  requireReflection?: boolean;
   /** 이 활동지 칸들이 모두 채워져야 게임이 열린다 (label·phase 는 누락 안내·이동용) */
   requires?: { key: string; label: string; phase: LessonPhase }[];
 }

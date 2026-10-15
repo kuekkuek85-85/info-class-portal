@@ -577,13 +577,27 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   gameExplainer: empty(),
 
   /*
-   * 보상 게임 — 성찰 '제출하고 게임하기' 를 누르면 열린다. 바이브 코딩은 AI 채점(verdict)이 없는
-   * 창작 활동이라 requires 게이트를 걸지 않는다(활동을 마친 상으로 성찰 제출 시 열림).
+   * 보상 — 마지막 선물. 성찰에서 '제출하고 게임하기' 를 누르면 '오늘은 검사하지 않습니다' —
+   * requireReflection:false 라 성찰을 비워도 바로 열리고(requires 게이트도 없음), 그동안 정보
+   * 시간에 한 게임 8개를 '고르기 카드'(새 탭)로 띄운다. games 가 있으면 iframe 하나 대신 카드 그리드.
    */
   rewardGame: {
-    heading: "테트리스",
-    body: "오늘 활동을 다 끝냈어요 — 쉬는 시간으로 테트리스 한 판! 수업이 끝나면 정리해요.",
+    heading: "수고했어요! 🎮",
+    body: "그동안 정보 시간에 한 게임들이에요. 하나 골라서 놀아요. 선생님이 부르면 돌아오세요.",
+    requireReflection: false,
+    // games 지원 코드(RewardGame.games)가 배포되기 전까지의 폴백 — 옛 코드는 url 하나만 읽어
+    // 테트리스 iframe 을 띄운다(깨진 화면 방지). 새 코드는 games 가 있으면 url 을 무시하고 카드 창을 연다.
     url: "https://tetris-game-seven-nu.vercel.app/",
+    games: [
+      { label: "하노이탑", url: "https://hanoi-tower-game-rosy.vercel.app/" },
+      { label: "2048", url: "https://2048-game-gilt-kappa.vercel.app/" },
+      { label: "똥피하기", url: "https://dodge-poop-game.vercel.app/" },
+      { label: "한붓그리기", url: "https://euler-path-game.vercel.app/" },
+      { label: "지뢰찾기", url: "https://mine-sweeper-game-seven.vercel.app/home" },
+      { label: "4색 지도 칠하기", url: "https://four-color-map-game-two.vercel.app/" },
+      { label: "테트리스", url: "https://tetris-game-seven-nu.vercel.app/" },
+      { label: "끝없는 계단", url: "https://endless-stairs-game.vercel.app/" },
+    ],
   },
 
   // 다음 시간(progress) 단계는 두지 않는다 — 안내(assessment)가 이미 있어 중복이다.
@@ -649,10 +663,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   reflectionPublic: false,
 
   /*
-   * 외부 새 탭 링크가 붙은 단계는 창을 옮겨도 이탈로 세지 않는다.
-   * 대기(타자)·버그 고치기 세 단계(mvp·problem·grill, OneCompiler)·build(바이브·OneCompiler)다.
+   * 외부 새 탭 링크가 붙은 단계는 창을 옮겨도 이탈로 세지 않는다. 대기(타자)·버그 고치기 세 단계
+   * (mvp·problem·grill, OneCompiler)·build(바이브·OneCompiler)·성찰(reflection — 보상 게임을 새 탭으로 엶).
    */
-  focusExempt: ["waiting", "mvp", "problem", "grill", "build"],
+  focusExempt: ["waiting", "mvp", "problem", "grill", "build", "reflection"],
   /*
    * 기분(mood)은 대기 화면에서 먼저 받으므로 단계에서 뺀다. 들여쓰기 배우기(wrapmap)를 복습 퀴즈
    * 뒤·버그 고치기 ① 앞에 둬서 개념을 먼저 익힌다(버그③이 들여쓰기 문제라). 그 뒤 버그 고치기를
@@ -776,7 +790,7 @@ async function main(): Promise<void> {
   console.log(`완성 코드(바탕): 21차 최종(점수·난이도). _dg22_base_code 의 code + vibe_code 의 vibeBaseCode 로 제공. OneCompiler 터틀(${ONECOMPILER_TURTLE_URL})에서 실행.`);
   console.log(`복습 퀴즈: ${QUIZ.questions.length}문항(변수·누적·리스트+for·distance).`);
   console.log(`공유: galleryEnabled + galleryAnswerKeys=[${SHARE_KEY}] 로 '더한 기능 한 줄' 만 공개 — 바이브 프롬프트·성찰은 비공개(프라이버시).`);
-  console.log("보상: 테트리스 — requires 없음(성찰 제출 시 열림). freeNavigation. focusExempt: waiting·mvp·problem·grill·build. 하드 게이트 없음(교사가 단계 몰아 자연히 지켜짐).");
+  console.log("보상: 게임 고르기 창 — 그동안 한 게임 8개(하노이탑·2048·똥피하기·한붓그리기·지뢰찾기·4색지도·테트리스·끝없는계단) 카드(새 탭). requireReflection:false 라 '검사 없이' 성찰 비워도 버튼 눌러 바로 열림. requires 없음. focusExempt 에 reflection 추가. ※ 코드(RewardGame.games/requireReflection + lesson/page.tsx 렌더·버튼) 배포돼야 화면에 뜸.");
   process.exit(0);
 }
 
