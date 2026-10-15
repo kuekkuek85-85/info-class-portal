@@ -147,6 +147,48 @@ fall()
 
 screen.mainloop()`;
 
+/* ──────────────────────────────────────────────────────────────
+ * 버그 고치기(디버깅) — 완성 코드(BASE_GAME_CODE)에 '한 줄짜리 결함' 만 심은 분리본 3개.
+ * lesson21 방식: note(증상+버그 코드+증상 SVG+OneCompiler 링크) → long 제출칸 → ai_feedback(code 채점).
+ * 학생이 코드를 '읽고 이해해야' 고칠 수 있게, 버그 줄에 정답 표시(주석)는 넣지 않는다.
+ * ────────────────────────────────────────────────────────────── */
+function mustReplace(src: string, find: string, repl: string, tag: string): string {
+  if (!src.includes(find)) {
+    console.error(`✗ 버그 주입 실패(${tag}) — 찾는 문자열이 BASE_GAME_CODE 에 없습니다:\n${find}`);
+    process.exit(1);
+  }
+  return src.replace(find, repl);
+}
+
+// 버그 ① 쉬움 — 문법: go_right 의 게임오버 확인이 `if over = True:` (대입 =) → SyntaxError
+const BUG1_CODE = mustReplace(
+  BASE_GAME_CODE,
+  "def go_right():\n    if over:",
+  "def go_right():\n    if over = True:",
+  "bug1",
+);
+
+// 버그 ② 중간 — 논리: 충돌 판정 부등호가 `> 20` (방향 뒤집힘) → 시작하자마자 게임 오버
+const BUG2_CODE = mustReplace(
+  BASE_GAME_CODE,
+  "if poop.distance(player) < 20:",
+  "if poop.distance(player) > 20:",
+  "bug2",
+);
+
+// 버그 ③ 어려움 — 흐름/들여쓰기: speed = speed + 1 이 if 블록 밖(for 안)으로 빠져 매 프레임 빨라짐
+const BUG3_CODE = mustReplace(
+  mustReplace(
+    BASE_GAME_CODE,
+    "            score = score + 1\n            speed = speed + 1\n            score_writer.clear()",
+    "            score = score + 1\n            score_writer.clear()",
+    "bug3a",
+  ),
+  '            score_writer.write("Score: " + str(score), align="center", font=("", 20, "bold"))\n        if poop.distance(player) < 20:',
+  '            score_writer.write("Score: " + str(score), align="center", font=("", 20, "bold"))\n        speed = speed + 1\n        if poop.distance(player) < 20:',
+  "bug3b",
+);
+
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
@@ -172,13 +214,6 @@ const QUIZ: QuizContent = {
       stickers: [],
     },
     {
-      prompt: "if over == True: 와 같은 뜻인 것은?",
-      choices: ["if over:", "over = True", "for over:"],
-      answerIndex: 0,
-      nowText: "over 자체가 참/거짓 값이라 if over: 와 if over == True: 는 같은 뜻이에요. == 는 '같은지 물어보기'.",
-      stickers: [],
-    },
-    {
       prompt: "똥 여러 개를 한 상자에 담아 하나씩 다루려고 쓴 것은?",
       choices: ["리스트와 for 반복", "if 조건문", "글씨 쓰기(write)"],
       answerIndex: 0,
@@ -192,13 +227,6 @@ const QUIZ: QuizContent = {
       nowText: "poop.distance(player) 가 두 거북 사이 거리예요. 20보다 가까우면 닿은 것으로 봤죠.",
       stickers: [],
     },
-    {
-      prompt: "speed 를 점점 키우면 게임이 어떻게 될까요?",
-      choices: ["똥이 점점 빨리 떨어진다", "점수가 사라진다", "주인공이 커진다"],
-      answerIndex: 0,
-      nowText: "speed = speed + 1 로 낙하 폭을 키우면 똥이 점점 빨리 떨어져 어려워져요(난이도).",
-      stickers: [],
-    },
   ],
 };
 
@@ -210,6 +238,161 @@ const QUIZ: QuizContent = {
 const SHARE_KEY = "dg22_share";
 
 const WORKSHEET: WorksheetQuestion[] = [
+  /* ═══════════════════════════════════════════════════════════════
+   * 버그 고치기(mvp) — 바이브 코딩(build) 앞에 둬서 '코드를 읽고 고치는 고민' 을 먼저 한다.
+   * 버그마다: 증상 note(설명 왼쪽 + 버그 코드 + 증상 SVG 오른쪽 1/3 + OneCompiler) → 제출칸 → AI 채점.
+   * checkGoal 은 서버 전용(lesson route 가 학생 화면으로 보내기 전에 떼어 냄).
+   * ═══════════════════════════════════════════════════════════════ */
+  {
+    key: "_dg22_debug_intro",
+    phase: "mvp",
+    label: "버그 고치기 — 코드를 읽고 고쳐 봐요",
+    hint:
+      "바이브 코딩에 들어가기 전에, 완성한 똥피하기 게임에 '일부러 심어 둔 버그(실수)' 3개를 고쳐 봐요.\n" +
+      "버그마다 '완성 코드' 에 딱 한 군데가 잘못돼 있어요. 아래 순서로 해요.\n\n" +
+      "· 코드를 복사해 OneCompiler 터틀에서 실행해 봐요 — 오른쪽 그림처럼 '증상' 이 나타나요.\n" +
+      "· 코드를 한 줄씩 읽으며 어디가 이상한지 찾아요(한 군데예요).\n" +
+      "· 고친 뒤 다시 실행해 제대로 되면, 고친 코드 전체를 붙여넣고 'AI 채점' 을 눌러 확인해요.\n\n" +
+      "쉬움 → 중간 → 어려움 순이에요. 한 번에 안 돼도 괜찮아요 — 고치는 게 공부예요.",
+    kind: "note",
+    maxLength: 0,
+  },
+
+  /* ── 버그 ① 쉬움 — 문법(= vs ==) ── */
+  {
+    key: "_dg22_bug1_note",
+    phase: "mvp",
+    label: "버그 ① — 게임이 아예 안 켜져요 (쉬움)",
+    hint:
+      "이 코드를 실행하면 게임 창이 안 뜨고 빨간 에러 글씨(SyntaxError)가 나요(오른쪽 그림).\n" +
+      "빨간 에러에는 보통 '몇 번째 줄' 이 적혀 있어요 — 그 줄부터 읽어 봐요.\n\n" +
+      "힌트: 게임이 끝났는지 '물어보는' 곳이에요. 값을 담을 때 쓰는 기호와, 두 값이 같은지\n" +
+      "물어볼 때 쓰는 기호는 서로 달라요. 어느 쪽이 들어가야 '물어보기' 가 될까요?",
+    kind: "note",
+    code: BUG1_CODE,
+    imageUrl: "/dg22-bug1.svg",
+    imageAlt: "OneCompiler 실행 화면에 빨간 글씨로 SyntaxError 가 뜨고 게임 창이 열리지 않은 모습.",
+    imageSide: "right",
+    imageSideWidth: "third",
+    linkUrl: ONECOMPILER_TURTLE_URL,
+    linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
+    maxLength: 0,
+  },
+  {
+    key: "dg22_bug1_submit",
+    phase: "mvp",
+    label: "✍ 고친 코드 제출 (버그 ①)",
+    hint: "OneCompiler 에서 고쳐 제대로 실행된 코드를 복사해 붙여넣어 주세요.",
+    kind: "long",
+    maxLength: 6000,
+  },
+  {
+    key: "dg22_bug1_check",
+    phase: "mvp",
+    label: "AI 채점 — 버그 ① 고쳐졌는지 확인",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. 게임이 끝났는지 '물어보는' 조건이 바르게 고쳐졌으면 통과!",
+    kind: "ai_feedback",
+    feedbackVariant: "code",
+    feedbackFields: [{ key: "dg22_bug1_submit", label: "고친 코드" }],
+    checkGoal:
+      "go_right() 의 게임오버 확인이 `if over = True:` 로 되어 있어 SyntaxError(문법 오류)가 난다. " +
+      "= 는 값을 넣는(대입) 기호라 조건(if)에는 쓸 수 없다. 두 값이 같은지 물어보는 `if over == True:` " +
+      "(또는 그냥 `if over:`) 로 고쳐야 맞다. 제출한 코드에 `if over = True:` 가 남아 있으면 틀림. " +
+      "해당 조건이 `== True` 또는 `if over:` 로 바뀌었으면 통과.",
+    maxLength: 2000,
+  },
+
+  /* ── 버그 ② 중간 — 논리(충돌 판정 부등호 방향) ── */
+  {
+    key: "_dg22_bug2_note",
+    phase: "mvp",
+    label: "버그 ② — 시작하자마자 GAME OVER (중간)",
+    hint:
+      "이 코드는 에러 없이 실행돼요. 그런데 게임을 시작하자마자 바로 'GAME OVER!' 가 떠요(오른쪽 그림).\n" +
+      "똥은 저 위에 멀리 있는데 왜 벌써 닿았다고 할까요?\n\n" +
+      "힌트: 충돌(닿음)을 판정하는 줄을 찾아보세요. 두 거북이 '사이 거리' 를 재고 있어요.\n" +
+      "똥이 주인공에 '가까울 때' 닿은 거예요. 지금 부등호 방향은 '멀 때' 를 가리키고 있지 않나요?",
+    kind: "note",
+    code: BUG2_CODE,
+    imageUrl: "/dg22-bug2.svg",
+    imageAlt: "게임이 시작되자마자 화면 가운데에 GAME OVER! 가 크게 뜨고 점수는 0 인 모습.",
+    imageSide: "right",
+    imageSideWidth: "third",
+    linkUrl: ONECOMPILER_TURTLE_URL,
+    linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
+    maxLength: 0,
+  },
+  {
+    key: "dg22_bug2_submit",
+    phase: "mvp",
+    label: "✍ 고친 코드 제출 (버그 ②)",
+    hint: "OneCompiler 에서 고쳐 제대로 실행된 코드를 복사해 붙여넣어 주세요.",
+    kind: "long",
+    maxLength: 6000,
+  },
+  {
+    key: "dg22_bug2_check",
+    phase: "mvp",
+    label: "AI 채점 — 버그 ② 고쳐졌는지 확인",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. 똥이 '가까울 때' 만 게임 오버가 되게 고쳐졌으면 통과!",
+    kind: "ai_feedback",
+    feedbackVariant: "code",
+    feedbackFields: [{ key: "dg22_bug2_submit", label: "고친 코드" }],
+    checkGoal:
+      "충돌 판정이 `if poop.distance(player) > 20:` 로 되어 있어, 똥이 멀리 있어도(거리가 20보다 큼) " +
+      "시작하자마자 게임 오버가 된다. 거리가 20보다 '작을 때'(가까울 때 = 닿았을 때) 게임 오버가 돼야 " +
+      "하므로 `< 20` 이 맞다. 제출 코드의 충돌 조건이 `poop.distance(player) < 20` 이면 통과, " +
+      "`> 20` 또는 `>= 20` 이면 틀림.",
+    maxLength: 2000,
+  },
+
+  /* ── 버그 ③ 어려움 — 흐름/들여쓰기(speed 증가가 if 블록 밖) ── */
+  {
+    key: "_dg22_bug3_note",
+    phase: "mvp",
+    label: "버그 ③ — 똥이 너무 빨라요 (어려움)",
+    hint:
+      "이 코드도 에러 없이 실행돼요. 그런데 시작하자마자 똥이 무섭게 빨라져서 도저히 못 피해요\n" +
+      "(오른쪽 그림). 점수는 거의 안 오르는데 속도만 폭발하듯 올라가요.\n\n" +
+      "힌트: 속도(speed) 를 1 올리는 줄을 찾아보세요. 원래는 '똥을 하나 피했을 때만' 빨라져야 해요.\n" +
+      "지금 그 줄의 들여쓰기(안쪽 띄우기)를 보세요 — 어느 블록 안에 들어가 있어야 '피했을 때만'\n" +
+      "실행될까요? 점수를 1 올리는 줄과 비교해 봐요.",
+    kind: "note",
+    code: BUG3_CODE,
+    imageUrl: "/dg22-bug3.svg",
+    imageAlt: "화면 가득 갈색 똥이 빽빽하게 내려와 주인공이 피할 틈이 없고 점수는 낮은 모습.",
+    imageSide: "right",
+    imageSideWidth: "third",
+    linkUrl: ONECOMPILER_TURTLE_URL,
+    linkLabel: "OneCompiler 터틀 편집기 열기 (새 탭)",
+    maxLength: 0,
+  },
+  {
+    key: "dg22_bug3_submit",
+    phase: "mvp",
+    label: "✍ 고친 코드 제출 (버그 ③)",
+    hint: "OneCompiler 에서 고쳐 제대로 실행된 코드를 복사해 붙여넣어 주세요.",
+    kind: "long",
+    maxLength: 6000,
+  },
+  {
+    key: "dg22_bug3_check",
+    phase: "mvp",
+    label: "AI 채점 — 버그 ③ 고쳐졌는지 확인",
+    hint: "위에 붙여넣은 코드를 AI가 봐줘요. 속도 올리는 줄이 '똥을 하나 피했을 때' 안으로 들어갔으면 통과!",
+    kind: "ai_feedback",
+    feedbackVariant: "code",
+    feedbackFields: [{ key: "dg22_bug3_submit", label: "고친 코드" }],
+    checkGoal:
+      "난이도 증가 `speed = speed + 1` 이 들여쓰기 때문에 `if poop.ycor() < -250:` 블록 밖(for 반복 " +
+      "바로 밑)에 있어, 똥을 피하지 않아도 매 프레임마다 speed 가 올라가 게임이 순식간에 너무 빨라진다. " +
+      "`speed = speed + 1` 이 `if poop.ycor() < -250:` 블록 '안'(score = score + 1 과 같은 들여쓰기, " +
+      "12칸)에 있어야, 똥을 하나 피했을 때만 빨라진다. 제출 코드에서 speed 를 올리는 줄이 " +
+      "`if poop.ycor() < -250:` 안쪽(점수 올리는 줄과 같은 들여쓰기)에 있으면 통과, for 루프 바로 밑" +
+      "(if 밖, score = score + 1 보다 바깥 들여쓰기)에 있으면 틀림.",
+    maxLength: 2000,
+  },
+
   /* ── 바이브 코딩 소개 + 프롬프트 기초 ── */
   {
     key: "_dg22_vibe_intro",
@@ -255,6 +438,18 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "vibe_code",
     vibeBaseCode: BASE_GAME_CODE,
     maxLength: 0,
+  },
+
+  /* ── AI 코드 한 줄 이해하기 ('딸깍' 줄이기 — 받기만 말고 읽어 보게) ── */
+  {
+    key: "dg22_vibe_explain",
+    phase: "build",
+    label: "AI가 준 코드는 무엇을 하나요? — 한 줄로",
+    hint:
+      "AI가 준 코드가 '무엇을' 하는지 한 줄로 적어 봐요(예: '똥에 닿으면 목숨이 1 줄어든다').\n" +
+      "코드를 그냥 받기만 하지 말고, 어떤 동작을 하는지 읽고 내 말로 설명해 보는 거예요.",
+    kind: "long",
+    maxLength: 200,
   },
 
   /* ── 디버깅 안내 ── */
@@ -326,9 +521,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         subtitle: "지금까지 배운 걸 복습하고, AI로 내 기능을 더해요",
         note:
           "지난 시간까지 똥피하기 기본 기능을 완성했죠? 오늘은 그동안 배운 걸 가볍게 복습하고,\n" +
-          "완성 게임에 '내가 원하는 기능 하나' 를 말로 설명해 AI에게 코드를 받아 붙여 봐요(바이브 코딩).",
+          "코드에 심어 둔 버그를 고친 뒤, 완성 게임에 '내가 원하는 기능 하나' 를 말로 설명해 AI에게\n" +
+          "코드를 받아 붙여 봐요(바이브 코딩).",
         rows: [
           { label: "복습", value: "변수·if·함수·리스트·for·점수·속도 등 가볍게 퀴즈로" },
+          { label: "버그 고치기", value: "완성 코드에 심어 둔 버그 3개를 읽고 고치기(쉬움→어려움)" },
           { label: "바이브 코딩", value: "원하는 기능을 프롬프트로 요청 → AI 코드 받기 → 실행·고치기" },
           { label: "기록", value: "내가 AI에게 보낸 말과 받은 코드는 선생님이 볼 수 있어요" },
         ],
@@ -338,15 +535,17 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
       },
       {
         label: "오늘 순서",
-        subtitle: "복습 퀴즈 → 바이브 코딩 → 서로 보기 → 성찰",
+        subtitle: "복습 퀴즈 → 버그 고치기 → 바이브 코딩 → 서로 보기 → 성찰",
         note: "선생님이 한 단계씩 넘겨 줘요.",
         rows: [
           { label: "1", value: "복습 퀴즈 — 지금까지 배운 개념 가볍게" },
-          { label: "2", value: "바이브 코딩 — 완성 코드에 내 기능 하나 AI에게 부탁해 붙이기" },
-          { label: "3", value: "서로 보기 — 내가 더한 기능 한 줄을 친구들과 나누기" },
+          { label: "2", value: "버그 고치기 — 완성 코드에 심어 둔 버그 3개를 읽고 고치기(쉬움→어려움)" },
+          { label: "3", value: "바이브 코딩 — 완성 코드에 내 기능 하나 AI에게 부탁해 붙이기" },
+          { label: "4", value: "서로 보기 — 내가 더한 기능 한 줄을 친구들과 나누기" },
           { label: "마지막", value: "성찰 한 줄 → 제출하면 테트리스!" },
         ],
         highlights: [
+          "버그는 한 군데씩이에요 — 코드를 한 줄씩 읽으며 찾아요.",
           "프롬프트는 구체적으로, 한 번에 하나씩, 동작을 말로 적어요.",
         ],
       },
@@ -366,17 +565,21 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   reflectionPublic: false,
 
   /*
-   * 외부 새 탭 링크가 붙은 단계는 창을 옮겨도 이탈로 세지 않는다. 대기(타자)·build(OneCompiler·바이브)다.
+   * 외부 새 탭 링크가 붙은 단계는 창을 옮겨도 이탈로 세지 않는다.
+   * 대기(타자)·mvp(버그 고치기 OneCompiler)·build(바이브·OneCompiler)다.
    */
-  focusExempt: ["waiting", "build"],
+  focusExempt: ["waiting", "mvp", "build"],
   /*
-   * 기분(mood)은 대기 화면에서 먼저 받으므로 단계에서 뺀다.
-   * 단계: 안내(assessment) → 복습 퀴즈(quiz) → 바이브 코딩(build) → 서로 보기(gallery) → 성찰(reflection).
+   * 기분(mood)은 대기 화면에서 먼저 받으므로 단계에서 뺀다. 버그 고치기(mvp)를 복습 퀴즈 뒤·
+   * 바이브 코딩(build) 앞에 둬서 '코드를 읽고 고치는 고민' 을 먼저 하고, 바이브 코딩을 '다 고친
+   * 뒤의 창작' 으로 둔다.
+   * 단계: 안내 → 복습 퀴즈 → 버그 고치기(mvp) → 바이브 코딩(build) → 서로 보기(gallery) → 성찰.
    */
-  phaseOrder: ["waiting", "assessment", "quiz", "build", "gallery", "reflection"],
+  phaseOrder: ["waiting", "assessment", "quiz", "mvp", "build", "gallery", "reflection"],
   phaseLabels: {
     assessment: "안내",
     quiz: "복습 퀴즈",
+    mvp: "버그 고치기",
     build: "바이브 코딩",
     gallery: "서로 보기",
   },
@@ -474,12 +677,14 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (게임 제작 아크 공용 통 — 17~21차와 같은 통. 바이브 코딩 기록이 21차 기록 위에 같은 문서에 쌓임)`);
-  console.log("단계: 대기(파이썬 타자 링크) → 안내(assessment) → 복습 퀴즈(quiz) → 바이브 코딩(build) → 서로 보기(gallery) → 성찰. 기분은 대기 화면에서만.");
-  console.log("바이브 코딩(vibe_code): 학생 프롬프트 → 서버 Gemini(vibe-code.ts) → 전체 파이썬 turtle 코드 + 설명. 프롬프트·답은 answers[dg22_vibe] 에 JSON 저장, 교사만 열람(api/teacher/vibe-code + requireTeacher, 대시보드 VibeCodeReviewPanel). 학번·이름 미전송. GEMINI_API_KEY 서버 전용.");
+  console.log("단계: 대기(파이썬 타자 링크) → 안내(assessment) → 복습 퀴즈(quiz) → 버그 고치기(mvp) → 바이브 코딩(build) → 서로 보기(gallery) → 성찰. 기분은 대기 화면에서만.");
+  console.log("버그 고치기(mvp): 완성 코드에 한 줄 결함만 심은 분리본 3개 — ①쉬움 if over = True(문법/SyntaxError) ②중간 distance > 20(충돌 논리) ③어려움 speed = speed + 1 들여쓰기(흐름). 버그마다 note(증상+버그코드+증상SVG 오른쪽1/3+OneCompiler) → long 제출 → ai_feedback(code, checkGoal 서버전용) 채점.");
+  console.log("증상 SVG: /dg22-bug1.svg(SyntaxError) /dg22-bug2.svg(즉시 GAME OVER) /dg22-bug3.svg(똥 폭주) — public/, note imageSide right third.");
+  console.log("바이브 코딩(vibe_code): 학생 프롬프트 → 서버 Gemini(vibe-code.ts) → 전체 파이썬 turtle 코드 + 설명. 프롬프트·답은 answers[dg22_vibe] 에 JSON 저장, 교사만 열람. GEMINI_API_KEY 서버 전용. + dg22_vibe_explain(한 줄 설명) long 칸으로 '딸깍' 줄임.");
   console.log(`완성 코드(바탕): 21차 최종(점수·난이도). _dg22_base_code 의 code + vibe_code 의 vibeBaseCode 로 제공. OneCompiler 터틀(${ONECOMPILER_TURTLE_URL})에서 실행.`);
-  console.log(`복습 퀴즈: ${QUIZ.questions.length}문항(변수·누적·==/True·리스트+for·distance·속도). 디버깅 안내 note 포함.`);
+  console.log(`복습 퀴즈: ${QUIZ.questions.length}문항(변수·누적·리스트+for·distance).`);
   console.log(`공유: galleryEnabled + galleryAnswerKeys=[${SHARE_KEY}] 로 '더한 기능 한 줄' 만 공개 — 바이브 프롬프트·성찰은 비공개(프라이버시).`);
-  console.log("보상: 테트리스 — requires 없음(바이브는 AI 채점 verdict 없는 창작 활동이라, 성찰 제출 시 열림). freeNavigation. focusExempt: waiting·build.");
+  console.log("보상: 테트리스 — requires 없음(성찰 제출 시 열림). freeNavigation. focusExempt: waiting·mvp·build. 하드 게이트 없음(교사가 단계 몰아 자연히 지켜짐).");
   process.exit(0);
 }
 
