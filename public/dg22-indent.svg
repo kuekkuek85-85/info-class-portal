@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 320" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <text x="110" y="22" text-anchor="middle" font-size="13" fill="#64748b">들여쓰기 = 부모·자식 예의</text>
+
+  <!-- 부모: 맨 왼쪽에 당당히 선다 -->
+  <g>
+    <rect x="18" y="40" width="70" height="56" rx="10" fill="#bbf7d0" stroke="#171717" stroke-width="2"/>
+    <circle cx="40" cy="62" r="3.5" fill="#171717"/>
+    <circle cx="66" cy="62" r="3.5" fill="#171717"/>
+    <path d="M40 76 Q53 86 66 76" fill="none" stroke="#171717" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="53" y="112" text-anchor="middle" font-size="12" font-weight="700" fill="#171717">부모</text>
+    <text x="53" y="126" text-anchor="middle" font-size="10.5" fill="#475569">if / for :</text>
+  </g>
+
+  <!-- 들여쓰기 화살표: 부모보다 한 칸 들어가라 -->
+  <path d="M60 134 q0 20 40 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4 3"/>
+  <path d="M96 160 l8 -1 -4 7 z" fill="#94a3b8"/>
+  <text x="150" y="150" text-anchor="middle" font-size="10" fill="#64748b">한 칸</text>
+  <text x="150" y="163" text-anchor="middle" font-size="10" fill="#64748b">들여써요</text>
+
+  <!-- 자식: 한 칸 들여써서(오른쪽으로 들어가) 공손히 고개 숙인다 -->
+  <g transform="translate(78 168) rotate(8)">
+    <rect x="0" y="0" width="58" height="48" rx="9" fill="#fde68a" stroke="#171717" stroke-width="2"/>
+    <circle cx="19" cy="20" r="3" fill="#171717"/>
+    <circle cx="39" cy="20" r="3" fill="#171717"/>
+    <path d="M20 33 Q29 39 38 33" fill="none" stroke="#171717" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
+  <text x="107" y="238" text-anchor="middle" font-size="12" font-weight="700" fill="#171717">자식</text>
+  <text x="107" y="252" text-anchor="middle" font-size="10.5" fill="#475569">속한 줄</text>
+
+  <!-- 대응 코드: 부모는 맨 왼쪽, 자식은 들여씀 -->
+  <rect x="14" y="266" width="192" height="42" rx="6" fill="#0f172a"/>
+  <text x="24" y="283" font-size="11" font-family="monospace" fill="#e2e8f0">if ...:            ← 부모</text>
+  <text x="24" y="299" font-size="11" font-family="monospace" fill="#fde68a">    speed = ...   ← 자식</text>
+</svg>

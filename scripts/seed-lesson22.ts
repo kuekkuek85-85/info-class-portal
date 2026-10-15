@@ -189,6 +189,19 @@ const BUG3_CODE = mustReplace(
   "bug3b",
 );
 
+/* 들여쓰기 배우기(wrapmap) 예제 — 같은 줄이 'if 안' 이냐 'if 밖' 이냐로 동작이 갈림(버그③과 직결). */
+const CODE_INDENT_EXAMPLE = `# A) speed 올리기가 'if 안' (12칸) — 똥을 하나 피했을 때만 빨라짐 (정상)
+for poop in poops:
+    if poop.ycor() < -250:      # 똥이 바닥을 지났을 때(= 하나 피함)
+        score = score + 1
+        speed = speed + 1       # if 안 → 피했을 때만 실행
+
+# B) speed 올리기가 'if 밖' (8칸, for 바로 밑) — 매 반복마다 빨라짐 (버그!)
+for poop in poops:
+    if poop.ycor() < -250:
+        score = score + 1
+    speed = speed + 1           # if 밖 → 똥을 안 피해도 매번 실행 → 너무 빨라짐`;
+
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
@@ -239,26 +252,94 @@ const SHARE_KEY = "dg22_share";
 
 const WORKSHEET: WorksheetQuestion[] = [
   /* ═══════════════════════════════════════════════════════════════
-   * 버그 고치기(mvp) — 바이브 코딩(build) 앞에 둬서 '코드를 읽고 고치는 고민' 을 먼저 한다.
+   * 들여쓰기 배우기(wrapmap) — 복습 퀴즈 뒤·버그 고치기 ① 앞. 들여쓰기를 아직 안 배웠는데 버그③이
+   * 들여쓰기 문제라, 먼저 개념을 익힌다. 개념 note + 예제 note(코드만, SVG 없음) + 형성평가 cloze
+   * (lesson21 연산자 단계와 같은 방식 — clozeGrade 즉석 채점). 새 kind 없음 → 배포 불필요.
+   * ═══════════════════════════════════════════════════════════════ */
+  {
+    key: "_dg22_indent_concept",
+    phase: "wrapmap",
+    label: "들여쓰기 — 부모와 자식의 예의",
+    hint:
+      "들여쓰기는 '부모와 자식의 예의' 라고 생각하면 쉬워요. 😊\n\n" +
+      "· if 나 for 같은 줄이 '부모' 예요. 그 아래에서 그 if/for 에 속해 움직이는 줄들이 '자식' 이고요.\n" +
+      "· 예의상 자식은 부모와 똑같은 자리에 나란히 서면 안 돼요 — 한 칸 '들여써서(안으로 들어가)' 서요.\n" +
+      "  그 들여쓰기가 '나는 이 if(부모)의 자식이에요' 하는 표시예요(오른쪽 그림).\n" +
+      "· 자식이 들여쓰기를 안 하고 부모와 같은 자리에 서 버리면, 더 이상 그 if 의 자식이 아니게 돼서\n" +
+      "  '언제 실행되는지' 가 달라져요 — 에러가 없어도 동작이 이상해져요.\n\n" +
+      "파이썬은 이렇게 들여쓰기(보통 공백 4칸)로 '어느 줄이 어느 블록에 속하는지' 를 정해요. 다른 언어가\n" +
+      "{ } 괄호로 묶는 걸, 파이썬은 들여쓰기로 묶어요. 줄 끝의 : 이 '여기부터 내 자식' 이라는 신호예요.\n\n" +
+      "곧 할 '버그 고치기 ③(똥이 너무 빨라요)' 이 바로 이 문제예요 — speed 올리는 줄이 if(부모)의\n" +
+      "자식이어야 하는데 밖에 나와 서 있어서 생긴 버그거든요. 먼저 개념을 익혀 둬요.",
+    kind: "note",
+    imageUrl: "/dg22-indent.svg",
+    imageAlt:
+      "부모 블록(if/for)이 맨 왼쪽에 서 있고, 자식이 한 칸 들여써서 공손히 고개를 숙인 모습. 아래에 if ...: (부모)와 들여쓴 speed 줄(자식) 코드.",
+    imageSide: "right",
+    imageSideWidth: "third",
+    maxLength: 0,
+  },
+  {
+    key: "_dg22_indent_example",
+    phase: "wrapmap",
+    label: "예제 — 같은 줄, 다른 들여쓰기",
+    hint:
+      "아래 두 코드는 'speed = speed + 1'(속도 올리기) 한 줄의 들여쓰기만 달라요. 그런데 동작이 전혀 달라져요.\n\n" +
+      "· A) 'if 안'(12칸, 점수 올리는 줄과 같은 칸) — 똥을 하나 피했을 때만 speed 가 1 올라가요(정상).\n" +
+      "· B) 'if 밖'(8칸, for 바로 밑) — 똥을 피하든 말든 for 가 돌 때마다 speed 가 올라가 순식간에 너무\n" +
+      "  빨라져요(버그). 같은 줄인데 들여쓰기 칸수만 다를 뿐이에요.\n\n" +
+      "어느 블록 안에 있느냐가 '언제 실행되는지' 를 정한다는 걸 눈으로 확인해요.",
+    kind: "note",
+    code: CODE_INDENT_EXAMPLE,
+    maxLength: 0,
+  },
+  {
+    key: "dg22_indent_cloze",
+    phase: "wrapmap",
+    label: "형성평가 — 들여쓰기",
+    hint: "보기에서 골라 'AI 채점 받기' 를 눌러 봐요. 위 개념·예제를 떠올리면 돼요.",
+    kind: "cloze",
+    clozeGrade: true,
+    clozeLines: [
+      {
+        key: "q1",
+        text: "if 나 for 처럼, 줄 끝에 써서 '여기부터 안쪽이 이 블록(내 자식)' 임을 알리는 기호는 → □",
+        blanks: [
+          {
+            options: [":", ";", "{"],
+            answer: ":",
+          },
+        ],
+      },
+    ],
+    maxLength: 0,
+  },
+
+  /* ═══════════════════════════════════════════════════════════════
+   * 버그 고치기 — 바이브 코딩(build) 앞에 둬서 '코드를 읽고 고치는 고민' 을 먼저 한다.
+   * 교사 요청으로 버그 1개씩 세 단계로 분리: 버그①=mvp, 버그②=problem, 버그③=grill
+   * (셋 다 STEP_PHASES 에 있어 활동지 문항을 렌더한다 — lesson/page.tsx 참조. grill 은 이 차시가
+   * presentationPhase 를 안 쓰므로 일반 활동지 단계로 뜬다). 단계 순서/라벨은 phaseOrder·phaseLabels.
    * 버그마다: 증상 note(설명 왼쪽 + 버그 코드 + 증상 SVG 오른쪽 1/3 + OneCompiler) → 제출칸 → AI 채점.
    * checkGoal 은 서버 전용(lesson route 가 학생 화면으로 보내기 전에 떼어 냄).
    * ═══════════════════════════════════════════════════════════════ */
+
+  /* ── 버그 ① 쉬움 — 문법(= vs ==) · 단계 mvp("버그 고치기 ①") ── */
   {
     key: "_dg22_debug_intro",
     phase: "mvp",
     label: "버그 고치기 — 코드를 읽고 고쳐 봐요",
     hint:
-      "바이브 코딩에 들어가기 전에, 완성한 똥피하기 게임에 '일부러 심어 둔 버그(실수)' 3개를 고쳐 봐요.\n" +
-      "버그마다 '완성 코드' 에 딱 한 군데가 잘못돼 있어요. 아래 순서로 해요.\n\n" +
+      "바이브 코딩에 들어가기 전에, 완성한 똥피하기 게임에 '일부러 심어 둔 버그(실수)' 를 고쳐 봐요.\n" +
+      "버그는 세 단계(① 쉬움 → ② 중간 → ③ 어려움)로 하나씩 나와요. 각 단계마다 '완성 코드' 에\n" +
+      "딱 한 군데가 잘못돼 있어요. 아래 순서로 해요.\n\n" +
       "· 코드를 복사해 OneCompiler 터틀에서 실행해 봐요 — 오른쪽 그림처럼 '증상' 이 나타나요.\n" +
       "· 코드를 한 줄씩 읽으며 어디가 이상한지 찾아요(한 군데예요).\n" +
       "· 고친 뒤 다시 실행해 제대로 되면, 고친 코드 전체를 붙여넣고 'AI 채점' 을 눌러 확인해요.\n\n" +
-      "쉬움 → 중간 → 어려움 순이에요. 한 번에 안 돼도 괜찮아요 — 고치는 게 공부예요.",
+      "한 번에 안 돼도 괜찮아요 — 고치는 게 공부예요. 다 하면 선생님이 다음 단계로 넘겨 줘요.",
     kind: "note",
     maxLength: 0,
   },
-
-  /* ── 버그 ① 쉬움 — 문법(= vs ==) ── */
   {
     key: "_dg22_bug1_note",
     phase: "mvp",
@@ -305,7 +386,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   /* ── 버그 ② 중간 — 논리(충돌 판정 부등호 방향) ── */
   {
     key: "_dg22_bug2_note",
-    phase: "mvp",
+    phase: "problem",
     label: "버그 ② — 시작하자마자 GAME OVER (중간)",
     hint:
       "이 코드는 에러 없이 실행돼요. 그런데 게임을 시작하자마자 바로 'GAME OVER!' 가 떠요(오른쪽 그림).\n" +
@@ -324,7 +405,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "dg22_bug2_submit",
-    phase: "mvp",
+    phase: "problem",
     label: "✍ 고친 코드 제출 (버그 ②)",
     hint: "OneCompiler 에서 고쳐 제대로 실행된 코드를 복사해 붙여넣어 주세요.",
     kind: "long",
@@ -332,7 +413,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "dg22_bug2_check",
-    phase: "mvp",
+    phase: "problem",
     label: "AI 채점 — 버그 ② 고쳐졌는지 확인",
     hint: "위에 붙여넣은 코드를 AI가 봐줘요. 똥이 '가까울 때' 만 게임 오버가 되게 고쳐졌으면 통과!",
     kind: "ai_feedback",
@@ -349,7 +430,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   /* ── 버그 ③ 어려움 — 흐름/들여쓰기(speed 증가가 if 블록 밖) ── */
   {
     key: "_dg22_bug3_note",
-    phase: "mvp",
+    phase: "grill",
     label: "버그 ③ — 똥이 너무 빨라요 (어려움)",
     hint:
       "이 코드도 에러 없이 실행돼요. 그런데 시작하자마자 똥이 무섭게 빨라져서 도저히 못 피해요\n" +
@@ -369,7 +450,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "dg22_bug3_submit",
-    phase: "mvp",
+    phase: "grill",
     label: "✍ 고친 코드 제출 (버그 ③)",
     hint: "OneCompiler 에서 고쳐 제대로 실행된 코드를 복사해 붙여넣어 주세요.",
     kind: "long",
@@ -377,7 +458,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "dg22_bug3_check",
-    phase: "mvp",
+    phase: "grill",
     label: "AI 채점 — 버그 ③ 고쳐졌는지 확인",
     hint: "위에 붙여넣은 코드를 AI가 봐줘요. 속도 올리는 줄이 '똥을 하나 피했을 때' 안으로 들어갔으면 통과!",
     kind: "ai_feedback",
@@ -525,7 +606,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
           "코드를 받아 붙여 봐요(바이브 코딩).",
         rows: [
           { label: "복습", value: "변수·if·함수·리스트·for·점수·속도 등 가볍게 퀴즈로" },
-          { label: "버그 고치기", value: "완성 코드에 심어 둔 버그 3개를 읽고 고치기(쉬움→어려움)" },
+          { label: "버그 고치기 ①②③", value: "버그를 한 단계에 하나씩, 세 번에 걸쳐 읽고 고치기(쉬움→어려움)" },
           { label: "바이브 코딩", value: "원하는 기능을 프롬프트로 요청 → AI 코드 받기 → 실행·고치기" },
           { label: "기록", value: "내가 AI에게 보낸 말과 받은 코드는 선생님이 볼 수 있어요" },
         ],
@@ -535,13 +616,16 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
       },
       {
         label: "오늘 순서",
-        subtitle: "복습 퀴즈 → 버그 고치기 → 바이브 코딩 → 서로 보기 → 성찰",
+        subtitle: "복습 퀴즈 → 들여쓰기 배우기 → 버그 고치기 ①②③ → 바이브 코딩 → 서로 보기 → 성찰",
         note: "선생님이 한 단계씩 넘겨 줘요.",
         rows: [
           { label: "1", value: "복습 퀴즈 — 지금까지 배운 개념 가볍게" },
-          { label: "2", value: "버그 고치기 — 완성 코드에 심어 둔 버그 3개를 읽고 고치기(쉬움→어려움)" },
-          { label: "3", value: "바이브 코딩 — 완성 코드에 내 기능 하나 AI에게 부탁해 붙이기" },
-          { label: "4", value: "서로 보기 — 내가 더한 기능 한 줄을 친구들과 나누기" },
+          { label: "2", value: "들여쓰기 배우기 — 어느 줄이 어느 블록인지(버그 고치기 전에 개념 먼저)" },
+          { label: "3", value: "버그 고치기 ① — 쉬움(문법): 게임이 아예 안 켜져요" },
+          { label: "4", value: "버그 고치기 ② — 중간(논리): 시작하자마자 GAME OVER" },
+          { label: "5", value: "버그 고치기 ③ — 어려움(흐름/들여쓰기): 똥이 너무 빨라요" },
+          { label: "6", value: "바이브 코딩 — 완성 코드에 내 기능 하나 AI에게 부탁해 붙이기" },
+          { label: "7", value: "서로 보기 — 내가 더한 기능 한 줄을 친구들과 나누기" },
           { label: "마지막", value: "성찰 한 줄 → 제출하면 테트리스!" },
         ],
         highlights: [
@@ -566,27 +650,34 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   /*
    * 외부 새 탭 링크가 붙은 단계는 창을 옮겨도 이탈로 세지 않는다.
-   * 대기(타자)·mvp(버그 고치기 OneCompiler)·build(바이브·OneCompiler)다.
+   * 대기(타자)·버그 고치기 세 단계(mvp·problem·grill, OneCompiler)·build(바이브·OneCompiler)다.
    */
-  focusExempt: ["waiting", "mvp", "build"],
+  focusExempt: ["waiting", "mvp", "problem", "grill", "build"],
   /*
-   * 기분(mood)은 대기 화면에서 먼저 받으므로 단계에서 뺀다. 버그 고치기(mvp)를 복습 퀴즈 뒤·
-   * 바이브 코딩(build) 앞에 둬서 '코드를 읽고 고치는 고민' 을 먼저 하고, 바이브 코딩을 '다 고친
-   * 뒤의 창작' 으로 둔다.
-   * 단계: 안내 → 복습 퀴즈 → 버그 고치기(mvp) → 바이브 코딩(build) → 서로 보기(gallery) → 성찰.
+   * 기분(mood)은 대기 화면에서 먼저 받으므로 단계에서 뺀다. 들여쓰기 배우기(wrapmap)를 복습 퀴즈
+   * 뒤·버그 고치기 ① 앞에 둬서 개념을 먼저 익힌다(버그③이 들여쓰기 문제라). 그 뒤 버그 고치기를
+   * 1개씩 세 단계(mvp·problem·grill, 모두 STEP_PHASES 라 활동지 렌더)로, 끝에 바이브 코딩(build)을
+   * '다 고친 뒤의 창작' 으로 둔다. 순서는 여기서 정하므로 LESSON_PHASES 기본 순서와 무관하다.
+   * 단계: 안내 → 복습 퀴즈 → 들여쓰기 배우기(wrapmap) → 버그 고치기 ①(mvp) → ②(problem) →
+   *       ③(grill) → 나만의 기능 추가하기(build) → 서로 보기(gallery) → 성찰.
    */
-  phaseOrder: ["waiting", "assessment", "quiz", "mvp", "build", "gallery", "reflection"],
+  phaseOrder: ["waiting", "assessment", "quiz", "wrapmap", "mvp", "problem", "grill", "build", "gallery", "reflection"],
   phaseLabels: {
     assessment: "안내",
     quiz: "복습 퀴즈",
-    mvp: "버그 고치기",
-    build: "바이브 코딩",
+    wrapmap: "들여쓰기 배우기",
+    mvp: "버그 고치기 ①",
+    problem: "버그 고치기 ②",
+    grill: "버그 고치기 ③",
+    build: "나만의 기능 추가하기",
     gallery: "서로 보기",
   },
   /*
-   * 되돌아가기 켬 — 보상 안내·단계 이동·성찰 복귀에 필요하다.
+   * 되돌아가기 끔 — 버그 고치기를 3단계(mvp·problem·grill)로 쪼개면서, 되돌아가기 pill 이
+   * LESSON_PHASES 순서를 따라 ①②③이 뒤섞이고 미리 건너뛸 수 있었다. 끄면 학생은 교사가 여는
+   * 현재 단계만 본다(교사 주도). 보상 게임은 requires 없이 성찰 제출로 열리므로 freeNavigation 과 무관.
    */
-  freeNavigation: true,
+  freeNavigation: false,
 
   activity: {
     activityId: ACTIVITY_ID,
@@ -677,14 +768,15 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (게임 제작 아크 공용 통 — 17~21차와 같은 통. 바이브 코딩 기록이 21차 기록 위에 같은 문서에 쌓임)`);
-  console.log("단계: 대기(파이썬 타자 링크) → 안내(assessment) → 복습 퀴즈(quiz) → 버그 고치기(mvp) → 바이브 코딩(build) → 서로 보기(gallery) → 성찰. 기분은 대기 화면에서만.");
-  console.log("버그 고치기(mvp): 완성 코드에 한 줄 결함만 심은 분리본 3개 — ①쉬움 if over = True(문법/SyntaxError) ②중간 distance > 20(충돌 논리) ③어려움 speed = speed + 1 들여쓰기(흐름). 버그마다 note(증상+버그코드+증상SVG 오른쪽1/3+OneCompiler) → long 제출 → ai_feedback(code, checkGoal 서버전용) 채점.");
+  console.log("단계: 대기(파이썬 타자 링크) → 안내 → 복습 퀴즈 → 들여쓰기 배우기(wrapmap) → 버그 고치기 ①(mvp)·②(problem)·③(grill) → 나만의 기능 추가하기(build) → 서로 보기(gallery) → 성찰. 기분은 대기 화면에서만.");
+  console.log("들여쓰기 배우기(wrapmap): 개념 note('부모·자식 예의' 비유 + /dg22-indent.svg 오른쪽 1/3) + 예제 note(코드) + 형성평가 cloze 1문항(: 기호) — clozeGrade 즉석 채점. 복습 퀴즈 뒤·버그① 앞. 새 kind 없음(SVG는 새 파일 — 배포 필요).");
+  console.log("버그 고치기: 교사 요청으로 버그 1개씩 세 단계 분리(mvp·problem·grill, 모두 STEP_PHASES). 완성 코드에 한 줄 결함만 심은 분리본 — ①쉬움 if over = True(문법/SyntaxError) ②중간 distance > 20(충돌 논리) ③어려움 speed = speed + 1 들여쓰기(흐름). 버그마다 note(증상+버그코드+증상SVG 오른쪽1/3+OneCompiler) → long 제출 → ai_feedback(code, checkGoal 서버전용) 채점.");
   console.log("증상 SVG: /dg22-bug1.svg(SyntaxError) /dg22-bug2.svg(즉시 GAME OVER) /dg22-bug3.svg(똥 폭주) — public/, note imageSide right third.");
   console.log("바이브 코딩(vibe_code): 학생 프롬프트 → 서버 Gemini(vibe-code.ts) → 전체 파이썬 turtle 코드 + 설명. 프롬프트·답은 answers[dg22_vibe] 에 JSON 저장, 교사만 열람. GEMINI_API_KEY 서버 전용. + dg22_vibe_explain(한 줄 설명) long 칸으로 '딸깍' 줄임.");
   console.log(`완성 코드(바탕): 21차 최종(점수·난이도). _dg22_base_code 의 code + vibe_code 의 vibeBaseCode 로 제공. OneCompiler 터틀(${ONECOMPILER_TURTLE_URL})에서 실행.`);
   console.log(`복습 퀴즈: ${QUIZ.questions.length}문항(변수·누적·리스트+for·distance).`);
   console.log(`공유: galleryEnabled + galleryAnswerKeys=[${SHARE_KEY}] 로 '더한 기능 한 줄' 만 공개 — 바이브 프롬프트·성찰은 비공개(프라이버시).`);
-  console.log("보상: 테트리스 — requires 없음(성찰 제출 시 열림). freeNavigation. focusExempt: waiting·mvp·build. 하드 게이트 없음(교사가 단계 몰아 자연히 지켜짐).");
+  console.log("보상: 테트리스 — requires 없음(성찰 제출 시 열림). freeNavigation. focusExempt: waiting·mvp·problem·grill·build. 하드 게이트 없음(교사가 단계 몰아 자연히 지켜짐).");
   process.exit(0);
 }
 
