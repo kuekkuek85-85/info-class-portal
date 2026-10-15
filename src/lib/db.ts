@@ -1860,6 +1860,64 @@ export async function skipRelayTurn(sessionId: string, groupNo: number): Promise
   });
 }
 
+/**
+ * 멈춘 턴 자동 넘김 — 현재 턴이 (turnSeconds + 여유) 를 넘겨 멈춰 있으면 다음 사람으로 넘긴다.
+ *
+ * 왜 필요한가: 결석 학생이 그릴 차례가 되면 그 학생 **클라이언트가 없어 20초 자동 제출이 안
+ * 일어나** 모둠이 막힌다("빠진 친구가 1번이면 막힘"). 다른 모둠원·교사가 폴링할 때 이 함수가
+ * 서버에서 넘겨 준다.
+ *
+ * 여유(GRACE)를 두는 이유: 접속한 학생은 20초에 클라이언트가 그림을 자동 제출하므로, 그보다
+ * 살짝 뒤에만 서버가 넘겨 **그린 그림을 보존**하고 이중 넘김을 피한다. 트랜잭션 안에서 다시
+ * 검사하므로, 자동 제출이 먼저 들어와 updatedAt 이 갱신됐으면 넘기지 않는다(no-op).
+ */
+const RELAY_AUTOSKIP_GRACE_MS = 5000;
+
+async function advanceRelayIfStale(groupId: string, thresholdMs: number): Promise<boolean> {
+  const ref = db().collection(COLLECTIONS.relayGroups).doc(groupId);
+  return db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return false;
+    const g = snap.data() as RelayGroup;
+    if (g.status !== "drawing") return false;
+    if (Date.now() - g.updatedAt <= thresholdMs) return false; // 자동 제출이 먼저 들어왔으면 통과
+    const turnIndex = g.turnIndex + 1;
+    const status: RelayGroup["status"] = turnIndex >= g.members.length ? "done" : "drawing";
+    tx.set(ref, { ...g, turnIndex, status, rev: g.rev + 1, updatedAt: Date.now() });
+    return true;
+  });
+}
+
+/** 세션의 모든 모둠에서 멈춘 턴을 자동으로 넘긴다(교사 폴링용). 넘긴 모둠 수 반환. */
+export async function autoAdvanceStaleRelayTurns(sessionId: string, turnSeconds: number): Promise<number> {
+  if (!turnSeconds || turnSeconds <= 0) return 0;
+  const threshold = turnSeconds * 1000 + RELAY_AUTOSKIP_GRACE_MS;
+  const groups = await listRelayGroups(sessionId);
+  let advanced = 0;
+  for (const g of groups) {
+    if (g.status !== "drawing") continue;
+    if (Date.now() - g.updatedAt <= threshold) continue;
+    if (await advanceRelayIfStale(g.id, threshold)) advanced += 1;
+  }
+  return advanced;
+}
+
+/** 한 학생의 모둠에서 멈춘 턴을 자동으로 넘긴다(학생 폴링용). 넘겼으면 갱신본, 아니면 원본 반환. */
+export async function autoAdvanceStaleRelayTurnForStudent(
+  sessionId: string,
+  studentId: string,
+  turnSeconds: number,
+): Promise<RelayGroup | null> {
+  const mine = await getRelayGroupForStudent(sessionId, studentId);
+  if (!mine || !turnSeconds || turnSeconds <= 0) return mine;
+  const threshold = turnSeconds * 1000 + RELAY_AUTOSKIP_GRACE_MS;
+  if (mine.status !== "drawing" || Date.now() - mine.updatedAt <= threshold) return mine;
+  if (await advanceRelayIfStale(mine.id, threshold)) {
+    return getRelayGroupForStudent(sessionId, studentId);
+  }
+  return mine;
+}
+
 // ------------------------------------------- STREAMS 동기화 개인전 (streams_broadcast)
 
 /**
