@@ -1,9 +1,9 @@
 import { fail, guard, ok, readJson } from "@/lib/api";
 import {
-  autoAdvanceStaleRelayTurnForStudent,
   getSession,
   isSessionClosed,
   listRelayGroups,
+  pollRelayForStudent,
   submitRelayTurn,
 } from "@/lib/db";
 import { currentDrawer } from "@/lib/relay";
@@ -32,8 +32,8 @@ export async function GET() {
     const reveal = session.relayReveal === true;
     // 한 사람 차례 제한 시간(초). 없거나 0이면 시간 제한 없음(기존 동작). 클라이언트 카운트다운용.
     const turnSeconds = Math.max(0, Math.floor(session.activity?.relayTurnSeconds ?? 0));
-    // 멈춘 턴(결석 학생 등) 자동 넘김 — 내 모둠이 (turnSeconds+여유) 넘게 멈춰 있으면 다음 사람으로.
-    const mine = await autoAdvanceStaleRelayTurnForStudent(session.id, me.studentId, turnSeconds);
+    // 내가 그릴 사람이면 하트비트 갱신(자동 넘김 방지), 아니면 그릴 학생 결석 시 자동 넘김.
+    const mine = await pollRelayForStudent(session.id, me.studentId, turnSeconds);
 
     // 공개되면 모든 모둠 완성 그림을 함께 본다(교사 신호 전엔 내 모둠만).
     const all = reveal

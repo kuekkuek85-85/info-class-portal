@@ -1861,58 +1861,86 @@ export async function skipRelayTurn(sessionId: string, groupNo: number): Promise
 }
 
 /**
- * 멈춘 턴 자동 넘김 — 현재 턴이 (turnSeconds + 여유) 를 넘겨 멈춰 있으면 다음 사람으로 넘긴다.
+ * 멈춘 턴 자동 넘김 — **현재 그릴 학생이 접속해 있지 않을 때만**(결석) 다음 사람으로 넘긴다.
  *
- * 왜 필요한가: 결석 학생이 그릴 차례가 되면 그 학생 **클라이언트가 없어 20초 자동 제출이 안
- * 일어나** 모둠이 막힌다("빠진 친구가 1번이면 막힘"). 다른 모둠원·교사가 폴링할 때 이 함수가
- * 서버에서 넘겨 준다.
+ * 왜 필요한가: 결석 학생이 그릴 차례가 되면 그 학생 클라이언트가 없어 20초 자동 제출이 안
+ * 일어나 모둠이 막힌다("빠진 친구가 1번이면 막힘").
  *
- * 여유(GRACE)를 두는 이유: 접속한 학생은 20초에 클라이언트가 그림을 자동 제출하므로, 그보다
- * 살짝 뒤에만 서버가 넘겨 **그린 그림을 보존**하고 이중 넘김을 피한다. 트랜잭션 안에서 다시
- * 검사하므로, 자동 제출이 먼저 들어와 updatedAt 이 갱신됐으면 넘기지 않는다(no-op).
+ * ## 접속한 학생을 억울하게 넘기지 않는 법 (하트비트)
+ *
+ * 시간만으로 판단하면, 폴링이 조금 늦은 접속 학생을 그 학생 클라이언트가 20초 자동 제출을
+ * 하기도 전에 서버가 넘겨 버린다(실제로 그런 사고가 났다). 그래서 **현재 그릴 학생이 최근에
+ * 폴링했는지(drawerSeenAt)** 를 본다. 접속해 그리는 중인 학생은 4초마다 폴링하므로 drawerSeenAt
+ * 이 최신이라 절대 안 넘어간다(그 학생 클라이언트가 20초에 자동 제출해 넘어간다). 폴링이 끊긴
+ * (결석) 학생만, 턴이 제한 시간을 넘기고 하트비트도 끊겼을 때 넘긴다.
  */
-const RELAY_AUTOSKIP_GRACE_MS = 5000;
+/** 현재 그릴 학생의 폴링이 이만큼 끊기면 '접속 안 함(결석)'으로 본다(폴링 4초의 약 2.5배). */
+const RELAY_DRAWER_STALE_MS = 10_000;
 
-async function advanceRelayIfStale(groupId: string, thresholdMs: number): Promise<boolean> {
+/** 그릴 학생이 접속(폴링)하고 있지 않고 턴 시간이 지났으면 다음 사람으로 넘긴다. 트랜잭션 안에서 재검사. */
+async function advanceRelayIfDrawerAbsent(groupId: string, turnSeconds: number): Promise<boolean> {
   const ref = db().collection(COLLECTIONS.relayGroups).doc(groupId);
   return db().runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists) return false;
     const g = snap.data() as RelayGroup;
     if (g.status !== "drawing") return false;
-    if (Date.now() - g.updatedAt <= thresholdMs) return false; // 자동 제출이 먼저 들어왔으면 통과
+    const now = Date.now();
+    if (now - g.updatedAt <= turnSeconds * 1000) return false; // 아직 턴 시간 안 지남
+    if (now - (g.drawerSeenAt ?? 0) <= RELAY_DRAWER_STALE_MS) return false; // 그릴 학생 접속 중 → 넘기지 않음
     const turnIndex = g.turnIndex + 1;
     const status: RelayGroup["status"] = turnIndex >= g.members.length ? "done" : "drawing";
-    tx.set(ref, { ...g, turnIndex, status, rev: g.rev + 1, updatedAt: Date.now() });
+    // 다음 사람의 하트비트는 비워 둔다(그 사람이 처음 폴링할 때 채워짐).
+    tx.set(ref, { ...g, turnIndex, status, rev: g.rev + 1, updatedAt: now, drawerSeenAt: 0 });
     return true;
   });
 }
 
-/** 세션의 모든 모둠에서 멈춘 턴을 자동으로 넘긴다(교사 폴링용). 넘긴 모둠 수 반환. */
+/** 세션의 모든 모둠에서, 그릴 학생이 결석인 멈춘 턴을 자동으로 넘긴다(교사 폴링용). 넘긴 모둠 수 반환. */
 export async function autoAdvanceStaleRelayTurns(sessionId: string, turnSeconds: number): Promise<number> {
   if (!turnSeconds || turnSeconds <= 0) return 0;
-  const threshold = turnSeconds * 1000 + RELAY_AUTOSKIP_GRACE_MS;
   const groups = await listRelayGroups(sessionId);
+  const now = Date.now();
   let advanced = 0;
   for (const g of groups) {
     if (g.status !== "drawing") continue;
-    if (Date.now() - g.updatedAt <= threshold) continue;
-    if (await advanceRelayIfStale(g.id, threshold)) advanced += 1;
+    if (now - g.updatedAt <= turnSeconds * 1000) continue;
+    if (now - (g.drawerSeenAt ?? 0) <= RELAY_DRAWER_STALE_MS) continue;
+    if (await advanceRelayIfDrawerAbsent(g.id, turnSeconds)) advanced += 1;
   }
   return advanced;
 }
 
-/** 한 학생의 모둠에서 멈춘 턴을 자동으로 넘긴다(학생 폴링용). 넘겼으면 갱신본, 아니면 원본 반환. */
-export async function autoAdvanceStaleRelayTurnForStudent(
+/**
+ * 학생 폴링 처리 — 내가 지금 그릴 사람이면 하트비트(drawerSeenAt)를 갱신하고(자동 넘김 방지),
+ * 아니면 그릴 학생이 결석인 멈춘 턴을 넘긴다. 현재(갱신 후) 내 모둠을 돌려준다.
+ */
+export async function pollRelayForStudent(
   sessionId: string,
   studentId: string,
   turnSeconds: number,
 ): Promise<RelayGroup | null> {
   const mine = await getRelayGroupForStudent(sessionId, studentId);
-  if (!mine || !turnSeconds || turnSeconds <= 0) return mine;
-  const threshold = turnSeconds * 1000 + RELAY_AUTOSKIP_GRACE_MS;
-  if (mine.status !== "drawing" || Date.now() - mine.updatedAt <= threshold) return mine;
-  if (await advanceRelayIfStale(mine.id, threshold)) {
+  if (!mine || mine.status !== "drawing" || !turnSeconds || turnSeconds <= 0) return mine;
+
+  if (mine.members[mine.turnIndex] === studentId) {
+    // 내가 지금 그릴 사람 → 하트비트 갱신(자동 넘김 방지). turnIndex 가 그대로일 때만.
+    const ref = db().collection(COLLECTIONS.relayGroups).doc(mine.id);
+    await db().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) return;
+      const g = snap.data() as RelayGroup;
+      if (g.status !== "drawing" || g.members[g.turnIndex] !== studentId) return;
+      tx.set(ref, { drawerSeenAt: Date.now() }, { merge: true });
+    });
+    return mine;
+  }
+
+  // 다른 모둠원 폴링 → 그릴 학생이 결석이면 넘긴다.
+  const now = Date.now();
+  if (now - mine.updatedAt <= turnSeconds * 1000) return mine;
+  if (now - (mine.drawerSeenAt ?? 0) <= RELAY_DRAWER_STALE_MS) return mine;
+  if (await advanceRelayIfDrawerAbsent(mine.id, turnSeconds)) {
     return getRelayGroupForStudent(sessionId, studentId);
   }
   return mine;
