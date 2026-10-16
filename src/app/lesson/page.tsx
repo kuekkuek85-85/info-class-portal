@@ -988,9 +988,21 @@ export default function LessonPage() {
    * 대기·마침은 뺀다. 되돌아가서 할 일이 없는 화면이고, 대기로 가면 게임이 떠서
    * 수업 중에 그리로 도망갈 구멍이 된다.
    */
-  const backPhases: LessonPhase[] = LESSON_PHASES.slice(
-    0,
-    LESSON_PHASES.indexOf(phase) + 1,
+  /*
+   * 되돌아가기 목록·순서는 **이 차시의 phaseOrder** 를 따른다 (LESSON_PHASES 전역 순서가 아니라).
+   * phaseOrder 로 순서를 바꾼 차시(구현 1·2단계, 22차 버그 고치기 등)에서 전역 순서를 쓰면,
+   * 뒤 단계가 앞에 오거나(예: 2단계가 앞으로) 현재 단계보다 뒤인 단계까지 되돌아가기에 풀려 버렸다.
+   * 차시 순서에서 '현재 단계까지'만 자르고, 목록 순서도 차시 순서를 따른다.
+   * phaseOrder 가 없는 차시는 기존대로 LESSON_PHASES 를 쓴다(동작 불변).
+   */
+  const phaseSeq: readonly LessonPhase[] = session.phaseOrder?.length
+    ? session.phaseOrder
+    : LESSON_PHASES;
+  const curInSeq = phaseSeq.indexOf(phase);
+  const backPhases: LessonPhase[] = (
+    curInSeq >= 0
+      ? phaseSeq.slice(0, curInSeq + 1)
+      : LESSON_PHASES.slice(0, LESSON_PHASES.indexOf(phase) + 1)
   ).filter((item) => {
     if (item === "waiting" || item === "done") return false;
     /*
