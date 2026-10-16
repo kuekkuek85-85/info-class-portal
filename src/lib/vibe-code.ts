@@ -15,13 +15,15 @@ import "server-only";
  */
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
-const TIMEOUT_MS = 20_000;
+// 코드가 길면 생성에 시간이 더 걸리므로 타임아웃도 넉넉히(터틀 게임 전체 코드 생성).
+const TIMEOUT_MS = 35_000;
 
 /** 저장·전송 방어 상한 (비용·Firestore 문서 1MB). */
 const MAX_PROMPT = 500;
 const MAX_BASE_CODE = 6000;
-const MAX_CODE_OUT = 6000;
-const MAX_EXPLAIN_OUT = 1500;
+// 생성 코드 표시·저장 상한 — 터틀 게임 전체 코드가 잘리지 않게 넉넉히(약 150줄).
+const MAX_CODE_OUT = 12000;
+const MAX_EXPLAIN_OUT = 3000;
 
 export interface VibeCodeResult {
   /** AI 가 돌려준 전체 파이썬 코드 (거절이면 빈 문자열) */
@@ -113,7 +115,8 @@ export async function vibeCodeGenerate(input: {
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: system }] },
           contents: [{ role: "user", parts: [{ text: userText }] }],
-          generationConfig: { temperature: 0.4, maxOutputTokens: 1400 },
+          // 코드가 1400 토큰에서 잘리던 문제 — 전체 코드+설명이 들어가게 넉넉히(flash 출력 상한).
+          generationConfig: { temperature: 0.4, maxOutputTokens: 8192 },
         }),
         signal: controller.signal,
       },
