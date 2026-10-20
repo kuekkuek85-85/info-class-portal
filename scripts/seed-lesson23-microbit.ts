@@ -170,8 +170,11 @@ const PHYSICAL: WorksheetQuestion[] = [
       "앞의 피지컬 컴퓨팅이 '정해진 규칙대로(이러면 저렇게)' 움직인다면, 피지컬 AI 는 상황을\n" +
       "스스로 '이해하고 판단' 하고, 겪은 걸로 점점 더 똑똑해져요(학습).\n\n" +
       "예) 자율주행차(길·신호·사람을 알아보고 스스로 운전), 로봇청소기(집 구조를 익혀 길을 짬),\n" +
-      "휴머노이드 로봇(아틀라스 — 걷고 뛰고 물건을 옮김).",
+      "휴머노이드 로봇(아틀라스 — 걷고 뛰고 물건을 옮김).\n\n" +
+      "▶ 아래 단추로 피지컬 AI 영상 '하늘을 나는 자동차' 를 같이 봐요.",
     kind: "note",
+    linkUrl: "https://youtube.com/shorts/2e2PXcW4YZQ",
+    linkLabel: "영상 보기 — 하늘을 나는 자동차 (새 탭)",
     maxLength: 0,
   },
 ];
@@ -400,8 +403,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
       "마이크로비트는 손바닥만 한 작은 컴퓨터예요. 앞면에 작은 불(LED)이 25개(5줄 x 5칸) 박혀 있어\n" +
       "그림·글자를 보여주고, 버튼 A·B 와 여러 센서(흔들기·밝기·온도 등)도 있어요. 오늘은 그중\n" +
       "'LED 25개' 와 친해져 봅니다.\n\n" +
-      "코딩은 'MakeCode' 로 해요 — 블록을 끼워 맞춰 마이크로비트를 움직이는 도구예요(엔트리처럼\n" +
-      "블록 코딩). makecode.microbit.org 에서 쓰고, 블록을 놓으면 왼쪽 시뮬레이터(마이크로비트\n" +
+      "코딩은 'MakeCode' 로 해요. makecode.microbit.org 에서 쓰고, 블록을 놓으면 왼쪽 시뮬레이터(마이크로비트\n" +
       "그림)에서 바로 결과가 보여요. '파이썬(Python) 보기' 로 바꾸면 같은 걸 코드로도 볼 수 있어요 —\n" +
       "오늘은 코드를 직접 쳐 보기도 하고 블록도 끌어와 봐요. 실물 없이 시뮬레이터로만 해 봐요.",
   },
@@ -422,7 +424,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 새 탭을 여는 단계는 창 이동을 이탈로 세지 않는다 — 대기(파이썬 타자 도우미 링크)와
    * worksheet(MakeCode 링크) 둘 다.
    */
-  focusExempt: ["waiting", "worksheet"],
+  focusExempt: ["waiting", "problem", "worksheet"],
   /*
    * 단계 버튼 순서 — 대기 → 안내 → 피지컬 컴퓨팅 → 마이크로비트 → LED 탐색 → 성찰.
    * 기분(mood)은 대기 화면에서 받으므로(moodCheckEnabled) 교사 대시보드의 단독 '기분' 단계는 뺀다.
