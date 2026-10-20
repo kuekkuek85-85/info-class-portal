@@ -186,8 +186,12 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "미션 — 두근두근 하트 (큰 하트 ↔ 작은 하트)",
     hint:
       "미션! 1초에 한 번씩 '큰 하트 → 작은 하트' 가 번갈아 뜨며 심장처럼 두근두근 뛰게 만들어요.\n" +
-      "선생님과 함께 직접 타이핑해서 만들어요. 시뮬레이터에서 두 하트가 번갈아 뛰면 성공!",
+      "선생님과 함께 직접 타이핑해서 만들어요. 오른쪽 그림처럼 두 하트가 번갈아 뛰면 성공!",
     kind: "note",
+    imageUrl: "/mb23-heart.svg",
+    imageAlt: "마이크로비트 LED가 큰 하트와 작은 하트로 1초마다 번갈아 깜빡이는 움직이는 그림",
+    imageSide: "right",
+    imageSideWidth: "half",
     maxLength: 0,
   },
 
