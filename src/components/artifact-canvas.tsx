@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 import { CANVAS_HEIGHT, CANVAS_WIDTH, PALETTE, STROKE_WIDTHS } from "@/lib/drawing";
-import type { Stroke, TextItem } from "@/lib/types";
+import type { DrawBackground, Stroke, TextItem } from "@/lib/types";
 
 /**
  * 저장된 획을 다시 그리는 읽기 전용 캔버스.
@@ -24,9 +24,17 @@ interface ArtifactCanvasProps {
    * 스물다섯 장이면 190MB — 태블릿에서 화면이 그대로 죽는다.
    */
   pixelWidth?: number;
+  /** 밑그림(가이드). "head" 면 머리 옆모습 윤곽선을 획 밑에 깐다. 미리보기에도 같게 보인다 */
+  background?: DrawBackground;
 }
 
-export function ArtifactCanvas({ strokes, texts, className, pixelWidth }: ArtifactCanvasProps) {
+export function ArtifactCanvas({
+  strokes,
+  texts,
+  className,
+  pixelWidth,
+  background,
+}: ArtifactCanvasProps) {
   const ref = useRef<HTMLCanvasElement>(null);
   const width = pixelWidth ?? CANVAS_WIDTH;
   const height = Math.round((width / CANVAS_WIDTH) * CANVAS_HEIGHT);
@@ -40,9 +48,9 @@ export function ArtifactCanvas({ strokes, texts, className, pixelWidth }: Artifa
     // 논리 좌표(1600×1200)로 그려진 그림을 실제 크기에 맞춰 줄인다
     ctx.save();
     ctx.scale(width / CANVAS_WIDTH, height / CANVAS_HEIGHT);
-    drawArtifact(ctx, strokes, texts);
+    drawArtifact(ctx, strokes, texts, background);
     ctx.restore();
-  }, [strokes, texts, width, height]);
+  }, [strokes, texts, width, height, background]);
 
   return (
     <canvas
@@ -59,10 +67,14 @@ export function drawArtifact(
   ctx: CanvasRenderingContext2D,
   strokes: Stroke[],
   texts: TextItem[],
+  background?: DrawBackground,
 ): void {
   ctx.save();
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+  // 밑그림(가이드)은 흰 배경 위, 학생 획 밑에 깐다 — 저장되는 획이 아니다
+  if (background === "head") drawHeadOutline(ctx);
 
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
@@ -94,5 +106,34 @@ export function drawArtifact(
     ctx.fillText(text.content, text.x, text.y);
   }
 
+  ctx.restore();
+}
+
+/**
+ * 머리 옆모습 윤곽선(껍데기) — '나의 뇌구조' 밑그림.
+ *
+ * 왼쪽을 바라보는 옆얼굴(코가 왼쪽). 저장되는 획이 아니라 화면에만 그려지는 가이드라
+ * 옅은 회색으로, 학생이 안을 감정 색으로 칠할 수 있게 비워 둔다. 좌표는 논리 캔버스
+ * (1600×1200) 기준이라 썸네일로 줄여도 같은 비율로 보인다.
+ */
+function drawHeadOutline(ctx: CanvasRenderingContext2D): void {
+  ctx.save();
+  ctx.strokeStyle = "#c2c2c2";
+  ctx.lineWidth = 7;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(810, 205); // 정수리
+  ctx.bezierCurveTo(1015, 210, 1150, 340, 1172, 545); // 뒤통수 윗부분
+  ctx.bezierCurveTo(1192, 725, 1115, 858, 1000, 920); // 뒤통수 아랫부분
+  ctx.bezierCurveTo(890, 978, 760, 1008, 652, 972); // 턱선 → 턱 끝
+  ctx.bezierCurveTo(602, 952, 584, 902, 580, 858); // 턱 → 아랫입술
+  ctx.bezierCurveTo(578, 832, 604, 830, 600, 808); // 입
+  ctx.bezierCurveTo(596, 786, 560, 788, 566, 758); // 윗입술 → 코 밑
+  ctx.bezierCurveTo(544, 732, 436, 710, 458, 670); // 코끝(왼쪽으로 돌출)
+  ctx.bezierCurveTo(476, 638, 552, 630, 560, 596); // 콧등
+  ctx.bezierCurveTo(566, 560, 552, 548, 566, 520); // 이마 아래(눈썹 언저리)
+  ctx.bezierCurveTo(582, 400, 648, 255, 810, 205); // 이마 → 정수리
+  ctx.stroke();
   ctx.restore();
 }

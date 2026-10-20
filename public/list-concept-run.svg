@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 300" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <text x="140" y="22" text-anchor="middle" font-size="14" fill="#64748b">실행 결과 — 셋이 차례로 출력돼요</text>
+  <rect x="40" y="34" width="200" height="232" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <!-- 출력 창 머리 -->
+  <rect x="56" y="50" width="168" height="26" rx="5" fill="#e2e8f0"/>
+  <text x="68" y="68" font-size="12" fill="#475569">출력</text>
+
+  <!-- 콘솔 출력 세 줄 (등폭 느낌) -->
+  <rect x="56" y="82" width="168" height="168" rx="5" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="72" y="122" font-family="'Courier New',monospace" font-size="22" fill="#0f172a">10</text>
+  <text x="72" y="166" font-family="'Courier New',monospace" font-size="22" fill="#0f172a">20</text>
+  <text x="72" y="210" font-family="'Courier New',monospace" font-size="22" fill="#0f172a">30</text>
+</svg>

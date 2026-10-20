@@ -73,7 +73,8 @@ const WORKSHEET: WorksheetQuestion[] = [
       "모둠이 한 그림을 이어서 그려요. 내 차례가 되면 지금까지 친구들이 그린 그림 위에\n" +
       "조금 더 그린 뒤 ‘제출하고 다음 사람에게’ 를 눌러요. 다음 사람에게 넘어가요.\n" +
       "말 없이 그림으로만 이어가요 — 다음 사람이 알아보게 그리려면, 그 친구가 무엇을\n" +
-      "떠올릴지 생각하며 그려 봐요.",
+      "떠올릴지 생각하며 그려 봐요.\n" +
+      "순서는 이름 없이 ‘N번째’ 로만 보여요. 누가 어느 부분을 그렸는지 나중에 맞혀 봐요!",
     kind: "note",
     maxLength: 0,
   },
@@ -84,15 +85,20 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "릴레이 그림",
     hint: "선생님이 모둠을 나누면 시작돼요. 내 차례에 이어 그려요.",
     kind: "relay_draw",
+    // 한 단어 제시어 — 안전·중립, 중1이 그리기 쉬운 것. (학생은 주제를 바꿀 수 없다.)
     relayTopics: [
-      "즐거운 소풍",
-      "우리 반 교실",
-      "미래의 도시",
-      "바닷속 세상",
-      "내가 좋아하는 음식",
-      "우주 여행",
-      "숲속 동물들",
-      "놀이공원",
+      "소풍",
+      "교실",
+      "바다",
+      "우주",
+      "동물",
+      "음식",
+      "여름",
+      "꽃",
+      "로봇",
+      "공룡",
+      "케이크",
+      "무지개",
     ],
     maxLength: 0,
   },
@@ -273,17 +279,16 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   focusExempt: [],
 
-  phaseOrder: ["waiting", "mood", "mvp", "worksheet", "grill", "wrapmap", "problem", "gallery", "build", "reflection"],
+  phaseOrder: ["waiting", "mvp", "worksheet", "grill", "wrapmap", "problem", "gallery", "build", "reflection"],
 
   phaseLabels: {
-    mood: "마음 체크인",
-    mvp: "① 릴레이 그림 (이어 그리기)",
-    worksheet: "① 이어 그리기 돌아보기",
-    grill: "② 반복 죄수의 딜레마",
-    wrapmap: "③ STREAMS 개인전",
-    problem: "④ 규칙 만들기 · 피드백 반영",
-    gallery: "④ 서로 감상·피드백",
-    build: "⑤ 우리 학교 규칙 완성",
+    mvp: "릴레이 그림 (이어 그리기)",
+    worksheet: "이어 그리기 돌아보기",
+    grill: "반복 죄수의 딜레마",
+    wrapmap: "STREAMS 개인전",
+    problem: "규칙 만들기 · 피드백 반영",
+    gallery: "서로 감상·피드백",
+    build: "우리 학교 규칙 완성",
     reflection: "마음일기",
   },
 
@@ -293,6 +298,19 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     year: 2026,
     worksheet: WORKSHEET,
     sourcesEnabled: false,
+
+    /*
+     * ★ 릴레이 그림 익명 모드 — 학생 화면에서 모둠원 이름을 숨기고 "N번째(친구)" 로만 보인다
+     * (누가 그렸는지 모르는 추리 재미 + 부담 감소). 동작은 그대로, 표시만 익명. 실명은 학생
+     * 응답에 아예 안 실린다(route). 교사 대시보드 릴레이 패널은 관리를 위해 실명을 그대로 본다.
+     */
+    relayAnonymous: true,
+
+    /*
+     * ★ 턴 제한 시간 20초 — 내 차례에 카운트다운이 보이고, 0초가 되면 지금 캔버스를 자동 제출해
+     * 다음 사람으로 넘어간다(게임이 멈추지 않게). 교사가 쉽게 조절(0 이면 제한 없음). 동작은 그대로.
+     */
+    relayTurnSeconds: 20,
 
     /*
      * ★ 갤러리를 켜되 나가는 칸은 rule_ideas 하나로 못박는다. 릴레이 그림은 answers 가 아니라

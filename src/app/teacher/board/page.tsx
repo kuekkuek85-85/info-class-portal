@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 
 import { ArtifactCanvas } from "@/components/artifact-canvas";
 import { TeacherShell } from "@/components/teacher-shell";
+import { StreamsPodium } from "@/components/streams-podium";
 import { pickCurrentSession } from "@/lib/pick-session";
 import { QUADRANTS, type Quadrant } from "@/lib/mood";
 import { TeacherJobsPanel } from "@/components/teacher-jobs-panel";
 import type { Review } from "@/lib/review";
+import type { Slot } from "@/lib/streams";
 import { usePolled } from "@/lib/use-polled";
 import { formatDateKorean } from "@/lib/datetime";
 import { useTeacherDate } from "@/lib/teacher-date";
@@ -50,8 +52,8 @@ interface SessionOption {
   lessonNo: number;
   title: string;
   status: "scheduled" | "active" | "ended";
-  /** 직업 집계 탭을 만들지 판단하는 데만 쓴다 */
-  activity?: { worksheet?: { key: string }[] };
+  /** 직업 집계·STREAMS 등수 탭을 만들지 판단하는 데 쓴다 */
+  activity?: { worksheet?: { key: string; kind?: string }[] };
   rehearsal?: boolean;
 }
 
@@ -76,7 +78,7 @@ export default function BoardPage() {
 
 function Board() {
   const [picked, setPicked] = useState("");
-  const [tab, setTab] = useState<"mood" | "review" | "jobs">("mood");
+  const [tab, setTab] = useState<"mood" | "review" | "jobs" | "streams">("mood");
 
   // 날짜는 교사 화면들이 함께 쓴다 (teacher-date.ts) — 대시보드에서 고른 날이 여기로 온다
   const [date] = useTeacherDate();
@@ -116,6 +118,13 @@ function Board() {
       ?.activity?.worksheet?.some((q) => q.key.startsWith("vanish")),
   );
 
+  /** 이 수업이 STREAMS 동기화 개인전을 하는가 — 등수 발표 탭을 띄운다. */
+  const hasStreams = Boolean(
+    sessions
+      .find((s) => s.id === sessionId)
+      ?.activity?.worksheet?.some((q) => q.kind === "streams_broadcast"),
+  );
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -124,6 +133,7 @@ function Board() {
             {tab === "mood" && "우리 반 기분"}
             {tab === "review" && "지난 시간에 우리 반은"}
             {tab === "jobs" && "우리 반이 고른 직업"}
+            {tab === "streams" && "STREAMS 등수"}
           </h1>
           <p className="text-sm text-muted">
             {tab === "mood" &&
@@ -132,6 +142,8 @@ function Board() {
               "학생 태블릿에 뜨는 것과 같은 화면입니다. 누가 그렸는지·썼는지는 나오지 않습니다."}
             {tab === "jobs" &&
               "반 전체가 적은 직업을 모았습니다. 누가 적었는지는 나오지 않습니다."}
+            {tab === "streams" &&
+              "선생님이 대시보드에서 등수를 공개하면 3등→2등→1등 순으로 여기에 크게 나옵니다."}
           </p>
         </div>
         <select
@@ -186,6 +198,19 @@ function Board() {
             직업 집계
           </button>
         )}
+
+        {/* STREAMS 동기화 개인전이 있는 차시에서만 — 등수 발표를 교실 앞 화면에 크게. */}
+        {hasStreams && (
+          <button
+            type="button"
+            onClick={() => setTab("streams")}
+            className={`rounded-xl border px-4 py-2 text-sm font-medium ${
+              tab === "streams" ? "border-accent bg-accent/10" : "border-line bg-card"
+            }`}
+          >
+            STREAMS 등수
+          </button>
+        )}
       </div>
 
       {tab === "review" && (
@@ -193,6 +218,8 @@ function Board() {
       )}
 
       {tab === "jobs" && sessionId && <TeacherJobsPanel sessionId={sessionId} hideHeading />}
+
+      {tab === "streams" && sessionId && <StreamsBoard sessionId={sessionId} />}
 
       {sessions.length === 0 && (
         <p className="rounded-xl border border-line bg-card px-4 py-6 text-center text-sm text-muted">
@@ -383,6 +410,66 @@ function ReviewBoard({ review, loading }: { review: Review | null; loading: bool
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+interface StreamsBoardRow {
+  studentId: string;
+  name: string;
+  score: number;
+  placed: number;
+  board: Slot[];
+}
+interface StreamsBoardData {
+  started: boolean;
+  status?: "drawing" | "finished";
+  drawCount?: number;
+  boardSize?: number;
+  revealRank?: boolean;
+  revealStep?: number;
+  boards?: StreamsBoardRow[];
+}
+
+/**
+ * 교실 앞 화면에 띄우는 STREAMS 동기화 개인전 등수 발표.
+ *
+ * 발표 단계(revealStep)는 서버에 있어, 교사가 대시보드에서 '3등 공개 → 2등 → 1등'을 누르면
+ * 이 화면이 같은 단계를 따라 크게 보여준다(학번·이름·최종 판). 아직 발표 전이면 진행 상황만.
+ * 학번·이름·판만 노출한다(게임 기록 — 감정/마음일기 데이터와 무관).
+ */
+function StreamsBoard({ sessionId }: { sessionId: string }) {
+  const { data } = usePolled<StreamsBoardData>(
+    sessionId ? `/api/teacher/streams-broadcast?sessionId=${sessionId}` : null,
+    POLL_INTERVAL_MS,
+  );
+
+  if (!data) return <p className="text-sm text-muted">불러오는 중…</p>;
+
+  if (!data.started) {
+    return (
+      <p className="rounded-xl border border-line bg-card px-4 py-10 text-center text-sm text-muted">
+        아직 STREAMS 게임이 시작되지 않았어요. 선생님이 대시보드에서 ‘새 게임 시작’을 누르면 시작돼요.
+      </p>
+    );
+  }
+
+  const boards = data.boards ?? [];
+
+  if (!data.revealRank) {
+    return (
+      <p className="rounded-xl border border-line bg-card px-4 py-10 text-center text-base">
+        게임 진행 중 — <b>{data.drawCount ?? 0}</b>/{data.boardSize ?? 20}장 뽑음.
+        <br />
+        20장을 다 뽑고 선생님이 ‘등수 발표’를 누르면 3등→2등→1등 순으로 여기에 크게 나와요.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+      <h2 className="text-center text-2xl font-bold">🏆 STREAMS 등수</h2>
+      <StreamsPodium boards={boards} revealStep={data.revealStep ?? 0} big />
     </div>
   );
 }

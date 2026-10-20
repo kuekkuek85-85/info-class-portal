@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { ComfortBotReviewPanel } from "@/components/comfort-bot-review-panel";
 import { RelayTeacherPanel } from "@/components/relay-teacher-panel";
+import { StreamsBroadcastTeacherPanel } from "@/components/streams-broadcast-teacher-panel";
 import { RulesCompilePanel } from "@/components/rules-compile-panel";
 import { TeacherArtifactPanel } from "@/components/teacher-artifact-panel";
 import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
@@ -105,6 +106,10 @@ interface SessionRow {
     }[];
     /** 감정을 쓰는 차시는 감상을 막는다 (types.ts 의 galleryEnabled) */
     galleryEnabled?: boolean;
+    /** 회고 뒤 두 번째 그림판(백지) — 있으면 wrapheal 단추를 연다 (8회기 인생 그래프) */
+    secondDraw?: { heading: string; body: string; title: string } | null;
+    /** 마음일기(마음 체크인 리포트) 단계를 연다 — 있으면 mooddiary 단추를 만든다 (8회기) */
+    moodReport?: boolean;
   };
   /** 지난 차시 복습 — 학생이 기분 체크를 마치면 서버가 만들어 넣는다. 여기서는 한 줄만 쓴다 */
   reviewCache?: { summary?: string } | null;
@@ -1383,6 +1388,14 @@ function Dashboard() {
             )}
 
           {/*
+            STREAMS 동기화 개인전 — 그 문항이 있는 세션에서만. 숫자 뽑기·진행·등수 발표를 제어한다.
+          */}
+          {session.activity &&
+            (session.activity.worksheet ?? []).some((q) => q.kind === "streams_broadcast") && (
+              <StreamsBroadcastTeacherPanel sessionId={session.id} />
+            )}
+
+          {/*
             직업 집계는 여기 두지 않는다.
 
             셀 때마다 AI 에게 직업 이름을 묶어 달라고 부른다. 대시보드에 두면 교사가
@@ -1737,7 +1750,14 @@ function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
     return !wrapDraw && (session.activity?.places?.length ?? 0) > 0;
   }
   if (phase === "wrapheal") {
-    return (session.activity?.worksheet ?? []).some((q) => q.phase === "wrapheal");
+    /*
+     * 회고 뒤 그림판은 두 꼴이다: 활동지 문항을 wrapheal 에 둔 차시(마음 톡톡 3회기)와,
+     * 두 번째 그림판(백지)을 secondDraw 로 둔 차시(8회기 인생 그래프). 둘 중 하나면 연다.
+     */
+    return (
+      Boolean(session.activity?.secondDraw) ||
+      (session.activity?.worksheet ?? []).some((q) => q.phase === "wrapheal")
+    );
   }
 
   /*
@@ -1764,7 +1784,18 @@ function availablePhase(session: SessionRow, phase: LessonPhase): boolean {
 
   // STEP 단계는 활동지 문항 또는 그 단계의 퀴즈 문항(노래·감정 추측·AI 감정분석)이 있으면 연다.
   if (STEP_PHASES.includes(phase)) return questionsIn(phase) > 0 || quizIn(phase) > 0;
-  if (phase === "worksheet") return questionsIn("worksheet") > 0;
+  /*
+   * 활동지 단추 — 학생 화면(lesson/page.tsx)과 같은 기준으로 연다.
+   *
+   * 그리기(places)가 있는 차시는 draw 단계의 '활동지 쓰기' 탭이 phase:"worksheet" 문항을
+   * 품으므로(학생 쪽 가드와 동일), 교사 버튼에 별도 "활동지" 단추를 만들지 않는다. 안 그러면
+   * 그리기와 똑같은 내용의 "활동지" 단추가 하나 더 떠서 마침 앞에 중복으로 보인다(마음 톡톡 8회기
+   * 뇌구조). 장소가 없는(글만 쓰는) 차시에서만 활동지 단추를 연다.
+   */
+  if (phase === "worksheet")
+    return (session.activity?.places?.length ?? 0) === 0 && questionsIn("worksheet") > 0;
+  // 마음일기(마음 체크인 리포트) — moodReport 를 켠 차시에서만 (8회기)
+  if (phase === "mooddiary") return Boolean(session.activity?.moodReport);
   /*
    * 감상은 볼 것이 있어야 한다 — 어느 단계에 배정됐든 활동지 문항이 있으면 열린다.
    * 다만 감정을 쓰는 차시는 차시 쪽에서 막아 둔다 (galleryEnabled). 마음 이야기가

@@ -1,5 +1,6 @@
 import { fail, guard, ok, readJson } from "@/lib/api";
 import {
+  autoAdvanceStaleRelayTurns,
   getSession,
   listAttendance,
   listRelayGroups,
@@ -33,6 +34,11 @@ export async function GET(request: Request) {
     if (!sessionId) return fail("invalid_input");
     const session = await getSession(sessionId);
     if (!session) return fail("not_found");
+
+    // 멈춘 턴(결석 학생 등) 자동 넘김 — 대시보드가 폴링할 때 모든 모둠에서 (turnSeconds+여유)
+    // 넘게 멈춘 턴을 다음 사람으로 넘긴다. 결석 학생이 그릴 차례여도 모둠이 안 막힌다.
+    const turnSeconds = Math.max(0, Math.floor(session.activity?.relayTurnSeconds ?? 0));
+    await autoAdvanceStaleRelayTurns(sessionId, turnSeconds);
 
     const groups = await listRelayGroups(sessionId);
     return ok({

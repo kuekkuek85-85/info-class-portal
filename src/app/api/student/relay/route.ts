@@ -1,5 +1,11 @@
 import { fail, guard, ok, readJson } from "@/lib/api";
-import { getRelayGroupForStudent, getSession, isSessionClosed, listRelayGroups, submitRelayTurn } from "@/lib/db";
+import {
+  getSession,
+  isSessionClosed,
+  listRelayGroups,
+  pollRelayForStudent,
+  submitRelayTurn,
+} from "@/lib/db";
 import { currentDrawer } from "@/lib/relay";
 import { readStudentSession } from "@/lib/session";
 
@@ -24,7 +30,10 @@ export async function GET() {
     if (!session) return fail("session_expired");
 
     const reveal = session.relayReveal === true;
-    const mine = await getRelayGroupForStudent(session.id, me.studentId);
+    // 한 사람 차례 제한 시간(초). 없거나 0이면 시간 제한 없음(기존 동작). 클라이언트 카운트다운용.
+    const turnSeconds = Math.max(0, Math.floor(session.activity?.relayTurnSeconds ?? 0));
+    // 내가 그릴 사람이면 하트비트 갱신(자동 넘김 방지), 아니면 그릴 학생 결석 시 자동 넘김.
+    const mine = await pollRelayForStudent(session.id, me.studentId, turnSeconds);
 
     // 공개되면 모든 모둠 완성 그림을 함께 본다(교사 신호 전엔 내 모둠만).
     const all = reveal
@@ -41,23 +50,42 @@ export async function GET() {
     }
 
     const drawerId = currentDrawer(mine);
-    const drawerIdx = mine.turnIndex;
+
+    /*
+     * 익명 모드(activity.relayAnonymous): 학생 화면에서 모둠원 이름을 숨기고 "N번째(친구)" 로만
+     * 보인다. 실명을 응답에 아예 싣지 않아(순서 라벨로 치환) 개발자 도구로도 이름이 새지 않는다.
+     * 동작(턴·제출·건너뛰기·공개)은 그대로 — 표시만 익명. 교사 패널은 별도 라우트라 실명 유지.
+     */
+    const anon = session.activity?.relayAnonymous === true;
+    const memberNames = anon
+      ? mine.memberNames.map((_, i) => `${i + 1}번째`)
+      : mine.memberNames;
+    const currentDrawerName = drawerId
+      ? anon
+        ? `${mine.turnIndex + 1}번째 친구`
+        : (mine.memberNames[mine.turnIndex] ?? "다음 사람")
+      : "";
+
     return ok({
       assigned: true,
       reveal,
       all,
+      anonymous: anon,
+      turnSeconds,
       group: {
         groupNo: mine.groupNo,
         topic: mine.topic,
-        memberNames: mine.memberNames,
+        memberNames,
         turnIndex: mine.turnIndex,
         status: mine.status,
         image: mine.image,
         rev: mine.rev,
+        // 매 setup(새 판)마다 바뀐다 — 그림판 remount 키에 써서 새 판에 캔버스를 깨끗이 비운다.
+        updatedAt: mine.updatedAt,
         isMyTurn: drawerId === me.studentId && mine.status === "drawing",
-        // 첫 차례(빈 그림)면 주제를 직접 쓸 수 있다.
-        canSetTopic: drawerIdx === 0 && drawerId === me.studentId,
-        currentDrawerName: drawerId ? (mine.memberNames[mine.turnIndex] ?? "다음 사람") : "",
+        // 주제는 모둠 나누기 때 배정되고 고정 — 학생은 바꿀 수 없다(항상 false).
+        canSetTopic: false,
+        currentDrawerName,
       },
     });
   });
@@ -71,7 +99,8 @@ export async function POST(request: Request) {
     if (!session) return fail("session_expired");
     if (isSessionClosed(session)) return fail("session_expired", "이 수업은 끝났어요.");
 
-    const body = await readJson<{ image?: string; topic?: string }>(request);
+    // 주제는 배정 후 고정이라 topic 은 받지 않는다(부적절 입력 원천 차단).
+    const body = await readJson<{ image?: string }>(request);
     const image = body?.image ?? "";
     if (!image.startsWith("data:image/")) return fail("invalid_input", "그림을 먼저 그려 주세요.");
     if (image.length > MAX_IMAGE_CHARS) {
@@ -82,7 +111,6 @@ export async function POST(request: Request) {
       sessionId: session.id,
       studentId: me.studentId,
       image,
-      topic: body?.topic,
     });
 
     if (!result.ok) {

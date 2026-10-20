@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 /**
  * 릴레이 그림판 — 배경(지금까지의 모둠 그림) 위에 덧그리고, 합쳐진 이미지를 축소 저장한다.
@@ -23,17 +23,21 @@ interface Stroke {
   points: number[]; // x0,y0,x1,y1,...
 }
 
-export function RelayCanvas({
-  background,
-  onSubmit,
-  disabled,
-  submitting,
-}: {
-  background: string;
-  onSubmit: (dataUrl: string) => void;
-  disabled?: boolean;
-  submitting?: boolean;
-}) {
+/** 부모(릴레이 패널)가 타임아웃 자동 제출 때 현재 캔버스 이미지를 꺼내 쓰는 핸들. */
+export interface RelayCanvasHandle {
+  /** 지금 캔버스를 제출용 data URL 로 뽑는다(배경+내가 그린 것 합성). 준비 안 됐으면 null. */
+  getDataUrl: () => string | null;
+}
+
+export const RelayCanvas = forwardRef<
+  RelayCanvasHandle,
+  {
+    background: string;
+    onSubmit: (dataUrl: string) => void;
+    disabled?: boolean;
+    submitting?: boolean;
+  }
+>(function RelayCanvas({ background, onSubmit, disabled, submitting }, ref) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const bgRef = useRef<HTMLImageElement | null>(null);
   const strokesRef = useRef<Stroke[]>([]);
@@ -125,80 +129,99 @@ export function RelayCanvas({
     redraw();
   }
 
-  function submit() {
+  const getDataUrl = useCallback((): string | null => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    onSubmit(canvas.toDataURL("image/jpeg", 0.6));
+    return canvas ? canvas.toDataURL("image/jpeg", 0.6) : null;
+  }, []);
+
+  // 부모가 타임아웃 자동 제출 때 쓴다 — 지금 캔버스를 그대로 data URL 로 꺼낸다.
+  useImperativeHandle(ref, () => ({ getDataUrl }), [getDataUrl]);
+
+  function submit() {
+    const url = getDataUrl();
+    if (url) onSubmit(url);
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <canvas
-        ref={canvasRef}
-        width={W}
-        height={H}
-        onPointerDown={handleDown}
-        onPointerMove={handleMove}
-        onPointerUp={handleUp}
-        onPointerCancel={handleUp}
-        className="w-full touch-none rounded-lg border-2 border-ink bg-white"
-        style={{ aspectRatio: "4 / 3" }}
-      />
-
-      <div className="flex flex-wrap items-center gap-2">
-        {COLORS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => {
-              setColor(c);
-              setEraser(false);
-            }}
-            aria-label={`색 ${c}`}
-            className={`h-8 w-8 rounded-full border-2 ${
-              !eraser && color === c ? "border-ink" : "border-line"
-            }`}
-            style={{ backgroundColor: c }}
-          />
-        ))}
-        <button
-          type="button"
-          onClick={() => setEraser(true)}
-          className={`pill t-body-sm ${eraser ? "pill-primary" : "pill-secondary"}`}
-        >
-          지우개
-        </button>
+    // 도화지(왼쪽)와 도구(오른쪽)를 좌우로 — 한 화면에 함께 보이게. 좁은 화면(폰)에선 위아래로.
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+      {/* 도화지 — 높이를 화면(약 64vh)에 맞춰 제한해 도구와 함께 한 화면에 들어오게 한다. */}
+      <div className="flex min-w-0 justify-center sm:flex-1">
+        <canvas
+          ref={canvasRef}
+          width={W}
+          height={H}
+          onPointerDown={handleDown}
+          onPointerMove={handleMove}
+          onPointerUp={handleUp}
+          onPointerCancel={handleUp}
+          className="block w-full touch-none rounded-lg border-2 border-ink bg-white"
+          // width:100% 로 열 너비를 채우되, maxWidth 로 '높이 64vh' 에 해당하는 너비 상한을 둔다
+          // → 세로가 화면을 넘지 않으면서 가능한 한 크게.
+          style={{ aspectRatio: "4 / 3", maxWidth: "calc(64vh * 4 / 3)" }}
+        />
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={undo}
-          disabled={strokeCount === 0}
-          className="pill pill-secondary t-body-sm disabled:opacity-50"
-        >
-          되돌리기
-        </button>
-        <button
-          type="button"
-          onClick={clearAll}
-          disabled={strokeCount === 0}
-          className="pill pill-secondary t-body-sm disabled:opacity-50"
-        >
-          전체 지우기
-        </button>
-        <button
-          type="button"
-          onClick={submit}
-          disabled={disabled || submitting}
-          className="pill pill-primary t-body-sm disabled:opacity-60"
-        >
-          {submitting ? "보내는 중…" : "제출하고 다음 사람에게"}
-        </button>
+      {/* 도구 — 오른쪽 세로 팔레트 */}
+      <div className="flex flex-col gap-3 sm:w-44 sm:shrink-0">
+        <div>
+          <p className="t-caption text-muted mb-1">색 · 지우개</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => {
+                  setColor(c);
+                  setEraser(false);
+                }}
+                aria-label={`색 ${c}`}
+                className={`h-8 w-8 rounded-full border-2 ${
+                  !eraser && color === c ? "border-ink" : "border-line"
+                }`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+            <button
+              type="button"
+              onClick={() => setEraser(true)}
+              className={`pill t-body-sm ${eraser ? "pill-primary" : "pill-secondary"}`}
+            >
+              지우개
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 sm:flex-col">
+          <button
+            type="button"
+            onClick={undo}
+            disabled={strokeCount === 0}
+            className="pill pill-secondary t-body-sm disabled:opacity-50 sm:w-full"
+          >
+            되돌리기
+          </button>
+          <button
+            type="button"
+            onClick={clearAll}
+            disabled={strokeCount === 0}
+            className="pill pill-secondary t-body-sm disabled:opacity-50 sm:w-full"
+          >
+            전체 지우기
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={disabled || submitting}
+            className="pill pill-primary t-body-sm disabled:opacity-60 sm:w-full"
+          >
+            {submitting ? "보내는 중…" : "제출하고 다음 사람에게"}
+          </button>
+        </div>
       </div>
     </div>
   );
-}
+});
 
 function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke) {
   const p = stroke.points;

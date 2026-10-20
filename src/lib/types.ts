@@ -78,6 +78,14 @@ export type LessonPhase =
    * (LESSON_PHASES 참조).
    */
   | "wrapmap"
+  /*
+   * 「디지털 마음 톡톡」 8회기(마지막)의 '마음일기' 단계.
+   *
+   * 학기 내내 고른 마음 체크인(mood)을 모아 계산·시각화해 보여 주는 리포트다 — 본인만 본다.
+   * 기분 분석을 포트폴리오(지난 8주 돌아보기)에서 떼어 이리로 옮겼다. moodReport 를 켠
+   * 차시에서만 교사 버튼에 뜬다 (availablePhase 참조).
+   */
+  | "mooddiary"
   | "wrapheal"
   | "done";
 
@@ -156,6 +164,8 @@ export const LESSON_PHASES: readonly LessonPhase[] = [
    * 단계다. 그림판은 활동지·감상과 한 묶음이라 따로 열어야 한다.
    */
   "wrapmap",
+  // 포트폴리오(돌아보기) 바로 뒤, 전체 후기(reflection) 앞. 마음 체크인 리포트를 본다.
+  "mooddiary",
   "wrapheal",
   "done",
 ];
@@ -185,6 +195,7 @@ export const PHASE_LABELS: Record<LessonPhase, string> = {
   gallery: "작품 감상",
   reflection: "성찰",
   wrapmap: "마무리 활동",
+  mooddiary: "마음일기",
   wrapheal: "마무리 그리기",
   done: "마침",
 };
@@ -371,6 +382,15 @@ export interface RowColumn {
   placeholder?: string;
   /** 있으면 글칸 대신 이 이모지들 중 하나를 고르게 한다 */
   emojis?: string[];
+  /**
+   * emojis 중 이 값(예: "기타")을 고르면 그 아래에 직접 입력칸이 뜬다.
+   *
+   * 보기에 없는 것을 골랐을 때 무엇인지 적을 데가 없던 문제를 푼다(마음 톡톡 8회기 뇌구조
+   * 감정-색). 입력한 값은 같은 칸 안에 `기타: <입력값>` 꼴로 함께 저장돼, 교사·포트폴리오
+   * 읽기 화면(rowColumns 키로 이어 붙임)에 그대로 보인다. emojis 가 있을 때만 쓰며, 없거나
+   * 이 값을 비워 두면 기존 이모지 선택과 완전히 같다 — 다른 rows 활동엔 영향이 없다.
+   */
+  otherOption?: string;
 }
 
 /** cloze 빈칸 하나 (text 의 □ 자리, 왼→오 순서로 하나씩 대응) */
@@ -657,6 +677,18 @@ export interface WorksheetQuestion {
      * answers 에 저장한다. 비민감 (streams-solo).
      */
     | "streams_solo"
+    /**
+     * streams_broadcast — STREAMS 보드게임 **동기화 개인전**(교사 주도). streams_solo 와 달리
+     * 교사가 대시보드에서 숫자 한 장을 뽑으면 **전원이 같은 순서의 같은 숫자**를 받는다(공용
+     * 셔플 덱). 판·점수는 학생별로 따로다(여전히 개인전) — 공용 덱 + 개인 판. 학생은 받은 숫자를
+     * 자기 20칸에 배치하고(놓으면 못 옮김), streamsDrawSeconds(기본 30) 초가 지나면 빈 칸 맨
+     * 왼쪽에 자동 배치된다(게임이 멈추지 않게). 20장을 다 뽑으면 solo 처럼 직접 계산·검증하고,
+     * 교사가 3→2→1등을 학번·이름·최종 판과 함께 발표한다. 상태는 서버(streamsMatches·
+     * streamsBoards)에 있고 학생·교사가 폴링으로 따라온다 — relayGroups 와 같은 아키텍처.
+     * answers(감정 글·갤러리)와 분리된 별도 경로라 감정 답이 새지 않는다. Gemini 미사용
+     * (streams-broadcast · streams-board-view · /api/student·teacher/streams-broadcast · streams-broadcast.ts).
+     */
+    | "streams_broadcast"
     /**
      * relay_draw — 릴레이(한 장 이어) 그림 그리기(공동체·협력). 포털 내장 그림판으로 모둠이
      * 한 그림을 학번 순 턴제로 이어 그린다. 외부 사이트 없이 포털 안에서 끝난다. 모둠·턴·이미지는
@@ -977,6 +1009,13 @@ export interface WorksheetQuestion {
    */
   relayTopics?: string[];
   /**
+   * streams_broadcast(동기화 개인전)에서 **한 장당 학생 배치 제한 시간(초).** 교사가 숫자를
+   * 뽑고 다음 장을 뽑기 전까지 학생이 배치할 시간이다. 0이 되면 빈 칸 맨 왼쪽에 자동 배치된다.
+   * 안 주면 기본 30초(streams-broadcast.ts 의 DEFAULT_STREAMS_DRAW_SECONDS). 0이면 제한 없음.
+   * relay_draw 의 relayTurnSeconds 와 같은 컨벤션(클라이언트 카운트다운·자동 처리).
+   */
+  streamsDrawSeconds?: number;
+  /**
    * comfort_bot 프리셋. "comfort"(기본)=학생이 고른 상황·설계로 만든 감정 위로 챗봇(6회기 grill).
    * "empathy_dialogue"=감정 대화 연습 봇(6회기 wrapheal ②) — 상황 선택·설계 없이, 봇이 감정 상황을
    * 꺼내고 학생이 배운 공감(상황 되짚기+감정 알아주기)으로 응답을 이어 간다. 시스템 프롬프트가 다르다.
@@ -1117,6 +1156,14 @@ export interface WorksheetQuestion {
  */
 export type PeerAssignMode = "cyclic" | "random";
 
+/**
+ * 그림판 캔버스의 밑그림(가이드).
+ *
+ * 저장되는 획이 아니라 **화면에만** 그려진다 — 학생이 그 위에/안에 그린다. 지금은 머리
+ * 옆모습 윤곽선("head") 하나뿐이다(마음 톡톡 8회기 '나의 뇌구조'). 없으면 흰 배경.
+ */
+export type DrawBackground = "head";
+
 export interface ActivityContent {
   /**
    * 그림을 묶는 열쇠. **2차시와 3차시 차시 계획에 같은 값을 넣는다.**
@@ -1161,6 +1208,45 @@ export interface ActivityContent {
    * 그림판 제목과 작품 카드 제목에 함께 쓴다.
    */
   artifactTitle?: string;
+  /**
+   * 그림판 캔버스 **배경 밑그림**. 안 적으면 흰 배경(지금까지의 차시).
+   *
+   * "head" 면 빈 머리 옆모습 윤곽선(껍데기)을 옅은 회색으로 깔아 준다. 마음 톡톡 8회기
+   * '나의 뇌구조'가 그 안을 감정 색으로 채우는 활동이라 켠다. 밑그림은 저장되는 획이
+   * 아니라 **화면에만** 그려지는 가이드다(artifact-canvas 의 drawArtifact 가 strokes 밑에 깐다).
+   */
+  drawBackground?: DrawBackground;
+  /**
+   * 그리기(draw) 단계를 **손그림 대신 AI 이미지 생성**으로 바꾼다 (마음 톡톡 8회기 뇌구조).
+   *
+   * 켜면 draw 단계의 '그림 그리기' 탭이 DrawBoard 대신 뇌구조 이미지 패널을 띄운다. 학생이
+   * 활동지(상황·감정·색·마음 크기)를 채우면 버튼이 켜지고, 누르면 서버가 그 학생 artifact 의
+   * 답을 읽어 프롬프트를 조립해 Gemini(이미지 모델)로 그림을 그려 저장한다(/api/student/brain-image).
+   *
+   * 그림(artifact.brainImage)은 본인 것이고 친구에게 안 나간다. 이 값이 없으면 지금까지처럼
+   * DrawBoard 로 손그림을 그린다(다른 그리기 차시엔 영향 없음). wrapheal 의 두 번째 그림판
+   * (secondDraw, 인생 그래프)은 이 값과 무관하게 늘 손그림이다.
+   */
+  brainImage?: boolean;
+  /**
+   * 회고 뒤 그리기(wrapheal) 단계에 두는 **두 번째 그림판**(백지).
+   *
+   * 그림(artifact)은 활동당 하나만 저장되므로(activityId__학번), 한 차시에 그림을 둘
+   * 그리려면 두 번째 것은 **슬롯**(activityId::graph)으로 따로 저장한다(gallery.ts 의
+   * activityIdForSlot, artifact 라우트의 slot). 마음 톡톡 8회기 '인생 그래프'가 이것이다 —
+   * 백지에서 손으로 굴곡 그래프를 그린다. 장소 선택 없이 바로 캔버스가 뜬다(places 가 비어 있음).
+   *
+   * 있으면 wrapheal 단계가 이 그림판 하나만 띄운다(탭 없음). 없으면 wrapheal 은 지금까지처럼
+   * 활동지/그림 탭을 쓴다(마음 톡톡 3회기 힐링 스페이스는 이 값 없이 기존 방식 그대로).
+   */
+  secondDraw?: {
+    heading: string;
+    body: string;
+    /** 그림판 제목 (예: "나의 인생 그래프") */
+    title: string;
+    /** 두 번째 캔버스 배경 밑그림 — 인생 그래프는 백지라 보통 생략 */
+    background?: DrawBackground;
+  };
   /**
    * 활동지를 그리기 **앞에** 둔다 (기본은 그리기가 앞).
    *
@@ -1306,6 +1392,26 @@ export interface ActivityContent {
    */
   galleryTabLabel?: string;
   /**
+   * 릴레이 그림(relay_draw)에서 **학생 화면의 모둠원 이름을 숨긴다.** 켜면 순서·현재 차례를
+   * 이름 대신 "N번째(친구)" 로만 보여줘, 누가 그렸는지 모르는 추리 재미 + 부담을 줄인다.
+   *
+   * 표시만 익명화한다 — 턴 로테이션·이어 그리기·제출·건너뛰기·공개 동작은 그대로다. 본인
+   * 차례 하이라이트(isMyTurn)도 그대로라 자기 차례는 안다. 익명일 때는 학생 응답(route)에
+   * 아예 실명을 싣지 않아(순서 라벨로 치환), 개발자 도구를 열어도 이름이 새지 않는다.
+   *
+   * 교사 대시보드 릴레이 패널은 관리를 위해 **실명을 그대로 본다**(이 플래그의 영향 없음).
+   * 안 적으면(기본) 지금까지처럼 학생 화면에도 실명이 보인다 — 회귀 없음.
+   */
+  relayAnonymous?: boolean;
+  /**
+   * 릴레이 그림(relay_draw)에서 **한 사람의 차례 제한 시간(초).** 켜면 내 차례에 카운트다운이
+   * 보이고, 0초가 되면 지금 캔버스를 자동 제출해 다음 사람으로 넘어간다(게임이 멈추지 않게).
+   * 학생이 그 전에 수동 제출하면 그대로 다음으로. 타이머는 내 차례일 때만 클라이언트에서 돈다.
+   *
+   * 없거나 0이면 **시간 제한 없음**(기존 동작 — 회귀 없음). 교사가 15~20초로 쉽게 조절한다.
+   */
+  relayTurnSeconds?: number;
+  /**
    * 지난 차시에 쓴 답을 활동지 위에 읽기 전용으로 띄운다.
    *
    * 5차시는 "내 희망 직업" 에서 출발하는데, 그 답은 이미 4차시에 적었다. 다시 쓰라고 하면
@@ -1353,6 +1459,28 @@ export interface ActivityContent {
     phases?: LessonPhase[];
     fields: { key: string; label: string; maxLength?: number; multiline?: boolean }[];
   };
+  /**
+   * 포트폴리오(지난 회기 돌아보기)를 연다 — 마음 톡톡 8회기(마지막) 성찰.
+   *
+   * 켜면 wrapmap(지난 8주 돌아보기) 단계에서 **학생 본인의** 지난 활동/작품과 회기별 기분
+   * 추이를 읽기 전용으로 띄운다(/api/student/portfolio 가 이 학생 것만 모은다).
+   *
+   * ★ 프라이버시: 철저히 본인 것만. 친구에게 안 나가고(갤러리 무관), AI 전송도 없다.
+   * 지난 회기 통(mt-2026-2/3/5/6/7)에서 리허설 꼬리표(__rehearsal)는 걸러 낸다.
+   */
+  portfolio?: boolean;
+  /**
+   * 마음일기(마음 체크인 리포트) 단계를 연다 — 마음 톡톡 8회기(마지막).
+   *
+   * 켜면 mooddiary 단계에서 **학생 본인의** 회기별 마음 체크인(mood)을 모아 계산·시각화한
+   * 리포트를 읽기 전용으로 띄운다(/api/student/mood-report → MoodReportView). 회기별 기분
+   * 추이 그래프·평균·가장 많이 고른 기분 같은 계산은 서버가 하고, 따뜻한 한두 문장 총평만
+   * Gemini 로 받는다(실패하면 계산 리포트만 보여 준다).
+   *
+   * ★ 프라이버시: 철저히 본인 것만. Gemini 로는 기분 라벨·valence/arousal·회기 번호만 보낸다 —
+   * 학번·이름·기분 이유(moodEntries.reason)는 보내지 않는다. 위기 신호는 호출 전 checkCrisis 로 멈춘다.
+   */
+  moodReport?: boolean;
 }
 
 /** 출처 두 칸의 기본 예시. 차시가 따로 정하지 않으면 이것을 쓴다 (그림 활동 기준) */
@@ -1412,8 +1540,18 @@ export interface ProgressChecks {
 export interface RewardGame {
   heading?: string;
   body?: string;
-  /** 보상으로 띄울 게임 iframe 주소 */
-  url: string;
+  /** 보상으로 띄울 게임 iframe 주소 (단일 게임). games 가 있으면 그쪽을 쓴다. */
+  url?: string;
+  /**
+   * 여러 게임을 '고르기 카드' 로 보여줄 목록 (22차 — 그동안 한 게임 모두 고르기).
+   * 있으면 iframe 하나 대신 카드 그리드(각 게임 새 탭 링크)로 뜬다.
+   */
+  games?: { label: string; url: string; hint?: string }[];
+  /**
+   * false 면 성찰을 쓰지 않아도 '제출하고 게임하기' 버튼이 눌리고 바로 게임이 열린다 (기본: true).
+   * 22차는 '오늘은 검사하지 않습니다' — 성찰 입력·requires 검사 없이 상으로 게임을 연다.
+   */
+  requireReflection?: boolean;
   /** 이 활동지 칸들이 모두 채워져야 게임이 열린다 (label·phase 는 누락 안내·이동용) */
   requires?: { key: string; label: string; phase: LessonPhase }[];
 }
@@ -2018,6 +2156,16 @@ export interface Artifact {
    * 일이 없다 (인간과 인공지능 4차시).
    */
   aiFeedbackDraft?: string;
+
+  /**
+   * 나의 뇌구조 AI 이미지 (마음 톡톡 8회기). base64 PNG data URL.
+   *
+   * **answers 가 아니라 전용 필드로 둔다** — 클라이언트 자동저장(artifact 라우트)이 못 덮고
+   * (그 라우트는 place/year/answers/traits/sources/strokes/texts 만 건드린다), 갤러리 카드
+   * (toCard)는 answers·strokes·texts 만 싣기에 이미지가 친구에게 나가는 경로를 아예 안 지난다.
+   * 서버 라우트(/api/student/brain-image)만 쓴다. 재생성하면 교체된다.
+   */
+  brainImage?: { dataUrl: string; at: number };
 
   /** 교사가 숨김 처리했는지. 갤러리에서 빠진다 */
   hidden: boolean;

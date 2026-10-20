@@ -10,6 +10,7 @@ import { EmotionLensPanel } from "@/components/emotion-lens-panel";
 import { RelayPanel } from "@/components/relay-panel";
 import { RulesResultPanel } from "@/components/rules-result-panel";
 import { StreamsSolo } from "@/components/streams-solo";
+import { StreamsBroadcast } from "@/components/streams-broadcast";
 import { VibeCodePanel } from "@/components/vibe-code-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
 import { ImageField } from "@/components/image-field";
@@ -1053,6 +1054,14 @@ export function WorksheetView({
               onChange={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}
             />
+          ) : question.kind === "streams_broadcast" ? (
+            /*
+              STREAMS 동기화 개인전(교사 주도). 교사가 뽑은 숫자를 전원이 같은 순서로 받아 각자
+              판에 놓는다(공용 덱·개인 판). 상태는 서버(streamsMatches·streamsBoards)에 있고
+              폴링으로 따라온다 — answers 에 저장하지 않는다(감정/갤러리와 분리). RelayPanel 처럼
+              학생·세션은 쿠키로 서버가 판단하므로 props 없이 렌더한다 (streams-broadcast).
+            */
+            <StreamsBroadcast />
           ) : question.kind === "rules_result" ? (
             /*
               「우리 학교 규칙」 완성 지면(읽기 전용, 학급 공용). 교사가 완성하면 학생 화면에

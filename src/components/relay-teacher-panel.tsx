@@ -34,7 +34,9 @@ export function RelayTeacherPanel({ sessionId }: { sessionId: string }) {
 
   const groups = data?.groups ?? [];
   const reveal = data?.reveal === true;
-  const allDone = groups.length > 0 && groups.every((g) => g.status === "done");
+  const started = groups.length > 0;
+  const doneCount = groups.filter((g) => g.status === "done").length;
+  const allDone = started && doneCount === groups.length;
 
   async function post(payload: Record<string, unknown>, confirmMsg?: string) {
     if (confirmMsg && !confirm(confirmMsg)) return;
@@ -60,6 +62,10 @@ export function RelayTeacherPanel({ sessionId }: { sessionId: string }) {
     <section className="card flex flex-col gap-4">
       <h2 className="t-body font-bold">릴레이 그림 — 모둠 제어</h2>
 
+      <p className="t-caption text-muted">
+        한 판이 끝나면(또는 언제든) ‘새 판 시작’ 으로 새 모둠·새 제시어·빈 캔버스로 다시 그려요. 2~3판 돌려 보세요.
+      </p>
+
       <div className="flex flex-wrap items-center gap-2">
         <label className="t-body-sm">모둠 수</label>
         <input
@@ -75,13 +81,15 @@ export function RelayTeacherPanel({ sessionId }: { sessionId: string }) {
           onClick={() =>
             void post(
               { action: "setup", groups: groupCount },
-              groups.length > 0 ? "이미 모둠이 있어요. 새로 나누면 지금까지 그린 그림이 지워져요. 계속할까요?" : undefined,
+              started
+                ? "새 판을 시작하면 새 모둠·새 제시어로 바뀌고, 지금까지 그린 그림은 지워져요. (공개 중이면 먼저 감상을 마치세요.) 계속할까요?"
+                : undefined,
             )
           }
           disabled={busy}
           className="pill pill-primary t-body-sm disabled:opacity-60"
         >
-          {groups.length > 0 ? "다시 모둠 나누기" : "접속 학생 모둠 나누기"}
+          {started ? "새 판 시작 (새 모둠·새 제시어)" : "접속 학생 모둠 나누기"}
         </button>
         <span className="t-caption">접속한 학생만 나눕니다(출석 기준).</span>
       </div>
@@ -138,10 +146,10 @@ export function RelayTeacherPanel({ sessionId }: { sessionId: string }) {
           </button>
           <span className="t-caption">
             {reveal
-              ? "학생 화면에 모든 모둠 그림이 보이는 중"
+              ? "학생 화면에 모든 모둠 그림이 보이는 중 — 다음 판은 위 ‘새 판 시작’."
               : allDone
-                ? "모든 모둠이 완성됐어요 — 공개해도 좋아요."
-                : "아직 그리는 중인 모둠이 있어요."}
+                ? "모든 모둠이 완성됐어요 — 공개 후 위 ‘새 판 시작’ 으로 다음 판을 돌릴 수 있어요."
+                : `아직 그리는 중인 모둠이 있어요 (완성 ${doneCount}/${groups.length}).`}
           </span>
         </div>
       )}

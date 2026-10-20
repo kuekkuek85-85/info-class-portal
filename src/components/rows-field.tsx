@@ -43,6 +43,20 @@ function hasAny(rows: Row[]): boolean {
   return rows.some((row) => Object.values(row).some((v) => String(v ?? "").trim()));
 }
 
+/**
+ * '기타 + 직접 입력' 을 한 칸 안에 담는 꼴 — `기타` 또는 `기타: <입력값>`.
+ *
+ * 따로 companion 키를 두지 않고 칸 값 자체에 넣는 이유: 교사·포트폴리오 읽기 화면이
+ * rowColumns 의 key 로만 값을 이어 붙이므로(card-news), 칸 안에 두어야 직접 쓴 색이 그대로 보인다.
+ */
+function isOther(cell: string, other: string): boolean {
+  return cell === other || cell.startsWith(`${other}:`);
+}
+/** `기타: 보라색` → `보라색` (아직 안 썼으면 ""). 앞의 `기타:` 만 떼고 나머지는 그대로 둔다 */
+function otherText(cell: string, other: string): string {
+  return cell.startsWith(`${other}:`) ? cell.slice(other.length + 1).trimStart() : "";
+}
+
 export function RowsField({
   value,
   columns,
@@ -100,7 +114,10 @@ export function RowsField({
                 <span className="t-caption">{column.label}</span>
                 <div className="flex flex-wrap gap-1.5">
                   {column.emojis.map((emoji) => {
-                    const on = (row[column.key] ?? "") === emoji;
+                    const cell = row[column.key] ?? "";
+                    // '기타' 보기는 칸이 `기타` 든 `기타: 보라색` 이든 켜진 것으로 본다
+                    const isOtherEmoji = !!column.otherOption && emoji === column.otherOption;
+                    const on = isOtherEmoji ? isOther(cell, column.otherOption!) : cell === emoji;
                     return (
                       <button
                         key={emoji}
@@ -117,6 +134,27 @@ export function RowsField({
                     );
                   })}
                 </div>
+                {/*
+                  '기타' 를 고르면 직접 색 이름을 적는 칸이 뜬다. 입력값은 같은 칸에
+                  `기타: <입력값>` 꼴로 저장돼 교사·포트폴리오 읽기 화면에 그대로 보인다.
+                  otherOption 이 없는 열에는 아예 그려지지 않는다(다른 rows 활동엔 영향 없음).
+                */}
+                {column.otherOption && isOther(row[column.key] ?? "", column.otherOption) && (
+                  <input
+                    value={otherText(row[column.key] ?? "", column.otherOption)}
+                    onChange={(event) => {
+                      const text = event.target.value.slice(0, 40);
+                      setCell(
+                        index,
+                        column.key,
+                        text.trim() ? `${column.otherOption}: ${text}` : column.otherOption!,
+                      );
+                    }}
+                    placeholder={column.placeholder ?? "직접 적어요 (예: 보라색)"}
+                    disabled={disabled}
+                    className="field t-body-sm mt-1 disabled:opacity-60"
+                  />
+                )}
               </div>
             ) : (
               <label key={column.key} className="flex flex-col gap-1">

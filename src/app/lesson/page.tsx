@@ -4,11 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { BrainImagePanel } from "@/components/brain-image-panel";
 import { ContentView, type Content } from "@/components/content-view";
 import { DonePortal } from "@/components/done-portal";
 import { DrawBoard } from "@/components/draw-board";
 import { GalleryView } from "@/components/gallery-view";
 import { MoodPicker } from "@/components/mood-picker";
+import { MoodReportView } from "@/components/mood-report-view";
+import { PortfolioView } from "@/components/portfolio-view";
 import { QuizView, type QuizState } from "@/components/quiz-view";
 import { ReviewView } from "@/components/review-view";
 import { SiteFooter } from "@/components/site-footer";
@@ -22,6 +25,7 @@ import { artifactTitle } from "@/lib/artifact-title";
 import {
   LESSON_PHASES,
   PHASE_LABELS,
+  type DrawBackground,
   type LessonPhase,
   type RewardGame,
   type Stroke,
@@ -57,6 +61,16 @@ export interface ActivityInfo {
   galleryAnswerKeys?: string[];
   /** 그림 제목의 틀. 비면 "○○년의 △△" (artifact-title.ts) */
   artifactTitle?: string;
+  /** 그림판 밑그림. "head" 면 머리 윤곽선을 획 밑에 깐다 */
+  drawBackground?: DrawBackground | null;
+  /** 그리기 단계를 손그림 대신 AI 이미지 생성으로 바꾼다 (8회기 뇌구조) */
+  brainImage?: boolean;
+  /** 회고 뒤 두 번째 그림판(백지) — 8회기 인생 그래프. 있으면 wrapheal 이 이 그림판만 띄운다 */
+  secondDraw?: { heading: string; body: string; title: string; background?: DrawBackground } | null;
+  /** 포트폴리오(지난 회기 돌아보기)를 wrapmap 단계에 띄운다 (8회기 성찰) */
+  portfolio?: boolean;
+  /** 마음일기(마음 체크인 리포트)를 mooddiary 단계에 띄운다 (8회기) */
+  moodReport?: boolean;
   /** 활동지를 그리기 앞에 두는가. 안 오면 그리기가 앞 (지금까지의 차시) */
   worksheetFirst?: boolean;
   /** 그리기 첫 화면(장소 고르기) 문구. 비면 기본값 */
@@ -174,6 +188,17 @@ export default function LessonPage() {
     texts: TextItem[];
     status: string;
     /** 서버가 마지막으로 받아들인 저장 순번 */
+    saveRev: number;
+    /** 뇌구조 AI 이미지 (8회기). 없으면 null */
+    brainImage?: { dataUrl: string; at: number } | null;
+  } | null>(null);
+  /**
+   * 두 번째 그림판(인생 그래프) — 8회기 wrapheal. 기본 그림(artifact)과 다른 슬롯
+   * (activityId::graph) 에 저장된다. secondDraw 가 있는 차시에서만 받아 온다.
+   */
+  const [graphArtifact, setGraphArtifact] = useState<{
+    strokes: Stroke[];
+    texts: TextItem[];
     saveRev: number;
   } | null>(null);
   const [worksheet, setWorksheet] = useState<WorksheetValue>({
@@ -568,6 +593,7 @@ export default function LessonPage() {
         texts: result.artifact.texts,
         status: result.artifact.status,
         saveRev: result.artifact.saveRev ?? 0,
+        brainImage: result.artifact.brainImage ?? null,
       });
       setWorksheet({
         answers: result.artifact.answers ?? {},
@@ -575,6 +601,19 @@ export default function LessonPage() {
         sources: result.artifact.sources ?? { site: "", ai: "" },
       });
       setCarried(result.carried ?? null);
+
+      // 두 번째 그림판(인생 그래프)이 있는 차시면 그 슬롯 그림도 받아 온다
+      if (data?.session.activity?.secondDraw) {
+        const graphRes = await fetch("/api/student/artifact?slot=graph");
+        const graph = await graphRes.json();
+        if (!cancelled && graph.ok) {
+          setGraphArtifact({
+            strokes: graph.artifact.strokes ?? [],
+            texts: graph.artifact.texts ?? [],
+            saveRev: graph.artifact.saveRev ?? 0,
+          });
+        }
+      }
     }
 
     void loadArtifact();
@@ -771,6 +810,29 @@ export default function LessonPage() {
   const worksheetFirst = Boolean(session.activity?.worksheetFirst);
 
   /*
+   * 회고 뒤 두 번째 그림판(백지) 단계인가 — 8회기 인생 그래프.
+   *
+   * 이 단계에서는 탭(그림/활동지/감상) 없이 두 번째 그림판 하나만 띄운다. 그래서
+   * 아래 탭 줄과 세 탭 블록을 모두 건너뛰고(!inGraphDraw), 전용 그림판을 그린다.
+   */
+  const inGraphDraw =
+    isWorkPhase && !showDone && viewPhase === "wrapheal" && Boolean(session.activity?.secondDraw);
+
+  /*
+   * 뇌구조(8회기 draw) — 활동지와 이미지 패널을 한 화면으로 합친다(탭 없이).
+   *
+   * 활동지(내용·감정·색·마음 크기)를 쓰고, 바로 그 아래에서 [뇌구조 이미지 만들기] 를
+   * 누르는 하나의 흐름이다. 탭으로 나누면 학생이 둘을 오가느라 흐름이 끊긴다(교사 요청).
+   * brainImage 차시(뇌구조)에서만 합치고, 다른 그리기 차시는 지금까지처럼 탭을 쓴다.
+   */
+  const brainMerged =
+    isWorkPhase &&
+    !showDone &&
+    !inGraphDraw &&
+    viewPhase === "draw" &&
+    Boolean(session.activity?.brainImage);
+
+  /*
    * 실제로 보여 줄 탭.
    *
    * 그리기가 없는 차시에서는 그리기 탭에 머무를 수 없다. 교사가 "그리기" 단계를 눌러도
@@ -926,9 +988,21 @@ export default function LessonPage() {
    * 대기·마침은 뺀다. 되돌아가서 할 일이 없는 화면이고, 대기로 가면 게임이 떠서
    * 수업 중에 그리로 도망갈 구멍이 된다.
    */
-  const backPhases: LessonPhase[] = LESSON_PHASES.slice(
-    0,
-    LESSON_PHASES.indexOf(phase) + 1,
+  /*
+   * 되돌아가기 목록·순서는 **이 차시의 phaseOrder** 를 따른다 (LESSON_PHASES 전역 순서가 아니라).
+   * phaseOrder 로 순서를 바꾼 차시(구현 1·2단계, 22차 버그 고치기 등)에서 전역 순서를 쓰면,
+   * 뒤 단계가 앞에 오거나(예: 2단계가 앞으로) 현재 단계보다 뒤인 단계까지 되돌아가기에 풀려 버렸다.
+   * 차시 순서에서 '현재 단계까지'만 자르고, 목록 순서도 차시 순서를 따른다.
+   * phaseOrder 가 없는 차시는 기존대로 LESSON_PHASES 를 쓴다(동작 불변).
+   */
+  const phaseSeq: readonly LessonPhase[] = session.phaseOrder?.length
+    ? session.phaseOrder
+    : LESSON_PHASES;
+  const curInSeq = phaseSeq.indexOf(phase);
+  const backPhases: LessonPhase[] = (
+    curInSeq >= 0
+      ? phaseSeq.slice(0, curInSeq + 1)
+      : LESSON_PHASES.slice(0, LESSON_PHASES.indexOf(phase) + 1)
   ).filter((item) => {
     if (item === "waiting" || item === "done") return false;
     /*
@@ -962,6 +1036,8 @@ export default function LessonPage() {
     if (item === "draw") return !wrapDraw && (session.activity?.places.length ?? 0) > 0;
     if (item === "wrapheal") return wrapDraw;
     if (item === "reflection") return session.reflectionQuestions.length > 0;
+    // 마음일기(마음 체크인 리포트) — moodReport 를 켠 차시에서만
+    if (item === "mooddiary") return Boolean(session.activity?.moodReport);
 
     const content =
       item === "progress"
@@ -1112,11 +1188,17 @@ export default function LessonPage() {
               const raw = (worksheet.answers[relKey] ?? "").trim();
               const slides = raw ? (/^https?:\/\//i.test(raw) ? raw : "https://" + raw) : "";
               if (!slides) {
+                // 제출된 링크가 없으면(예: 진로탐색 발표에서 웹 앱 링크 미제출) 링크 대신
+                // 선생님께 알리라는 안내를 눈에 띄게 띄운다. 키에 따라 이름을 맞춘다.
+                const linkName = relKey === "build_url" ? "웹 앱 링크" : "발표 자료 링크";
                 return (
                   <div className="block bg-lime">
-                    <h2 className="t-headline">{session.game.heading || "발표 리허설"}</h2>
-                    <p className="t-body mt-2">
-                      아직 발표 자료 링크가 없어요. 선생님이 발표 단계로 넘기면 그때 낼 수 있어요.
+                    <h2 className="t-headline">⚠ 내 {linkName}가 없어요</h2>
+                    <p className="t-body mt-2 font-semibold">
+                      {linkName}가 제출되지 않았어요.
+                    </p>
+                    <p className="t-body mt-1">
+                      발표 순서가 되면 <b>선생님께 손을 들고</b> 말해 주세요.
                     </p>
                   </div>
                 );
@@ -1404,6 +1486,26 @@ export default function LessonPage() {
           )
         )}
 
+        {/*
+          포트폴리오(지난 회기 돌아보기) — 마음 톡톡 8회기 성찰. wrapmap 단계 맨 위에
+          학생 '본인'의 지난 활동/작품과 기분 추이를 읽기 전용으로 띄우고, 바로 아래 활동지
+          (그때 마음 적기)에 쓰게 한다. 본인 것만 — 친구에게 안 나가고 AI 전송 없음.
+        */}
+        {!showDone && !inPresentation && viewPhase === "wrapmap" && session.activity?.portfolio && (
+          <div className="mb-5">
+            <PortfolioView />
+          </div>
+        )}
+
+        {/*
+          마음일기 — 마음 톡톡 8회기(마지막). 학기 내내 고른 마음 체크인을 모아 계산·시각화한
+          리포트를 읽기 전용으로 띄운다(/api/student/mood-report → MoodReportView). 본인 것만 —
+          친구에게 안 나가고, AI 총평은 기분 라벨·숫자만 보고 쓴 것(학번·이름·이유 비전송).
+        */}
+        {!showDone && !inPresentation && viewPhase === "mooddiary" && session.activity?.moodReport && (
+          <MoodReportView />
+        )}
+
         {!showDone && !inPresentation && STEP_PHASES.includes(viewPhase) && !(quiz && viewPhase === phase) &&
           (session.activity && artifact && stepQuestions.length > 0 ? (
             <WorksheetView
@@ -1449,7 +1551,7 @@ export default function LessonPage() {
           누를 곳이 아니라 지금 보고 있는 화면의 이름이다. 누르면 아무 일도 안 나는
           단추가 화면 맨 위에 있으면 학생은 그것부터 눌러 본다.
         */}
-        {isWorkPhase && !showDone && session.activity && Number(canDraw) + Number(canShare) > 0 && (
+        {isWorkPhase && !showDone && !inGraphDraw && !brainMerged && session.activity && Number(canDraw) + Number(canShare) > 0 && (
           <div className="mb-5 flex gap-2">
             {/*
               그리기가 없는 차시도 있다 (4차시 직업 조사처럼 글만 쓰는 활동).
@@ -1467,7 +1569,7 @@ export default function LessonPage() {
                 onClick={() => setWorkTab("draw")}
                 className={`pill flex-1 ${activeTab === "draw" ? "pill-primary" : "pill-secondary"}`}
               >
-                그림 그리기
+                {session.activity?.brainImage ? "뇌구조 이미지" : "그림 그리기"}
               </button>
             )}
             <button
@@ -1486,7 +1588,7 @@ export default function LessonPage() {
                 onClick={() => setWorkTab("draw")}
                 className={`pill flex-1 ${activeTab === "draw" ? "pill-primary" : "pill-secondary"}`}
               >
-                그림 그리기
+                {session.activity?.brainImage ? "뇌구조 이미지" : "그림 그리기"}
               </button>
             )}
             {/*
@@ -1508,10 +1610,109 @@ export default function LessonPage() {
           </div>
         )}
 
+        {/*
+          두 번째 그림판(인생 그래프) — wrapheal 단계 전용. 백지에서 손으로 그래프를
+          그린다. 장소 선택 없이(places 비움) 바로 캔버스가 뜨고, graph 슬롯에 저장된다.
+        */}
+        {/*
+          뇌구조(8회기) — 탭 없이 한 화면: 위에 활동지(내용·감정·색·마음 크기),
+          바로 아래에 뇌구조 이미지 패널. 둘을 오가는 탭을 없애 하나의 흐름으로 만든다(교사 요청).
+        */}
+        {brainMerged && session.activity && artifact && (
+          <div className="flex flex-col gap-6">
+            <WorksheetView
+              questions={plainWorksheetQuestions}
+              place={artifact.place}
+              year={artifact.year}
+              canDraw={canDraw}
+              sourceHints={session.activity.sourceHints ?? undefined}
+              carried={carried}
+              studentName={me.name}
+              studentId={me.studentId}
+              intro={session.activity.worksheetIntro}
+              strokes={artifact.strokes}
+              texts={artifact.texts}
+              value={worksheet}
+              onChange={setWorksheet}
+              onSubmit={submitArtifact}
+              onFeedback={handleFeedback}
+              submitted={artifact.status === "submitted"}
+              submitError={submitError}
+              disabled={closed}
+              hideSubmit={viewPhase !== finalWorkPhase}
+              hideSources={session.activity.sourcesEnabled === false}
+              heading={session.phaseLabels?.[viewPhase] ?? PHASE_LABELS[viewPhase]}
+            />
+            <BrainImagePanel
+              key={`${session.activity.activityId}::brain`}
+              answers={worksheet.answers}
+              initial={artifact.brainImage}
+              prompt={session.activity.drawPrompt}
+              disabled={closed}
+              onGenerated={(dataUrl) =>
+                setArtifact((prev) =>
+                  prev ? { ...prev, brainImage: { dataUrl, at: Date.now() } } : prev,
+                )
+              }
+            />
+          </div>
+        )}
+
+        {inGraphDraw &&
+          (session.activity?.secondDraw && graphArtifact ? (
+            <DrawBoard
+              key={`${session.activity.activityId}::graph`}
+              initialStrokes={graphArtifact.strokes}
+              initialTexts={graphArtifact.texts}
+              initialRev={graphArtifact.saveRev}
+              places={[]}
+              place=""
+              year={session.activity.year}
+              drawPrompt={{
+                heading: session.activity.secondDraw.heading,
+                body: session.activity.secondDraw.body,
+              }}
+              title={session.activity.secondDraw.title}
+              background={session.activity.secondDraw.background}
+              saveSlot="graph"
+              onPlaceChange={() => undefined}
+              onExit={(strokes, texts, saveRev) =>
+                setGraphArtifact((prev) => (prev ? { ...prev, strokes, texts, saveRev } : prev))
+              }
+              disabled={closed}
+            />
+          ) : (
+            <Placeholder title="그림판을 준비하고 있어요" description="잠시만 기다려 주세요." />
+          ))}
+
         {isWorkPhase &&
           !showDone &&
+          !inGraphDraw &&
+          !brainMerged &&
           activeTab === "draw" &&
-          (session.activity && artifact ? (
+          /*
+            뇌구조(8회기)는 손그림 대신 AI 이미지 생성이다. 활동지(상황·감정·색·마음 크기)를
+            채우면 패널의 버튼이 켜지고, 서버가 그 학생 artifact 의 답을 읽어 그림을 그려 준다.
+            이 분기 없는 다른 그리기 차시는 지금까지처럼 DrawBoard 로 손그림을 그린다.
+          */
+          (session.activity?.brainImage ? (
+            session.activity && artifact ? (
+              <BrainImagePanel
+                key={`${session.activity.activityId}::brain`}
+                answers={worksheet.answers}
+                initial={artifact.brainImage}
+                prompt={session.activity.drawPrompt}
+                disabled={closed}
+                onGenerated={(dataUrl) =>
+                  setArtifact((prev) =>
+                    prev ? { ...prev, brainImage: { dataUrl, at: Date.now() } } : prev,
+                  )
+                }
+              />
+            ) : (
+              <Placeholder title="준비하고 있어요" description="잠시만 기다려 주세요." />
+            )
+          ) : session.activity && artifact ? (
             <DrawBoard
               key={session.activity.activityId}
               initialStrokes={artifact.strokes}
@@ -1522,6 +1723,7 @@ export default function LessonPage() {
               year={artifact.year}
               techExamples={session.activity.techExamples}
               drawPrompt={session.activity.drawPrompt}
+              background={session.activity.drawBackground ?? undefined}
               title={artifactTitle(
                 session.activity.artifactTitle,
                 artifact.year,
@@ -1539,6 +1741,8 @@ export default function LessonPage() {
 
         {isWorkPhase &&
           !showDone &&
+          !inGraphDraw &&
+          !brainMerged &&
           activeTab === "worksheet" &&
           (session.activity && artifact ? (
             <WorksheetView
@@ -1587,7 +1791,7 @@ export default function LessonPage() {
             <Placeholder title="활동지를 준비하고 있어요" description="잠시만 기다려 주세요." />
           ))}
 
-        {isWorkPhase && !showDone && activeTab === "gallery" && (
+        {isWorkPhase && !showDone && !inGraphDraw && activeTab === "gallery" && (
           <GalleryView disabled={closed} noun={workNoun} />
         )}
 
@@ -1595,13 +1799,47 @@ export default function LessonPage() {
           보상 게임 — 성찰을 제출하고 구현 1·2·3단계 제출까지 다 마친 학생에게만 열린다.
           대기 자리에 있던 게임이 여기로 옮겨 와, 활동을 끝낸 상으로 쉬는 시간을 준다 (요청: 17차).
         */}
-        {viewPhase === "reflection" && rewardUnlocked && session.rewardGame && (
-          /* 보상 게임은 머리글·설명 없이 iframe 하나만 — 상자에 맞춰 %로 줄여 세로 스크롤을 없앤다 */
-          <RewardGameFrame
-            url={session.rewardGame.url}
-            title={session.rewardGame.heading || "보상 게임"}
-          />
-        )}
+        {viewPhase === "reflection" &&
+          rewardUnlocked &&
+          session.rewardGame &&
+          (session.rewardGame.games && session.rewardGame.games.length > 0 ? (
+            /*
+              여러 게임 '고르기' 창 (22차 — 그동안 정보 시간에 한 게임 모두 고르기). 게임이 여러 개라
+              iframe 하나로 못 담으니 카드 그리드로, 각 게임은 새 탭으로 연다 (done-portal 카드 스타일 재사용).
+            */
+            <section className="flex flex-col gap-5">
+              <div className="block flex flex-col gap-2 bg-lime">
+                <p className="t-display">{session.rewardGame.heading || "수고했어요! 🎮"}</p>
+                {session.rewardGame.body && (
+                  <p className="t-body-lg whitespace-pre-line">{session.rewardGame.body}</p>
+                )}
+              </div>
+              <div className="flex flex-col gap-3">
+                <h2 className="t-headline">게임 고르기</h2>
+                <p className="t-note">새 창으로 열려요. 선생님이 부르면 돌아오세요.</p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {session.rewardGame.games.map((game) => (
+                    <a
+                      key={game.url}
+                      href={game.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="card flex flex-col gap-1 text-center transition active:scale-[0.99]"
+                    >
+                      <span className="t-card-title">{game.label}</span>
+                      {game.hint && <span className="t-body-sm text-muted">{game.hint}</span>}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : session.rewardGame.url ? (
+            /* 단일 보상 게임 — 머리글·설명 없이 iframe 하나만 (상자에 맞춰 %로 줄여 세로 스크롤 없앰) */
+            <RewardGameFrame
+              url={session.rewardGame.url}
+              title={session.rewardGame.heading || "보상 게임"}
+            />
+          ) : null)}
 
         {viewPhase === "reflection" && !(rewardUnlocked && session.rewardGame) && (
           <section className="flex flex-col gap-6">
@@ -1673,7 +1911,15 @@ export default function LessonPage() {
             <button
               type="button"
               onClick={() => void handleReflectionSubmit()}
-              disabled={answered === 0 || reflectionState === "saving" || closed}
+              disabled={
+                /*
+                  보통은 한 개라도 써야 제출이 열린다. 다만 보상 게임이 requireReflection:false 면
+                  '오늘은 검사하지 않습니다' — 성찰을 비워도 버튼을 눌러 바로 게임을 연다 (22차).
+                */
+                (session.rewardGame?.requireReflection === false ? false : answered === 0) ||
+                reflectionState === "saving" ||
+                closed
+              }
               className="pill pill-primary pill-block"
             >
               {session.rewardGame
