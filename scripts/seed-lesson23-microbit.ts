@@ -191,7 +191,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     imageUrl: "/mb23-heart.svg",
     imageAlt: "마이크로비트 LED가 큰 하트와 작은 하트로 1초마다 번갈아 깜빡이는 움직이는 그림",
     imageSide: "right",
-    imageSideWidth: "half",
+    imageSideWidth: "third",
     maxLength: 0,
   },
 
