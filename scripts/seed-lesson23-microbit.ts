@@ -305,6 +305,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * worksheet(MakeCode 링크) 둘 다.
    */
   focusExempt: ["waiting", "worksheet"],
+  /*
+   * 단계 버튼 순서 — 기분(mood)은 대기 화면에서 받으므로(moodCheckEnabled) 교사 대시보드의
+   * 단독 '기분' 단계는 뺀다. phaseOrder 를 명시하지 않으면 LESSON_PHASES 기본이라 기분이 따로 뜬다.
+   */
+  phaseOrder: ["waiting", "assessment", "worksheet", "reflection"],
   phaseLabels: {
     assessment: "안내",
     worksheet: "LED 탐색",
@@ -392,6 +397,7 @@ async function main(): Promise<void> {
           reflectionQuestions: PLAN.reflectionQuestions,
           reflectionPublic: PLAN.reflectionPublic,
           focusExempt: PLAN.focusExempt,
+          phaseOrder: PLAN.phaseOrder,
           phaseLabels: PLAN.phaseLabels,
           freeNavigation: PLAN.freeNavigation,
           activity: PLAN.activity,
