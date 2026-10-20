@@ -87,31 +87,9 @@ const SNAKE_URL = "https://snake-game-iota-puce.vercel.app/";
 const SHARE_IMG = "/mb23-share.png";
 
 /*
- * MakeCode '파이썬(Python) 보기' 코드 — 들여쓰기를 그대로 보여줘야 해서 hint 가 아니라 code 필드로
- * 준다(등폭·readonly). 오늘은 직접 타이핑(노가다)으로 감을 잡는 차시라 noCopy 로 복사 단추를 숨긴다.
+ * LED 탐색(worksheet)은 '미션 — 두근두근 하트' 하나로 간소화했다(교사와 함께 직접 타이핑).
+ * 예전 스캐폴딩 코드 상수(스켈레톤·타이핑·큰 하트·미션 완성본)는 미션에서 코드를 빼면서 제거했다.
  */
-const CODE_SKELETON = `def on_forever():
-    pass
-basic.forever(on_forever)`;
-
-/** 직접 타이핑으로 먼저 쳐 보는 두 줄 — 숫자 출력 → 아이콘 출력 (pass 를 지우고 그 자리에). */
-const CODE_TYPE = `def on_forever():
-    basic.show_number(7)
-    basic.show_icon(IconNames.HEART)
-basic.forever(on_forever)`;
-
-/** 무한 반복 안에 큰 하트 하나. */
-const CODE_BIGHEART = `def on_forever():
-    basic.show_icon(IconNames.HEART)
-basic.forever(on_forever)`;
-
-/** 미션 완성본 — 큰 하트 ↔ 작은 하트가 1초마다 번갈아(두근두근). */
-const CODE_MISSION = `def on_forever():
-    basic.show_icon(IconNames.HEART)
-    basic.pause(1000)
-    basic.show_icon(IconNames.SMALL_HEART)
-    basic.pause(1000)
-basic.forever(on_forever)`;
 
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
@@ -201,128 +179,33 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
 
-  /* ── ① 스켈레톤 — 파이썬 보기는 이렇게 생겼다 ── */
-  {
-    key: "_mb_skeleton",
-    phase: "worksheet",
-    label: "① 파이썬 보기 — 처음 코드는 이렇게 생겼어요",
-    hint:
-      "위쪽에서 '파이썬(Python)' 보기로 바꾸면, 새 프로젝트는 아래처럼 생겼어요.\n" +
-      "· on_forever() 안이 '계속 되풀이할 곳' 이에요. pass 는 '아직 아무것도 안 함' 이라는 빈 자리예요.\n" +
-      "· 다음 칸부터 이 pass 를 지우고 그 자리에 코드를 '직접 타이핑' 해 볼 거예요.",
-    kind: "note",
-    code: CODE_SKELETON,
-    noCopy: true,
-    maxLength: 0,
-  },
-
-  /* ── ② 직접 타이핑(노가다) — 숫자 출력 → 아이콘 출력 ── */
-  {
-    key: "_mb_type",
-    phase: "worksheet",
-    label: "② 직접 타이핑 — 숫자 → 아이콘 (선생님과 함께)",
-    hint:
-      "pass 를 지우고, 그 자리에 아래 두 줄을 '직접' 쳐 봐요(복사 말고 노가다!). 선생님과 함께 천천히.\n" +
-      "· basic.show_number(7) — LED에 숫자 7 이 떠요. 괄호 안 숫자를 바꾸면 다른 숫자가 떠요.\n" +
-      "· basic.show_icon(IconNames.HEART) — LED에 하트가 떠요. 점(.) 과 괄호, 대문자까지 그대로 쳐요.\n" +
-      "안쪽 두 줄은 on_forever 보다 '한 칸(공백 4칸) 들여써야' 그 안에 속해요(파이썬 들여쓰기).",
-    kind: "note",
-    code: CODE_TYPE,
-    noCopy: true,
-    maxLength: 0,
-  },
-
-  /* ── ③ 블록 드래그 = 코드 자동 ── */
-  {
-    key: "_mb_drag",
-    phase: "worksheet",
-    label: "③ 블록을 끌어오면 — 코드가 저절로!",
-    hint:
-      "이번엔 '블록' 보기로 바꿔서, 블록 서랍(기본·Basic)에서 블록을 마우스로 끌어다 넣어 봐요.\n" +
-      "· 'LED 출력(show leds)' 을 끌어오면 5x5=25칸이 떠요 — 칸을 눌러 내 그림을 만들어 봐요.\n" +
-      "· '문자열 출력(show string)' 을 끌어와 'HI' 같은 영어를 적으면 글자가 흘러가요.\n" +
-      "블록을 놓을 때마다 '파이썬 보기' 로 바꿔 보면 — 내가 친 것과 똑같은 코드가 저절로 생겨 있어요!\n" +
-      "(블록 ↔ 코드는 같은 것을 다르게 보여 주는 거예요. 둘 중 편한 걸로 만들면 돼요.)",
-    kind: "note",
-    maxLength: 0,
-  },
-
-  /* ── 탐색 기록 (list, 저장) — 가볍게 ── */
-  {
-    key: "mb_explore_log",
-    phase: "worksheet",
-    label: "해 본 것 기록 — 무엇을 하니 무엇이 달라졌나요?",
-    hint:
-      "직접 쳐 보거나 끌어와 본 것 중 기억에 남는 것을 한 줄씩 적어요. [+ 칸 추가] 로 늘릴 수 있어요.\n" +
-      "예) show_number 숫자를 3으로 바꿨더니 3이 떴다 / show leds 로 네모를 그렸다 / 블록을 놓으니 코드가 저절로 생겼다.",
-    kind: "list",
-    minItems: 2,
-    maxItems: 5,
-    itemPlaceholder: "예) 무엇을 / 어떻게 바꾸니 / 어떻게 달라졌는지",
-    maxLength: 1200,
-  },
-
-  /* ── ④ 무한 반복 안에 큰 하트 ── */
-  {
-    key: "_mb_bigheart",
-    phase: "worksheet",
-    label: "④ 무한 반복(forever) 안에 큰 하트 넣기",
-    hint:
-      "이제 on_forever() 안에 '아이콘 출력(show icon)' 으로 큰 하트(HEART)를 넣어요(아래 코드처럼).\n" +
-      "· on_forever 안에 있으니 멈추지 않고 '계속' 하트가 떠 있어요(무한 반복).\n" +
-      "· 블록으로 끌어와도 되고, 파이썬 보기에서 직접 쳐도 돼요 — 결과는 같아요.",
-    kind: "note",
-    code: CODE_BIGHEART,
-    noCopy: true,
-    maxLength: 0,
-  },
-
-  /* ── ⑤ 최종 미션 — 두근두근 하트 (완성본 코드) ── */
+  /* ── 미션 — 두근두근 하트 (설명만. 코드·세부 힌트 없음 — 선생님과 함께 직접 타이핑) ── */
   {
     key: "_mb_mission",
     phase: "worksheet",
-    label: "⑤ 미션 — 두근두근 하트 (큰 하트 ↔ 작은 하트)",
+    label: "미션 — 두근두근 하트 (큰 하트 ↔ 작은 하트)",
     hint:
       "미션! 1초에 한 번씩 '큰 하트 → 작은 하트' 가 번갈아 뜨며 심장처럼 두근두근 뛰게 만들어요.\n" +
-      "on_forever 안을 아래 순서로 채워요(큰 하트 → 1초 기다리기 → 작은 하트 → 1초 기다리기):\n\n" +
-      "· basic.pause(1000) — 1000 ms = 1초만큼 잠깐 기다려요. 이게 있어야 바뀌는 게 눈에 보여요.\n" +
-      "· 큰 하트=HEART, 작은 하트=SMALL_HEART. 블록으로는 '아이콘 출력(show icon)' 의 그림을 바꿔요.\n" +
-      "· pause 값(1000)을 500, 200 으로 바꾸면 더 빨리 두근거려요 — 바꿔 보며 가장 마음에 드는 빠르기를 찾아요.\n" +
-      "시뮬레이터에서 두 하트가 번갈아 뛰면 성공!",
+      "선생님과 함께 직접 타이핑해서 만들어요. 시뮬레이터에서 두 하트가 번갈아 뛰면 성공!",
     kind: "note",
-    code: CODE_MISSION,
-    noCopy: true,
     maxLength: 0,
   },
 
-  /* ── 제출 안내 — 프로젝트 이름 바꾸기 + 공유 버튼 (그림) ── */
-  {
-    key: "_mb_submit_guide",
-    phase: "worksheet",
-    label: "제출 준비 — 이름 바꾸고 공유 링크 만들기",
-    hint:
-      "다 만들었으면 제출해요. 순서대로 해요:\n" +
-      "1) MakeCode 맨 아래 '프로젝트 이름' 칸을 '학번 이름 하트 두근두근' 으로 바꿔요.\n" +
-      "   예) 10130 홍길동 하트 두근두근\n" +
-      "2) 오른쪽 위 '공유(Share)' 버튼(아래 그림의 강조된 아이콘)을 눌러요.\n" +
-      "3) '공유하기 / 링크 만들기' 를 누르면 주소(링크)가 만들어져요 — 그 주소를 복사해요.\n" +
-      "4) 아래 칸에 그 주소를 붙여넣어 제출해요.",
-    kind: "note",
-    imageUrl: SHARE_IMG,
-    imageAlt: "MakeCode 상단 바에서 공유(Share) 버튼 아이콘이 네모로 강조된 모습",
-    imageWidth: "half",
-    maxLength: 0,
-  },
-
-  /* ── 공유 링크 제출 (text, 저장) ── */
+  /* ── 제출 (하나로 합침) — 이름 바꾸기 + 공유 버튼(그림) 안내 + 링크 입력칸 ── */
   {
     key: "mb_share_link",
     phase: "worksheet",
-    label: "공유 링크 제출 — 만든 작품 주소를 붙여넣기",
+    label: "제출 — 이름 바꾸고 공유 링크 붙여넣기",
     hint:
-      "프로젝트 이름을 '학번 이름 하트 두근두근' 으로 바꾼 뒤, 오른쪽 위 공유 버튼 → 링크 만들기 →\n" +
-      "그 주소(https://makecode.microbit.org/... )를 여기 붙여넣어요. 선생님이 열어서 확인해요.",
+      "다 만들었으면 제출해요. 순서대로 해요:\n" +
+      "1) MakeCode 맨 아래 '프로젝트 이름' 칸을 '학번 이름 하트 두근두근' 으로 바꿔요. 예) 10130 홍길동 하트 두근두근\n" +
+      "2) 오른쪽 위 '공유(Share)' 버튼(아래 그림의 강조된 아이콘)을 눌러요.\n" +
+      "3) '공유하기 / 링크 만들기' 를 누르면 주소(링크)가 만들어져요 — 그 주소를 복사해요.\n" +
+      "4) 아래 칸에 그 주소를 붙여넣어 제출해요. (선생님이 열어서 확인해요.)",
     kind: "text",
+    imageUrl: SHARE_IMG,
+    imageAlt: "MakeCode 상단 바에서 공유(Share) 버튼 아이콘이 네모로 강조된 모습",
+    imageWidth: "half",
     maxLength: 300,
   },
 ];
