@@ -441,10 +441,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     worksheet: "LED 탐색",
   },
   /*
-   * 되돌아가기 켬 — 학생이 안내·활동지를 스스로 오갈 수 있다. 교사는 안내 → 탐색 블록들 →
-   * 최종 미션 순으로 단추로 몬다.
+   * 되돌아가기 끔 — 교사 표준(무조건 모든 차시 시작 시 off 기본값). 단계 진행은 교사가
+   * 대시보드 단추로 몬다(안내 → 피지컬 컴퓨팅 → 마이크로비트 → LED 탐색 → 성찰). 필요하면
+   * 수업 중 대시보드에서 켠다.
    */
-  freeNavigation: true,
+  freeNavigation: false,
 
   activity: {
     activityId: ACTIVITY_ID,
