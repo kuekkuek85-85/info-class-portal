@@ -232,9 +232,9 @@ export default function LessonPage() {
   /** 보상 게임이 열렸는가(성찰 제출 + 구현 제출 조건 충족) */
   const [rewardUnlocked, setRewardUnlocked] = useState(false);
   /** 제출이 빠진 구현 단계 안내 팝업 (null 이면 안 뜸) */
-  const [rewardMissing, setRewardMissing] = useState<{ label: string; phase: LessonPhase }[] | null>(
-    null,
-  );
+  const [rewardMissing, setRewardMissing] = useState<
+    { label: string; phase: LessonPhase; submitted?: boolean }[] | null
+  >(null);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSaved = useRef("");
   const submitted = useRef(false);
@@ -665,7 +665,11 @@ export default function LessonPage() {
     } catch {
       // 네트워크 실패 — 로컬 값으로 판단
     }
-    const passed = (raw: string | undefined): boolean => {
+    const ok = (req: { key: string; submitted?: boolean }): boolean => {
+      const raw = latest[req.key];
+      // submitted:true — 'AI 채점' 이 아니라 '제출(비어있지 않음)' 만 본다 (공유 링크 제출칸 등)
+      if (req.submitted) return Boolean(raw && raw.trim());
+      // 기본 — AI 채점 통과(verdict good). 별표 코드를 그대로 붙여넣는 것을 막는다.
       if (!raw) return false;
       try {
         return (
@@ -675,10 +679,12 @@ export default function LessonPage() {
         return false;
       }
     };
-    const missing = (reward.requires ?? []).filter((req) => !passed(latest[req.key]));
+    const missing = (reward.requires ?? []).filter((req) => !ok(req));
     if (missing.length > 0) {
       setRewardUnlocked(false);
-      setRewardMissing(missing.map((req) => ({ label: req.label, phase: req.phase })));
+      setRewardMissing(
+        missing.map((req) => ({ label: req.label, phase: req.phase, submitted: req.submitted })),
+      );
     } else {
       setRewardMissing(null);
       setRewardUnlocked(true);
@@ -1993,7 +1999,15 @@ export default function LessonPage() {
           <div className="flex w-full max-w-md flex-col gap-4 rounded-xl border-2 border-ink bg-canvas p-6">
             <h2 className="t-headline">🎮 게임은 조금만 더!</h2>
             <p className="t-body">
-              아래 단계의 <b>AI 채점</b>을 아직 통과하지 못했어요. 코드를 고쳐 AI 채점을 통과하면 게임이 열려요.
+              {rewardMissing.every((item) => item.submitted) ? (
+                <>
+                  아래 단계에서 아직 <b>제출</b>하지 않았어요. 거기서 제출하면 게임이 열려요.
+                </>
+              ) : (
+                <>
+                  아래 단계의 <b>AI 채점</b>을 아직 통과하지 못했어요. 코드를 고쳐 AI 채점을 통과하면 게임이 열려요.
+                </>
+              )}
             </p>
             <ul className="flex flex-col gap-2">
               {rewardMissing.map((item) => (

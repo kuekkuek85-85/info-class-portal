@@ -1552,8 +1552,12 @@ export interface RewardGame {
    * 22차는 '오늘은 검사하지 않습니다' — 성찰 입력·requires 검사 없이 상으로 게임을 연다.
    */
   requireReflection?: boolean;
-  /** 이 활동지 칸들이 모두 채워져야 게임이 열린다 (label·phase 는 누락 안내·이동용) */
-  requires?: { key: string; label: string; phase: LessonPhase }[];
+  /**
+   * 이 활동지 칸들이 모두 '통과' 해야 게임이 열린다 (label·phase 는 누락 안내·이동용).
+   * 기본은 AI 채점 통과(feedback.verdict==="good") 로 본다. `submitted:true` 면 **제출(비어있지 않음)**
+   * 만 본다 — 공유 링크 제출칸(23차 mb_share_link) 처럼 AI 채점이 없는 칸에 쓴다.
+   */
+  requires?: { key: string; label: string; phase: LessonPhase; submitted?: boolean }[];
 }
 
 /** 수업 내용. 반과 무관하게 한 번만 등록해 4반에 공용으로 쓴다. */

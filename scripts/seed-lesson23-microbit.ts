@@ -230,11 +230,15 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   },
   gameExplainer: empty(),
 
-  // 성찰 보상 게임 = 스네이크. 성찰을 제출하면 '제출하고 게임하기' 로 열린다(requireReflection 생략=기본 검사).
+  // 성찰 보상 게임 = 스네이크. '제출하고 게임하기' 를 누르면 LED 탐색의 공유 링크(mb_share_link)
+  // 가 제출됐는지 본다 — 제출했으면 스네이크, 아니면 팝업으로 LED 탐색 단계로 보낸다(submitted:true).
   rewardGame: {
     heading: "수고했어요! 🎮",
     body: "성찰을 제출했으면 잠깐 스네이크 게임으로 쉬어요. 선생님이 부르면 돌아오세요.",
     url: SNAKE_URL,
+    requires: [
+      { key: "mb_share_link", label: "LED 탐색 — 공유 링크 제출", phase: "worksheet", submitted: true },
+    ],
   },
 
   // 다음 시간(progress) 단계는 두지 않는다 — 안내(assessment)가 이미 있어 중복이다.
