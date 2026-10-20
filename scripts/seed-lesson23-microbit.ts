@@ -72,6 +72,11 @@ const ACTIVITY_ID = "microbit-makecode";
 /** MakeCode 블록 에디터(공식). 새 탭으로 열고 시뮬레이터로 바로 확인한다. */
 const MAKECODE_URL = "https://makecode.microbit.org/";
 
+/** 대기 화면 = 파이썬 타자 도우미(정보 수업 표준). game.url 이 "link:" 면 설명+새 탭 링크 카드로 뜬다. */
+const TYPING_URL = "https://python-typing-helper.vercel.app/";
+/** 성찰 보상 게임 = 스네이크. 성찰을 제출하면 '제출하고 게임하기' 로 열린다. */
+const SNAKE_URL = "https://snake-game-iota-puce.vercel.app/";
+
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
@@ -218,16 +223,23 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   title: "마이크로비트 MakeCode — LED와 친해지기(두근두근 하트)",
   moodCheckEnabled: true,
 
-  // 대기 화면 = 간단한 게임(지뢰찾기, 정보 관례). 기분은 대기 앞에서 받는다(moodCheckEnabled).
+  // 대기 화면 = 파이썬 타자 도우미(정보 수업 표준). 기분은 대기 앞에서 받는다(moodCheckEnabled).
+  // url 이 "link:" 로 시작하면 iframe 이 아니라 설명+새 탭 링크 카드로 뜬다(focusExempt 에 waiting 필요).
   game: {
-    heading: "기다리는 동안 — 지뢰찾기",
+    heading: "기다리는 동안 — 파이썬 타자 연습",
     body:
-      "수업이 시작되길 기다리는 동안 잠깐 쉬어요.\n" +
-      "숫자를 단서로 지뢰가 없는 칸을 찾아 열면 돼요.\n" +
-      "수업이 시작되면 이 화면은 저절로 넘어가요.",
-    url: "https://mine-sweeper-game-seven.vercel.app/home",
+      "수업이 시작되길 기다리는 동안 파이썬 타자 연습을 해 봐요.\n" +
+      "아래 단추로 새 탭에서 열려요. 수업이 시작되면 돌아오세요.",
+    url: `link:${TYPING_URL}`,
   },
   gameExplainer: empty(),
+
+  // 성찰 보상 게임 = 스네이크. 성찰을 제출하면 '제출하고 게임하기' 로 열린다(requireReflection 생략=기본 검사).
+  rewardGame: {
+    heading: "수고했어요! 🎮",
+    body: "성찰을 제출했으면 잠깐 스네이크 게임으로 쉬어요. 선생님이 부르면 돌아오세요.",
+    url: SNAKE_URL,
+  },
 
   // 다음 시간(progress) 단계는 두지 않는다 — 안내(assessment)가 이미 있어 중복이다.
   progress: empty(),
@@ -289,10 +301,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   reflectionPublic: false,
 
   /*
-   * MakeCode(새 탭) 링크가 붙은 worksheet 단계에서 창을 옮기는 것을 이탈로 세지 않는다.
-   * 대기 게임은 iframe(새 탭 아님)이라 focusExempt 가 필요 없다.
+   * 새 탭을 여는 단계는 창 이동을 이탈로 세지 않는다 — 대기(파이썬 타자 도우미 링크)와
+   * worksheet(MakeCode 링크) 둘 다.
    */
-  focusExempt: ["worksheet"],
+  focusExempt: ["waiting", "worksheet"],
   phaseLabels: {
     assessment: "안내",
     worksheet: "LED 탐색",
@@ -371,6 +383,7 @@ async function main(): Promise<void> {
           moodCheckEnabled: PLAN.moodCheckEnabled,
           game: PLAN.game,
           gameExplainer: PLAN.gameExplainer,
+          rewardGame: PLAN.rewardGame,
           progress: FieldValue.delete(),
           progressChecks: FieldValue.delete(),
           quiz: FieldValue.delete(),
@@ -393,7 +406,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (MakeCode 피지컬 아크 전용 새 통 — 파이썬 통 python-dodge-game·파킹된 MicroPython 통 physical-computing 과 분리)`);
-  console.log("단계: 대기(지뢰찾기) → 기분 → 안내(assessment: 마이크로비트·MakeCode 소개) → LED 탐색(worksheet) → 성찰. freeNavigation. quiz·rewardGame 없음.");
+  console.log("단계: 대기(파이썬 타자 도우미 링크) → 기분 → 안내(assessment: 마이크로비트·MakeCode 소개) → LED 탐색(worksheet) → 성찰. freeNavigation. quiz 없음, 보상=스네이크.");
   console.log(`LED 탐색: MakeCode 열기(${MAKECODE_URL}, 새 탭·focusExempt worksheet) → ① 아이콘 출력 ② LED 출력(25칸) ③ 문자열 출력 ④ 시작하면 vs 무한 반복 ⑤ 일시 중지. 블록 하나씩 눌러보고 값 바꿔 관찰.`);
   console.log("최종 미션: 두근두근 하트 — 무한 반복 안에 '아이콘 출력(하트) → 일시 중지 → 아이콘 출력(작은 하트) → 일시 중지' 반복. pause 값으로 빠르기 조절.");
   console.log("저장 입력: 탐색 기록(mb_explore_log, list 3~6) · 미션 기록(mb_mission_done, text). 블록 안내는 note(평문). 외부 링크는 makecode.microbit.org 하나.");
