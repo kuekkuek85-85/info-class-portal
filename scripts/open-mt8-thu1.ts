@@ -19,7 +19,7 @@
  * 쓴다(이중 안전장치). 서버 갤러리 라우트가 galleryEnabled 를 보고 응답 자체를 막는다. 열고 나서
  * report 로 그 값을 반드시 확인한다.
  *
- * ## rewardGame(테트리스)도 세션에 복사한다
+ * ## rewardGame(스네이크)도 세션에 복사한다
  *
  * snapshotOf 수기 목록에 rewardGame 을 포함한다 — 빠지면 마음일기 '제출하고 게임하기' 가 안 열린다.
  *
@@ -75,7 +75,7 @@ function planContent(plan: LessonPlan, kept: WorksheetQuestion[]): Record<string
     moodCheckEnabled: plan.moodCheckEnabled,
     game: plan.game,
     gameExplainer: plan.gameExplainer,
-    rewardGame: plan.rewardGame, // ★ 빠지면 마음일기 뒤 테트리스가 안 열린다
+    rewardGame: plan.rewardGame, // ★ 빠지면 마음일기 뒤 스네이크가 안 열린다
     progress: plan.progress,
     assessment: plan.assessment,
     video: plan.video,
@@ -199,9 +199,9 @@ function report(id: string, code: string, kept: WorksheetQuestion[]): void {
 
   console.log("교사 버튼 순서: 대기(마음 체크인) →");
   console.log("  [draw] 뇌구조 그리기 → [video] 행복? 영상 → [problem] 가치·행복·응원 →");
-  console.log("  [mvp] 자가진단(외부, 저장X) → [wrapheal] 인생 그래프 그리기 → [build] 인생 그래프 돌아보기 →");
+  console.log("  [mvp] AI 과의존 자가진단(외부, 저장X) → [wrapheal] 인생 그래프 그리기 → [build] 인생 그래프 돌아보기 →");
   console.log("  [quiz] 마음 건강 OX → [grill] 실천방안·도움 요청 → [wrapmap] 지난 8주 돌아보기(포트폴리오 아코디언) →");
-  console.log("  [mooddiary] 마음일기(마음 체크인 리포트+AI 총평) → [reflection] 전체 후기(제출→테트리스)\n");
+  console.log("  [mooddiary] 마음일기(마음 체크인 리포트+AI 총평) → [reflection] 전체 후기(제출→스네이크)\n");
   console.log(`활동지 문항 ${kept.length}개 · 마음 건강 OX 퀴즈 5문항.`);
 
   /*
@@ -218,8 +218,8 @@ function report(id: string, code: string, kept: WorksheetQuestion[]): void {
       ? "\n리허설 모드 — 아무 때나 열립니다. 목요일 1기 번호로 로그인해 테스트하고, 끝나면\n  node --env-file=.env.local scripts/clear-rehearsals.ts --write 로 정리하세요."
       : "\n실제 수업 모드. 리허설로 먼저 확인하려면 --rehearsal 을 붙여 여세요.",
   );
-  console.log("\n⚠ 교사 확인 필요: 유튜브 영상·mentalhealth.go.kr 자가진단의 학교망 접속 여부(7회기 메모: 외부 사이트 차단 사례).");
-  console.log("⚠ 배포 전제: 테트리스 보상·OX 퀴즈 UI 는 main 배포 기능. 테트리스는 교사 vercel 앱.");
+  console.log("\n⚠ 교사 확인 필요: 유튜브 영상·maum-sopoong.or.kr AI 과의존 자가진단의 학교망 접속 여부(7회기 메모: 외부 사이트 차단 사례).");
+  console.log("⚠ 배포 전제: 스네이크 보상·OX 퀴즈 UI 는 main 배포 기능. 스네이크는 교사 vercel 앱.");
 }
 
 main().catch((error: unknown) => {
