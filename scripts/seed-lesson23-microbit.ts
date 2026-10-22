@@ -72,14 +72,95 @@ const ACTIVITY_ID = "microbit-makecode";
 /** MakeCode 블록 에디터(공식). 새 탭으로 열고 시뮬레이터로 바로 확인한다. */
 const MAKECODE_URL = "https://makecode.microbit.org/";
 
+/**
+ * 마이크로비트 소개 영상(유튜브). video 단계(전자칠판)에서 toEmbedUrl 로 임베드돼 재생된다.
+ * 학생 태블릿에는 주소를 내려보내지 않고 전자칠판에서만 튼다(PRD 3.2) — 교사가 같이 재생.
+ */
+const VIDEO_URL = "https://youtu.be/7WMCgUIcKnk";
+
+/** 대기 화면 = 파이썬 타자 도우미(정보 수업 표준). game.url 이 "link:" 면 설명+새 탭 링크 카드로 뜬다. */
+const TYPING_URL = "https://python-typing-helper.vercel.app/";
+/** 성찰 보상 게임 = 스네이크. 성찰을 제출하면 '제출하고 게임하기' 로 열린다. */
+const SNAKE_URL = "https://snake-game-iota-puce.vercel.app/";
+
+/** 공유(Share) 버튼 위치 안내 그림 — MakeCode 상단 바, 공유 아이콘 강조(교사 제공 스크린샷). */
+const SHARE_IMG = "/mb23-share.png";
+
+/*
+ * LED 탐색(worksheet)은 '미션 — 두근두근 하트' 하나로 간소화했다(교사와 함께 직접 타이핑).
+ * 예전 스캐폴딩 코드 상수(스켈레톤·타이핑·큰 하트·미션 완성본)는 미션에서 코드를 빼면서 제거했다.
+ */
+
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
 
 // ─────────────────────────────────────────────────────────────
-// 활동지 (worksheet 단계) — LED 탐색. 블록을 하나씩 찾아 끌어다 놓고 시뮬레이터로 결과를 보며
-// 감을 잡고, 값도 바꿔 본다(16차 '찍어보기' 톤). 블록 이름은 한글 MakeCode 표기 + 영어를 함께 준다.
-// 기록은 list/text 로 가볍게 남긴다(저장). 안내는 note. 화면 글자는 평문.
+// 피지컬 컴퓨팅(+피지컬 AI) 단계 — phase:"problem" (STEP 단계 슬롯을 '피지컬 컴퓨팅' 으로 이름만
+// 바꿔 쓴다). 설명만 하는 note 묶음(입력칸 없음, maxLength:0). 센서/프로세서/액추에이터를
+// 사람 몸 반사 반응 그림(/mb23-body.png, 생성형 이미지)을 note 오른쪽 1/2 폭으로 붙인다(imageSide). 중1 눈높이.
+// ─────────────────────────────────────────────────────────────
+const PHYSICAL: WorksheetQuestion[] = [
+  {
+    key: "_pc_intro",
+    phase: "problem",
+    label: "피지컬 컴퓨팅이 뭐예요?",
+    hint:
+      "지금까지 파이썬·블록으로 만든 건 모두 '화면 안' 에서만 움직였죠? 피지컬 컴퓨팅은 코드가\n" +
+      "화면 밖 '진짜 세상' 과 주고받는 거예요 — 불을 켜고, 소리를 내고, 움직임을 느껴요.\n\n" +
+      "움직이는 방법은 늘 세 단계예요:\n" +
+      "  ① 입력 — 센서로 바깥을 '감지' 해요 (밝기·온도·흔들기 등)\n" +
+      "  ② 처리 — 그 값을 보고 프로그램이 '어떻게 할지' 정해요\n" +
+      "  ③ 출력 — 장치(LED·모터·스피커)로 '반응' 해요\n\n" +
+      "우리 둘레에도 많아요: 스마트홈(공기가 나빠지면 공기청정기가 켜짐), 스마트워치(심장이\n" +
+      "빨리 뛰면 알려 줌), 사물인터넷(문이 열리면 자동으로 잠금). 오늘 쓰는 마이크로비트가\n" +
+      "바로 이 피지컬 컴퓨팅을 해 보는 작은 컴퓨터예요.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "_pc_parts",
+    phase: "problem",
+    label: "세 가지 — 센서 · 프로세서 · 액추에이터 (사람 몸으로 보면)",
+    hint:
+      "피지컬 컴퓨팅 장치는 사람 몸이랑 똑 닮았어요(오른쪽 그림):\n\n" +
+      "· 센서 = 감각기관(눈·귀·피부) — 바깥을 '감지' 해요 … 입력\n" +
+      "· 마이크로프로세서 = 뇌 — 받은 걸 보고 '생각하고 판단' 해요 … 처리\n" +
+      "· 액추에이터 = 손발·근육 — '움직여서 반응' 해요(LED·모터·스피커) … 출력\n\n" +
+      "사람이 '뜨거운 걸 손으로 느끼고(센서) → 앗 뜨거! 판단하고(뇌) → 손을 떼는(근육)' 것처럼,\n" +
+      "장치도 '감지 → 판단 → 반응' 으로 움직여요. 마이크로비트의 LED는 이 중 '액추에이터(출력)' 예요.",
+    kind: "note",
+    imageUrl: "/mb23-body.png",
+    imageAlt:
+      "아이가 뜨거운 촛불에 손을 댔다 떼는 반사 그림. ① 센서(입력)=손이 뜨거움을 느낌, ② 마이크로프로세서(처리)=뇌가 '앗 뜨거!' 판단, ③ 액추에이터(출력)=근육이 손을 뗌. 아래에 입력→처리→출력 흐름.",
+    imageSide: "right",
+    imageSideWidth: "half",
+    maxLength: 0,
+  },
+  {
+    key: "_pc_ai",
+    phase: "problem",
+    label: "피지컬 AI 는 뭐가 다를까?",
+    hint:
+      "피지컬 AI 는 'AI가 몸을 가지고 세상 밖으로 나온 것' 이에요. 카메라·센서로 주변을 보고,\n" +
+      "스스로 '이게 뭔지 알아보고(인식) → 어떻게 할지 생각해(추론) → 행동' 까지 해요.\n\n" +
+      "  입력 → 인식 → 추론 → 행동 → (해 보고) 학습\n\n" +
+      "앞의 피지컬 컴퓨팅이 '정해진 규칙대로(이러면 저렇게)' 움직인다면, 피지컬 AI 는 상황을\n" +
+      "스스로 '이해하고 판단' 하고, 겪은 걸로 점점 더 똑똑해져요(학습).\n\n" +
+      "예) 자율주행차(길·신호·사람을 알아보고 스스로 운전), 로봇청소기(집 구조를 익혀 길을 짬),\n" +
+      "휴머노이드 로봇(아틀라스 — 걷고 뛰고 물건을 옮김).\n\n" +
+      "▶ 아래 단추로 피지컬 AI 영상 '하늘을 나는 자동차' 를 같이 봐요.",
+    kind: "note",
+    linkUrl: "https://youtube.com/shorts/2e2PXcW4YZQ",
+    linkLabel: "영상 보기 — 하늘을 나는 자동차 (새 탭)",
+    maxLength: 0,
+  },
+];
+
+// ─────────────────────────────────────────────────────────────
+// 활동지 (worksheet 단계) — LED 탐색. 교사 주도로 '직접 타이핑(노가다) → 블록 드래그 = 코드 자동
+// → 큰 하트 → 두근두근 미션 → 공유 링크 제출' 순으로 간다. MakeCode '파이썬 보기' 코드를 code
+// 필드(등폭·readonly·noCopy)로 보여 주고, 들여쓰기를 그대로 익힌다. 안내는 note, 저장은 list/text.
 // ─────────────────────────────────────────────────────────────
 const WORKSHEET: WorksheetQuestion[] = [
   /* ── 먼저 — MakeCode 열기 (새 탭, 시뮬레이터) ── */
@@ -88,128 +169,48 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "worksheet",
     label: "먼저 — MakeCode 열기",
     hint:
-      "아래 [MakeCode 열기] 로 블록 에디터를 새 탭에서 열어요. '새 프로젝트' 를 하나 만들면 돼요.\n" +
-      "왼쪽에 마이크로비트 그림(시뮬레이터)이 있어요 — 블록을 놓으면 여기서 바로 움직여요.\n" +
+      "아래 [MakeCode 열기] 로 새 탭에서 열고 '새 프로젝트' 를 하나 만들어요.\n" +
+      "왼쪽에 마이크로비트 그림(시뮬레이터)이 있어요 — 코드가 바뀌면 여기서 바로 움직여요.\n" +
       "오늘은 실물 보드 없이 이 시뮬레이터로만 확인해요(연결·다운로드 안 해요).\n" +
-      "가운데 블록 서랍(기본·입력·LED 등)에서 블록을 찾아 끌어다 놓으면 됩니다.",
+      "MakeCode 위쪽 가운데에서 '블록 ↔ { } 파이썬(Python)' 보기를 바꿀 수 있어요. 오늘은 둘 다 써 봐요.",
     kind: "note",
     linkUrl: MAKECODE_URL,
     linkLabel: "MakeCode 열기 (새 탭)",
     maxLength: 0,
   },
 
-  /* ── 탐색 1 — 아이콘 출력(show icon) ── */
-  {
-    key: "_mb_show_icon",
-    phase: "worksheet",
-    label: "① 아이콘 출력 — show icon",
-    hint:
-      "블록 서랍 '기본(Basic)' 에서 '아이콘 출력(show icon)' 블록을 찾아 '시작하면(on start)' 안에\n" +
-      "끼워 넣어요. 시뮬레이터 LED에 그림이 떠요.\n" +
-      "· 블록의 그림을 눌러 다른 아이콘으로 바꿔 봐요 — 하트, 웃는 얼굴, 네모 등 여러 개가 있어요.\n" +
-      "· 마음에 드는 아이콘을 두세 개 바꿔 보며 LED가 어떻게 달라지는지 눈으로 확인해요.",
-    kind: "note",
-    maxLength: 0,
-  },
-
-  /* ── 탐색 2 — LED 출력(show leds): 25칸 직접 칠하기 ── */
-  {
-    key: "_mb_show_leds",
-    phase: "worksheet",
-    label: "② LED 출력 — show leds (내 그림 만들기)",
-    hint:
-      "'기본(Basic)' 에서 'LED 출력(show leds)' 블록을 가져와요. 블록에 5x5 = 25칸이 있어요.\n" +
-      "· 칸을 눌러 켜고 끄며 내 그림을 직접 만들어 봐요(점, 네모, 큰 하트 모양 등).\n" +
-      "· 마이크로비트 LED는 25개뿐이라, 큰 그림도 25칸 안에서 표현해야 해요 — 그 느낌을 체험해요.",
-    kind: "note",
-    maxLength: 0,
-  },
-
-  /* ── 탐색 3 — 문자열 출력(show string) ── */
-  {
-    key: "_mb_show_string",
-    phase: "worksheet",
-    label: "③ 문자열 출력 — show string (글자 흘려보내기)",
-    hint:
-      "'기본(Basic)' 에서 '문자열 출력(show string)' 블록을 가져와 내 이름이나 'HI' 같은 글자를 적어요.\n" +
-      "· LED에 글자가 한 글자씩 흘러가며 지나가요(LED로 글자를 보여주는 한 가지 방법).\n" +
-      "· 글자는 영어로 적어요 — 한글은 LED로 잘 안 나와요. 가볍게 한 번 해 보면 돼요.",
-    kind: "note",
-    maxLength: 0,
-  },
-
-  /* ── 탐색 4 — 시작하면 vs 계속 실행(on start / forever) ── */
-  {
-    key: "_mb_onstart_forever",
-    phase: "worksheet",
-    label: "④ 시작하면 vs 무한 반복 — on start / forever",
-    hint:
-      "블록을 어디에 넣느냐에 따라 '한 번' 할지 '계속' 할지가 달라져요.\n" +
-      "· 시작하면(on start) 안에 넣으면 — 켜질 때 딱 한 번만 실행돼요.\n" +
-      "· 무한 반복(forever) 안에 넣으면 — 멈추지 않고 계속 되풀이해요.\n" +
-      "같은 '아이콘 출력' 블록을 시작하면 안과 무한 반복 안에 각각 넣어 보고 차이를 느껴 봐요.",
-    kind: "note",
-    maxLength: 0,
-  },
-
-  /* ── 탐색 5 — 일시 중지(pause ms) ── */
-  {
-    key: "_mb_pause",
-    phase: "worksheet",
-    label: "⑤ 일시 중지 — pause (ms), 기다리기",
-    hint:
-      "'기본(Basic)' 에서 '일시 중지(pause) (ms)' 블록을 가져와요. 숫자만큼 잠깐 기다려요.\n" +
-      "· 1000 ms = 1초예요. 숫자를 500, 200 처럼 바꿔 보면 기다리는 시간이 달라져요.\n" +
-      "· 두 아이콘 사이에 일시 중지를 넣으면, 바뀌는 속도(빠르기)를 내가 정할 수 있어요.\n" +
-      "다음 미션에서 이걸로 하트가 '두근두근' 뛰게 만들어요.",
-    kind: "note",
-    maxLength: 0,
-  },
-
-  /* ── 탐색 기록 (list, 저장) ── */
-  {
-    key: "mb_explore_log",
-    phase: "worksheet",
-    label: "눌러본 블록 기록 — 무엇을 바꾸니 무엇이 달라졌나요?",
-    hint:
-      "위에서 눌러 본 블록 중 기억에 남는 것을 한 줄씩 적어요. [+ 칸 추가] 로 늘릴 수 있어요.\n" +
-      "예) 아이콘을 하트에서 웃는 얼굴로 바꿨더니 LED 그림이 바뀌었다 / pause 를 200으로 줄였더니 더 빨라졌다.",
-    kind: "list",
-    minItems: 3,
-    maxItems: 6,
-    itemPlaceholder: "예) 어떤 블록을 / 무엇을 바꾸니 / 어떻게 달라졌는지",
-    // 문자열 배열을 JSON 으로 한 칸에 담는다(list-field). 여섯 칸이라 넉넉히 잡아도 1,500 안쪽
-    maxLength: 1500,
-  },
-
-  /* ── 최종 미션 — 두근두근 하트 (블록 순서 평문 안내) ── */
+  /* ── 미션 — 두근두근 하트 (설명만. 코드·세부 힌트 없음 — 선생님과 함께 직접 타이핑) ── */
   {
     key: "_mb_mission",
     phase: "worksheet",
-    label: "최종 미션 — 두근두근 하트 만들기",
+    label: "미션 — 두근두근 하트 (큰 하트 ↔ 작은 하트)",
     hint:
-      "배운 블록을 모아 하트가 '두근두근' 뛰게 만들어요. 무한 반복(forever) 안에 아래 순서로 블록을 쌓아요:\n\n" +
-      "  1. 아이콘 출력(show icon) — 하트(Heart)\n" +
-      "  2. 일시 중지(pause) — 500 ms\n" +
-      "  3. 아이콘 출력(show icon) — 작은 하트(Small heart)\n" +
-      "  4. 일시 중지(pause) — 500 ms\n\n" +
-      "이렇게 하면 큰 하트와 작은 하트가 번갈아 뜨면서 심장처럼 두근두근 뛰어요(0.5초마다 바뀌니 1초에 한 번 두근).\n" +
-      "· 일시 중지 값(500)을 200이나 1000으로 바꿔 빠르기를 조절해 봐요 — 더 빠르게/느리게 뛰어요.\n" +
-      "시뮬레이터에서 두 하트가 번갈아 뛰면 성공!",
+      "미션! 1초에 한 번씩 '큰 하트 → 작은 하트' 가 번갈아 뜨며 심장처럼 두근두근 뛰게 만들어요.\n" +
+      "선생님과 함께 직접 타이핑해서 만들어요. 오른쪽 그림처럼 두 하트가 번갈아 뛰면 성공!",
     kind: "note",
+    imageUrl: "/mb23-heart.svg",
+    imageAlt: "마이크로비트 LED가 큰 하트와 작은 하트로 1초마다 번갈아 깜빡이는 움직이는 그림",
+    imageSide: "right",
+    imageSideWidth: "third",
     maxLength: 0,
   },
 
-  /* ── 미션 기록 (text, 저장) ── */
+  /* ── 제출 (하나로 합침) — 이름 바꾸기 + 공유 버튼(그림) 안내 + 링크 입력칸 ── */
   {
-    key: "mb_mission_done",
+    key: "mb_share_link",
     phase: "worksheet",
-    label: "미션 확인 — 두근두근 하트, 어떻게 했나요?",
+    label: "제출 — 이름 바꾸고 공유 링크 붙여넣기",
     hint:
-      "두근두근 하트를 완성했으면, 일시 중지 값을 얼마로 했을 때 가장 마음에 들었는지 한 줄로 적어 봐요.\n" +
-      "(예: 300으로 하니 심장이 빨리 뛰는 것 같아 재밌었다)",
+      "다 만들었으면 제출해요. 순서대로 해요:\n" +
+      "1) MakeCode 맨 아래 '프로젝트 이름' 칸을 '학번 이름 하트 두근두근' 으로 바꿔요. 예) 10130 홍길동 하트 두근두근\n" +
+      "2) 오른쪽 위 '공유(Share)' 버튼(아래 그림의 강조된 아이콘)을 눌러요.\n" +
+      "3) '공유하기 / 링크 만들기' 를 누르면 주소(링크)가 만들어져요 — 그 주소를 복사해요.\n" +
+      "4) 아래 칸에 그 주소를 붙여넣어 제출해요. (선생님이 열어서 확인해요.)",
     kind: "text",
-    maxLength: 200,
+    imageUrl: SHARE_IMG,
+    imageAlt: "MakeCode 상단 바에서 공유(Share) 버튼 아이콘이 네모로 강조된 모습",
+    imageWidth: "half",
+    maxLength: 300,
   },
 ];
 
@@ -218,90 +219,126 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   title: "마이크로비트 MakeCode — LED와 친해지기(두근두근 하트)",
   moodCheckEnabled: true,
 
-  // 대기 화면 = 간단한 게임(지뢰찾기, 정보 관례). 기분은 대기 앞에서 받는다(moodCheckEnabled).
+  // 대기 화면 = 파이썬 타자 도우미(정보 수업 표준). 기분은 대기 앞에서 받는다(moodCheckEnabled).
+  // url 이 "link:" 로 시작하면 iframe 이 아니라 설명+새 탭 링크 카드로 뜬다(focusExempt 에 waiting 필요).
   game: {
-    heading: "기다리는 동안 — 지뢰찾기",
+    heading: "기다리는 동안 — 파이썬 타자 연습",
     body:
-      "수업이 시작되길 기다리는 동안 잠깐 쉬어요.\n" +
-      "숫자를 단서로 지뢰가 없는 칸을 찾아 열면 돼요.\n" +
-      "수업이 시작되면 이 화면은 저절로 넘어가요.",
-    url: "https://mine-sweeper-game-seven.vercel.app/home",
+      "수업이 시작되길 기다리는 동안 파이썬 타자 연습을 해 봐요.\n" +
+      "아래 단추로 새 탭에서 열려요. 수업이 시작되면 돌아오세요.",
+    url: `link:${TYPING_URL}`,
   },
   gameExplainer: empty(),
+
+  // 성찰 보상 게임 = 스네이크. '제출하고 게임하기' 를 누르면 LED 탐색의 공유 링크(mb_share_link)
+  // 가 제출됐는지 본다 — 제출했으면 스네이크, 아니면 팝업으로 LED 탐색 단계로 보낸다(submitted:true).
+  rewardGame: {
+    heading: "수고했어요! 🎮",
+    body: "성찰을 제출했으면 잠깐 스네이크 게임으로 쉬어요. 선생님이 부르면 돌아오세요.",
+    url: SNAKE_URL,
+    requires: [
+      { key: "mb_share_link", label: "LED 탐색 — 공유 링크 제출", phase: "worksheet", submitted: true },
+    ],
+  },
 
   // 다음 시간(progress) 단계는 두지 않는다 — 안내(assessment)가 이미 있어 중복이다.
   progress: empty(),
 
   /*
-   * 안내 보드 — 마이크로비트가 뭔지 + MakeCode(블록) 소개 + 오늘 할 일. 활동 중 되돌아와 볼 수 있다.
-   * MakeCode 를 새 탭으로 여는 링크는 활동지 첫 note(_mb_open)에 둔다(탭은 worksheet 단계, focusExempt).
+   * 안내 보드 — 오늘 전체 활동 안내만(큰 그림). 마이크로비트·MakeCode 소개는 '마이크로비트'
+   * 단계(video)로, 센서·프로세서 비유는 '피지컬 컴퓨팅' 단계(problem 활동지)로 옮겼다.
+   * 활동 중 되돌아와 오늘 순서를 다시 볼 수 있다.
    */
   assessment: {
-    heading: "오늘 할 일 — 마이크로비트와 MakeCode로 LED 켜 보기",
+    heading: "오늘 할 일 — 마이크로비트로 LED 켜 보기",
     body: "",
     url: "",
-    tabs: [
+    // 빈 배열로 둬서 옛 마이크로비트·MakeCode 탭을 지운다. set(merge:true)는 맵을 깊게 병합해
+    // 새 cards 만 넣으면 옛 tabs 가 그대로 남는다 — tabs:[] 로 배열을 통째로 덮어 비운다.
+    tabs: [],
+    cards: [
       {
-        label: "마이크로비트가 뭐예요?",
-        subtitle: "손바닥만 한 작은 컴퓨터",
-        note:
-          "마이크로비트는 손바닥만 한 작은 컴퓨터예요. 앞면에 작은 불(LED) 25개가 5줄 x 5칸으로 박혀\n" +
-          "있어서 그림이나 글자를 보여줄 수 있어요. 버튼 A·B 와 여러 센서(흔들기·밝기·온도 등)도 있어요.\n" +
-          "오늘은 그중 'LED 25개' 와 친해져 봅니다.",
-        rows: [
-          { label: "LED", value: "앞면의 작은 불 25개(5x5) — 그림·글자를 보여줘요" },
-          { label: "버튼", value: "A·B 두 개 — 다음 차시부터 입력으로 써요" },
-          { label: "센서", value: "흔들기·밝기·온도 등 — 나중에 게임에 써요" },
-        ],
-        highlights: [
-          "오늘은 실물 보드 없이 화면 속 '시뮬레이터' 로만 해 봐요(연결·다운로드 안 해요).",
+        badge: "오늘",
+        title: "이 순서로 해요",
+        note: "40분",
+        lines: [
+          "① 피지컬 컴퓨팅 — 코드가 '현실' 과 주고받는 법 알아보기(센서·뇌·손발)",
+          "② 마이크로비트 — 영상으로 어떤 컴퓨터인지 보기 + MakeCode 소개",
+          "③ LED 탐색 — MakeCode 블록을 하나씩 눌러 보며 LED 켜 보기",
+          "④ 두근두근 하트 만들기(최종 미션)",
+          "⑤ 성찰 쓰고 → 스네이크 게임으로 쉬기",
         ],
       },
       {
-        label: "MakeCode가 뭐예요?",
-        subtitle: "블록을 끼워 맞춰 코딩하는 곳",
-        note:
-          "MakeCode 는 블록을 끼워 맞춰 마이크로비트를 움직이는 코딩 도구예요(엔트리처럼 블록 코딩).\n" +
-          "블록을 놓으면 왼쪽 시뮬레이터(마이크로비트 그림)에서 바로 결과가 보여요. 오늘은 LED를\n" +
-          "켜는 블록들을 하나씩 눌러 보며 감을 잡고, 마지막에 '두근두근 하트' 를 만들어요.",
-        rows: [
-          { label: "어디서", value: "makecode.microbit.org (활동지에서 새 탭으로 열어요)" },
-          { label: "어떻게", value: "블록 서랍에서 블록을 찾아 끌어다 놓기" },
-          { label: "확인", value: "왼쪽 시뮬레이터로 바로 보기(값도 바꿔 보기)" },
-          { label: "채점은", value: "점수·자동채점 없어요 — 눌러 보고 감만 잡으면 됩니다" },
-        ],
-        highlights: [
-          "파이썬처럼 글자를 치는 게 아니라, 블록을 끼워요. 틀려도 괜찮으니 이것저것 눌러 봐요.",
+        badge: "약속",
+        title: "오늘 수업 방법",
+        note: "",
+        lines: [
+          "오늘은 실물 보드 없이 화면 속 '시뮬레이터' 로만 해요(연결·다운로드 안 해요).",
+          "점수·자동채점 없어요 — 블록을 눌러 보고 '감' 만 잡으면 됩니다.",
+          "블록도 끌어와 보고, 코드(파이썬)도 직접 쳐 봐요. 틀려도 괜찮으니 이것저것 해 봐요.",
         ],
       },
     ],
   },
 
-  video: empty(),
+  /*
+   * '마이크로비트' 단계(video) — 전자칠판에서 소개 영상(VIDEO_URL)을 교사가 같이 재생한다
+   * (toEmbedUrl 임베드). 학생 태블릿에는 영상 주소를 안 내려보내고(PRD 3.2), body(마이크로비트·
+   * MakeCode 설명)와 videoPrompts(영상 보며 생각할 것)만 뜬다. phaseLabels 로 '마이크로비트' 표시.
+   */
+  video: {
+    heading: "마이크로비트가 뭐예요?",
+    url: VIDEO_URL,
+    body:
+      "마이크로비트는 손바닥만 한 작은 컴퓨터예요. 앞면에 작은 불(LED)이 25개(5줄 x 5칸) 박혀 있어\n" +
+      "그림·글자를 보여주고, 버튼 A·B 와 여러 센서(흔들기·밝기·온도 등)도 있어요. 오늘은 그중\n" +
+      "'LED 25개' 와 친해져 봅니다.\n\n" +
+      "코딩은 'MakeCode' 로 해요. makecode.microbit.org 에서 쓰고, 블록을 놓으면 왼쪽 시뮬레이터(마이크로비트\n" +
+      "그림)에서 바로 결과가 보여요. '파이썬(Python) 보기' 로 바꾸면 같은 걸 코드로도 볼 수 있어요 —\n" +
+      "오늘은 코드를 직접 쳐 보기도 하고 블록도 끌어와 봐요. 실물 없이 시뮬레이터로만 해 봐요.",
+  },
+  videoPrompts: [
+    "마이크로비트 앞면의 작은 불(LED)은 몇 개일까요? (힌트: 5줄 x 5칸)",
+    "LED 말고 또 뭐가 있었나요? (버튼·센서 — 흔들기·밝기·온도 등)",
+    "오늘 우리는 실물 보드 없이 무엇으로 해 볼까요? (화면 속 시뮬레이터)",
+  ],
 
   /*
-   * 성찰 — 블록으로 바로 반응하는 체험 소감 + 다음 시간 예고. 개인적이라 비공개.
+   * 성찰 — 오늘 배운 '피지컬 컴퓨팅 3구성요소' 를 확인하는 한 문항. 개인적이라 비공개.
+   * (성찰을 제출하면 보상 게임 스네이크가 열린다 — requireReflection 기본값.)
    */
-  reflectionQuestions: [
-    "블록을 놓으니 마이크로비트(시뮬레이터)가 바로 반응했죠? 가장 재밌었던 블록과 그 이유를 한 줄로 적어 봐요.",
-    "다음 시간엔 '기본 코드' 를 포털에서 내려받아 MakeCode로 가져와서 시작해요. 어떤 걸 만들어 보고 싶나요?",
-  ],
+  reflectionQuestions: ["피지컬 컴퓨팅의 3가지 구성 요소는 무엇인가요?"],
   reflectionPublic: false,
 
   /*
-   * MakeCode(새 탭) 링크가 붙은 worksheet 단계에서 창을 옮기는 것을 이탈로 세지 않는다.
-   * 대기 게임은 iframe(새 탭 아님)이라 focusExempt 가 필요 없다.
+   * 새 탭을 여는 단계는 창 이동을 이탈로 세지 않는다 — 대기(파이썬 타자 도우미 링크)와
+   * worksheet(MakeCode 링크) 둘 다.
    */
-  focusExempt: ["worksheet"],
+  focusExempt: ["waiting", "problem", "worksheet"],
+  /*
+   * 단계 버튼 순서 — 대기 → 안내 → 피지컬 컴퓨팅 → 마이크로비트 → LED 탐색 → 성찰.
+   * 기분(mood)은 대기 화면에서 받으므로(moodCheckEnabled) 교사 대시보드의 단독 '기분' 단계는 뺀다.
+   *  · 피지컬 컴퓨팅 = problem 슬롯(STEP 단계, 활동지 note — 사람 몸 비유 그림)
+   *  · 마이크로비트 = video 슬롯(전자칠판 영상 + body·videoPrompts). video 는 session.video 에
+   *    url 이 있으면 교사 대시보드에 버튼이 뜨므로(hasContent) 반드시 phaseOrder 에 넣어 자리를
+   *    못 박는다 — 안 넣으면 '영상 시청' 단추가 성찰 뒤에 새서 붙는다.
+   * problem(피지컬) 을 video(마이크로비트) 앞에 두려고 phaseOrder 로 순서를 명시한다
+   * (LESSON_PHASES 전역 순서는 video 가 problem 보다 앞이라, phaseOrder 가 그걸 뒤집는다).
+   */
+  phaseOrder: ["waiting", "assessment", "problem", "video", "worksheet", "reflection"],
   phaseLabels: {
     assessment: "안내",
+    problem: "피지컬 컴퓨팅",
+    video: "마이크로비트",
     worksheet: "LED 탐색",
   },
   /*
-   * 되돌아가기 켬 — 학생이 안내·활동지를 스스로 오갈 수 있다. 교사는 안내 → 탐색 블록들 →
-   * 최종 미션 순으로 단추로 몬다.
+   * 되돌아가기 끔 — 교사 표준(무조건 모든 차시 시작 시 off 기본값). 단계 진행은 교사가
+   * 대시보드 단추로 몬다(안내 → 피지컬 컴퓨팅 → 마이크로비트 → LED 탐색 → 성찰). 필요하면
+   * 수업 중 대시보드에서 켠다.
    */
-  freeNavigation: true,
+  freeNavigation: false,
 
   activity: {
     activityId: ACTIVITY_ID,
@@ -314,7 +351,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         "MakeCode 를 새 탭으로 열고, LED 블록을 하나씩 찾아 끌어다 놓으며 시뮬레이터로 결과를 봐요.\n" +
         "값도 바꿔 보고, 마지막엔 배운 블록을 모아 '두근두근 하트' 를 만들어요.",
     },
-    worksheet: WORKSHEET,
+    // 피지컬 컴퓨팅(problem) note 묶음 + LED 탐색(worksheet) 을 한 활동지에 담는다.
+    // phase 필드로 각 단계에 갈린다(questionsFor). 피지컬이 먼저 오도록 앞에 붙인다.
+    worksheet: [...PHYSICAL, ...WORKSHEET],
     // 서로 구경하기·출처 칸은 이 차시에서 쓰지 않는다
     galleryEnabled: false,
     sourcesEnabled: false,
@@ -371,14 +410,17 @@ async function main(): Promise<void> {
           moodCheckEnabled: PLAN.moodCheckEnabled,
           game: PLAN.game,
           gameExplainer: PLAN.gameExplainer,
+          rewardGame: PLAN.rewardGame,
           progress: FieldValue.delete(),
           progressChecks: FieldValue.delete(),
           quiz: FieldValue.delete(),
           assessment: PLAN.assessment,
           video: PLAN.video,
+          videoPrompts: PLAN.videoPrompts,
           reflectionQuestions: PLAN.reflectionQuestions,
           reflectionPublic: PLAN.reflectionPublic,
           focusExempt: PLAN.focusExempt,
+          phaseOrder: PLAN.phaseOrder,
           phaseLabels: PLAN.phaseLabels,
           freeNavigation: PLAN.freeNavigation,
           activity: PLAN.activity,
@@ -393,11 +435,11 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (MakeCode 피지컬 아크 전용 새 통 — 파이썬 통 python-dodge-game·파킹된 MicroPython 통 physical-computing 과 분리)`);
-  console.log("단계: 대기(지뢰찾기) → 기분 → 안내(assessment: 마이크로비트·MakeCode 소개) → LED 탐색(worksheet) → 성찰. freeNavigation. quiz·rewardGame 없음.");
-  console.log(`LED 탐색: MakeCode 열기(${MAKECODE_URL}, 새 탭·focusExempt worksheet) → ① 아이콘 출력 ② LED 출력(25칸) ③ 문자열 출력 ④ 시작하면 vs 무한 반복 ⑤ 일시 중지. 블록 하나씩 눌러보고 값 바꿔 관찰.`);
-  console.log("최종 미션: 두근두근 하트 — 무한 반복 안에 '아이콘 출력(하트) → 일시 중지 → 아이콘 출력(작은 하트) → 일시 중지' 반복. pause 값으로 빠르기 조절.");
-  console.log("저장 입력: 탐색 기록(mb_explore_log, list 3~6) · 미션 기록(mb_mission_done, text). 블록 안내는 note(평문). 외부 링크는 makecode.microbit.org 하나.");
-  console.log("성찰 2문항(재밌던 블록 · 다음 시간 예고: 기본 코드 내려받아 MakeCode 가져오기). galleryEnabled: false. sourcesEnabled: false. 실물 보드·플래싱 없음(시뮬레이터).");
+  console.log("단계(phaseOrder): 대기(파이썬 타자 링크) → [기분=대기 화면] → 안내(assessment: 오늘 순서) → 피지컬 컴퓨팅(problem: 센서·뇌·손발 비유 /mb23-body.svg) → 마이크로비트(video: 전자칠판 영상+body/videoPrompts) → LED 탐색(worksheet) → 성찰. freeNavigation. quiz 없음, 보상=스네이크.");
+  console.log(`마이크로비트 영상: ${VIDEO_URL} (전자칠판 toEmbedUrl 임베드, 교사가 재생 — 학생 태블릿엔 주소 안 감).`);
+  console.log(`LED 탐색(worksheet): MakeCode 열기(${MAKECODE_URL}, 새 탭) → ① 파이썬 스켈레톤 → ② 직접 타이핑(show_number→show_icon, noCopy code) → ③ 블록 드래그=코드 자동 → ④ forever 큰 하트 → ⑤ 미션 두근두근(HEART↔SMALL_HEART, pause 1000). code 필드 노가다(직접 타이핑).`);
+  console.log("제출: 프로젝트 이름 '학번 이름 하트 두근두근' → 공유(Share) 버튼(/mb23-share.png 안내) → 링크 만들기 → mb_share_link(text, 공유 URL 제출). 저장: mb_explore_log(list 2~5) · mb_share_link(text).");
+  console.log("성찰 1문항: '피지컬 컴퓨팅의 3가지 구성 요소는 무엇인가요?' (제출 시 보상 스네이크 열림). galleryEnabled: false. sourcesEnabled: false. 실물 보드·플래싱 없음(시뮬레이터).");
   process.exit(0);
 }
 

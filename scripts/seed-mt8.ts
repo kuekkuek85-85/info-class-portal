@@ -8,10 +8,10 @@
  * 교사 구성안을 포털 기능으로 옮긴 것이다. 네 묶음 + 성찰로 짠다:
  *   ① 나의 뇌구조         — 활동지(한 줄에 내용·감정·색·크기)를 채우면 AI(Gemini 이미지)가 뇌구조 그림 생성
  *   ② 나의 행복?           — 영상 시청 + 가치관·행복한 삶·노력·나에게 보내는 응원
- *   ③ 마음 건강            — 자가진단(외부 링크) · 인생 그래프 · 마음건강 OX · 실천방안 · 도움 요청
+ *   ③ 마음 건강            — AI 과의존 자가진단(외부 링크) · 인생 그래프 · 마음건강 OX · 실천방안 · 도움 요청
  *   ④ 돌아보기(포트폴리오) — 지난 8주 활동을 회기별 아코디언으로 펼쳐 보며 그때의 마음 적기
  *   ⑤ 마음일기             — 학기 내내 고른 마음 체크인을 모아 계산·시각화 + AI 한두 문장 총평(본인만)
- *   ⑥ 전체 후기(성찰)      — 전체 수업 후기·배운 점·앞으로의 다짐 → 제출하면 보상 테트리스(rewardGame).
+ *   ⑥ 전체 후기(성찰)      — 전체 수업 후기·배운 점·앞으로의 다짐 → 제출하면 보상 스네이크(rewardGame).
  *
  * ## ★ 프라이버시 (이 과목 1순위) — 전면 비공개
  *
@@ -56,8 +56,8 @@
  * ## 외부 링크는 교사 확인 필요 (직전 7회기 수업 후 메모)
  *
  * 7회기(9/29) 메모: "스케치풀·갈틱폰 등이 학교망에서 접속 안 됨 — 하나도 활용 못 함." 그래서 이 회기의
- * 외부 링크(유튜브 영상·mentalhealth.go.kr 자가진단) 접속 여부는 교사가 먼저 확인해야 한다. 테트리스는
- * 교사 소유 vercel 앱(정보과 17~20차에서 쓰던 것)이라 임베드로 동작한다.
+ * 외부 링크(유튜브 영상·maum-sopoong.or.kr AI 과의존 자가진단) 접속 여부는 교사가 먼저 확인해야 한다.
+ * 스네이크는 교사 소유 vercel 앱이라 임베드로 동작한다.
  */
 
 import { cert, initializeApp } from "firebase-admin/app";
@@ -91,10 +91,10 @@ const LESSON_NO = 208;
 
 /** 돈이 많으면 행복할까? (교사 제공). 임베드용 주소로 바꿔 둔다 — 학교망 접속 여부는 교사 확인 */
 const HAPPY_VIDEO_EMBED = "https://www.youtube.com/embed/GxzF8iASY7E";
-/** 정신건강 자가진단 (교사 제공). 민감정보라 결과는 포털에 저장하지 않고 새 탭에서 각자 본다 */
-const SELFTEST_URL = "https://www.mentalhealth.go.kr/portal/mdexmn/getMdexmnuserJoin.do";
-/** 보상 테트리스 — 교사 소유 vercel 앱(정보과 17~20차에서 쓰던 것). 학교망에서 동작 확인됨 */
-const TETRIS_URL = "https://tetris-game-seven-nu.vercel.app/";
+/** AI 과의존 자가진단 (교사 제공 · 마음소풍). 민감정보라 결과는 포털에 저장하지 않고 새 탭에서 각자 본다 */
+const SELFTEST_URL = "https://www.maum-sopoong.or.kr/ai-overdependency-self-diagnosis-test";
+/** 보상 스네이크 — 교사 소유 vercel 앱. 학교망에서 동작 확인됨 */
+const SNAKE_URL = "https://snake-game-iota-puce.vercel.app/";
 
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
@@ -216,18 +216,18 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 200,
   },
 
-  /* ═══════════ ③-가 마음 건강 — 자가진단(외부 링크, 저장 안 함) (mvp) ═══════════ */
+  /* ═══════════ ③-가 마음 건강 — AI 과의존 자가진단(외부 링크, 저장 안 함) (mvp) ═══════════ */
   {
     key: "_selftest_intro",
     phase: "mvp",
-    label: "마음 건강 — 내 마음 상태를 스스로 살펴봐요",
+    label: "AI 과의존 자가진단 — 나와 스마트폰·AI 사이의 거리를 살펴봐요",
     hint:
-      "아래 [정신건강 자가진단] 을 눌러 새 탭에서 열고, 안내에 따라 각자 해 봐요.\n" +
+      "아래 [AI 과의존 자가진단] 을 눌러 새 탭에서 열고, 안내에 따라 각자 해 봐요.\n" +
       "★ 결과는 '나만' 보는 거예요 — 포털에 저장하지 않고, 친구에게도 보이지 않아요.\n" +
       "결과가 걱정되면 담임·상담 선생님께 편하게 이야기해도 좋아요(아래 '도움 요청' 참고).",
     kind: "note",
     linkUrl: SELFTEST_URL,
-    linkLabel: "정신건강 자가진단 열기 (새 탭)",
+    linkLabel: "AI 과의존 자가진단 열기 (새 탭)",
     maxLength: 0,
   },
   {
@@ -445,7 +445,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     { key: "mt-thu-2", label: "목요일 2기", classNo: 4 },
   ],
 
-  // 대기 게임은 지뢰찾기(교사 소유 vercel). 테트리스는 마지막 보상으로 아껴 둔다.
+  // 대기 게임은 지뢰찾기(교사 소유 vercel). 스네이크는 마지막 보상으로 아껴 둔다.
   game: {
     heading: "기다리는 동안 — 지뢰찾기",
     body:
@@ -498,7 +498,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     draw: "나의 뇌구조 그리기",
     video: "나의 행복? (영상)",
     problem: "나의 행복? (가치·행복·응원)",
-    mvp: "마음 건강 자가진단",
+    mvp: "AI 과의존 자가진단",
     wrapheal: "나의 인생 그래프 그리기",
     build: "인생 그래프 돌아보기",
     quiz: "마음 건강 OX",
@@ -595,13 +595,13 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   },
 
   /*
-   * 보상 테트리스 — 마음일기를 제출하면 열린다(rewardGame). requires 를 비워 두면 '제출' 만으로
+   * 보상 스네이크 — 마음일기를 제출하면 열린다(rewardGame). requires 를 비워 두면 '제출' 만으로
    * 바로 열린다(이 회기엔 AI 채점 통과 같은 조건이 없다). 교사 소유 vercel 앱이라 학교망에서 동작한다.
    */
   rewardGame: {
-    heading: "테트리스",
-    body: "8주 동안 정말 수고했어요 — 마지막 상으로 테트리스 한 판! 수업이 끝나면 정리해요.",
-    url: TETRIS_URL,
+    heading: "스네이크",
+    body: "8주 동안 정말 수고했어요 — 마지막 상으로 스네이크 한 판! 먹이를 먹으며 쭉쭉 길어져 봐요. 수업이 끝나면 정리해요.",
+    url: SNAKE_URL,
     requires: [],
   },
 };
@@ -633,14 +633,14 @@ async function main(): Promise<void> {
   console.log(`\n활동 ID: ${ACTIVITY_ID} · 차시 번호 ${LESSON_NO} (8회기 마지막)`);
   console.log("교사 버튼 순서: 대기(마음 체크인) →");
   console.log("  [draw] 나의 뇌구조(AI 이미지 생성) → [video] 나의 행복? 영상 → [problem] 가치·행복·응원");
-  console.log("  → [mvp] 마음 건강 자가진단(외부, 저장X) → [wrapheal] 나의 인생 그래프 그리기(백지 손그림) → [build] 인생 그래프 돌아보기");
+  console.log("  → [mvp] AI 과의존 자가진단(외부, 저장X) → [wrapheal] 나의 인생 그래프 그리기(백지 손그림) → [build] 인생 그래프 돌아보기");
   console.log("  → [quiz] 마음 건강 OX → [grill] 실천방안·도움 요청 → [wrapmap] 지난 8주 돌아보기(포트폴리오, 회기별 아코디언)");
-  console.log("  → [mooddiary] 마음일기(마음 체크인 리포트: 계산 + AI 한두 문장 총평) → [reflection] 전체 후기(제출→테트리스)");
+  console.log("  → [mooddiary] 마음일기(마음 체크인 리포트: 계산 + AI 한두 문장 총평) → [reflection] 전체 후기(제출→스네이크)");
   console.log("\n★ 산출물 둘: 뇌구조(draw, brainImage AI 이미지) + 인생 그래프(wrapheal, 백지 손그림·graph 슬롯). 포트폴리오: wrapmap 에서 본인 지난 작품·기분 추이.");
   console.log("★ 프라이버시: galleryEnabled: false (전면 비공개) · reflectionPublic: false · 포트폴리오도 본인 것만.");
   console.log("  뇌구조 이미지: 서버가 artifact 답(각 줄의 내용·감정·색·%)만 Gemini 로 보냄 — 학번·이름 안 보냄, 위기 신호는 호출 전 차단, 결과는 본인 전용 필드 저장(친구 비노출).");
   console.log("  자가진단 결과는 포털에 저장하지 않음(외부 새 탭). 도움 요청은 학교·집·기관 직접 조사 + 짧은 안전망(1388·109)·OX 로 위기 대응 녹임.");
-  console.log("⚠ 교사 확인 필요: 유튜브 영상·mentalhealth.go.kr 자가진단의 학교망 접속 여부(7회기 메모: 외부 사이트 차단 사례).");
+  console.log("⚠ 교사 확인 필요: 유튜브 영상·maum-sopoong.or.kr AI 과의존 자가진단의 학교망 접속 여부(7회기 메모: 외부 사이트 차단 사례).");
   console.log("세션 열기(화요일 1기): node --env-file=.env.local scripts/open-mt8-tue1.ts  (리허설: --rehearsal)");
   process.exit(0);
 }
