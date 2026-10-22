@@ -104,6 +104,8 @@ export async function GET() {
         reflectionImage: session.reflectionImage,
         reflectionPublic: session.reflectionPublic,
         freeNavigation: session.freeNavigation ?? false,
+        // "다 했어요" 제출 버튼 숨김 여부(24차~). 기본 false=기존대로 보임.
+        hideDoneButton: session.hideDoneButton ?? false,
         // 단계 순서(차시가 정함). 되돌아가기 줄이 이걸 존중해 phaseOrder 에 없는 단계(예: 기분)는
         // 안 띄운다 — 교사 대시보드 단추(availablePhase)와 같은 기준.
         phaseOrder: session.phaseOrder ?? [],

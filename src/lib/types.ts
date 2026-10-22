@@ -712,6 +712,14 @@ export interface WorksheetQuestion {
      * 있어요" 를 띄운다 (vibe-code-panel · /api/student/vibe-code · vibe-code.ts).
      */
     | "vibe_code"
+    /**
+     * led_animator — 포털 LED 애니메이터 (24차 나만의 LED 애니메이션). 5x5 격자를 클릭으로 그려
+     * 프레임을 쌓고(각 프레임 뒤 지연 ms), '코드 생성' 으로 MakeCode Python 전체 코드(def on_forever
+     * + basic.show_leds/pause + basic.forever)를 뽑아 복사한다. 순수 클라이언트(서버·AI 없음). 주제·
+     * 프레임은 answers[key] 에 JSON({theme, frames:[{on:boolean[25], delay}]})으로 저장돼 지속되고
+     * 교사가 활동지로 열람한다. 갤러리 노출은 안 한다(비공개) (led-animator).
+     */
+    | "led_animator"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
@@ -1634,6 +1642,12 @@ export interface LessonPlan {
    * 잊어버리기 좋은 자리다.
    */
   freeNavigation?: boolean;
+  /**
+   * "다 했어요 — 선생님께 알리기" 제출 버튼을 숨긴다 (24차부터). 기본 false=기존대로 보인다.
+   * 제출·통과·보상이 없고 입력이 자동저장되는 차시(예: 24차 LED 애니메이터)만 켠다. 전역으로
+   * 지우면 안 된다 — 이 버튼은 수행평가 통과·DonePortal·보상 게이트의 방아쇠다.
+   */
+  hideDoneButton?: boolean;
   /** 진도 체크 팝업 설정 (도우미 선발 속도 체크). 없으면 팝업 없음 (ProgressChecks) */
   progressChecks?: ProgressChecks;
   /**
@@ -1807,6 +1821,12 @@ export interface ClassSession {
    * 들여다보면 수업을 끌고 갈 수가 없다.
    */
   freeNavigation?: boolean;
+  /**
+   * "다 했어요 — 선생님께 알리기" 제출 버튼을 숨긴다 (24차부터). 기본 false=기존대로 보인다.
+   * 제출·통과·보상이 없고 입력이 자동저장되는 차시(예: 24차 LED 애니메이터)만 켠다. 전역으로
+   * 지우면 안 된다 — 이 버튼은 수행평가 통과·DonePortal·보상 게이트의 방아쇠다.
+   */
+  hideDoneButton?: boolean;
   /** 진도 체크 팝업 설정 (도우미 선발 속도 체크). 없으면 팝업 없음 (ProgressChecks) */
   progressChecks?: ProgressChecks;
 
