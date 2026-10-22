@@ -712,6 +712,14 @@ export interface WorksheetQuestion {
      * 있어요" 를 띄운다 (vibe-code-panel · /api/student/vibe-code · vibe-code.ts).
      */
     | "vibe_code"
+    /**
+     * led_animator — 포털 LED 애니메이터 (24차 나만의 LED 애니메이션). 5x5 격자를 클릭으로 그려
+     * 프레임을 쌓고(각 프레임 뒤 지연 ms), '코드 생성' 으로 MakeCode Python 전체 코드(def on_forever
+     * + basic.show_leds/pause + basic.forever)를 뽑아 복사한다. 순수 클라이언트(서버·AI 없음). 주제·
+     * 프레임은 answers[key] 에 JSON({theme, frames:[{on:boolean[25], delay}]})으로 저장돼 지속되고
+     * 교사가 활동지로 열람한다. 갤러리 노출은 안 한다(비공개) (led-animator).
+     */
+    | "led_animator"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.

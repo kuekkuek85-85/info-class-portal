@@ -10,6 +10,7 @@ import { EmotionLensPanel } from "@/components/emotion-lens-panel";
 import { RelayPanel } from "@/components/relay-panel";
 import { RulesResultPanel } from "@/components/rules-result-panel";
 import { StreamsSolo } from "@/components/streams-solo";
+import { LedAnimator } from "@/components/led-animator";
 import { StreamsBroadcast } from "@/components/streams-broadcast";
 import { VibeCodePanel } from "@/components/vibe-code-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
@@ -1049,6 +1050,18 @@ export function WorksheetView({
               서버·Gemini 를 쓰지 않는다 (streams-solo).
             */
             <StreamsSolo
+              questionKey={question.key}
+              raw={value.answers[question.key] ?? ""}
+              onChange={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
+          ) : question.kind === "led_animator" ? (
+            /*
+              LED 애니메이터 — 5x5 격자를 클릭으로 그려 프레임을 쌓고 '코드 생성' 으로 MakeCode
+              Python 전체 코드를 뽑아 복사한다. 순수 클라이언트(서버·AI 없음), 상태는 answers 에
+              JSON 으로 저장된다 (led-animator · 24차).
+            */
+            <LedAnimator
               questionKey={question.key}
               raw={value.answers[question.key] ?? ""}
               onChange={(raw) => setAnswer(question.key, raw)}
