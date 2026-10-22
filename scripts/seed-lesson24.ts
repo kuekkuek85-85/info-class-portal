@@ -170,16 +170,22 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   // 자동저장이라 제출 버튼이 필요 없다(기본값 false, 다른 차시는 그대로 버튼이 보인다).
   hideDoneButton: true,
 
-  // 대기 화면 = 23차와 동일한 게임. (교사가 추후 스네이크 링크로 바꿀 예정 — 23차를 따라간다.)
+  // 대기 화면 = 파이썬 타자 도우미(정보 수업 표준, 교사 확정). url 이 "link:" 면 설명+새 탭 링크 카드로 뜬다.
   game: {
-    heading: "기다리는 동안 — 지뢰찾기",
+    heading: "기다리는 동안 — 파이썬 타자 연습",
     body:
-      "수업이 시작되길 기다리는 동안 잠깐 쉬어요.\n" +
-      "숫자를 단서로 지뢰가 없는 칸을 찾아 열면 돼요.\n" +
-      "수업이 시작되면 이 화면은 저절로 넘어가요.",
-    url: "https://mine-sweeper-game-seven.vercel.app/home",
+      "수업이 시작되길 기다리는 동안 파이썬 타자 연습을 해 봐요.\n" +
+      "아래 단추로 새 탭에서 열려요. 수업이 시작되면 돌아오세요.",
+    url: "link:https://python-typing-helper.vercel.app/",
   },
   gameExplainer: empty(),
+
+  // 성찰 보상 게임 = 스네이크(교사 확정). 성찰을 제출하면 '제출하고 게임하기' 로 열린다(requireReflection 기본).
+  rewardGame: {
+    heading: "수고했어요! 🎮",
+    body: "성찰을 제출했으면 잠깐 스네이크 게임으로 쉬어요. 선생님이 부르면 돌아오세요.",
+    url: "https://snake-game-iota-puce.vercel.app/",
+  },
 
   // 다음 시간(progress) 단계는 두지 않는다 — 안내(assessment)가 이미 있어 중복이다.
   progress: empty(),
@@ -243,7 +249,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * MakeCode(새 탭) 링크가 붙은 미션 단계(build·grill)에서 창을 옮기는 것을 이탈로 세지 않는다.
    * 대기 게임은 iframe(새 탭 아님)이라 focusExempt 가 필요 없다.
    */
-  focusExempt: ["build", "grill"],
+  focusExempt: ["waiting", "build", "grill"],
   phaseLabels: {
     assessment: "안내",
     build: "미션 1 — 두근두근 하트",
@@ -255,9 +261,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    */
   phaseOrder: ["waiting", "assessment", "build", "grill", "reflection"],
   /*
-   * 되돌아가기 켬 — 학생이 안내·미션 단계를 스스로 오갈 수 있다.
+   * 되돌아가기 끔 — 교사 표준(모든 차시 시작 시 off). 교사가 안내 → 미션1 → 미션2 순으로 단추로 몬다.
+   * 필요하면 수업 중 대시보드에서 켠다.
    */
-  freeNavigation: true,
+  freeNavigation: false,
 
   activity: {
     activityId: ACTIVITY_ID,
@@ -328,6 +335,7 @@ async function main(): Promise<void> {
           hideDoneButton: PLAN.hideDoneButton,
           game: PLAN.game,
           gameExplainer: PLAN.gameExplainer,
+          rewardGame: PLAN.rewardGame,
           progress: FieldValue.delete(),
           progressChecks: FieldValue.delete(),
           quiz: FieldValue.delete(),
