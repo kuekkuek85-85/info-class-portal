@@ -294,7 +294,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * (성찰을 제출하면 보상 게임이 열린다 — requireReflection 기본값.)
    */
   reflectionQuestions: [
-    "오늘 만든 '나만의 LED 애니메이션' 은 어떤 장면들이었나요? 다음에 마이크로비트로 더 만들어 보고 싶은 그림이나 움직임이 있다면 함께 적어 보세요.",
+    "오늘 만든 '나만의 LED 애니메이션' 의 주제는 무엇인가요? 무엇을 표현하려 했는지 간단히 소개해 주세요.",
   ],
   reflectionPublic: false,
 
