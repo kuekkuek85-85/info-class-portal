@@ -70,6 +70,21 @@ const ACTIVITY_ID = "microbit-makecode";
 /** MakeCode 블록/파이썬 에디터(공식). 새 탭으로 열어 '파이썬 보기' 에 생성 코드를 붙인다. */
 const MAKECODE_URL = "https://makecode.microbit.org/";
 
+/**
+ * 미션 1 뼈대 코드 — 복사해서 MakeCode '파이썬(Python) 보기' 의 기존 코드를 지우고 맨 처음에 붙여넣는다.
+ * 각 '# (미션)' 왼쪽 빈자리에 basic.pause(500) 을 한 줄씩 넣어 두근두근을 천천히 뛰게 완성한다.
+ */
+const CODE_M1 = `def on_forever():
+    # 큰 하트 출력
+    basic.show_icon(IconNames.HEART)
+                        # (미션) 0.5초(500ms) 멈춤
+
+    # 작은 하트 출력
+    basic.show_icon(IconNames.SMALL_HEART)
+                            # (미션) 0.5초(500ms) 멈춤
+
+basic.forever(on_forever)`;
+
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
@@ -82,31 +97,19 @@ function empty(): PhaseContent {
 const WORKSHEET: WorksheetQuestion[] = [
   /* ── 미션 1 (build) — 두근두근 하트에 pause 두 줄 넣기 ── */
   {
-    key: "_mb24_open1",
-    phase: "build",
-    label: "먼저 — MakeCode 열기",
-    hint:
-      "아래 [MakeCode 열기] 로 에디터를 새 탭에서 열어요. 미션 1은 23차처럼 블록으로 해요.\n" +
-      "왼쪽 시뮬레이터로 바로 확인해요(실물 보드·다운로드 없이).",
-    kind: "note",
-    linkUrl: MAKECODE_URL,
-    linkLabel: "MakeCode 열기 (새 탭)",
-    maxLength: 0,
-  },
-  {
     key: "_mb24_m1",
     phase: "build",
     label: "미션 1 — 두근두근 하트를 천천히 뛰게 (pause 두 줄)",
     hint:
-      "23차에서 만든 '큰 하트 ↔ 작은 하트' 가 너무 빨리 깜빡이면, 아이콘 사이에 '일시 중지(pause)' 를\n" +
-      "넣어 천천히 두근두근 되게 해요. 무한 반복(forever) 안을 이렇게 만들어요:\n\n" +
-      "  1. show_icon — HEART\n" +
-      "  2. pause — 500 ms   (한 줄 추가)\n" +
-      "  3. show_icon — SMALL_HEART\n" +
-      "  4. pause — 500 ms   (또 한 줄 추가)\n\n" +
-      "즉 show_icon 다음마다 pause 를 한 줄씩, 모두 두 줄을 넣는 거예요. 숫자(500)를 바꿔\n" +
-      "빠르기도 조절해 봐요. MakeCode에서 직접 블록으로 해 봅니다.",
+      "아래 '코드 복사하기' 로 뼈대 코드를 복사해, MakeCode '파이썬(Python) 보기' 의 기존 코드를\n" +
+      "모두 지우고(Ctrl+A → Delete) 맨 처음에 붙여넣어요. 그다음 각 '# (미션)' 왼쪽 빈자리에\n" +
+      "basic.pause(500) 을 한 줄씩 넣어, 큰 하트(HEART) ↔ 작은 하트(SMALL_HEART) 사이를 0.5초씩\n" +
+      "쉬게 해 두근두근을 천천히 뛰게 완성해요. 숫자(500)를 바꾸면 빠르기도 조절돼요.\n" +
+      "(아래 [MakeCode 열기] 로 새 탭에서 열어요. 왼쪽 시뮬레이터로 바로 확인!)",
     kind: "note",
+    code: CODE_M1,
+    linkUrl: MAKECODE_URL,
+    linkLabel: "MakeCode 열기 (새 탭)",
     maxLength: 0,
   },
   {
