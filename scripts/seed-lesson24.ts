@@ -100,11 +100,11 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "23차에서 만든 '큰 하트 ↔ 작은 하트' 가 너무 빨리 깜빡이면, 아이콘 사이에 '일시 중지(pause)' 를\n" +
       "넣어 천천히 두근두근 되게 해요. 무한 반복(forever) 안을 이렇게 만들어요:\n\n" +
-      "  1. 아이콘 출력(show icon) — 하트(Heart)\n" +
-      "  2. 일시 중지(pause) — 500 ms   (한 줄 추가)\n" +
-      "  3. 아이콘 출력(show icon) — 작은 하트(Small heart)\n" +
-      "  4. 일시 중지(pause) — 500 ms   (또 한 줄 추가)\n\n" +
-      "즉 아이콘 출력 다음마다 일시 중지를 한 줄씩, 모두 두 줄을 넣는 거예요. 숫자(500)를 바꿔\n" +
+      "  1. show_icon — HEART\n" +
+      "  2. pause — 500 ms   (한 줄 추가)\n" +
+      "  3. show_icon — SMALL_HEART\n" +
+      "  4. pause — 500 ms   (또 한 줄 추가)\n\n" +
+      "즉 show_icon 다음마다 pause 를 한 줄씩, 모두 두 줄을 넣는 거예요. 숫자(500)를 바꿔\n" +
       "빠르기도 조절해 봐요. MakeCode에서 직접 블록으로 해 봅니다.",
     kind: "note",
     maxLength: 0,
