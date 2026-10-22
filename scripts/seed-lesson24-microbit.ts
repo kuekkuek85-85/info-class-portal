@@ -85,7 +85,7 @@ const MAKECODE_URL = "https://makecode.microbit.org/";
 
 /** 대기 화면 = 파이썬 타자 도우미(정보 수업 표준). game.url 이 "link:" 면 설명+새 탭 링크 카드로 뜬다. */
 const TYPING_URL = "https://python-typing-helper.vercel.app/";
-/** 성찰 보상 게임 = 스네이크(23차와 동일). 성찰을 제출하면 '제출하고 게임하기' 로 열린다. ※ 교사 확정 대기 */
+/** 성찰 보상 게임 = 스네이크(23차와 동일, 교사 확정 10-22). 성찰을 제출하면 '제출하고 게임하기' 로 열린다. */
 const SNAKE_URL = "https://snake-game-iota-puce.vercel.app/";
 
 /** 공유(Share) 버튼 위치 안내 그림 — MakeCode 상단 바, 공유 아이콘 강조(23차 자산 재사용). */
@@ -237,7 +237,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   // 성찰 보상 게임 = 스네이크(23차와 동일). '제출하고 게임하기' 를 누르면 공유 링크(mb_share_link)
   // 가 제출됐는지 본다 — 제출했으면 스네이크, 아니면 팝업으로 '나만의 LED 애니메이션' 단계로 보낸다.
-  // ※ 보상 게임 종류는 교사 확정 대기(일단 23차 기준 스네이크).
+  // 보상 게임 = 스네이크(교사 확정 10-22, 23차와 동일).
   rewardGame: {
     heading: "수고했어요! 🎮",
     body: "성찰을 제출했으면 잠깐 스네이크 게임으로 쉬어요. 선생님이 부르면 돌아오세요.",
@@ -272,7 +272,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
           "② 23차 코드(LED 큰 하트·작은 하트) 붙여넣기 — 기존 코드 모두 지우고 맨 처음에",
           "③ 미션1 — 하트 사이에 '0.5초 멈추기' 넣어 두근두근 완성",
           "④ 미션2 — 'LED 그림 + 멈추기' 를 더 붙여 나만의 애니메이션 만들기",
-          "⑤ 이름 바꾸고 공유 링크 제출 → 성찰 쓰고 → 게임으로 쉬기",
+          "⑤ 이름 바꾸고 공유 링크 제출 → 성찰 쓰고 → 스네이크 게임으로 쉬기",
         ],
       },
       {
@@ -410,7 +410,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (23차와 같은 통 — MakeCode 피지컬 아크 이어쓰기)`);
-  console.log("단계(phaseOrder): 대기(파이썬 타자 링크) → [기분=대기 화면] → 안내(assessment) → 나만의 LED 애니메이션(worksheet) → 성찰. freeNavigation off, quiz/video 없음, 보상=스네이크(교사 확정 대기).");
+  console.log("단계(phaseOrder): 대기(파이썬 타자 링크) → [기분=대기 화면] → 안내(assessment) → 나만의 LED 애니메이션(worksheet) → 성찰. freeNavigation off, quiz/video 없음, 보상=스네이크(교사 확정).");
   console.log(`worksheet: MakeCode 열기(${MAKECODE_URL}) → 파이썬 보기 → 스타터 붙여넣기(전체 지우고 맨 처음, code 복사 허용) → 미션1 basic.pause(500)(두 show_leds 사이) → 미션2 show_leds(새 장면)+pause 더 추가(나만의 애니메이션) → mb_share_link(text) 제출.`);
   console.log("LED 블록 확정(에디터 검증): show_leds 다중행 문자열이 열 0 붙여넣기 때 안 깨지고 LED 그림 블록(큰 하트/작은 하트)으로 변환. basic.pause(500)=일시중지 블록. 소리·흔들기 없음(LED만).");
   console.log("깨진 하트/소리/흔들기 전부 제거(교사 확정 2026-10-22). galleryEnabled/sourcesEnabled false. 실물 없이 시뮬레이터.");
