@@ -1642,6 +1642,12 @@ export interface LessonPlan {
    * 잊어버리기 좋은 자리다.
    */
   freeNavigation?: boolean;
+  /**
+   * "다 했어요 — 선생님께 알리기" 제출 버튼을 숨긴다 (24차부터). 기본 false=기존대로 보인다.
+   * 제출·통과·보상이 없고 입력이 자동저장되는 차시(예: 24차 LED 애니메이터)만 켠다. 전역으로
+   * 지우면 안 된다 — 이 버튼은 수행평가 통과·DonePortal·보상 게이트의 방아쇠다.
+   */
+  hideDoneButton?: boolean;
   /** 진도 체크 팝업 설정 (도우미 선발 속도 체크). 없으면 팝업 없음 (ProgressChecks) */
   progressChecks?: ProgressChecks;
   /**
@@ -1815,6 +1821,12 @@ export interface ClassSession {
    * 들여다보면 수업을 끌고 갈 수가 없다.
    */
   freeNavigation?: boolean;
+  /**
+   * "다 했어요 — 선생님께 알리기" 제출 버튼을 숨긴다 (24차부터). 기본 false=기존대로 보인다.
+   * 제출·통과·보상이 없고 입력이 자동저장되는 차시(예: 24차 LED 애니메이터)만 켠다. 전역으로
+   * 지우면 안 된다 — 이 버튼은 수행평가 통과·DonePortal·보상 게이트의 방아쇠다.
+   */
+  hideDoneButton?: boolean;
   /** 진도 체크 팝업 설정 (도우미 선발 속도 체크). 없으면 팝업 없음 (ProgressChecks) */
   progressChecks?: ProgressChecks;
 

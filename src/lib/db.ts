@@ -718,6 +718,8 @@ export function snapshotOf(plan: LessonPlan, groupKey?: string) {
      * 수업에서만 조용히 꺼진 채로 열린다.
      */
     freeNavigation: plan.freeNavigation ?? false,
+    // "다 했어요" 제출 버튼 숨김 여부(24차~). phaseLabels 처럼 화면/open 세션에도 실려야 반영된다.
+    hideDoneButton: plan.hideDoneButton,
   };
 }
 

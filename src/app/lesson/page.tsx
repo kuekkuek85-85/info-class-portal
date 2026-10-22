@@ -110,6 +110,8 @@ interface LessonData {
     reflectionPublic: boolean;
     /** 학생이 지나온 단계로 되돌아갈 수 있는가 */
     freeNavigation?: boolean;
+    /** "다 했어요 — 선생님께 알리기" 버튼 숨김 여부(24차~). 기본 false=보임 */
+    hideDoneButton?: boolean;
     /** 단계 순서(차시가 정함). 되돌아가기 줄이 존중 — 여기 없는 단계(예: 기분)는 안 띄운다 */
     phaseOrder?: LessonPhase[];
     /** 이 차시에서만 쓰는 단계 이름 (되돌아가기 줄에 쓴다) */
@@ -1540,7 +1542,7 @@ export default function LessonPage() {
                 보이면 거기서 끝내는 학생이 나오고, 아직 그리기가 남은 차시에서는 장소를
                 안 고른 채로 누르게 된다 (finalWorkPhase 참조).
               */
-              hideSubmit={viewPhase !== finalWorkPhase}
+              hideSubmit={viewPhase !== finalWorkPhase || session.hideDoneButton === true}
               hideSources={session.activity.sourcesEnabled === false}
               // 기분 다시 고르기 문항이 오늘 처음 고른 낱말을 나란히 띄운다
               firstMood={mood}
@@ -1645,7 +1647,7 @@ export default function LessonPage() {
               submitted={artifact.status === "submitted"}
               submitError={submitError}
               disabled={closed}
-              hideSubmit={viewPhase !== finalWorkPhase}
+              hideSubmit={viewPhase !== finalWorkPhase || session.hideDoneButton === true}
               hideSources={session.activity.sourcesEnabled === false}
               heading={session.phaseLabels?.[viewPhase] ?? PHASE_LABELS[viewPhase]}
             />
@@ -1781,7 +1783,7 @@ export default function LessonPage() {
                 회고 뒤에 그리기가 오는 차시(마음 톡톡 3회기)에서는 그 그리기 화면이
                 마지막이므로 거기서 뜬다 — 같은 규칙 하나로 판단한다.
               */
-              hideSubmit={viewPhase !== finalWorkPhase}
+              hideSubmit={viewPhase !== finalWorkPhase || session.hideDoneButton === true}
               hideSources={session.activity.sourcesEnabled === false}
               /*
                 제목은 지금 단계(viewPhase)의 이름을 따른다.
