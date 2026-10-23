@@ -107,6 +107,10 @@ const WORKSHEET: WorksheetQuestion[] = [
       "쉬게 해 두근두근을 천천히 뛰게 완성해요. 숫자(500)를 바꾸면 빠르기도 조절돼요.\n" +
       "(아래 [MakeCode 열기] 로 새 탭에서 열어요. 왼쪽 시뮬레이터로 바로 확인!)",
     kind: "note",
+    imageUrl: "/mb23-heart.svg",
+    imageAlt: "마이크로비트 LED가 큰 하트와 작은 하트로 1초마다 번갈아 뛰는 움직이는 그림(실행 결과)",
+    imageSide: "right",
+    imageSideWidth: "third",
     code: CODE_M1,
     linkUrl: MAKECODE_URL,
     linkLabel: "MakeCode 열기 (새 탭)",
@@ -137,8 +141,13 @@ const WORKSHEET: WorksheetQuestion[] = [
       "  5. '미리보기' 로 포털에서 어떻게 재생되는지 먼저 확인해요.\n" +
       "  6. '코드 생성' 을 누르면 전체 MakeCode Python 코드가 나와요. '코드 복사하기' 로 복사해요.\n\n" +
       "그다음 '코드 복사하기' 바로 밑의 [MakeCode 열기] 로 열어 위쪽을 'Python' 으로 바꾸고, 복사한 코드를\n" +
-      "붙여넣으면 시뮬레이터에서 내 애니메이션이 바로 돌아가요. 프레임 두 장 이상이면 움직임이 더 잘 보여요.",
+      "붙여넣으면 시뮬레이터에서 내 애니메이션이 바로 돌아가요. 프레임 두 장 이상이면 움직임이 더 잘 보여요.\n" +
+      "(오른쪽은 예시예요 — 프레임을 바꾸면 이렇게 '움직이는' 애니메이션이 돼요.)",
     kind: "note",
+    imageUrl: "/mb24-sprite.svg",
+    imageAlt: "마이크로비트 LED에서 공이 위아래로 통통 튀는 예시 애니메이션(움직이는 그림)",
+    imageSide: "right",
+    imageSideWidth: "third",
     maxLength: 0,
   },
   {
