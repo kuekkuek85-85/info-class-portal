@@ -38,16 +38,16 @@ export type VibeTarget = "turtle" | "microbit";
 /**
  * 25차 만보기 기본 코드 — AI가 '여기에 기능을 더한' 전체 프로그램을 만들 바탕 (MakeCode static Python).
  *
- * 흔들면 걸음이 1 늘고 숫자로 보여주는, 미션 1·2 를 합친 완성 만보기다. 차시가 vibeBaseCode 를 안 주면
- * 서버가 이 값을 바탕으로 쓴다. '걸음'(한글) 변수는 makecode.microbit.org '파이썬 보기' 에서 유효하고
- * 블록으로도 변환됨을 에디터로 확인했다 (2026-10-25 검증).
+ * 흔들면 걸음 수(steps)가 1 늘고 숫자로 보여주는, 미션 1·2 를 합친 완성 만보기다. 차시가 vibeBaseCode 를
+ * 안 주면 서버가 이 값을 바탕으로 쓴다. 변수 이름은 영어 `steps`(교사 확정 2026-10-25). makecode.microbit.org
+ * '파이썬 보기' 에서 붙여넣기·블록 변환·시뮬레이터 동작 확인됨.
  */
-export const MICROBIT_MANBOGI_BASE = `걸음 = 0
+export const MICROBIT_MANBOGI_BASE = `steps = 0
 
 def on_gesture_shake():
-    global 걸음
-    걸음 += 1
-    basic.show_number(걸음)
+    global steps
+    steps += 1
+    basic.show_number(steps)
 input.on_gesture(Gesture.SHAKE, on_gesture_shake)`;
 
 /** 아티팩트 answers[key] 에 저장하는 기록 한 건. */
@@ -103,7 +103,7 @@ function buildMicrobitSystem(baseCode: string): string {
     "가장 중요한 규칙 — 이 코드는 반드시 **MakeCode(makecode.microbit.org)의 static Python** 이어야 한다:",
     "- MicroPython 이 아니다. 'from microbit import *', 'display.show', 'Image', 'while True:', 'import' 를 절대 쓰지 마라.",
     "- turtle·pygame·input()·print() 같은 PC용 코드도 쓰지 마라. 오직 micro:bit MakeCode API 만 쓴다.",
-    "- 아래 '현재 코드' 에 이미 있는 '걸음' 변수를 그대로 쓴다. 함수 안에서 걸음을 바꾸려면 그 함수 첫 줄에 'global 걸음' 을 넣는다.",
+    "- 아래 '현재 코드' 에 이미 있는 'steps' 변수를 그대로 쓴다(걸음 수). 함수 안에서 steps 를 바꾸려면 그 함수 첫 줄에 'global steps' 을 넣는다.",
     "",
     "쓸 수 있는 MakeCode API (아래 것들만, 실제 에디터에서 동작 확인됨):",
     "- 화면: basic.show_number(값) · basic.show_icon(IconNames.HEART) · basic.show_string(\"HI\") · basic.clear_screen() · basic.pause(밀리초)",
@@ -115,10 +115,10 @@ function buildMicrobitSystem(baseCode: string): string {
     "- 반복: def on_forever(): ... 뒤에 basic.forever(on_forever)",
     "- 소리(micro:bit v2): music.play(music.tone_playable(262, music.beat(BeatFraction.WHOLE)), music.PlaybackMode.UNTIL_DONE)",
     "  (음 높이는 숫자 Hz. 262=도, 294=레, 330=미, 392=솔. 더 간단히는 그냥 이 한 줄을 그대로 쓴다.)",
-    "- 변수 증감: 걸음 += 1 (늘리기) · 걸음 = 0 (초기화)",
+    "- 변수 증감: steps += 1 (늘리기) · steps = 0 (초기화)",
     "",
     "그 밖의 규칙:",
-    "- 중학교 1학년이 이해할 수 있게 짧고 쉽게. 현재 코드의 틀(걸음 변수, 흔들기로 1 늘리기)은 최대한 그대로 두고 요청 기능만 더한다.",
+    "- 중학교 1학년이 이해할 수 있게 짧고 쉽게. 현재 코드의 틀(steps 변수, 흔들기로 1 늘리기)은 최대한 그대로 두고 요청 기능만 더한다.",
     "- 들여쓰기는 공백 4칸. 파이썬 문법에 맞게(콜론·들여쓰기) 정확히 쓴다.",
     "- 만보기·마이크로비트와 상관없는 요청, 또는 부적절한(폭력·혐오·개인정보·욕설 등) 요청은 코드를 주지 말고 정중히 거절한다.",
     "- 아래 출력 형식을 반드시 지켜라:",

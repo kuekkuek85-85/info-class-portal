@@ -37,7 +37,7 @@
  *
  *  · 한글 변수 '걸음' — 붙여넣기·블록 변환·시뮬레이터 동작 확인(숫자 출력/흔들기/버튼 모두). steps 로
  *    바꿀 필요 없음.
- *  · 미션 1·2 뼈대(완성형: 걸음=0 + show_number, 흔들기 + global 걸음 + 걸음 += 1 + show_number) 확인.
+ *  · 미션 1·2 뼈대(완성형: steps=0 + show_number, 흔들기 + global steps + steps += 1 + show_number) 확인.
  *  · 미션 3 생성 예시(A+B 초기화, 소리 추가) — 전체 코드 붙여넣기·블록 변환·시뮬레이터 동작 확인.
  *
  * ## 구성 (40분, 정보 차시 관례) — 안내문 평문. 외부 링크는 makecode.microbit.org 하나.
@@ -87,11 +87,11 @@ const MAKECODE_URL = "https://makecode.microbit.org/";
 
 /**
  * 미션 1 뼈대 코드 — 복사해 MakeCode 'Python' 의 기존 코드를 지우고 맨 처음에 붙여넣는다.
- * 맨 위 '걸음 = 0' 으로 변수를 만들고, on_forever 안의 pass 를 지우고 걸음 수를 화면에 숫자로 보여준다.
- * (완성형: basic.show_number(걸음) — 에디터에서 블록 변환·동작 확인됨.)
+ * 맨 위 'steps = 0' 으로 변수를 만들고, on_forever 안의 pass 를 지우고 걸음 수를 화면에 숫자로 보여준다.
+ * (완성형: basic.show_number(steps) — 에디터에서 블록 변환·동작 확인됨.)
  */
-const CODE_M1 = `# 걸음 수를 담을 변수 (0부터 시작)
-걸음 = 0
+const CODE_M1 = `# 걸음 수를 담을 변수 steps (0부터 시작)
+steps = 0
 
 def on_forever():
     # (미션) 아래 pass 를 지우고, 걸음 수를 화면에 숫자로 보여주세요
@@ -101,14 +101,14 @@ basic.forever(on_forever)`;
 
 /**
  * 미션 2 뼈대 코드 — 흔들면 걸음이 1 늘고 화면에 보여주는 만보기. pass 를 지우고 두 줄을 채운다.
- * global 걸음 은 '밖에서 만든 걸음 변수를 이 안에서 바꾼다' 는 뜻(그대로 둔다 — MakeCode Python 규칙).
- * (완성형: 걸음 += 1 / basic.show_number(걸음) — 에디터에서 블록 변환·흔들기 동작 확인됨.)
+ * global steps 은 '밖에서 만든 steps 변수를 이 안에서 바꾼다' 는 뜻(그대로 둔다 — MakeCode Python 규칙).
+ * (완성형: steps += 1 / basic.show_number(steps) — 에디터에서 블록 변환·흔들기 동작 확인됨.)
  */
-const CODE_M2 = `# 걸음 수를 담을 변수 (0부터 시작)
-걸음 = 0
+const CODE_M2 = `# 걸음 수를 담을 변수 steps (0부터 시작)
+steps = 0
 
 def on_gesture_shake():
-    global 걸음
+    global steps
     # (미션) 아래 pass 를 지우고: ① 걸음을 1 늘리고  ② 걸음 수를 화면에 숫자로 보여주세요
     pass
 
@@ -125,19 +125,23 @@ function empty(): PhaseContent {
 // 평문. 공유 링크는 학생 작품 링크라 갤러리 비공개(galleryAnswerKeys 에 안 넣는다).
 // ─────────────────────────────────────────────────────────────
 const WORKSHEET: WorksheetQuestion[] = [
-  /* ── 미션 1 (build) — 걸음 변수 만들고 화면에 보여주기 ── */
+  /* ── 미션 1 (build) — steps 변수 만들고 화면에 보여주기 ── */
   {
     key: "_mb25_m1",
     phase: "build",
     label: "미션 1 — 걸음 수를 화면에 보여주기 (만보기 ①)",
     hint:
       "아래 '코드 복사하기' 로 뼈대 코드를 복사해, MakeCode 'Python' 의 기존 코드를 모두 지우고\n" +
-      "(Ctrl+A → Delete) 맨 처음에 붙여넣어요. 맨 위 '걸음 = 0' 은 걸음 수를 담는 변수를 0으로 만드는\n" +
-      "거예요. 그다음 on_forever 안의 pass 를 지우고 basic.show_number(걸음) 을 넣어, 화면에 걸음 수\n" +
+      "(Ctrl+A → Delete) 맨 처음에 붙여넣어요. 맨 위 'steps = 0' 은 걸음 수를 담는 변수를 0으로 만드는\n" +
+      "거예요. 그다음 on_forever 안의 pass 를 지우고 basic.show_number(steps) 을 넣어, 화면에 걸음 수\n" +
       "(지금은 0)가 보이게 완성해요.\n" +
       "(아래 [MakeCode 열기] 로 새 탭에서 열고, 위쪽을 'Python' 으로 바꾼 뒤 붙여넣어요. 왼쪽\n" +
       "시뮬레이터에 0 이 보이면 성공!)",
     kind: "note",
+    imageUrl: "/mb25-num0.svg",
+    imageAlt: "마이크로비트 화면에 숫자 0 이 떠 있는 실행 결과(아직 흔들기 전)",
+    imageSide: "right",
+    imageSideWidth: "third",
     code: CODE_M1,
     linkUrl: MAKECODE_URL,
     linkLabel: "MakeCode 열기 (새 탭)",
@@ -151,12 +155,16 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "이번엔 '흔들면' 걸음이 1씩 늘어나는 진짜 만보기예요. 아래 '코드 복사하기' 로 뼈대 코드를 복사해,\n" +
       "MakeCode 'Python' 의 기존 코드를 모두 지우고 맨 처음에 붙여넣어요.\n" +
-      "흔들림을 감지하면 on_gesture_shake 가 실행돼요. 그 안의 'global 걸음' 은 밖에서 만든 걸음 변수를\n" +
+      "흔들림을 감지하면 on_gesture_shake 가 실행돼요. 그 안의 'global steps' 은 밖에서 만든 steps 변수를\n" +
       "여기서 바꾸겠다는 뜻이니 그대로 둬요. pass 를 지우고 두 줄을 넣어요:\n" +
-      "   걸음 += 1            ← 걸음을 1 늘리기\n" +
-      "   basic.show_number(걸음)   ← 걸음 수를 화면에 보여주기\n" +
+      "   steps += 1            ← 걸음을 1 늘리기\n" +
+      "   basic.show_number(steps)   ← 걸음 수를 화면에 보여주기\n" +
       "(시뮬레이터 위쪽 SHAKE 버튼을 눌러 숫자가 올라가면 성공! 실제 보드라면 흔들면 올라가요.)",
     kind: "note",
+    imageUrl: "/mb25-count.svg",
+    imageAlt: "마이크로비트 화면 숫자가 흔들 때마다 1씩 올라 0에서 10까지 세는 움직이는 실행 결과",
+    imageSide: "right",
+    imageSideWidth: "third",
     code: CODE_M2,
     linkUrl: MAKECODE_URL,
     linkLabel: "MakeCode 열기 (새 탭)",
@@ -246,11 +254,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         label: "오늘은 이런 날",
         subtitle: "변수 → 흔들기 → AI로 기능 추가",
         note:
-          "'걸음' 이라는 변수를 만들어 화면에 보여주고(미션 1), 흔들면 걸음이 1씩 늘어나는 만보기를\n" +
+          "'steps' 라는 변수를 만들어 화면에 보여주고(미션 1), 흔들면 걸음이 1씩 늘어나는 만보기를\n" +
           "완성해요(미션 2). 그다음 AI에게 말로 기능을 부탁해, 만보기에 기능 하나를 더한 전체 코드를\n" +
           "받아 붙여 실행해요(미션 3).",
         rows: [
-          { label: "미션 1", value: "걸음 변수를 0으로 만들고, 화면에 걸음 수 보여주기" },
+          { label: "미션 1", value: "steps 변수를 0으로 만들고, 화면에 걸음 수 보여주기" },
           { label: "미션 2", value: "흔들면(가속도 센서) 걸음이 1씩 올라가게 — 만보기 완성" },
           { label: "미션 3", value: "AI에게 말로 기능 부탁 → 만보기 전체 코드 받아 붙여 실행" },
           { label: "채점은", value: "점수·자동채점 없어요 — 만들어 보고 돌아가면 성공" },
@@ -286,7 +294,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * 성찰 — 변수·흔들기·AI로 기능 추가 체험 소감. 개인적이라 비공개. 성찰 제출로 스네이크 보상이 열린다.
    */
   reflectionQuestions: [
-    "변수(걸음)를 만들고 흔들면 올라가는 만보기를 만들어 보니 어땠나요? 한 줄로 적어 봐요.",
+    "변수(steps)를 만들고 흔들면 올라가는 만보기를 만들어 보니 어땠나요? 한 줄로 적어 봐요.",
     "미션 3에서 AI에게 어떤 기능을 부탁했고, 코드가 잘 돌아갔나요? (안 되면 어떻게 고쳐 봤는지도 적어 봐요.)",
   ],
   reflectionPublic: false,
@@ -407,8 +415,8 @@ async function main(): Promise<void> {
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (23·24차와 같은 MakeCode 통 — 파이썬 통·파킹된 MicroPython 통과 분리)`);
   console.log("단계: 대기(파이썬 타자 도우미) → 기분 → 안내(assessment) → 미션 1(build) → 미션 2(grill) → 미션 3(mvp) → 성찰. freeNavigation off. quiz 없음. hideDoneButton: true. 성찰 제출 → 스네이크 보상(rewardGame).");
-  console.log("미션 1(build): 걸음=0 변수 만들고 basic.show_number(걸음) 로 화면에 보여주기. 뼈대 코드(복사)+빈칸.");
-  console.log("미션 2(grill): 흔들면(on_gesture_shake) global 걸음 + 걸음 += 1 + show_number 로 만보기 완성. 뼈대+빈칸. 끝에 공유 링크 제출(mb25_share2).");
+  console.log("미션 1(build): steps=0 변수 만들고 basic.show_number(steps) 로 화면에 보여주기. 뼈대 코드(복사)+빈칸.");
+  console.log("미션 2(grill): 흔들면(on_gesture_shake) global steps + steps += 1 + show_number 로 만보기 완성. 뼈대+빈칸. 끝에 공유 링크 제출(mb25_share2).");
   console.log("미션 3(mvp): vibe_code(vibeTarget: microbit) — AI가 만보기 전체+요청 기능의 MakeCode Python 코드 생성 → 복사 → MakeCode 'Python' 붙여 실행. 바탕 코드는 vibe-code.ts MICROBIT_MANBOGI_BASE.");
   console.log(`외부 링크: makecode.microbit.org 하나(${MAKECODE_URL}) + 대기 타자 도우미(link:). focusExempt: waiting·build·grill·mvp. 성찰 2문항. reflectionPublic: false.`);
   process.exit(0);
