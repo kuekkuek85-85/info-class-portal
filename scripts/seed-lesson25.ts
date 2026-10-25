@@ -143,17 +143,6 @@ const WORKSHEET: WorksheetQuestion[] = [
     linkLabel: "MakeCode 열기 (새 탭)",
     maxLength: 0,
   },
-  {
-    key: "mb25_share1",
-    phase: "build",
-    label: "미션 1 공유 링크 제출",
-    hint:
-      "완성했으면 MakeCode 위쪽 '공유(Share)' 를 눌러 만든 링크를 아래 칸에 붙여넣어요.\n" +
-      "적으면 자동으로 저장돼요(따로 제출 버튼은 없어요).",
-    kind: "long",
-    maxLength: 300,
-  },
-
   /* ── 미션 2 (grill) — 흔들면 걸음 1 늘리기 (만보기 완성) ── */
   {
     key: "_mb25_m2",
@@ -214,16 +203,6 @@ const WORKSHEET: WorksheetQuestion[] = [
     // MICROBIT_MANBOGI_BASE 를 쓴다(vibeBaseCode 를 안 주면 그 값으로 물러남 — 한곳에서 관리).
     vibeTarget: "microbit",
     maxLength: 0,
-  },
-  {
-    key: "mb25_share3",
-    phase: "mvp",
-    label: "미션 3 공유 링크 제출",
-    hint:
-      "AI가 준 코드를 붙여 실행했으면 MakeCode 위쪽 '공유(Share)' 를 눌러 만든 링크를 아래 칸에\n" +
-      "붙여넣어요. 적으면 자동으로 저장돼요(따로 제출 버튼은 없어요).",
-    kind: "long",
-    maxLength: 300,
   },
 ];
 
@@ -428,9 +407,9 @@ async function main(): Promise<void> {
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (23·24차와 같은 MakeCode 통 — 파이썬 통·파킹된 MicroPython 통과 분리)`);
   console.log("단계: 대기(파이썬 타자 도우미) → 기분 → 안내(assessment) → 미션 1(build) → 미션 2(grill) → 미션 3(mvp) → 성찰. freeNavigation off. quiz 없음. hideDoneButton: true. 성찰 제출 → 스네이크 보상(rewardGame).");
-  console.log("미션 1(build): 걸음=0 변수 만들고 basic.show_number(걸음) 로 화면에 보여주기. 뼈대 코드(복사)+빈칸. 끝에 공유 링크 제출(mb25_share1).");
+  console.log("미션 1(build): 걸음=0 변수 만들고 basic.show_number(걸음) 로 화면에 보여주기. 뼈대 코드(복사)+빈칸.");
   console.log("미션 2(grill): 흔들면(on_gesture_shake) global 걸음 + 걸음 += 1 + show_number 로 만보기 완성. 뼈대+빈칸. 끝에 공유 링크 제출(mb25_share2).");
-  console.log("미션 3(mvp): vibe_code(vibeTarget: microbit) — AI가 만보기 전체+요청 기능의 MakeCode Python 코드 생성 → 복사 → MakeCode 'Python' 붙여 실행. 바탕 코드는 vibe-code.ts MICROBIT_MANBOGI_BASE. 끝에 공유 링크 제출(mb25_share3).");
+  console.log("미션 3(mvp): vibe_code(vibeTarget: microbit) — AI가 만보기 전체+요청 기능의 MakeCode Python 코드 생성 → 복사 → MakeCode 'Python' 붙여 실행. 바탕 코드는 vibe-code.ts MICROBIT_MANBOGI_BASE.");
   console.log(`외부 링크: makecode.microbit.org 하나(${MAKECODE_URL}) + 대기 타자 도우미(link:). focusExempt: waiting·build·grill·mvp. 성찰 2문항. reflectionPublic: false.`);
   process.exit(0);
 }
