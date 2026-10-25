@@ -897,6 +897,17 @@ export interface WorksheetQuestion {
    */
   vibeBaseCode?: string;
   /**
+   * vibe_code 의 대상 환경 — AI가 어떤 종류의 코드를 만들지, 생성 코드 아래 '열기' 링크가 어디로 갈지 정한다.
+   *
+   *  · "turtle"(기본) — 22차: 파이썬 turtle '똥피하기'. 화면 글씨는 영어, OneCompiler 터틀로 연다.
+   *  · "microbit" — 25차: MakeCode static Python 만보기. '걸음' 변수를 바탕으로 요청 기능을 더한 전체
+   *    프로그램을 만들고, makecode.microbit.org 로 연다(MicroPython·터틀 아님).
+   *
+   * 안 주면 "turtle" — 22차 문항은 그대로다(순수 추가). vibe-code.ts 가 대상별 시스템 프롬프트를,
+   * vibe-code-panel.tsx 가 대상별 열기 링크·안내를 고른다.
+   */
+  vibeTarget?: "turtle" | "microbit";
+  /**
    * ai_review 가 AI 에게 보낼 답들. 순서대로 이름표를 붙여 함께 보낸다.
    * 안 쓴 칸은 자동으로 빠진다 — 학생이 비워 둔 것까지 "왜 안 썼냐"고 묻지 않는다.
    */

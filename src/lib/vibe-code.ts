@@ -32,6 +32,24 @@ export interface VibeCodeResult {
   explanation: string;
 }
 
+/** vibe_code 대상 — turtle(22차 똥피하기) / microbit(25차 만보기 MakeCode Python). 안 주면 turtle. */
+export type VibeTarget = "turtle" | "microbit";
+
+/**
+ * 25차 만보기 기본 코드 — AI가 '여기에 기능을 더한' 전체 프로그램을 만들 바탕 (MakeCode static Python).
+ *
+ * 흔들면 걸음이 1 늘고 숫자로 보여주는, 미션 1·2 를 합친 완성 만보기다. 차시가 vibeBaseCode 를 안 주면
+ * 서버가 이 값을 바탕으로 쓴다. '걸음'(한글) 변수는 makecode.microbit.org '파이썬 보기' 에서 유효하고
+ * 블록으로도 변환됨을 에디터로 확인했다 (2026-10-25 검증).
+ */
+export const MICROBIT_MANBOGI_BASE = `걸음 = 0
+
+def on_gesture_shake():
+    global 걸음
+    걸음 += 1
+    basic.show_number(걸음)
+input.on_gesture(Gesture.SHAKE, on_gesture_shake)`;
+
 /** 아티팩트 answers[key] 에 저장하는 기록 한 건. */
 export interface VibeCodeEntry {
   prompt: string;
@@ -46,7 +64,8 @@ export interface VibeCodeLog {
   updatedAt: number;
 }
 
-function buildSystem(baseCode: string): string {
+/** 22차 turtle 똥피하기용 시스템 프롬프트 (OneCompiler 터틀 전체 코드). */
+function buildTurtleSystem(baseCode: string): string {
   return [
     "너는 중학교 1학년 학생이 파이썬 turtle '똥피하기' 게임에 기능 하나를 추가하도록 돕는 도우미다.",
     "아래 '현재 코드' 에, 학생이 말한 기능을 더해 전체가 실행 가능한 파이썬 코드를 만들어 준다.",
@@ -66,6 +85,56 @@ function buildSystem(baseCode: string): string {
     baseCode.slice(0, MAX_BASE_CODE),
     "```",
   ].join("\n");
+}
+
+/**
+ * 25차 마이크로비트 만보기용 시스템 프롬프트 (MakeCode static Python 전체 코드).
+ *
+ * 핵심: MicroPython(from microbit import *, display.show …)·turtle 이 아니라 **MakeCode static Python**
+ * 이다. makecode.microbit.org '파이썬 보기' 에 그대로 붙여 블록으로도 변환·실행돼야 한다. 아래 API·관례는
+ * 2026-10-25 에 실제 에디터에서 붙여넣기·블록 변환·시뮬레이터 동작을 확인한 것만 쓰게 못 박았다.
+ */
+function buildMicrobitSystem(baseCode: string): string {
+  return [
+    "너는 중학교 1학년 학생이 마이크로비트(micro:bit) '만보기' 프로그램에 기능 하나를 추가하도록 돕는 도우미다.",
+    "아래 '현재 코드'(흔들면 걸음이 1 늘고 화면에 숫자로 보여주는 만보기)에, 학생이 말한 기능을 더한",
+    "**전체 프로그램**을 만들어 준다. 추가한 부분만이 아니라, 처음부터 끝까지 그대로 실행되는 완성 코드를 준다.",
+    "",
+    "가장 중요한 규칙 — 이 코드는 반드시 **MakeCode(makecode.microbit.org)의 static Python** 이어야 한다:",
+    "- MicroPython 이 아니다. 'from microbit import *', 'display.show', 'Image', 'while True:', 'import' 를 절대 쓰지 마라.",
+    "- turtle·pygame·input()·print() 같은 PC용 코드도 쓰지 마라. 오직 micro:bit MakeCode API 만 쓴다.",
+    "- 아래 '현재 코드' 에 이미 있는 '걸음' 변수를 그대로 쓴다. 함수 안에서 걸음을 바꾸려면 그 함수 첫 줄에 'global 걸음' 을 넣는다.",
+    "",
+    "쓸 수 있는 MakeCode API (아래 것들만, 실제 에디터에서 동작 확인됨):",
+    "- 화면: basic.show_number(값) · basic.show_icon(IconNames.HEART) · basic.show_string(\"HI\") · basic.clear_screen() · basic.pause(밀리초)",
+    "  (IconNames 예: HEART, SMALL_HEART, YES, NO, HAPPY, SAD, ASLEEP, DUCK, GHOST. show_string 의 글씨는 영어로.)",
+    "- 입력(이벤트): 함수를 def 로 정의한 뒤 아래처럼 등록한다.",
+    "    흔들기 → input.on_gesture(Gesture.SHAKE, 함수)",
+    "    버튼  → input.on_button_pressed(Button.A, 함수) / Button.B / Button.AB (A+B 동시)",
+    "    핀 터치 → input.on_pin_pressed(TouchPin.P0, 함수)",
+    "- 반복: def on_forever(): ... 뒤에 basic.forever(on_forever)",
+    "- 소리(micro:bit v2): music.play(music.tone_playable(262, music.beat(BeatFraction.WHOLE)), music.PlaybackMode.UNTIL_DONE)",
+    "  (음 높이는 숫자 Hz. 262=도, 294=레, 330=미, 392=솔. 더 간단히는 그냥 이 한 줄을 그대로 쓴다.)",
+    "- 변수 증감: 걸음 += 1 (늘리기) · 걸음 = 0 (초기화)",
+    "",
+    "그 밖의 규칙:",
+    "- 중학교 1학년이 이해할 수 있게 짧고 쉽게. 현재 코드의 틀(걸음 변수, 흔들기로 1 늘리기)은 최대한 그대로 두고 요청 기능만 더한다.",
+    "- 들여쓰기는 공백 4칸. 파이썬 문법에 맞게(콜론·들여쓰기) 정확히 쓴다.",
+    "- 만보기·마이크로비트와 상관없는 요청, 또는 부적절한(폭력·혐오·개인정보·욕설 등) 요청은 코드를 주지 말고 정중히 거절한다.",
+    "- 아래 출력 형식을 반드시 지켜라:",
+    "    먼저 코드 한 덩어리를 ```python 과 ``` 사이에 넣는다.",
+    "    그다음 줄에 '설명:' 으로 시작해, 무엇을 어떻게 바꿨는지 2~4문장으로 쉽게 설명한다.",
+    "    (거절할 때는 코드 블록 없이 '설명:' 뒤에 왜 도와줄 수 없는지 한두 문장만 적는다.)",
+    "",
+    "현재 코드:",
+    "```python",
+    baseCode.slice(0, MAX_BASE_CODE),
+    "```",
+  ].join("\n");
+}
+
+function buildSystem(baseCode: string, target: VibeTarget): string {
+  return target === "microbit" ? buildMicrobitSystem(baseCode) : buildTurtleSystem(baseCode);
 }
 
 /** ```python ...``` 코드 블록과 그 뒤 '설명:' 을 갈라낸다. 형식이 어긋나도 최대한 건진다. */
@@ -96,11 +165,13 @@ function parseOutput(text: string): VibeCodeResult {
 export async function vibeCodeGenerate(input: {
   baseCode: string;
   prompt: string;
+  /** turtle(22차, 기본) / microbit(25차 만보기). 대상별 시스템 프롬프트를 고른다 */
+  target?: VibeTarget;
 }): Promise<VibeCodeResult | null> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
-  const system = buildSystem(input.baseCode);
+  const system = buildSystem(input.baseCode, input.target ?? "turtle");
   const userText = `추가하고 싶은 기능: ${input.prompt.trim().slice(0, MAX_PROMPT)}`;
 
   const controller = new AbortController();

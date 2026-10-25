@@ -22,8 +22,44 @@ interface Log {
   updatedAt: number;
 }
 
-const NOTICE = "내가 AI에게 보낸 말과 받은 코드는 저장되고, 선생님이 볼 수 있어요. 게임과 관련된 기능만 요청해요.";
+/** 대상 — turtle(22차 똥피하기) / microbit(25차 만보기). 열기 링크·안내·예시가 달라진다. */
+type VibeTarget = "turtle" | "microbit";
+
 const ONECOMPILER_URL = "https://onecompiler.com/turtle";
+const MAKECODE_URL = "https://makecode.microbit.org/";
+
+/** 대상별 화면 문구 — 투명성 안내, 입력 안내·예시, 생성 코드 아래 '열기' 링크. */
+const COPY: Record<
+  VibeTarget,
+  {
+    notice: string;
+    promptLabel: string;
+    placeholder: string;
+    openUrl: string;
+    openLabel: string;
+    runHint: string;
+  }
+> = {
+  turtle: {
+    notice:
+      "내가 AI에게 보낸 말과 받은 코드는 저장되고, 선생님이 볼 수 있어요. 게임과 관련된 기능만 요청해요.",
+    promptLabel: "어떤 기능을 더하고 싶나요? 한 번에 하나씩, 동작을 말로 적어 보세요.",
+    placeholder: "예) 똥에 닿으면 목숨이 1 줄고, 목숨이 3개 다 떨어지면 게임 오버가 되게 해 줘",
+    openUrl: ONECOMPILER_URL,
+    openLabel: "OneCompiler 터틀 열기 (새 탭)",
+    runHint: "복사해서 붙여넣어 실행해 봐요. 한 번에 안 되면 정상이에요 — 설명을 보고 조금씩 고쳐요.",
+  },
+  microbit: {
+    notice:
+      "내가 AI에게 보낸 말과 받은 코드는 저장되고, 선생님이 볼 수 있어요. 만보기와 관련된 기능만 요청해요.",
+    promptLabel: "만보기에 어떤 기능을 더하고 싶나요? 한 번에 하나씩, 동작을 말로 적어 보세요.",
+    placeholder: "예) A와 B 버튼을 같이 누르면 걸음 수가 0으로 초기화되게 해 줘",
+    openUrl: MAKECODE_URL,
+    openLabel: "MakeCode 열기 (새 탭)",
+    runHint:
+      "'코드 복사하기' 로 복사한 뒤 [MakeCode 열기] 로 열어 위쪽을 'Python' 으로 바꾸고, 기존 코드를 모두 지우고 붙여넣어 실행해요. 한 번에 안 되면 정상이에요 — 설명을 보고 조금씩 고쳐요.",
+  },
+};
 
 function parse(raw: string): Log | null {
   if (!raw.trim()) return null;
@@ -40,12 +76,16 @@ export function VibeCodePanel({
   raw,
   onResult,
   disabled,
+  target = "turtle",
 }: {
   questionKey: string;
   raw: string;
   onResult: (raw: string) => void;
   disabled?: boolean;
+  /** turtle(22차, 기본) / microbit(25차 만보기). 열기 링크·안내 문구를 고른다 */
+  target?: VibeTarget;
 }) {
+  const copy = COPY[target];
   const log = parse(raw);
   const entries = log?.entries ?? [];
   const latest = entries[entries.length - 1];
@@ -94,12 +134,12 @@ export function VibeCodePanel({
     <div className="flex flex-col gap-3">
       {/* 투명성 안내 — 항상 크게. */}
       <p className="rounded-lg border-2 border-ink bg-lilac px-4 py-3 t-body-sm font-semibold">
-        🔎 {NOTICE}
+        🔎 {copy.notice}
       </p>
 
       <div className="flex flex-col gap-2">
         <label htmlFor={`vibe-${questionKey}`} className="t-body-sm font-semibold">
-          어떤 기능을 더하고 싶나요? 한 번에 하나씩, 동작을 말로 적어 보세요.
+          {copy.promptLabel}
         </label>
         <textarea
           id={`vibe-${questionKey}`}
@@ -107,7 +147,7 @@ export function VibeCodePanel({
           onChange={(event) => setDraft(event.target.value.slice(0, 500))}
           rows={3}
           disabled={disabled || loading}
-          placeholder="예) 똥에 닿으면 목숨이 1 줄고, 목숨이 3개 다 떨어지면 게임 오버가 되게 해 줘"
+          placeholder={copy.placeholder}
           className="field"
         />
         <button
@@ -149,17 +189,15 @@ export function VibeCodePanel({
                   {copied ? "복사됐어요" : "코드 복사하기"}
                 </button>
                 <a
-                  href={ONECOMPILER_URL}
+                  href={copy.openUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="pill pill-primary t-body-sm"
                 >
-                  OneCompiler 터틀 열기 (새 탭)
+                  {copy.openLabel}
                 </a>
               </div>
-              <p className="t-caption text-muted">
-                복사해서 붙여넣어 실행해 봐요. 한 번에 안 되면 정상이에요 — 설명을 보고 조금씩 고쳐요.
-              </p>
+              <p className="t-caption text-muted">{copy.runHint}</p>
             </>
           ) : (
             <p className="t-body-sm rounded-md bg-pink px-3 py-2">
