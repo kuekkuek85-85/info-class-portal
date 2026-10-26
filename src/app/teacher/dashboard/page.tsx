@@ -1031,10 +1031,11 @@ function Dashboard() {
             <div className="flex flex-wrap gap-2">
               {/*
                 「미리 피드백」·「발표 평가」는 진로탐색(인간과 인공지능) 전용이라 헤더 전역 탭에서
-                빼고, 그 수업을 보고 있을 때만 여기에 버튼으로 띄운다. 미리 피드백은 모든 hai 차시,
+                빼고, 그 수업을 보고 있을 때만 여기에 버튼으로 띄운다. 미리 피드백은 hai 차시 중
+                1차시(102)를 뺀 나머지 — 1차시엔 아직 만든 작품이 없어 미리 써 둘 피드백이 없다.
                 발표 평가는 발표 차시(7·8차, lessonNo 107·108)에서만 뜬다.
               */}
-              {session.activity?.activityId?.startsWith("hai-") && (
+              {session.activity?.activityId?.startsWith("hai-") && session.lessonNo !== 102 && (
                 <Link href="/teacher/pre-review" className="pill pill-primary t-body-sm">
                   미리 피드백
                 </Link>
