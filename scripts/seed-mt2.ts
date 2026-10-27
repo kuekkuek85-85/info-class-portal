@@ -187,10 +187,13 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "① 캔바에 들어가기",
     hint:
       "아래 단추를 누르고 [Microsoft로 계속하기] 를 고릅니다.\n" +
-      "학교 계정으로 로그인해요 — 26 뒤에 내 학번 5자리를 붙입니다.\n" +
-      "예) 학번이 10822이면 → 2610822@jangpyung.sen.ms.kr\n" +
+      "로그인 아이디는 아래 칸의 내 학교 계정 주소예요 — [복사하기] 를 눌러 붙여 넣으면 됩니다.\n" +
+      "(직접 입력하려면: 26 뒤에 내 학번 5자리, 예) 2610822@jangpyung.sen.ms.kr)\n" +
       "비밀번호는 학교 계정 비밀번호예요.",
     kind: "note",
+    // 학번으로 만든 학교 계정 이메일을 복사 칸으로 준다 ({학교계정}=26+학번+@jangpyung.sen.ms.kr).
+    // worksheet-view 가 copyText 를 linkUrl("캔바 열기")보다 **위에** 그린다 — 복사 후 로그인.
+    copyText: "{학교계정}",
     // 분반 주소가 있으면 그것으로, 없으면 위 기본 주소로 (수업 만들 때 하나만 남는다)
     linkUrl: CANVA_MT,
     linkUrlByGroup: Object.fromEntries(Object.entries(CANVA_BY_GROUP).filter(([, url]) => url)),
@@ -311,22 +314,9 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "long",
     maxLength: 250,
   },
-  {
-    key: "io_anxiety",
-    phase: "problem",
-    /*
-     * 오늘 수업의 밑바탕 — **감정에 좋은 것과 나쁜 것은 없다.**
-     *
-     * 영상이 이것을 그대로 말해 준다: 불안이는 라일리를 위기에 빠뜨렸지만 "적당한
-     * 불안은 본인뿐 아니라 타인까지 안전하게 지켜 준다", 소심이는 "생존을 위해 가장
-     * 필요한 감정" 이라고. 그 말을 자기 이야기로 옮겨 놓으면, 뒤에 나오는 무드미터의
-     * 빨강·파랑 칸을 "나쁜 칸" 으로 읽지 않게 된다.
-     */
-    label: "영상은 “지나쳐서 문제지, 나쁜 감정은 없다” 고 했어요. 나를 힘들게 하는 감정도 그럴까요?",
-    hint: "요즘 나를 힘들게 하는 감정 하나를 떠올려 보세요. 그 감정이 나에게 무엇을 알려 주려는 걸까요?\n예) 시험 전에 불안한 건 준비를 더 하라고 알려 주는 것 같아요.",
-    kind: "long",
-    maxLength: 250,
-  },
+  /* (삭제) io_anxiety — "나를 힘들게 하는 감정도 그럴까요?" 는 바로 위 io_why("왜 그
+     감정을 골랐나요?")와 중복이라 뺐다(교사 피드백). galleryAnswerKeys 는 io_* 를 참조하지
+     않으므로 공개 칸 설정에는 영향 없음. */
 
   /*
    * ── 감정 낱말 퀴즈 (10분) ────────────────────────────────
@@ -553,36 +543,20 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "worksheet",
     label: "쓰기① 나의 감정 낱말",
     hint:
-      "최근 일주일 동안 느낀 감정을 세 개 적어 봅시다.\n" +
+      "최근 일주일 동안 느낀 감정을 하나 적어 봅시다.\n" +
       "“기분 나빴다” 말고 더 정확한 낱말을 찾아보세요 — 아래 보기에서 골라도 좋아요.",
     kind: "note",
     maxLength: 0,
   },
+  /*
+   * 감정 낱말은 **하나만** 쓴다(교사 피드백 — 세 개는 형식적이라 부담). 예전 word2·word3 은
+   * 뺐다. 참조처 없음(galleryAnswerKeys·io_why·AI 렌즈(draft)는 word 를 쓰지 않는다).
+   */
   {
     key: "word1",
     phase: "worksheet",
-    label: "감정 낱말 ① — 그리고 언제 그랬나요?",
+    label: "감정 낱말 — 그리고 언제 그랬나요?",
     hint: "낱말 하나와, 그때가 언제였는지 한 줄로.\n예) 서운함 — 친구가 약속을 갑자기 취소했을 때",
-    kind: "text",
-    examples: MOOD_WORDS,
-    examplesNote: MOOD_WORDS_NOTE,
-    maxLength: 80,
-  },
-  {
-    key: "word2",
-    phase: "worksheet",
-    label: "감정 낱말 ② — 그리고 언제 그랬나요?",
-    hint: "",
-    kind: "text",
-    examples: MOOD_WORDS,
-    examplesNote: MOOD_WORDS_NOTE,
-    maxLength: 80,
-  },
-  {
-    key: "word3",
-    phase: "worksheet",
-    label: "감정 낱말 ③ — 그리고 언제 그랬나요?",
-    hint: "",
     kind: "text",
     examples: MOOD_WORDS,
     examplesNote: MOOD_WORDS_NOTE,
@@ -685,10 +659,11 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 80,
   },
 
-  // ── 쓰기② 나를 보여주는 글 (12분) ───────────────────────
+  // ── 쓰기② 나를 보여주는 글 — AI 감정 렌즈 단계 맨 위로 옮김(교사 피드백) ─────
+  // '나의 감정 쓰기' 맨 아래라 학생이 못 찾던 것을, 렌즈 단계에서 바로 쓰도록 phase 를 emotion 으로.
   {
     key: "_draft_note",
-    phase: "worksheet",
+    phase: "emotion",
     label: "쓰기② AI에게 보여줄 글",
     hint:
       "잠시 뒤에 이 글을 AI가 읽고 “어떤 기분이었을까” 를 추측할 거예요.\n" +
@@ -698,10 +673,11 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "draft",
-    phase: "worksheet",
+    phase: "emotion",
     /*
-     * 렌즈에 보낼 글은 여기서 한 번만 쓴다. 렌즈 화면에 입력칸을 또 두면 학생은
-     * 거기에 한 줄로 대충 적고, 그러면 추측이 얕아져서 견줄 것이 없어진다.
+     * 렌즈에 보낼 글은 이 AI 감정 렌즈 단계 **맨 위에서 한 번** 쓴다 — 바로 아래
+     * 미리보기(_lens_recap)와 "AI에게 보여주기"(lens)로 이어진다. 입력칸은 여기 하나뿐이라
+     * 한 줄로 대충 적는 문제는 그대로 막힌다.
      */
     label: "최근에 있었던 일을 2~4문장으로 적어 주세요",
     hint:
@@ -784,9 +760,9 @@ const WORKSHEET: WorksheetQuestion[] = [
    * 여기 "그래서, 지금 이 경험에 내가 붙이는 감정 낱말은?" 이 있었다. 뺐다.
    *
    * "정답은 나에게 있다" 를 칸으로 만들려던 자리였는데, 화면에 나오는 모습은
-   * 그 의도를 전하지 못했다. 쓰기①에서 이미 감정 낱말을 세 개 쓴 뒤라 무드미터
+   * 그 의도를 전하지 못했다. 쓰기①에서 이미 감정 낱말을 쓴 뒤라 무드미터
    * 낱말 상자가 또 떴고, 학생 눈에는 "아까 그거 또 하네" 로 보였다.
-   * 경험 글이 쓰기① 세 사건 중 하나면 답까지 똑같아진다.
+   * 경험 글이 쓰기① 사건과 같으면 답까지 똑같아진다.
    *
    * 결론은 compare_hit·compare_why 가 이미 받아 간다.
    */
@@ -819,18 +795,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   ],
 
   /*
-   * 대기 시간 미니게임.
-   *
-   * 노트북 수령·부팅으로 도착 시각이 5분씩 벌어진다. 먼저 온 학생의 그 시간을 그냥
-   * 버리지 않는다 — 「인간과 인공지능」과 같은 2048 을 쓴다.
-   *
-   * 수업이 시작되면 화면이 저절로 넘어가므로 학생이 게임을 끄고 나올 필요가 없다.
+   * 대기 화면은 **기분 체크인만** 한다 — 대기 게임은 뺀다(교사 피드백, 인간과AI와 동일).
+   * 아래 moodCheckEnabled 만 켜 두면 대기 화면에서 기분을 받고, 게임 없이 다음 단계로
+   * 넘어간다. game 을 비우면 학생 대기 화면에 게임 칸이 뜨지 않는다.
    */
-  game: {
-    heading: "기다리는 동안 — 2048",
-    body: "같은 숫자끼리 밀어서 합치세요.\n오늘은 512만 넘어도 잘한 거예요.",
-    url: "https://2048-game-gilt-kappa.vercel.app/",
-  },
+  game: empty(),
   gameExplainer: empty(),
 
   /*
@@ -881,6 +850,41 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     "오늘의 나에게 해주고 싶은 말 한마디를 적어 주세요.",
   ],
   reflectionPublic: false,
+
+  /*
+   * 별도 '마음 체크인'(mood) 단계만 뺀다 — 기분은 대기 화면에서 이미 받으므로 중복이다.
+   * phaseOrder 에 **없는** 단계는 대시보드 단추에서도, 학생 '되돌아가기'에서도 숨는다
+   * (dashboard availablePhase · lesson/page backPhases 둘 다 "phaseOrder 에 없으면 제외").
+   *
+   * ⚠ 그래서 ["waiting"] 처럼 줄여 적으면 안 된다 — 그러면 mood 뿐 아니라 **나머지 모든
+   * 단계가 되돌아가기 목록에서 빠져** freeNavigation 이 깨진다(라이브 버그였음). 되돌아가기가
+   * 동작하려면 **갈 수 있어야 하는 단계를 전부** 여기 적어야 한다. 그래서 LESSON_PHASES
+   * 전체 순서에서 mood 하나만 뺀 목록을 그대로 박아 둔다(순서 = 지금 흐름 그대로).
+   * moodCheckEnabled 는 대기 화면 기분 체크용으로 그대로 켜 둔다.
+   * (값 import 는 tsc(.ts 확장자) 때문에 못 써서 리터럴로 적는다. types.ts LESSON_PHASES 와 맞춰 둘 것.)
+   */
+  phaseOrder: [
+    "waiting",
+    "wordquiz",
+    "recheck",
+    "progress",
+    "assessment",
+    "quiz",
+    "video",
+    "problem",
+    "mvp",
+    "build",
+    "grill",
+    "draw",
+    "worksheet",
+    "gallery",
+    "emotion",
+    "reflection",
+    "wrapmap",
+    "mooddiary",
+    "wrapheal",
+    "done",
+  ],
 
   phaseLabels: {
     mood: "마음 체크인",
