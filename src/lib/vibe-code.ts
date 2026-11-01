@@ -50,6 +50,71 @@ def on_gesture_shake():
     basic.show_number(steps)
 input.on_gesture(Gesture.SHAKE, on_gesture_shake)`;
 
+/**
+ * 26차 주사위 기본 코드 — AI가 '여기에 기능을 더한' 전체 프로그램을 만들 바탕 (MakeCode static Python).
+ *
+ * 흔들면 randint 로 1~6 을 뽑아, 교사 확정 표준 눈(show_leds)으로 보여 주는 완성 주사위다(미션1·2 를 합친
+ * '눈 주사위'). 변수 이름은 roll. 차시(26차 미션4 vibe_code)는 이 값을 vibeBaseCode 로 준다 — 서버 fallback
+ * (MICROBIT_MANBOGI_BASE)은 25차 전용이라 그대로 두고, 주사위는 반드시 vibeBaseCode 를 넘긴다.
+ * ※ seed 스크립트는 `import "server-only"` 때문에 이 모듈을 못 불러오므로, seed-lesson26 에 같은 문자열을
+ *    복제해 둔다(둘이 일치해야 함 — 한쪽을 고치면 다른 쪽도).
+ * makecode.microbit.org '파이썬 보기' 에서 붙여넣기·블록 변환·시뮬레이터 동작 확인(2026-11-01).
+ */
+export const MICROBIT_DICE_BASE = `roll = 0
+
+def on_gesture_shake():
+    global roll
+    roll = randint(1, 6)
+    if roll == 1:
+        basic.show_leds("""
+        . . . . .
+        . . . . .
+        . . # . .
+        . . . . .
+        . . . . .
+        """)
+    elif roll == 2:
+        basic.show_leds("""
+        # . . . .
+        . . . . .
+        . . . . .
+        . . . . .
+        . . . . #
+        """)
+    elif roll == 3:
+        basic.show_leds("""
+        # . . . .
+        . . . . .
+        . . # . .
+        . . . . .
+        . . . . #
+        """)
+    elif roll == 4:
+        basic.show_leds("""
+        # . . . #
+        . . . . .
+        . . . . .
+        . . . . .
+        # . . . #
+        """)
+    elif roll == 5:
+        basic.show_leds("""
+        # . . . #
+        . . . . .
+        . . # . .
+        . . . . .
+        # . . . #
+        """)
+    else:
+        basic.show_leds("""
+        # . . . #
+        . . . . .
+        # . . . #
+        . . . . .
+        # . . . #
+        """)
+input.on_gesture(Gesture.SHAKE, on_gesture_shake)`;
+
 /** 아티팩트 answers[key] 에 저장하는 기록 한 건. */
 export interface VibeCodeEntry {
   prompt: string;
@@ -96,18 +161,20 @@ function buildTurtleSystem(baseCode: string): string {
  */
 function buildMicrobitSystem(baseCode: string): string {
   return [
-    "너는 중학교 1학년 학생이 마이크로비트(micro:bit) '만보기' 프로그램에 기능 하나를 추가하도록 돕는 도우미다.",
-    "아래 '현재 코드'(흔들면 걸음이 1 늘고 화면에 숫자로 보여주는 만보기)에, 학생이 말한 기능을 더한",
-    "**전체 프로그램**을 만들어 준다. 추가한 부분만이 아니라, 처음부터 끝까지 그대로 실행되는 완성 코드를 준다.",
+    "너는 중학교 1학년 학생이 마이크로비트(micro:bit) 프로그램에 기능 하나를 추가하도록 돕는 도우미다.",
+    "아래 '현재 코드' 에, 학생이 말한 기능을 더한 **전체 프로그램**을 만들어 준다. 추가한 부분만이 아니라,",
+    "처음부터 끝까지 그대로 실행되는 완성 코드를 준다.",
     "",
     "가장 중요한 규칙 — 이 코드는 반드시 **MakeCode(makecode.microbit.org)의 static Python** 이어야 한다:",
     "- MicroPython 이 아니다. 'from microbit import *', 'display.show', 'Image', 'while True:', 'import' 를 절대 쓰지 마라.",
     "- turtle·pygame·input()·print() 같은 PC용 코드도 쓰지 마라. 오직 micro:bit MakeCode API 만 쓴다.",
-    "- 아래 '현재 코드' 에 이미 있는 'steps' 변수를 그대로 쓴다(걸음 수). 함수 안에서 steps 를 바꾸려면 그 함수 첫 줄에 'global steps' 을 넣는다.",
+    "- 아래 '현재 코드' 에 이미 있는 변수와 틀을 그대로 쓴다. 함수 안에서 바깥 변수를 바꾸려면 그 함수 첫 줄에 'global 변수이름' 을 넣는다.",
     "",
     "쓸 수 있는 MakeCode API (아래 것들만, 실제 에디터에서 동작 확인됨):",
     "- 화면: basic.show_number(값) · basic.show_icon(IconNames.HEART) · basic.show_string(\"HI\") · basic.clear_screen() · basic.pause(밀리초)",
-    "  (IconNames 예: HEART, SMALL_HEART, YES, NO, HAPPY, SAD, ASLEEP, DUCK, GHOST. show_string 의 글씨는 영어로.)",
+    "  (IconNames 예: HEART, SMALL_HEART, YES, NO, HAPPY, SAD, MEH, ASLEEP, DUCK, GHOST. show_string 의 글씨는 영어로.)",
+    "- LED 직접 그리기: basic.show_leds(\"\"\"...\"\"\") — 삼중따옴표 안에 다섯 줄, 각 줄 다섯 칸, 켜짐은 # 꺼짐은 . (칸 사이 공백).",
+    "- 무작위(난수): randint(1, 6) — 1~6 중 아무 수(양끝 포함). random. 같은 접두어 없이 그대로 쓴다.",
     "- 입력(이벤트): 함수를 def 로 정의한 뒤 아래처럼 등록한다.",
     "    흔들기 → input.on_gesture(Gesture.SHAKE, 함수)",
     "    버튼  → input.on_button_pressed(Button.A, 함수) / Button.B / Button.AB (A+B 동시)",
@@ -115,12 +182,12 @@ function buildMicrobitSystem(baseCode: string): string {
     "- 반복: def on_forever(): ... 뒤에 basic.forever(on_forever)",
     "- 소리(micro:bit v2): music.play(music.tone_playable(262, music.beat(BeatFraction.WHOLE)), music.PlaybackMode.UNTIL_DONE)",
     "  (음 높이는 숫자 Hz. 262=도, 294=레, 330=미, 392=솔. 더 간단히는 그냥 이 한 줄을 그대로 쓴다.)",
-    "- 변수 증감: steps += 1 (늘리기) · steps = 0 (초기화)",
+    "- 조건: if / elif / else 와 비교 == 를 쓸 수 있다.",
     "",
     "그 밖의 규칙:",
-    "- 중학교 1학년이 이해할 수 있게 짧고 쉽게. 현재 코드의 틀(steps 변수, 흔들기로 1 늘리기)은 최대한 그대로 두고 요청 기능만 더한다.",
+    "- 중학교 1학년이 이해할 수 있게 짧고 쉽게. 현재 코드의 틀은 최대한 그대로 두고 요청 기능만 더한다.",
     "- 들여쓰기는 공백 4칸. 파이썬 문법에 맞게(콜론·들여쓰기) 정확히 쓴다.",
-    "- 만보기·마이크로비트와 상관없는 요청, 또는 부적절한(폭력·혐오·개인정보·욕설 등) 요청은 코드를 주지 말고 정중히 거절한다.",
+    "- 마이크로비트와 상관없는 요청, 또는 부적절한(폭력·혐오·개인정보·욕설 등) 요청은 코드를 주지 말고 정중히 거절한다.",
     "- 아래 출력 형식을 반드시 지켜라:",
     "    먼저 코드 한 덩어리를 ```python 과 ``` 사이에 넣는다.",
     "    그다음 줄에 '설명:' 으로 시작해, 무엇을 어떻게 바꿨는지 2~4문장으로 쉽게 설명한다.",

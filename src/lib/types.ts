@@ -720,6 +720,15 @@ export interface WorksheetQuestion {
      * 교사가 활동지로 열람한다. 갤러리 노출은 안 한다(비공개) (led-animator).
      */
     | "led_animator"
+    /**
+     * dice_builder — 포털 주사위 코드 조립기 (26차 주사위 게임). led_animator 의 확장이다. 학생이
+     * 주사위 눈 1~6을 5×5 격자에 **자유로** 그리고(옆에 표준 '기준 눈' 참고 이미지, 일치검사·잠금 없음),
+     * 각 숫자에 어떤 눈을 보여줄지 **드롭다운으로 분기(if/elif/else)를 조립**한다. '코드 생성' 을 누르면
+     * 흔들기 이벤트 + randint(1,6) + 조립된 if/elif/else + 각 분기 show_leds 가 든 MakeCode Python 전체
+     * 코드를 뽑는다. 순수 클라이언트(서버·AI 없음). 격자·분기 매핑은 answers[key] 에 JSON 으로 저장돼
+     * 지속되고 교사가 활동지로 열람한다(제출칸 없음 — 생성 시 자동저장). 갤러리 비공개 (dice-builder).
+     */
+    | "dice_builder"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
