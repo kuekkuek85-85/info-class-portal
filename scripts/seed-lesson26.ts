@@ -11,7 +11,7 @@
  * 조립기'(dice_builder). 미션 4개:
  *   1(build)  흔들면 randint(1,6) → show_number (숫자 주사위). 25차 코드 붙여넣기 + 빈칸.
  *   2(grill)  dice_builder — 눈 1~6 자유 그리기 + if/elif/else 드롭다운 조립 → 전체 코드 생성(제출칸 없음).
- *   3(problem) 디버깅 — "흔들어도 같은 숫자만"(randint 를 처음에 한 번만 굴린 버그) 찾아 고치기 + 개념 문항.
+ *   3(problem) 디버깅 — "흔들어도 같은 숫자만"(randint 를 처음에 한 번만 굴린 버그) 찾아 고치고 공유 링크 제출.
  *   4(mvp)    바이브(vibe_code, microbit) — "6이 나오면 소리·불빛" 등 기능 얹기. 베이스 = 눈 주사위.
  *
  * 설계 문서: docs/superpowers/specs/2026-11-01-info-lesson26-dice-design.md (교사 승인 확정본).
@@ -242,24 +242,12 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "mb26_fix",
     phase: "problem",
-    label: "무엇을 고쳤나요? (고친 내용이나 고친 코드)",
+    label: "미션 3 — 고친 주사위 공유 링크 제출",
     hint:
-      "무엇을 왜 고쳤는지 한두 줄로 적거나, 고친 코드를 통째로 붙여넣어도 돼요. 적으면 자동 저장돼요.",
+      "버그를 고쳐 흔들 때마다 숫자가 바뀌면, MakeCode 위쪽 '공유(Share)' 를 눌러 만든 링크를 아래 칸에\n" +
+      "붙여넣어요. 적으면 자동으로 저장돼요(따로 제출 버튼은 없어요).",
     kind: "long",
-    maxLength: 6000,
-  },
-  {
-    key: "mb26_q1",
-    phase: "problem",
-    label: "생각해 보기 — 주사위가 매번 같은 수라면, 무엇이 문제일까요?",
-    hint: "가장 가까운 것을 골라요. (정답을 맞히는 게 아니라, 왜 그런지 생각해 보는 거예요.)",
-    kind: "choice",
-    choices: [
-      "주사위를 '맨 처음에 한 번만' 굴리고, 흔들 때는 다시 안 굴려서",
-      "화면이 고장나서 (코드는 문제 없음)",
-      "흔드는 세기가 약해서",
-    ],
-    maxLength: 0,
+    maxLength: 500,
   },
 
   /* ── 미션 4 (mvp) — AI로 기능 추가 (바이브) ── */
@@ -470,7 +458,7 @@ async function main(): Promise<void> {
   console.log(`\n활동 ID: ${ACTIVITY_ID} (23~25차와 같은 MakeCode 통)`);
   console.log("단계: 대기(타자) → 기분 → 안내 → 미션1(build) → 미션2(grill·조립기) → 미션3(problem·디버깅) → 미션4(mvp·바이브) → 성찰. freeNav off. hideDoneButton true. 성찰 제출 → 사과 게임.");
   console.log("미션1: 흔들기 뼈대 + randint(1,6)·show_number 빈칸. 미션2: dice_builder(눈 자유 그리기 + if/elif/else 드롭다운 조립 → 전체 코드 생성, 제출칸 없음).");
-  console.log("미션3: 디버깅 '흔들어도 같은 숫자만'(randint 를 핸들러 밖에 둔 버그) 고치기 + 개념 choice. 미션4: vibe_code(microbit, 베이스=눈 주사위 DICE_BASE).");
+  console.log("미션3: 디버깅 '흔들어도 같은 숫자만'(randint 를 핸들러 밖에 둔 버그) 고치고 MakeCode 공유(Share) 링크 제출(long). 미션4: vibe_code(microbit, 베이스=눈 주사위 DICE_BASE).");
   console.log("MakeCode 실측(2026-11-01): randint 전역 호출·show_leds 멀티라인·if/elif/else·흔들기 이어붙이기 변환 확인. global 누락은 roll2 지역변수를 만들어 '같은 숫자' 증상이 안 나므로 버그는 randint 위치로 잡음.");
   process.exit(0);
 }

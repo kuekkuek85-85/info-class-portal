@@ -8,22 +8,29 @@ import { useMemo, useState } from "react";
  * ## 무엇을 하나 (순수 클라이언트 · 서버·AI 없음)
  *
  * 학생이 ① 주사위 눈 1~6을 5×5 격자에 **자유로** 그리고(옆에 표준 '기준 눈' 참고 — 일치검사·잠금 없음,
- * 틀리게 그려도 됨: 정확성은 교사 순회로), ② 각 숫자에 어떤 눈을 보여줄지 **드롭다운으로 분기를 조립**한다
- * (숫자 N 일 때 → 내가 그린 눈 M). '코드 생성' 을 누르면 흔들기 이벤트 + randint(1,6) + if/elif/else +
- * 각 분기의 show_leds 가 든 **MakeCode Python 전체 코드**를 뽑아 복사한다.
+ * 틀리게 그려도 됨: 정확성은 교사 순회로), ② 각 행마다 **if/elif/else 키워드를 직접 고르고** '그 숫자일 때
+ * 어떤 눈을 보여줄지' 를 조립한다(조건 `number == N` 은 행 순서로 정해지고, else 를 고르면 조건은 사라진다).
+ * '코드 생성' 을 누르면 흔들기 이벤트 + randint(1,6) + 학생이 조립한 if/elif/else + 각 분기의 show_leds 가
+ * 든 **MakeCode Python 전체 코드**를 뽑아 복사한다.
+ *
+ * ## 자유 조립 (강제 검증 없음)
+ *
+ * 키워드를 학생이 직접 골라 틀리게 조립하면(예: else 를 가운데 두거나 if 를 빠뜨림) 그대로 생성된다 —
+ * 26차 '자유 그리기' 철학과 같다. 올바른지는 교사 순회로 본다. 기본 프리필은 1행 if, 2~5행 elif, 6행 else.
  *
  * ## 저장
  *
- * 격자(눈 6개)·분기 매핑은 answers[key] 에 JSON({grids, branches})으로 저장된다(onChange). 제출칸은
- * 없다 — '코드 생성' 을 누르면(또는 그리면) 그 상태가 자동 저장돼 교사가 활동지로 열람한다.
+ * 격자(눈 6개)·분기(키워드+눈)는 answers[key] 에 JSON({grids, branches})으로 저장된다(onChange). 제출칸은
+ * 없다 — '코드 생성' 을 누르면(또는 그리면·고르면) 그 상태가 자동 저장돼 교사가 활동지로 열람한다.
  *
  * ## 범용성 (27차 가위바위보 재활용)
  *
- * 눈 개수·조건 라벨·변수 이름을 props 로 받게 해, 27차 가위바위보(가위·바위·보 3개, 조건 "내 패 ==")에도
- * 쓸 수 있다. 26차 주사위는 기본값(6개, "숫자 ==", roll)을 쓴다.
+ * 눈 개수·조건 라벨·변수 이름을 props 로 받게 해, 27차 가위바위보(3개, 조건 "내 패 ==")에도 쓸 수 있다.
  */
 
 const CELLS = 25;
+
+type Keyword = "if" | "elif" | "else";
 
 /** 교사 확정 표준 주사위 눈 1~6 (5×5, 1=켜짐). 참고 이미지로만 보여 주고 강제하지 않는다. */
 const STANDARD_EYES: string[] = [
@@ -40,39 +47,65 @@ function standardOn(index: number): boolean[] {
   return Array.from({ length: CELLS }, (_, i) => s[i] === "1");
 }
 
+interface Branch {
+  /** if / elif / else — 학생이 직접 고른다 */
+  kw: Keyword;
+  /** 이 행에서 보여줄 '내가 그린 눈'의 번호(0부터) */
+  eye: number;
+}
 interface Doc {
   /** 학생이 그린 눈 N개 (각 25칸 boolean) */
   grids: boolean[][];
-  /** 숫자 i+1 일 때 보여줄 '내가 그린 눈'의 번호(0부터) */
-  branches: number[];
+  branches: Branch[];
 }
 
 function blankGrid(): boolean[] {
   return Array(CELLS).fill(false);
 }
 
+/** 기본 키워드 프리필 — 1행 if, 마지막 행 else, 가운데 elif. 학생이 바꿀 수 있다. */
+function defaultKeyword(i: number, count: number): Keyword {
+  if (i === 0) return "if";
+  if (i === count - 1) return "else";
+  return "elif";
+}
+
 function defaultDoc(count: number): Doc {
   return {
     grids: Array.from({ length: count }, () => blankGrid()),
-    branches: Array.from({ length: count }, (_, i) => i), // 1→눈1 … N→눈N
+    branches: Array.from({ length: count }, (_, i) => ({ kw: defaultKeyword(i, count), eye: i })),
   };
 }
 
 function parse(raw: string, count: number): Doc {
   if (raw.trim()) {
     try {
-      const value = JSON.parse(raw) as Doc;
+      const value = JSON.parse(raw) as { grids?: unknown; branches?: unknown };
       if (Array.isArray(value.grids) && value.grids.length === count) {
         const grids = value.grids.map((g) =>
           Array.isArray(g) && g.length === CELLS ? g.map(Boolean) : blankGrid(),
         );
-        const branches =
-          Array.isArray(value.branches) && value.branches.length === count
-            ? value.branches.map((b) => {
-                const n = Number(b);
-                return Number.isInteger(n) && n >= 0 && n < count ? n : 0;
-              })
-            : Array.from({ length: count }, (_, i) => i);
+        let branches: Branch[];
+        if (Array.isArray(value.branches) && value.branches.length === count) {
+          branches = value.branches.map((b, i) => {
+            // 신형: {kw, eye} / 구형: 눈 번호(number)
+            if (b && typeof b === "object") {
+              const kw = (b as Branch).kw;
+              const eye = Number((b as Branch).eye);
+              return {
+                kw: kw === "if" || kw === "elif" || kw === "else" ? kw : defaultKeyword(i, count),
+                eye: Number.isInteger(eye) && eye >= 0 && eye < count ? eye : i,
+              };
+            }
+            const n = Number(b);
+            return {
+              kw: defaultKeyword(i, count),
+              eye: Number.isInteger(n) && n >= 0 && n < count ? n : i,
+            };
+          });
+        } else {
+          branches = Array.from({ length: count }, (_, i) => ({ kw: defaultKeyword(i, count), eye: i }));
+        }
         return { grids, branches };
       }
     } catch {
@@ -95,23 +128,29 @@ function gridToRows(on: boolean[]): string {
 
 /**
  * MakeCode Python 전체 프로그램을 만든다 (복사→붙여넣기로 바로 도는 완성본).
- *  roll = 0 / 흔들기 핸들러(global roll + randint + if/elif/else + show_leds) / on_gesture 등록.
+ *  roll = 0 / 흔들기 핸들러(global roll + randint + 학생이 조립한 if/elif/else + show_leds) / 등록.
+ * 학생이 고른 키워드 순서 그대로 나온다(자유 조립 — 틀리면 틀린 대로 생성).
  */
-function generateCode(doc: Doc, varName: string, conditionLabel: string): string {
+function generateCode(doc: Doc, varName: string): string {
   const count = doc.grids.length;
-  const lines: string[] = [`${varName} = 0`, "", "def on_gesture_shake():", `    global ${varName}`];
-  lines.push(`    ${varName} = randint(1, ${count})`);
-  for (let n = 1; n <= count; n += 1) {
-    const eye = doc.grids[doc.branches[n - 1]] ?? blankGrid();
+  const lines: string[] = [
+    `${varName} = 0`,
+    "",
+    "def on_gesture_shake():",
+    `    global ${varName}`,
+    `    ${varName} = randint(1, ${count})`,
+  ];
+  for (let i = 0; i < count; i += 1) {
+    const { kw, eye } = doc.branches[i];
+    const n = i + 1;
     let header: string;
-    if (n === 1) header = `    if ${varName} == ${n}:`;
-    else if (n === count) header = `    else:`; // 마지막 숫자 → else (if/elif/else 완성)
-    else header = `    elif ${varName} == ${n}:`;
+    if (kw === "else") header = "    else:";
+    else if (kw === "elif") header = `    elif ${varName} == ${n}:`;
+    else header = `    if ${varName} == ${n}:`;
     lines.push(header);
-    lines.push(`        basic.show_leds("""\n${gridToRows(eye)}\n        """)`);
+    lines.push(`        basic.show_leds("""\n${gridToRows(doc.grids[eye] ?? blankGrid())}\n        """)`);
   }
   lines.push("input.on_gesture(Gesture.SHAKE, on_gesture_shake)");
-  void conditionLabel; // 라벨은 화면 표시에만 쓰고 코드엔 숫자 비교로 들어간다
   return lines.join("\n");
 }
 
@@ -122,7 +161,7 @@ export function DiceBuilder({
   disabled,
   eyeCount = 6,
   varName = "roll",
-  conditionLabel = "숫자",
+  conditionLabel = "number",
   eyeNoun = "눈",
 }: {
   questionKey: string;
@@ -133,33 +172,38 @@ export function DiceBuilder({
   eyeCount?: number;
   /** 생성 코드의 변수 이름 — 주사위 roll */
   varName?: string;
-  /** 분기 조건 라벨 — "숫자"(주사위) / "내 패"(가위바위보) */
+  /** 분기 조건에 보이는 변수 라벨 — "number"(주사위 roll). 코드엔 varName 이 들어간다 */
   conditionLabel?: string;
   /** 그림을 부르는 말 — "눈"(주사위) / "그림"(가위바위보) */
   eyeNoun?: string;
 }) {
   const initial = useMemo(() => parse(raw, eyeCount), [raw, eyeCount]);
   const [grids, setGrids] = useState<boolean[][]>(initial.grids);
-  const [branches, setBranches] = useState<number[]>(initial.branches);
+  const [branches, setBranches] = useState<Branch[]>(initial.branches);
   const [code, setCode] = useState("");
   const [copied, setCopied] = useState(false);
 
-  function persist(nextGrids: boolean[][], nextBranches: number[]) {
+  function persist(nextGrids: boolean[][], nextBranches: Branch[]) {
     onChange(JSON.stringify({ grids: nextGrids, branches: nextBranches }));
   }
 
   function toggleCell(eyeIndex: number, cell: number) {
     if (disabled) return;
-    const next = grids.map((g, i) =>
-      i === eyeIndex ? g.map((v, c) => (c === cell ? !v : v)) : g,
-    );
+    const next = grids.map((g, i) => (i === eyeIndex ? g.map((v, c) => (c === cell ? !v : v)) : g));
     setGrids(next);
     persist(next, branches);
   }
 
-  function setBranch(numberIndex: number, eyeIndex: number) {
+  function setKeyword(rowIndex: number, kw: Keyword) {
     if (disabled) return;
-    const next = branches.map((b, i) => (i === numberIndex ? eyeIndex : b));
+    const next = branches.map((b, i) => (i === rowIndex ? { ...b, kw } : b));
+    setBranches(next);
+    persist(grids, next);
+  }
+
+  function setEye(rowIndex: number, eye: number) {
+    if (disabled) return;
+    const next = branches.map((b, i) => (i === rowIndex ? { ...b, eye } : b));
     setBranches(next);
     persist(grids, next);
   }
@@ -231,33 +275,65 @@ export function DiceBuilder({
         </div>
       </div>
 
-      {/* 2) 분기 조립 — 숫자 N 일 때 → 내가 그린 눈 M */}
+      {/* 2) 분기 조립 — [if/elif/else] + number == N : → 내가 그린 눈 M */}
       <div className="flex flex-col gap-2">
-        <p className="t-body-sm font-semibold">② 어떤 {conditionLabel}일 때 어떤 {eyeNoun}을 보여줄까요?</p>
+        <p className="t-body-sm font-semibold">
+          ② 갈림길(if / elif / else)을 직접 골라 조립해요
+        </p>
         <p className="t-caption text-muted">
-          기본은 {conditionLabel} 1 → {eyeNoun} 1 … 처럼 똑같이 맞춰 뒀어요. 바꾸고 싶으면 골라요.
+          기본은 1번 <code>if</code>, 가운데 <code>elif</code>, 마지막 <code>else</code> 로 맞춰 뒀어요. 바꿔도
+          돼요(틀리게 조립하면 그대로 코드가 나와요 — 선생님이 봐 줄 거예요). <code>else</code> 를 고르면 그
+          줄은 조건 없이 '나머지 전부' 가 돼요.
         </p>
         <div className="flex flex-col gap-2">
-          {branches.map((eyeIndex, numberIndex) => (
-            <label key={numberIndex} className="flex flex-wrap items-center gap-2 t-body-sm">
-              <span className="font-mono">
-                {conditionLabel} == {numberIndex + 1}
-              </span>
-              <span aria-hidden>→</span>
+          {branches.map((branch, rowIndex) => (
+            <div
+              key={rowIndex}
+              className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 t-body-sm"
+            >
+              {/* 키워드 드롭다운 */}
               <select
-                value={eyeIndex}
-                onChange={(event) => setBranch(numberIndex, Number(event.target.value))}
+                value={branch.kw}
+                onChange={(event) => setKeyword(rowIndex, event.target.value as Keyword)}
                 disabled={disabled}
-                className="field w-auto"
-                aria-label={`${conditionLabel} ${numberIndex + 1} 일 때 보여줄 ${eyeNoun}`}
+                className="field w-auto font-mono"
+                aria-label={`${rowIndex + 1}번 줄 갈림길 키워드`}
               >
-                {grids.map((_, i) => (
-                  <option key={i} value={i}>
-                    {eyeNoun} {i + 1}
-                  </option>
-                ))}
+                <option value="if">if</option>
+                <option value="elif">elif</option>
+                <option value="else">else</option>
               </select>
-            </label>
+
+              {/* 조건 — else 면 숨기고 '나머지 전부' */}
+              {branch.kw === "else" ? (
+                <span className="font-mono text-muted">: (나머지 전부)</span>
+              ) : (
+                <span className="font-mono">
+                  {conditionLabel} == {rowIndex + 1} :
+                </span>
+              )}
+
+              <span aria-hidden>→</span>
+
+              {/* 어떤 눈을 보여줄지 */}
+              <span className="whitespace-nowrap">
+                내가 그린
+                <select
+                  value={branch.eye}
+                  onChange={(event) => setEye(rowIndex, Number(event.target.value))}
+                  disabled={disabled}
+                  className="field mx-1 w-auto"
+                  aria-label={`${rowIndex + 1}번 줄에서 보여줄 ${eyeNoun}`}
+                >
+                  {grids.map((_, i) => (
+                    <option key={i} value={i}>
+                      {eyeNoun} {i + 1}
+                    </option>
+                  ))}
+                </select>
+                보여주기
+              </span>
+            </div>
           ))}
         </div>
       </div>
@@ -266,7 +342,7 @@ export function DiceBuilder({
       <div className="flex flex-col gap-2">
         <button
           type="button"
-          onClick={() => setCode(generateCode({ grids, branches }, varName, conditionLabel))}
+          onClick={() => setCode(generateCode({ grids, branches }, varName))}
           disabled={disabled}
           className="pill pill-primary self-start disabled:opacity-60"
         >
