@@ -31,6 +31,8 @@ import { useMemo, useState } from "react";
 const CELLS = 25;
 
 type Keyword = "if" | "elif" | "else";
+/** 학생이 아직 안 고른 상태("") 포함. 처음엔 전부 미선택으로 시작한다(프리필 없음, 교사 확정 2026-11-03). */
+type KwChoice = Keyword | "";
 
 /** 교사 확정 표준 주사위 눈 1~6 (5×5, 1=켜짐). 참고 이미지로만 보여 주고 강제하지 않는다. */
 const STANDARD_EYES: string[] = [
@@ -48,8 +50,8 @@ function standardOn(index: number): boolean[] {
 }
 
 interface Branch {
-  /** if / elif / else — 학생이 직접 고른다 */
-  kw: Keyword;
+  /** "" = 아직 안 고름(처음 상태) / if·elif·else = 학생이 직접 고른 값 */
+  kw: KwChoice;
   /** 이 행에서 보여줄 '내가 그린 눈'의 번호(0부터) */
   eye: number;
 }
@@ -63,17 +65,11 @@ function blankGrid(): boolean[] {
   return Array(CELLS).fill(false);
 }
 
-/** 기본 키워드 프리필 — 1행 if, 마지막 행 else, 가운데 elif. 학생이 바꿀 수 있다. */
-function defaultKeyword(i: number, count: number): Keyword {
-  if (i === 0) return "if";
-  if (i === count - 1) return "else";
-  return "elif";
-}
-
+/** 처음엔 키워드 미선택(""), 눈 매핑만 기본값(숫자 N → 눈 N). 교사 확정: 키워드는 학생이 직접 고른다. */
 function defaultDoc(count: number): Doc {
   return {
     grids: Array.from({ length: count }, () => blankGrid()),
-    branches: Array.from({ length: count }, (_, i) => ({ kw: defaultKeyword(i, count), eye: i })),
+    branches: Array.from({ length: count }, (_, i) => ({ kw: "" as KwChoice, eye: i })),
   };
 }
 
@@ -88,23 +84,23 @@ function parse(raw: string, count: number): Doc {
         let branches: Branch[];
         if (Array.isArray(value.branches) && value.branches.length === count) {
           branches = value.branches.map((b, i) => {
-            // 신형: {kw, eye} / 구형: 눈 번호(number)
+            // 신형: {kw, eye}(kw 없거나 "" 면 미선택 유지) / 구형: 눈 번호(number) → 미선택으로 시작
             if (b && typeof b === "object") {
               const kw = (b as Branch).kw;
               const eye = Number((b as Branch).eye);
               return {
-                kw: kw === "if" || kw === "elif" || kw === "else" ? kw : defaultKeyword(i, count),
+                kw: kw === "if" || kw === "elif" || kw === "else" ? kw : ("" as KwChoice),
                 eye: Number.isInteger(eye) && eye >= 0 && eye < count ? eye : i,
               };
             }
             const n = Number(b);
             return {
-              kw: defaultKeyword(i, count),
+              kw: "" as KwChoice,
               eye: Number.isInteger(n) && n >= 0 && n < count ? n : i,
             };
           });
         } else {
-          branches = Array.from({ length: count }, (_, i) => ({ kw: defaultKeyword(i, count), eye: i }));
+          branches = Array.from({ length: count }, (_, i) => ({ kw: "" as KwChoice, eye: i }));
         }
         return { grids, branches };
       }
@@ -113,6 +109,15 @@ function parse(raw: string, count: number): Doc {
     }
   }
   return defaultDoc(count);
+}
+
+/** 아직 키워드를 안 고른 행의 번호(1부터) 목록. 비어 있으면 모두 선택됨 → 생성 가능. */
+function unselectedRows(doc: Doc): number[] {
+  const out: number[] = [];
+  doc.branches.forEach((b, i) => {
+    if (b.kw !== "if" && b.kw !== "elif" && b.kw !== "else") out.push(i + 1);
+  });
+  return out;
 }
 
 /** 눈 하나(25칸)를 show_leds 용 5줄 문자열로 (각 줄 8칸 들여쓰기, 칸 사이 공백, 켜짐 # 꺼짐 .) */
@@ -182,6 +187,8 @@ export function DiceBuilder({
   const [branches, setBranches] = useState<Branch[]>(initial.branches);
   const [code, setCode] = useState("");
   const [copied, setCopied] = useState(false);
+  // 키워드를 안 고른 행이 있는데 '코드 생성' 을 누르면 띄우는 안내
+  const [genError, setGenError] = useState("");
 
   function persist(nextGrids: boolean[][], nextBranches: Branch[]) {
     onChange(JSON.stringify({ grids: nextGrids, branches: nextBranches }));
@@ -194,11 +201,12 @@ export function DiceBuilder({
     persist(next, branches);
   }
 
-  function setKeyword(rowIndex: number, kw: Keyword) {
+  function setKeyword(rowIndex: number, kw: KwChoice) {
     if (disabled) return;
     const next = branches.map((b, i) => (i === rowIndex ? { ...b, kw } : b));
     setBranches(next);
     persist(grids, next);
+    setGenError(""); // 고르면 안내 지움
   }
 
   function setEye(rowIndex: number, eye: number) {
@@ -206,6 +214,19 @@ export function DiceBuilder({
     const next = branches.map((b, i) => (i === rowIndex ? { ...b, eye } : b));
     setBranches(next);
     persist(grids, next);
+  }
+
+  function handleGenerate() {
+    const missing = unselectedRows({ grids, branches });
+    if (missing.length > 0) {
+      setCode("");
+      setGenError(
+        `아직 if / elif / else 를 안 고른 줄이 있어요: ${missing.join(", ")}번째 줄. 모두 고른 뒤 다시 눌러 주세요.`,
+      );
+      return;
+    }
+    setGenError("");
+    setCode(generateCode({ grids, branches }, varName));
   }
 
   async function copyCode() {
@@ -281,9 +302,9 @@ export function DiceBuilder({
           ② 갈림길(if / elif / else)을 직접 골라 조립해요
         </p>
         <p className="t-caption text-muted">
-          기본은 1번 <code>if</code>, 가운데 <code>elif</code>, 마지막 <code>else</code> 로 맞춰 뒀어요. 바꿔도
-          돼요(틀리게 조립하면 그대로 코드가 나와요 — 선생님이 봐 줄 거예요). <code>else</code> 를 고르면 그
-          줄은 조건 없이 '나머지 전부' 가 돼요.
+          각 줄에서 <code>if</code> / <code>elif</code> / <code>else</code> 를 직접 골라 조립해요(처음엔 아무것도
+          안 골라져 있어요). 틀리게 조립하면 그대로 코드가 나와요 — 선생님이 봐 줄 거예요. <code>else</code> 를
+          고르면 그 줄은 조건 없이 '나머지 전부' 가 돼요.
         </p>
         <div className="flex flex-col gap-2">
           {branches.map((branch, rowIndex) => (
@@ -291,24 +312,27 @@ export function DiceBuilder({
               key={rowIndex}
               className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 t-body-sm"
             >
-              {/* 키워드 드롭다운 */}
+              {/* 키워드 드롭다운 — 처음엔 미선택("선택해 주세요") */}
               <select
                 value={branch.kw}
-                onChange={(event) => setKeyword(rowIndex, event.target.value as Keyword)}
+                onChange={(event) => setKeyword(rowIndex, event.target.value as KwChoice)}
                 disabled={disabled}
                 className="field w-auto font-mono"
                 aria-label={`${rowIndex + 1}번 줄 갈림길 키워드`}
               >
+                <option value="" disabled>
+                  선택해 주세요
+                </option>
                 <option value="if">if</option>
                 <option value="elif">elif</option>
                 <option value="else">else</option>
               </select>
 
-              {/* 조건 — else 면 숨기고 '나머지 전부' */}
+              {/* 조건 — else 면 '나머지 전부', 미선택이면 흐리게, if/elif 면 number == N */}
               {branch.kw === "else" ? (
                 <span className="font-mono text-muted">: (나머지 전부)</span>
               ) : (
-                <span className="font-mono">
+                <span className={`font-mono ${branch.kw === "" ? "text-muted" : ""}`}>
                   {conditionLabel} == {rowIndex + 1} :
                 </span>
               )}
@@ -342,12 +366,18 @@ export function DiceBuilder({
       <div className="flex flex-col gap-2">
         <button
           type="button"
-          onClick={() => setCode(generateCode({ grids, branches }, varName))}
+          onClick={handleGenerate}
           disabled={disabled}
           className="pill pill-primary self-start disabled:opacity-60"
         >
           코드 생성 (MakeCode Python)
         </button>
+
+        {genError && (
+          <p role="alert" className="t-body-sm font-semibold text-rose-600">
+            {genError}
+          </p>
+        )}
 
         {code && (
           <>
