@@ -34,8 +34,16 @@ import { answersOf, type Artifact, type ClassSession, type Reflection } from "./
  * 활동을 지어내지 않게 하려는 것이다.
  */
 
-/** ai-review.ts 와 같은 값. 키 하나·모델 하나를 같이 쓴다 */
-const TIMEOUT_MS = 12_000;
+/**
+ * Gemini 호출 한 건의 제한 시간.
+ *
+ * 수업 중 학생 1명이 부르는 ai-review(12초)보다 길게 둔다. 세특 생성은 활동 기록 전체를
+ * 요약해 보내므로 프롬프트가 크고(코딩 차시를 코드까지 다 쓴 학생은 2만 자를 넘겨 혼자서도
+ * 8초쯤 걸린다), 게다가 한 번에 4명씩 동시에 부르는 일괄 생성이라 12초로는 가장 기록이 큰
+ * 학생이 거의 매번 걸려 "오류"로 떨어졌다. 일괄 상한(route.ts maxDuration 300초)에 비하면
+ * 여유가 크다 — 느린 학생은 소수이고 대부분 몇 초 안에 끝난다.
+ */
+const TIMEOUT_MS = 25_000;
 const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
 
 /**
