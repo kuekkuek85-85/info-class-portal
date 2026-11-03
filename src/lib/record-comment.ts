@@ -9,7 +9,7 @@ import {
   type StudentSessionRecord,
   type SubjectScope,
 } from "./record-comment-core";
-import { answersOf, type Artifact, type ClassSession } from "./types";
+import { answersOf, type Artifact, type ClassSession, type Reflection } from "./types";
 
 /**
  * 세특(세부특기사항) 초안 생성: 학생 기록 수집 + Gemini 호출.
@@ -60,20 +60,46 @@ function shortLabel(label: string): string {
   return t.length > MAX_LABEL_CHARS ? `${t.slice(0, MAX_LABEL_CHARS)}…` : t;
 }
 
-/** 한 세션에서 그 학생의 기록을 모은다 */
-async function recordOf(
-  session: ClassSession,
-  studentId: string,
-  sensitive: boolean,
-  artifactsOf: (activityId: string, classNo: ClassSession["classNo"]) => Promise<Artifact[]>,
-): Promise<StudentSessionRecord> {
-  const activity = session.activity;
-  const questions = (activity?.worksheet ?? []).filter((q) => DESCRIPTIVE_KINDS.has(q.kind));
+/** 세션 하나를 읽어 온 결과. 학생 수와 무관하게 세션당 한 번만 만든다 */
+interface SessionData {
+  session: ClassSession;
+  reflections: Reflection[];
+  artifacts: Artifact[];
+}
 
-  const [reflections, artifacts] = await Promise.all([
-    listReflections(session.id),
-    activity?.activityId ? artifactsOf(activity.activityId, session.classNo) : Promise.resolve([]),
-  ]);
+/**
+ * 범위 안 세션들의 성찰·활동지를 세션당 한 번씩만 읽는다. 차시 오름차순.
+ * 같은 활동지(activityId)를 여러 세션이 쓰면 그것도 한 번만 읽는다.
+ */
+async function loadSessionData(inScopeSessions: ClassSession[]): Promise<SessionData[]> {
+  const cache = new Map<string, Promise<Artifact[]>>();
+  const artifactsOf = (activityId: string, classNo: ClassSession["classNo"]) => {
+    const key = `${activityId}__${classNo}`;
+    let hit = cache.get(key);
+    if (!hit) {
+      hit = listArtifacts(activityId, classNo);
+      cache.set(key, hit);
+    }
+    return hit;
+  };
+
+  const sessions = [...inScopeSessions].sort((a, b) => a.lessonNo - b.lessonNo);
+  return Promise.all(
+    sessions.map(async (session) => {
+      const activityId = session.activity?.activityId;
+      const [reflections, artifacts] = await Promise.all([
+        listReflections(session.id),
+        activityId ? artifactsOf(activityId, session.classNo) : Promise.resolve([] as Artifact[]),
+      ]);
+      return { session, reflections, artifacts };
+    }),
+  );
+}
+
+/** 이미 읽어 둔 세션 데이터에서 한 학생의 한 차시 기록을 메모리로 조립한다 (읽기 없음) */
+function recordOf(data: SessionData, studentId: string, sensitive: boolean): StudentSessionRecord {
+  const { session, reflections, artifacts } = data;
+  const questions = (session.activity?.worksheet ?? []).filter((q) => DESCRIPTIVE_KINDS.has(q.kind));
 
   const reflectionAnswers = reflections
     .filter((r) => r.studentId === studentId)
@@ -108,20 +134,30 @@ export async function gatherStudentRecords(
   inScopeSessions: ClassSession[],
 ): Promise<StudentSessionRecord[]> {
   const sensitive = isSensitiveSubject(scope);
-  // 같은 활동지(activityId)를 여러 세션이 쓰면 한 번만 읽는다
-  const cache = new Map<string, Promise<Artifact[]>>();
-  const artifactsOf = (activityId: string, classNo: ClassSession["classNo"]) => {
-    const key = `${activityId}__${classNo}`;
-    let hit = cache.get(key);
-    if (!hit) {
-      hit = listArtifacts(activityId, classNo);
-      cache.set(key, hit);
-    }
-    return hit;
-  };
+  const data = await loadSessionData(inScopeSessions);
+  return data.map((d) => recordOf(d, studentId, sensitive));
+}
 
-  const sessions = [...inScopeSessions].sort((a, b) => a.lessonNo - b.lessonNo);
-  return Promise.all(sessions.map((s) => recordOf(s, studentId, sensitive, artifactsOf)));
+/**
+ * 여러 학생의 기록을 한 번에 모은다. 세션당 성찰·활동지를 **한 번만** 읽고
+ * 메모리에서 학생별로 나눈다 (학생마다 gatherStudentRecords 를 부르면 읽기가 학생 수배로 늘어난다).
+ * 요청한 학생은 모두 키가 있고, 값은 차시마다 하나씩이다 (작성 안 했으면 written=false).
+ */
+export async function gatherRecordsForStudents(
+  scope: SubjectScope,
+  studentIds: string[],
+  inScopeSessions: ClassSession[],
+): Promise<Map<string, StudentSessionRecord[]>> {
+  const sensitive = isSensitiveSubject(scope);
+  const data = await loadSessionData(inScopeSessions);
+  const result = new Map<string, StudentSessionRecord[]>();
+  for (const studentId of new Set(studentIds)) {
+    result.set(
+      studentId,
+      data.map((d) => recordOf(d, studentId, sensitive)),
+    );
+  }
+  return result;
 }
 
 /** Gemini 를 한 번 부른다. 던지지 않고 문구 또는 null(실패) 을 돌려준다 */
