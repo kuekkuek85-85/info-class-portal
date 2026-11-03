@@ -4,6 +4,7 @@ import { FieldPath, FieldValue, type Query } from "firebase-admin/firestore";
 
 import { dateKeyKST } from "./datetime";
 import { db } from "./firebase-admin";
+import { recordCommentId } from "./record-comment-id";
 import { DEFAULT_RELAY_TOPICS, splitIntoGroups, type RelayGroup } from "./relay";
 import { BOARD_SIZE, emptyBoard, makeDeck, shuffle, type Slot } from "./streams";
 import {
@@ -24,6 +25,7 @@ import type {
   LessonPlan,
   MoodEntry,
   QuizAnswer,
+  RecordComment,
   Reflection,
   SessionStatus,
   Student,
@@ -88,6 +90,8 @@ export const COLLECTIONS = {
    * 보낸다. 세션이 아니라 **학번**에 묶어 저장하므로, 리더보드가 학번으로 조회한다.
    */
   typingScores: "typingScores",
+  /** 생기부 세특 초안. 문서 ID = `회차__과목열쇠__학번` (recordCommentId). */
+  recordComments: "recordComments",
   meta: "meta",
 } as const;
 
@@ -1637,6 +1641,26 @@ export async function listReflectionsByStudent(studentId: string): Promise<Refle
     db().collection(COLLECTIONS.reflections).where("studentId", "==", studentId),
   );
   return rows.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+// ------------------------------------------------------- 생기부 세특 초안
+
+export { recordCommentId };
+
+/** 한 회차의 세특 초안 전체. 학번 오름차순 */
+export async function listRecordComments(round: string): Promise<RecordComment[]> {
+  const rows = await collectAll<RecordComment>(
+    db().collection(COLLECTIONS.recordComments).where("round", "==", round),
+  );
+  return rows.sort((a, b) => a.studentId.localeCompare(b.studentId));
+}
+
+export async function saveRecordComment(input: Omit<RecordComment, "id" | "updatedAt">): Promise<void> {
+  const id = recordCommentId(input.round, input.subjectKey, input.studentId);
+  await db()
+    .collection(COLLECTIONS.recordComments)
+    .doc(id)
+    .set({ ...input, updatedAt: Date.now() }, { merge: true });
 }
 
 // ------------------------------------------------------- 보관·삭제 (PRD 5.2)

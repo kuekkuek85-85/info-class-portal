@@ -2064,6 +2064,29 @@ export interface Reflection {
 }
 
 /**
+ * 생기부 세부특기사항 초안. 문서ID = `회차__과목열쇠__학번` (recordCommentId).
+ * 회차를 ID 에 넣어 12월 2차가 1차를 덮지 않는다.
+ */
+export interface RecordComment {
+  id: string;
+  /** 회차 ("1", "2" ...) */
+  round: string;
+  /** 과목 열쇠 (예: "info-2", "mt-1") */
+  subjectKey: string;
+  studentId: string;
+  classNo: ClassNo;
+  /** 분반 과목이면 분반 열쇠 */
+  groupKey?: string;
+  text: string;
+  /** draft = 생성된 그대로, edited = 교사가 손봄 */
+  status: "draft" | "edited";
+  /** ai = 모델 생성, fallback = 규칙 기반 대체 문안 */
+  source?: "ai" | "fallback";
+  model?: string;
+  updatedAt: number;
+}
+
+/**
  * 저장된 답 배열을 안전하게 꺼낸다.
  *
  * 질문이 하나였던 시절의 문서에는 answers 가 없다. 그런 문서 하나 때문에 교사 대시보드 전체가
