@@ -83,7 +83,11 @@ export function RecordCommentPanel() {
     () => (rows ?? []).filter((row) => row.subjectKey === currentKey),
     [rows, currentKey],
   );
-  /** 한 번이라도 생성·저장이 돌고 있으면 다른 생성·저장은 막는다 (연타·중복 방지) */
+  /**
+   * 「과목 전체 생성」·「새로 불러오기」는 무엇이든 돌고 있으면 막는다 (겹침 방지).
+   * 개인 「생성」·「저장」은 이 값이 아니라 그 행(rowBusy)·전체 생성(bulkBusy)만 보고 막아,
+   * 서로 다른 학생을 동시에 생성할 수 있게 한다.
+   */
   const anyBusy = bulkBusy || busyKeys.size > 0;
 
   async function load() {
@@ -394,7 +398,7 @@ export function RecordCommentPanel() {
                               <button
                                 type="button"
                                 onClick={() => void generate([row], false)}
-                                disabled={anyBusy}
+                                disabled={bulkBusy || rowBusy}
                                 className="pill pill-secondary t-body-sm disabled:opacity-60"
                               >
                                 {rowBusy ? "처리 중…" : "생성"}
@@ -402,7 +406,7 @@ export function RecordCommentPanel() {
                               <button
                                 type="button"
                                 onClick={() => void save(row)}
-                                disabled={anyBusy || text.trim() === ""}
+                                disabled={bulkBusy || rowBusy || text.trim() === ""}
                                 className="pill pill-secondary t-body-sm disabled:opacity-60"
                               >
                                 저장
