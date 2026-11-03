@@ -103,24 +103,40 @@ export function summarizeForPrompt(records: StudentSessionRecord[], sensitive: b
   return lines.join("\n");
 }
 
-export function buildCommentPrompt(subjectLabel: string, summary: string, sensitive: boolean): string {
-  const rules = [
-    "교사가 학생을 관찰한 사실을 중심으로 쓴다.",
-    "문장은 현재형 종결어미 '~함'으로 끝낸다. (예: 발표함, 정리함)",
-    "약 2문장으로 쓴다. 줄바꿈 없이, 문장과 문장 사이는 띄어쓰기 한 칸으로 이어 쓴다.",
-    "활동을 전부 나열하지 말고 대표 활동 위주로 쓴다.",
-    "특정 회사·제품·브랜드·서비스·앱 이름을 쓰지 말고 일반 명칭으로 바꿔 쓴다. (예: 파이썬 → 텍스트 프로그래밍 언어, 특정 디자인 앱 → 디자인 도구)",
-    "중학생 수준에 맞는 표현을 쓴다.",
-  ];
-  if (sensitive) {
-    rules.push("학생의 감정·속마음을 쓰지 말고 활동 사실만 쓴다.");
-  }
+/**
+ * 생성 시 지키는 [기재 요령] — 정본은 `docs/record-comment-guidelines.md` 다(서버가 읽어 `guidelines` 로 넘김).
+ * 아래 내장 규칙은 그 파일을 못 읽었을 때의 안전망(동일 취지)이다. 한쪽을 고치면 다른 쪽도 맞춘다.
+ */
+const FALLBACK_RULES = [
+  "- 교사가 학생을 관찰한 사실을 중심으로 쓴다.",
+  "- 문장은 현재형 종결어미 '~함'으로 끝낸다. (예: 발표함, 정리함)",
+  "- 약 2문장으로 쓴다. 줄바꿈 없이, 문장과 문장 사이는 띄어쓰기 한 칸으로 이어 쓴다.",
+  "- 활동을 전부 나열하지 말고 대표 활동 위주로 쓴다.",
+  "- 특정 회사·제품·브랜드·서비스·앱 이름을 쓰지 말고 일반 명칭으로 바꿔 쓴다. (예: 파이썬 → 텍스트 프로그래밍 언어, 특정 디자인 앱 → 디자인 도구)",
+  "- 중학생 수준에 맞는 표현을 쓴다.",
+].join("\n");
+
+/** 마음 톡톡 등 민감 과목 프롬프트에 늘 덧붙이는 가드 — 기재 요령 파일 편집과 무관하게 코드로 보장. */
+const SENSITIVE_RULE = "학생의 감정·속마음은 쓰지 말고 활동 사실만 쓴다.";
+
+/**
+ * guidelines 가 주어지면(= docs/record-comment-guidelines.md 본문) 그것을 [기재 요령]으로 쓰고,
+ * 없으면 FALLBACK_RULES 를 쓴다. sensitive 면 가드 한 줄을 늘 덧붙인다.
+ */
+export function buildCommentPrompt(
+  subjectLabel: string,
+  summary: string,
+  sensitive: boolean,
+  guidelines?: string,
+): string {
+  const rulesBlock = guidelines && guidelines.trim() ? guidelines.trim() : FALLBACK_RULES;
   return [
     `다음은 ${subjectLabel} 수업에서 한 학생의 활동 기록이다.`,
-    "이 기록을 바탕으로 학교생활기록부 세부능력 및 특기사항 문구를 작성해라.",
+    "아래 [기재 요령]을 반드시 지켜, 학교생활기록부 세부능력 및 특기사항 문구를 작성해라.",
     "",
-    "[규칙]",
-    ...rules.map((r) => `- ${r}`),
+    "[기재 요령]",
+    rulesBlock,
+    ...(sensitive ? ["", `[주의] ${SENSITIVE_RULE}`] : []),
     "",
     "[활동 기록]",
     summary,

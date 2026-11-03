@@ -1,5 +1,8 @@
 import "server-only";
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { listArtifacts, listReflections } from "./db";
 import {
   buildCommentPrompt,
@@ -202,6 +205,25 @@ async function callGemini(prompt: string): Promise<string | null> {
  * 세특 초안 한 건을 만든다. 던지지 않는다.
  * 자료가 없으면 빈 문구(라우트가 "자료 부족" 으로 표시), AI 가 실패하면 폴백.
  */
+/**
+ * 생기부 기재 요령(정본) — `docs/record-comment-guidelines.md`.
+ *
+ * 생성할 때마다 이 파일을 읽어 프롬프트 [기재 요령]으로 넣는다(교사가 규칙을 한곳에서 관리).
+ * Vercel 번들에 포함되도록 next.config.ts 의 outputFileTracingIncludes 에 등록돼 있다.
+ * 읽기 실패 시 빈 문자열 → buildCommentPrompt 가 코드 내장 기본 규칙으로 대체(생성은 멈추지 않음).
+ * 배포 수명 동안 바뀌지 않으므로 한 번만 읽어 캐싱한다.
+ */
+let cachedGuidelines: string | null = null;
+function loadGuidelines(): string {
+  if (cachedGuidelines !== null) return cachedGuidelines;
+  try {
+    cachedGuidelines = readFileSync(join(process.cwd(), "docs/record-comment-guidelines.md"), "utf8");
+  } catch {
+    cachedGuidelines = "";
+  }
+  return cachedGuidelines;
+}
+
 export async function generateComment(
   scope: SubjectScope,
   records: StudentSessionRecord[],
@@ -212,7 +234,9 @@ export async function generateComment(
 
   const sensitive = isSensitiveSubject(scope);
   const summary = summarizeForPrompt(records, sensitive);
-  const comment = await callGemini(buildCommentPrompt(scope.label, summary, sensitive));
+  const comment = await callGemini(
+    buildCommentPrompt(scope.label, summary, sensitive, loadGuidelines()),
+  );
 
   if (comment !== null) {
     const text = capComment(comment);

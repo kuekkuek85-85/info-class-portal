@@ -17,3 +17,8 @@ test("프롬프트는 회사·제품명 금지와 띄어쓰기 한 칸 연결을
   assert.ok(/회사|제품|브랜드|서비스|앱/.test(p) && p.includes("일반 명칭"));
   assert.ok(p.includes("띄어쓰기") && p.includes("줄바꿈"));
 });
+test("기재 요령(MD 본문)이 주어지면 프롬프트에 그대로 들어간다", () => {
+  const p = buildCommentPrompt("정보 2반", "요약", false, "## 요령\n- 특수규칙 XYZ");
+  assert.ok(p.includes("특수규칙 XYZ"));
+  assert.ok(p.includes("[기재 요령]"));
+});
