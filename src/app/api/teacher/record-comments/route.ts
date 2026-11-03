@@ -26,6 +26,9 @@ import type { ClassNo, RecordComment } from "@/lib/types";
  * 쓰기는 recordComments 컬렉션뿐이다. 성찰·활동지는 읽기만 한다.
  */
 
+/** 일괄 생성은 학생 수에 따라 80~180초쯤 걸린다 (Gemini 호출 × 학생 수) */
+export const maxDuration = 300;
+
 /** 한 번에 Gemini 를 부르는 학생 수 */
 const CONCURRENCY = 4;
 /** 한 요청에서 만들 수 있는 학생 수 상한 (과목 하나 = 한 반 정도) */
@@ -213,13 +216,19 @@ export async function POST(request: Request) {
     };
 
     const one = async (entry: RosterEntry): Promise<Result> => {
-      const { text, source } = await generateComment(
-        scope,
-        recordsByStudent.get(entry.studentId) ?? [],
-      );
-      // 자료 부족(빈 문구)은 저장하지 않는다 — 빈 초안이 교사의 기존 글을 덮지 않게
+      const records = recordsByStudent.get(entry.studentId) ?? [];
+      const { text, source } = await generateComment(scope, records);
+      // 빈 문구는 저장하지 않는다 — 빈 초안이 교사의 기존 글을 덮지 않게.
+      // 기록이 있는데 비었다면 AI 호출 실패(시간 초과·네트워크 등)이므로 "오류"로 알린다
       if (text === "") {
-        return { studentId: entry.studentId, text, source, status: "none", note: "자료부족" };
+        const hadData = records.some((r) => r.written);
+        return {
+          studentId: entry.studentId,
+          text,
+          source,
+          status: "none",
+          note: hadData ? "오류" : "자료부족",
+        };
       }
       await saveRecordComment(commentInput(round, scope.subjectKey, entry, text, "draft", source));
       return { studentId: entry.studentId, text, source, status: "draft" };

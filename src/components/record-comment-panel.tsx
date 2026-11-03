@@ -373,10 +373,7 @@ export function RecordCommentPanel() {
                       return (
                         <tr key={key} className="border-t border-line align-top">
                           <td className="px-3 py-2 whitespace-nowrap">
-                            {row.classNo}반
-                            {row.groupKey ? (
-                              <span className="ml-1 text-xs text-muted">{row.groupKey}</span>
-                            ) : null}
+                            {row.groupKey ? row.subjectLabel : `${row.classNo}반`}
                           </td>
                           <td className="px-3 py-2 tabular-nums whitespace-nowrap">
                             {row.studentId}
