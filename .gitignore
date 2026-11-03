@@ -58,3 +58,6 @@ next-env.d.ts
 
 # 보안 점검 보고서 — 취약점 상세를 담으므로 저장소(특히 공개 시)에 올리지 않는다
 docs/security-review-*.md
+
+# SDD(서브에이전트 주도 개발) 작업 스크래치 — 원장·브리프·리뷰 패키지 임시 보관
+.superpowers/
