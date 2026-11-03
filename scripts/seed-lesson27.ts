@@ -232,6 +232,78 @@ input.on_logo_event(TouchButtonEvent.PRESSED, on_logo_pressed)
 
 show_hand(choice)`;
 
+/**
+ * 미션5 바이브 베이스 — 완성형 가위바위보(미션1~3 완성형, 버그 없음). AI가 여기에 기능을 더한다.
+ * ※ src/lib/vibe-code.ts 의 MICROBIT_RPS_BASE 와 **같은 문자열**이어야 한다(seed 는 server-only 모듈을
+ *    import 못 해 복제함 — 한쪽을 고치면 다른 쪽도). makecode.microbit.org 에서 변환 확인(2026-11-04).
+ */
+const RPS_BASE = `choice = 1
+my = 0
+ai = 0
+
+def show_hand(n):
+    if n == 1:
+        basic.show_leds("""
+            # # . . #
+            # # . # .
+            . . # . .
+            # # . # .
+            # # . . #
+            """)
+    elif n == 2:
+        basic.show_leds("""
+            . # # # .
+            . # # # #
+            . # # # #
+            # # # # #
+            # # # # #
+            """)
+    else:
+        basic.show_leds("""
+            . . . . .
+            . # # # .
+            . # # # .
+            . # # # .
+            . . . . .
+            """)
+
+def on_button_pressed_a():
+    global choice
+    choice = choice + 1
+    if choice > 3:
+        choice = 1
+    show_hand(choice)
+input.on_button_pressed(Button.A, on_button_pressed_a)
+
+def on_button_pressed_b():
+    global choice
+    choice = choice - 1
+    if choice < 1:
+        choice = 3
+    show_hand(choice)
+input.on_button_pressed(Button.B, on_button_pressed_b)
+
+def on_logo_pressed():
+    global my, ai
+    my = choice
+    ai = randint(1, 3)
+    show_hand(ai)
+    basic.pause(800)
+    if my == ai:
+        basic.show_icon(IconNames.MEH)
+    elif my == 1 and ai == 2:
+        basic.show_icon(IconNames.HAPPY)
+    elif my == 3 and ai == 1:
+        basic.show_icon(IconNames.HAPPY)
+    elif my == 2 and ai == 3:
+        basic.show_icon(IconNames.HAPPY)
+    else:
+        basic.show_icon(IconNames.SAD)
+    basic.pause(1500)
+input.on_logo_event(TouchButtonEvent.PRESSED, on_logo_pressed)
+
+show_hand(choice)`;
+
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
@@ -387,6 +459,53 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "long",
     maxLength: 6000,
   },
+
+  /* ── 미션 5 (worksheet) — AI로 기능 추가 (바이브) ── */
+  {
+    key: "_mb27_m5_intro",
+    phase: "worksheet",
+    label: "미션 5 — AI에게 기능 하나를 부탁하기",
+    hint:
+      "내 가위바위보에 더하고 싶은 기능을 한 문장으로 말하면, AI가 '가위바위보 전체 + 그 기능' 이 든 완성\n" +
+      "코드를 만들어 줘요. 복사해서 MakeCode 'Python' 에 (기존 코드 모두 지우고) 붙여넣어 실행해요.\n\n" +
+      "이런 걸 부탁해 볼 수 있어요:\n" +
+      "  · 이기면 '삐' 소리가 나게 해 줘\n" +
+      "  · 비기면 LED가 잠깐 깜빡이게 해 줘\n" +
+      "  · A+B 를 같이 누르면 처음(가위)으로 되돌아가게 해 줘\n\n" +
+      "한 번에 안 될 수도 있어요 — 설명을 읽고 다시 부탁하거나 조금씩 고쳐 봐요.\n" +
+      "(내가 AI에게 보낸 말과 받은 코드는 저장되고, 선생님이 볼 수 있어요.)",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "mb27_vibe",
+    phase: "worksheet",
+    label: "AI에게 기능 부탁하기 — 가위바위보에 더할 기능을 말로 적어요",
+    hint:
+      "더하고 싶은 기능을 한 번에 하나씩, 동작으로 적어요. AI가 가위바위보 전체 코드에 그 기능을 더해 줘요.\n" +
+      "'코드 복사하기' 로 복사해 아래 [MakeCode 열기] 로 열고 'Python' 에 붙여넣어 실행해요.",
+    kind: "vibe_code",
+    vibeTarget: "microbit",
+    // 바탕 = 완성형 가위바위보. 서버 fallback(만보기)은 25차 전용이라, 가위바위보는 반드시 베이스를 넘긴다.
+    vibeBaseCode: RPS_BASE,
+    maxLength: 0,
+  },
+  {
+    key: "mb27_vibe_what",
+    phase: "worksheet",
+    label: "AI가 준 코드는 무엇을 하나요? (한 줄)",
+    hint: "AI가 더해 준 부분이 '무엇을 하는지' 한 줄로 적어 봐요. (예: 이기면 소리가 난다.)",
+    kind: "text",
+    maxLength: 200,
+  },
+  {
+    key: "mb27_vibe_mine",
+    phase: "worksheet",
+    label: "내가 더한 기능 — 친구들과 나눌 한 줄",
+    hint: "내 가위바위보에 어떤 기능을 더했는지, 자랑하듯 한 줄로 적어 봐요.",
+    kind: "text",
+    maxLength: 200,
+  },
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
@@ -431,11 +550,13 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
           { label: "미션 2", value: "금색 로고 터치로 AI 패 뽑기 (randint)" },
           { label: "미션 3", value: "판정 — if/elif/else 로 이김·비김·짐 얼굴" },
           { label: "미션 4", value: "버그 고치기(비겼는데 짐) + 퀴즈 2문항" },
+          { label: "미션 5", value: "AI로 기능 추가 (이기면 소리 등) — 바이브" },
           { label: "채점은", value: "점수·자동채점 없어요 — 만들어 보고 돌아가면 성공" },
         ],
         highlights: [
           "미션1~3은 뼈대 코드의 '# (미션)' 왼쪽 빈칸만 채워요(show_hand·B버튼 등은 다 돼 있어요).",
           "미션4는 '왜 비겼는데 짐이 뜨지?' 를 직접 찾아 고치는 미션 — 바이브만 하면 얕으니까요.",
+          "미션5는 완성한 가위바위보에 AI로 기능 하나를 더해 '나만의 가위바위보' 로 만들어요.",
         ],
       },
       {
@@ -467,15 +588,16 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   reflectionPublic: false,
 
   // MakeCode(새 탭)·파이썬 타자(새 탭)가 붙은 단계에서 창을 옮기는 것을 이탈로 안 센다.
-  focusExempt: ["waiting", "build", "grill", "mvp", "problem"],
+  focusExempt: ["waiting", "build", "grill", "mvp", "problem", "worksheet"],
   phaseLabels: {
     assessment: "안내",
     build: "미션 1 — 내 패 고르기",
     grill: "미션 2 — AI 패(무작위)",
     mvp: "미션 3 — 판정",
     problem: "미션 4 — 버그 고치기 + 퀴즈",
+    worksheet: "미션 5 — AI로 기능 추가",
   },
-  phaseOrder: ["waiting", "assessment", "build", "grill", "mvp", "problem", "reflection"],
+  phaseOrder: ["waiting", "assessment", "build", "grill", "mvp", "problem", "worksheet", "reflection"],
   freeNavigation: false,
 
   activity: {
@@ -564,8 +686,9 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (23~26차와 같은 MakeCode 통)`);
-  console.log("단계: 대기(타자) → 기분 → 안내 → 미션1(build) → 미션2(grill) → 미션3(mvp·판정+공유링크) → 미션4(problem·디버깅+퀴즈2+고친코드) → 성찰. freeNav off. hideDoneButton true. 성찰 제출 → 사과 게임.");
+  console.log("단계: 대기(타자) → 기분 → 안내 → 미션1(build) → 미션2(grill) → 미션3(mvp·판정+공유링크) → 미션4(problem·디버깅+퀴즈2+고친코드) → 미션5(worksheet·바이브) → 성찰. freeNav off. hideDoneButton true. 성찰 제출 → 사과 게임.");
   console.log("미션1: 버튼 A 순환 빈칸(B·show_hand 제공). 미션2: 로고 터치 randint 빈칸. 미션3: 판정 elif 2개 빈칸 + 공유 링크(mb27_share, long). 미션4: 비김 누락 버그 고치기 + 형성평가 2문항(choice) + 고친 코드(mb27_fix, long 6000).");
+  console.log("미션5: vibe_code(microbit, 베이스=완성형 RPS_BASE=vibe-code.ts MICROBIT_RPS_BASE) + 서술칸 2개(AI가 한 일·내가 더한 기능).");
   console.log("MakeCode 실측(2026-11-04): on_button_pressed·on_logo_event(TouchButtonEvent.PRESSED)·randint·show_icon(IconNames.HAPPY/MEH/SAD)·show_leds·show_hand(n)·if/elif/else 변환 확인. TouchButton.LOGO 는 컴파일 실패라 안 씀.");
   process.exit(0);
 }

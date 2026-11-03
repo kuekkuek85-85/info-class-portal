@@ -115,6 +115,85 @@ def on_gesture_shake():
         """)
 input.on_gesture(Gesture.SHAKE, on_gesture_shake)`;
 
+/**
+ * 27차 가위바위보 기본 코드 — AI가 '여기에 기능을 더한' 전체 프로그램을 만들 바탕 (MakeCode static Python).
+ *
+ * A·B 버튼으로 내 패를 고르고(1=가위·2=보·3=바위), 금색 로고 터치로 AI 패(randint)를 뽑아 if/elif/else 로
+ * 이김(Happy)·비김(Meh)·짐(Sad)을 판정하는 완성 가위바위보다(미션1~3 완성형). 차시(27차 바이브 미션)는 이
+ * 값을 vibeBaseCode 로 준다 — 서버 fallback(MICROBIT_MANBOGI_BASE)은 25차 전용이라 그대로 두고, 가위바위보는
+ * 반드시 vibeBaseCode 를 넘긴다.
+ * ※ seed 스크립트는 `import "server-only"` 때문에 이 모듈을 못 불러오므로, seed-lesson27 에 같은 문자열을
+ *    복제해 둔다(둘이 일치해야 함 — 한쪽을 고치면 다른 쪽도).
+ * makecode.microbit.org '파이썬 보기' 에서 붙여넣기·블록 변환 확인(2026-11-04). 로고 터치는
+ * input.on_logo_event(TouchButtonEvent.PRESSED, …) — TouchButton.LOGO 는 컴파일 실패라 안 씀.
+ */
+export const MICROBIT_RPS_BASE = `choice = 1
+my = 0
+ai = 0
+
+def show_hand(n):
+    if n == 1:
+        basic.show_leds("""
+            # # . . #
+            # # . # .
+            . . # . .
+            # # . # .
+            # # . . #
+            """)
+    elif n == 2:
+        basic.show_leds("""
+            . # # # .
+            . # # # #
+            . # # # #
+            # # # # #
+            # # # # #
+            """)
+    else:
+        basic.show_leds("""
+            . . . . .
+            . # # # .
+            . # # # .
+            . # # # .
+            . . . . .
+            """)
+
+def on_button_pressed_a():
+    global choice
+    choice = choice + 1
+    if choice > 3:
+        choice = 1
+    show_hand(choice)
+input.on_button_pressed(Button.A, on_button_pressed_a)
+
+def on_button_pressed_b():
+    global choice
+    choice = choice - 1
+    if choice < 1:
+        choice = 3
+    show_hand(choice)
+input.on_button_pressed(Button.B, on_button_pressed_b)
+
+def on_logo_pressed():
+    global my, ai
+    my = choice
+    ai = randint(1, 3)
+    show_hand(ai)
+    basic.pause(800)
+    if my == ai:
+        basic.show_icon(IconNames.MEH)
+    elif my == 1 and ai == 2:
+        basic.show_icon(IconNames.HAPPY)
+    elif my == 3 and ai == 1:
+        basic.show_icon(IconNames.HAPPY)
+    elif my == 2 and ai == 3:
+        basic.show_icon(IconNames.HAPPY)
+    else:
+        basic.show_icon(IconNames.SAD)
+    basic.pause(1500)
+input.on_logo_event(TouchButtonEvent.PRESSED, on_logo_pressed)
+
+show_hand(choice)`;
+
 /** 아티팩트 answers[key] 에 저장하는 기록 한 건. */
 export interface VibeCodeEntry {
   prompt: string;
@@ -179,6 +258,7 @@ function buildMicrobitSystem(baseCode: string): string {
     "    흔들기 → input.on_gesture(Gesture.SHAKE, 함수)",
     "    버튼  → input.on_button_pressed(Button.A, 함수) / Button.B / Button.AB (A+B 동시)",
     "    핀 터치 → input.on_pin_pressed(TouchPin.P0, 함수)",
+    "    로고 터치(v2) → input.on_logo_event(TouchButtonEvent.PRESSED, 함수)  (TouchButton.LOGO 는 쓰지 마라)",
     "- 반복: def on_forever(): ... 뒤에 basic.forever(on_forever)",
     "- 소리(micro:bit v2): music.play(music.tone_playable(262, music.beat(BeatFraction.WHOLE)), music.PlaybackMode.UNTIL_DONE)",
     "  (음 높이는 숫자 Hz. 262=도, 294=레, 330=미, 392=솔. 더 간단히는 그냥 이 한 줄을 그대로 쓴다.)",
