@@ -107,8 +107,9 @@ export function buildCommentPrompt(subjectLabel: string, summary: string, sensit
   const rules = [
     "교사가 학생을 관찰한 사실을 중심으로 쓴다.",
     "문장은 현재형 종결어미 '~함'으로 끝낸다. (예: 발표함, 정리함)",
-    "정확히 2줄(약 2문장)로 쓴다.",
+    "약 2문장으로 쓴다. 줄바꿈 없이, 문장과 문장 사이는 띄어쓰기 한 칸으로 이어 쓴다.",
     "활동을 전부 나열하지 말고 대표 활동 위주로 쓴다.",
+    "특정 회사·제품·브랜드·서비스·앱 이름을 쓰지 말고 일반 명칭으로 바꿔 쓴다. (예: 파이썬 → 텍스트 프로그래밍 언어, 특정 디자인 앱 → 디자인 도구)",
     "중학생 수준에 맞는 표현을 쓴다.",
   ];
   if (sensitive) {
@@ -128,9 +129,10 @@ export function buildCommentPrompt(subjectLabel: string, summary: string, sensit
   ].join("\n");
 }
 
-/** 상한(기본 200자)을 넘으면 마지막 '함'/문장부호 경계에서 자른다. */
+/** 줄바꿈·연속 공백을 한 칸으로 모으고, 상한(기본 200자)을 넘으면 마지막 '함'/문장부호 경계에서 자른다. */
 export function capComment(text: string, max = 200): string {
-  const t = text.trim();
+  // 생기부 문구는 줄바꿈 없이 문장 사이를 띄어쓰기 한 칸으로 잇는다.
+  const t = text.replace(/\s+/g, " ").trim();
   if (t.length <= max) return t;
   const head = t.slice(0, max);
   const cut = Math.max(head.lastIndexOf("함"), head.lastIndexOf("."), head.lastIndexOf("!"), head.lastIndexOf("?"), head.lastIndexOf("。"));

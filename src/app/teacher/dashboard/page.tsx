@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { ComfortBotReviewPanel } from "@/components/comfort-bot-review-panel";
-import { RecordCommentPanel } from "@/components/record-comment-panel";
 import { RelayTeacherPanel } from "@/components/relay-teacher-panel";
 import { StreamsBroadcastTeacherPanel } from "@/components/streams-broadcast-teacher-panel";
 import { RulesCompilePanel } from "@/components/rules-compile-panel";
@@ -1710,9 +1709,6 @@ function Dashboard() {
           </section>
         </>
       )}
-
-      {/* 생기부 세특 초안 — 수업(세션)과 무관한 교사 도구라 수업이 없는 날에도 뜬다. 열 때만 읽는다. */}
-      <RecordCommentPanel />
     </div>
   );
 }

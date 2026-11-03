@@ -47,3 +47,7 @@ test("CSV: BOM·헤더·쉼표/줄바꿈/따옴표 이스케이프", () => {
 test("capComment: 200자 상한", () => {
   assert.ok(capComment("가".repeat(400)).length <= 200);
 });
+test("capComment: 줄바꿈·연속공백을 한 칸으로 잇는다", () => {
+  assert.equal(capComment("발표함.\n정리함."), "발표함. 정리함.");
+  assert.equal(capComment("가  나\t다"), "가 나 다");
+});

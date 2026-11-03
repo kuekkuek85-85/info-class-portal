@@ -30,6 +30,7 @@ const NAV = [
   { href: "/teacher/schedule", label: "시간표" },
   { href: "/teacher/students", label: "명렬표" },
   { href: "/teacher/data", label: "데이터" },
+  { href: "/teacher/record-comments", label: "세특 초안" },
 ] as const;
 
 export function TeacherShell({ children }: { children: ReactNode }) {
