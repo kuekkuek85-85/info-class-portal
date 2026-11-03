@@ -15,10 +15,16 @@ test("정보: 다른 반·리허설·분반세션 제외", () => {
   assert.equal(sessionInScope({ classNo: 2, lessonNo: 10, rehearsal: true }, info), false);
   assert.equal(sessionInScope({ classNo: 2, lessonNo: 10, groupKey: "mt-tue-1" }, info), false);
 });
-test("마음톡톡 1기: 1기 groupKey만, 2기 제외", () => {
-  const mt = getSubjectScope("mt-1")!;
+test("주제선택 화 1기: 그 분반 세션만 (목·2기 제외)", () => {
+  const mt = getSubjectScope("mt-tue-1")!;
   assert.equal(sessionInScope({ classNo: 5, lessonNo: 4, groupKey: "mt-tue-1" }, mt), true);
+  assert.equal(sessionInScope({ classNo: 5, lessonNo: 4, groupKey: "mt-thu-1" }, mt), false);
   assert.equal(sessionInScope({ classNo: 5, lessonNo: 4, groupKey: "mt-tue-2" }, mt), false);
+});
+test("진로탐색 목 1기: 그 분반 세션만", () => {
+  const hai = getSubjectScope("hai-thu-1")!;
+  assert.equal(sessionInScope({ classNo: 5, lessonNo: 4, groupKey: "hai-thu-1" }, hai), true);
+  assert.equal(sessionInScope({ classNo: 5, lessonNo: 4, groupKey: "hai-tue-1" }, hai), false);
 });
 test("MT 요약(sensitive)엔 학생 글이 없다", () => {
   const recs = [{

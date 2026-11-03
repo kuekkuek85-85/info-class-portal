@@ -26,17 +26,31 @@ export const SUBJECT_SCOPES: SubjectScope[] = [
       maxLessonNo: 22,
     }),
   ),
+  // 선택과목은 분반(화/목)별로 따로 낸다 — 한 학생은 한 분반에만 있어 겹치지 않는다.
+  // subjectKey 를 분반 열쇠와 똑같이 둬서 문서 ID(`회차__과목열쇠__학번`)가 분반까지 담는다.
   {
-    subjectKey: "mt-1",
-    label: "마음톡톡 1기",
+    subjectKey: "mt-tue-1",
+    label: "주제선택 화 1기",
     kind: "mt",
-    groupKeys: ["mt-tue-1", "mt-thu-1"],
+    groupKeys: ["mt-tue-1"],
   },
   {
-    subjectKey: "hai-1",
-    label: "진로탐색 1기",
+    subjectKey: "mt-thu-1",
+    label: "주제선택 목 1기",
+    kind: "mt",
+    groupKeys: ["mt-thu-1"],
+  },
+  {
+    subjectKey: "hai-tue-1",
+    label: "진로탐색 화 1기",
     kind: "hai",
-    groupKeys: ["hai-tue-1", "hai-thu-1"],
+    groupKeys: ["hai-tue-1"],
+  },
+  {
+    subjectKey: "hai-thu-1",
+    label: "진로탐색 목 1기",
+    kind: "hai",
+    groupKeys: ["hai-thu-1"],
   },
 ];
 
