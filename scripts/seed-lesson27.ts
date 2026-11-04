@@ -314,93 +314,96 @@ function empty(): PhaseContent {
 // 공유 링크·코드 제출은 비공개(갤러리 off). 각 미션에 실행결과 SVG(설명 우측 1/3).
 // ─────────────────────────────────────────────────────────────
 const WORKSHEET: WorksheetQuestion[] = [
-  /* ── 미션 1 (build) — 내 패 고르기 ── */
+  /* ── 미션 1 (build) — A/B 순환 시뮬레이터 + 코드 생성(제출 없음) ── */
   {
     key: "_mb27_m1",
     phase: "build",
     label: "미션 1 — A·B 버튼으로 내 패 고르기",
     hint:
-      "가위바위보 게임을 만들어요! 먼저 'A·B 버튼' 으로 내 패(가위·보·바위)를 고르게 해요. 아래 '코드\n" +
-      "복사하기' 로 뼈대를 복사해, MakeCode 'Python' 의 기존 코드를 모두 지우고(Ctrl+A → Delete) 맨 처음에\n" +
-      "붙여넣어요. 패 번호는 1=가위, 2=보, 3=바위 예요.\n" +
-      "'show_hand' 와 'B 버튼' 은 다 돼 있어요(B는 거꾸로 도는 예시예요). 'A 버튼' 함수 안 각 '# (미션)'\n" +
-      "왼쪽 빈자리만 채워요:\n" +
-      "   ① 다음 패로 — choice 에 1 을 더해 다시 choice 에 담아요 (25·26차에서 쓴 '1 더하기' 와 같아요).\n" +
-      "   ② choice 가 3보다 커지면 다시 1 로 되돌려요 — B 버튼 예시의 'if … : choice = …' 를 거꾸로 따라 해요.\n" +
-      "'global choice' 는 밖에서 만든 choice 를 함수 안에서 바꾼다는 뜻이니 그대로 둬요.\n" +
-      "(아래 [MakeCode 열기] 로 새 탭에서 열고 'Python' 으로 바꾼 뒤 붙여넣어요. A·B 를 눌러 가위·보·바위가\n" +
-      "바뀌면 성공!)",
+      "가위바위보 게임을 만들어요! 먼저 'A·B 버튼' 으로 내 패(가위·보·바위)를 고르게 해요. 패 번호는\n" +
+      "1=가위, 2=보, 3=바위 예요.\n" +
+      "아래에서 A·B 버튼을 눌러 패가 어떻게 바뀌는지 체험한 뒤, '코드 생성' 을 눌러요. 나온 코드를 복사해\n" +
+      "MakeCode 'Python' 에 (기존 코드 모두 지우고) 붙여넣어 실행하면, 실제 보드에서도 A·B 로 패가 바뀌어요.",
     kind: "note",
     imageUrl: "/mb27-choose.svg",
-    imageAlt: "마이크로비트 화면에 A·B 버튼을 누를 때마다 가위·보·바위 LED 그림이 바뀌는 실행 결과",
+    imageAlt: "A·B 버튼을 누를 때마다 가위·보·바위 LED 그림이 바뀌는 실행 결과",
     imageSide: "right",
     imageSideWidth: "third",
-    code: CODE_M1,
-    linkUrl: MAKECODE_URL,
-    linkLabel: "MakeCode 열기 (새 탭)",
+    maxLength: 0,
+  },
+  {
+    key: "mb27_sim",
+    phase: "build",
+    label: "A·B 버튼 체험 + 코드 생성",
+    hint:
+      "A 버튼(가위→보→바위)·B 버튼(가위→바위→보)을 눌러 보고, '코드 생성' 으로 순환 코드를 만들어\n" +
+      "복사해요. 따로 제출은 없어요 — 만들어 붙여넣어 보면 성공!",
+    kind: "rps_sim",
     maxLength: 0,
   },
 
-  /* ── 미션 2 (grill) — AI 패(무작위) ── */
+  /* ── 미션 2 (grill) — 정답 입력 + (★미션★) 끼워 코드 생성(제출 없음) ── */
   {
     key: "_mb27_m2",
     phase: "grill",
-    label: "미션 2 — 금색 로고 터치로 AI 패 뽑기",
+    label: "미션 2 — 로고 터치로 AI 패 뽑기 (정답 넣기)",
     hint:
-      "이제 상대(AI)를 만들어요. 마이크로비트 **앞면 위쪽 금색 로고를 터치**하면 AI 가 무작위로 패를 내요.\n" +
-      "아래 '코드 복사하기' 로 뼈대를 복사해, MakeCode 'Python' 의 기존 코드를 모두 지우고 맨 처음에\n" +
-      "붙여넣어요(A·B·show_hand 는 미션1에서 한 게 다 들어 있어요).\n" +
-      "로고 함수 안 '# (미션)' 왼쪽 빈자리에 한 줄을 채워요:\n" +
-      "   · AI 패 뽑기 — ai 에 1~3 중 아무 수를 담아요. 26차 주사위에서 쓴 '무작위로 하나 뽑아 주는'\n" +
-      "     함수에 (1, 3) 을 넣으면 돼요. (바로 아래 show_hand(ai) 가 뽑은 패를 보여줘요.)\n" +
-      "(로고 터치는 시뮬레이터에서 위쪽 금색 부분을 눌러요. 누를 때마다 AI 패가 바뀌면 성공!)",
+      "이제 상대(AI)를 만들어요. 금색 로고를 터치하면 AI 가 무작위로 패를 내요. 아래 코드에서 '(★미션★)'\n" +
+      "자리에 들어갈 정답을 직접 적고, '정답 반영 코드 생성' 을 눌러요.\n" +
+      "정답은 'ai 에 1~3 중 아무 수 담기' — 26차 주사위에서 쓴 '무작위로 하나 뽑아 주는' 함수에 (1, 3) 을\n" +
+      "넣으면 돼요. 나온 코드를 복사해 MakeCode 'Python' 에 붙여넣어 실행해요.",
     kind: "note",
     imageUrl: "/mb27-ai.svg",
     imageAlt: "로고를 터치하면 내 패 옆에 AI 가 무작위로 낸 패가 뜨는 실행 결과",
     imageSide: "right",
     imageSideWidth: "third",
-    code: CODE_M2,
-    linkUrl: MAKECODE_URL,
-    linkLabel: "MakeCode 열기 (새 탭)",
+    maxLength: 0,
+  },
+  {
+    key: "mb27_fill",
+    phase: "grill",
+    label: "(★미션★) 정답 입력 + 코드 생성",
+    hint:
+      "'(★미션★)' 자리에 들어갈 정답을 적고 '정답 반영 코드 생성' 을 눌러요. 나온 전체 코드를 복사해\n" +
+      "MakeCode 에 붙여넣어요. 따로 제출은 없어요.",
+    kind: "rps_fill",
     maxLength: 0,
   },
 
-  /* ── 미션 3 (mvp) — 판정 ── */
+  /* ── 미션 3 (mvp) — 9가지 경우 드롭다운 빌더 + 코드 생성(제출 없음) ── */
   {
     key: "_mb27_m3",
     phase: "mvp",
-    label: "미션 3 — 이겼는지 판정하기 (if / elif / else)",
+    label: "미션 3 — 9가지 경우로 판정하기",
     hint:
-      "마지막으로 '내 패 vs AI 패' 로 이김·비김·짐을 가려 얼굴로 보여줘요. 아래 '코드 복사하기' 로 뼈대를\n" +
-      "복사해 MakeCode 'Python' 에 (기존 코드 모두 지우고) 붙여넣어요.\n" +
-      "로고 함수 안에 '갈림길(if/elif/else)' 이 있어요. 비김(같을 때 → 그냥 얼굴)과 '가위가 보를 이김'(웃는\n" +
-      "얼굴) 은 예시로 해 놨어요. 남은 두 경우를 '# (미션)' 자리에 elif 로 더해요:\n" +
-      "   ① 바위(3)가 가위(1)를 이길 때 — 웃는 얼굴\n" +
-      "   ② 보(2)가 바위(3)를 이길 때 — 웃는 얼굴\n" +
-      "위의 '가위가 보를 이김' 줄(elif my == 1 and ai == 2:)을 똑같은 모양으로 숫자만 바꿔 따라 쓰면 돼요.\n" +
-      "(안 채우면 그 두 경우는 '짐' 으로 잘못 떠요. 채우면 바르게 '이김' 이 떠요!)\n" +
-      "다 되면 A·B 로 패를 정하고 로고를 터치해 승부를 봐요.",
+      "마지막으로 '내 패 vs AI 패' 를 가려 이김·비김·짐을 얼굴로 보여줘요. 가위·바위·보가 만나는 경우는\n" +
+      "모두 9가지예요. 아래에서 9가지마다 ① 내 패 ② AI 패 ③ 결과 ④ 보여줄 LED 를 골라요.\n" +
+      "예) 가위 / 바위 / 짐 / 슬픈 얼굴. 9가지를 다 고르면 '코드 생성' 을 눌러 복사해 MakeCode 에 붙여넣어요.",
     kind: "note",
     imageUrl: "/mb27-result.svg",
-    imageAlt: "판정 결과로 웃는 얼굴(이김)·그냥 얼굴(비김)·우는 얼굴(짐)이 뜨는 실행 결과",
+    imageAlt: "판정 결과로 웃는 얼굴(이김)·그냥 얼굴(비김)·슬픈 얼굴(짐)이 뜨는 실행 결과",
     imageSide: "right",
     imageSideWidth: "third",
-    code: CODE_M3,
-    linkUrl: MAKECODE_URL,
-    linkLabel: "MakeCode 열기 (새 탭)",
     maxLength: 0,
   },
   {
-    key: "mb27_share",
+    key: "mb27_judge",
     phase: "mvp",
-    label: "미션 3 — 완성한 가위바위보 공유 링크 제출",
+    label: "9가지 경우 조립 + 코드 생성",
     hint:
-      "가위바위보가 되면(A·B 로 고르고 로고로 승부) MakeCode 위쪽 '공유(Share)' 를 눌러 만든 링크를\n" +
-      "아래 칸에 붙여넣어요. 적으면 자동으로 저장돼요(따로 제출 버튼은 없어요).",
-    kind: "long",
-    maxLength: 500,
+      "9가지 경우마다 결과(이김/비김/짐)와 보여줄 LED 를 골라요. 틀리게 골라도 그대로 코드가 나와요 —\n" +
+      "선생님이 돌아다니며 봐 줄 거예요. 다 고르면 '코드 생성' 으로 판정 코드를 만들어 MakeCode 에 붙여넣어요.",
+    kind: "rps_judge",
+    maxLength: 0,
   },
+];
 
+/**
+ * ▼ 다음 차시로 미룬 미션 4(디버깅+형성평가)·5(바이브). 27차에서는 쓰지 않는다(위 WORKSHEET·phaseOrder 에서
+ *   제외). 내용·정의는 **보존** — 다음 차시에서 이 배열을 WORKSHEET 에 합치고 phaseOrder 에 problem·worksheet 를
+ *   넣으면 그대로 되살아난다. CODE_BUG·RPS_BASE·mb27-bug.svg 도 그대로 둔다.
+ */
+const DEFERRED_WORKSHEET: WorksheetQuestion[] = [
   /* ── 미션 4 (problem) — 디버깅 + 형성평가 ── */
   {
     key: "_mb27_m4",
@@ -533,7 +536,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   progress: empty(),
 
-  // 안내 보드 — 오늘 할 일(미션 1·2·3·4) + 새 개념(버튼·로고 입력 / 갈림길 판정).
+  // 안내 보드 — 오늘 할 일(미션 1·2·3) + 새 개념(버튼·로고 입력 / 갈림길 판정).
   assessment: {
     heading: "오늘 할 일 — 가위바위보 게임 만들기",
     body: "",
@@ -541,22 +544,19 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     tabs: [
       {
         label: "오늘은 이런 날",
-        subtitle: "내 패 → AI 패 → 판정 → 고치기",
+        subtitle: "내 패 → AI 패 → 판정",
         note:
           "25·26차에서 익힌 변수·무작위·갈림길에, 오늘은 '버튼·로고 입력' 과 '판정' 을 더해 가위바위보\n" +
           "게임을 만들어요. 패 번호는 1=가위, 2=보, 3=바위 예요.",
         rows: [
-          { label: "미션 1", value: "A·B 버튼으로 내 패 고르기 (선택 상태 변수)" },
-          { label: "미션 2", value: "금색 로고 터치로 AI 패 뽑기 (randint)" },
-          { label: "미션 3", value: "판정 — if/elif/else 로 이김·비김·짐 얼굴" },
-          { label: "미션 4", value: "버그 고치기(비겼는데 짐) + 퀴즈 2문항" },
-          { label: "미션 5", value: "AI로 기능 추가 (이기면 소리 등) — 바이브" },
-          { label: "채점은", value: "점수·자동채점 없어요 — 만들어 보고 돌아가면 성공" },
+          { label: "미션 1", value: "A·B 버튼 체험 → 내 패 고르기 코드 생성" },
+          { label: "미션 2", value: "로고 터치 AI 패 — 정답 넣어 코드 생성 (randint)" },
+          { label: "미션 3", value: "9가지 경우 조립 → 판정(이김·비김·짐) 코드 생성" },
+          { label: "채점은", value: "점수·자동채점 없어요 — 만들어 붙여넣어 보면 성공" },
         ],
         highlights: [
-          "미션1~3은 뼈대 코드의 '# (미션)' 왼쪽 빈칸만 채워요(show_hand·B버튼 등은 다 돼 있어요).",
-          "미션4는 '왜 비겼는데 짐이 뜨지?' 를 직접 찾아 고치는 미션 — 바이브만 하면 얕으니까요.",
-          "미션5는 완성한 가위바위보에 AI로 기능 하나를 더해 '나만의 가위바위보' 로 만들어요.",
+          "미션마다 화면에서 체험·조립한 뒤 '코드 생성' → 복사해 MakeCode 에 붙여넣어요(따로 제출 없음).",
+          "틀리게 골라도 코드는 만들어져요 — 돌려 보고 고치면 돼요. 선생님이 돌아다니며 봐 줘요.",
         ],
       },
       {
@@ -581,23 +581,23 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   video: empty(),
 
-  // 성찰 — 입력·판정·디버깅 체험 소감. 개인적이라 비공개. 성찰 제출로 사과 게임 보상이 열린다.
+  // 성찰 — 쉬운 말로 가볍게 돌아보기(교사 요청 2026-11-04). 개인적이라 비공개. 성찰 제출로 사과 게임이 열린다.
   reflectionQuestions: [
-    "오늘 가위바위보를 만들며 가장 재밌던/어려웠던 건 무엇이었나요? 한 줄로 적어 봐요. (미션4 '비겼는데 짐이 뜨는 버그' 를 고친 이야기나, 판정 갈림길을 만든 이야기를 넣어도 좋아요.)",
+    "오늘 만든 가위바위보에서 가장 재미있었던 점은 무엇이었나요? 한 줄로 적어 봐요.",
+    "코드를 직접 만들어 MakeCode 에서 돌려 보니 어땠나요? (어려웠던 점이 있으면 같이 적어도 좋아요.)",
   ],
   reflectionPublic: false,
 
   // MakeCode(새 탭)·파이썬 타자(새 탭)가 붙은 단계에서 창을 옮기는 것을 이탈로 안 센다.
-  focusExempt: ["waiting", "build", "grill", "mvp", "problem", "worksheet"],
+  // ※ 미션4(problem)·미션5(worksheet)는 다음 차시로 미뤄 27차에서는 뺀다(DEFERRED_WORKSHEET 보존).
+  focusExempt: ["waiting", "build", "grill", "mvp"],
   phaseLabels: {
     assessment: "안내",
     build: "미션 1 — 내 패 고르기",
     grill: "미션 2 — AI 패(무작위)",
     mvp: "미션 3 — 판정",
-    problem: "미션 4 — 버그 고치기 + 퀴즈",
-    worksheet: "미션 5 — AI로 기능 추가",
   },
-  phaseOrder: ["waiting", "assessment", "build", "grill", "mvp", "problem", "worksheet", "reflection"],
+  phaseOrder: ["waiting", "assessment", "build", "grill", "mvp", "reflection"],
   freeNavigation: false,
 
   activity: {
@@ -607,8 +607,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     worksheetIntro: {
       heading: "가위바위보 게임 만들기",
       body:
-        "A·B 버튼으로 내 패를 고르고(미션1), 금색 로고 터치로 AI 패를 뽑고(미션2), if/elif/else 로 이김·비김·\n" +
-        "짐을 판정해요(미션3). 끝으로 '비겼는데 짐이 뜨는' 버그를 고치고 퀴즈를 풀어요(미션4).",
+        "A·B 버튼으로 내 패 고르기를 체험해 코드를 만들고(미션1), 로고 터치로 AI 패를 뽑는 정답을 넣어\n" +
+        "코드를 만들고(미션2), 9가지 경우를 조립해 이김·비김·짐 판정 코드를 만들어요(미션3). 각 미션은\n" +
+        "화면에서 만든 코드를 복사해 MakeCode 에 붙여넣어 실행해요(따로 제출 없음).",
     },
     worksheet: WORKSHEET,
     galleryEnabled: false,
@@ -686,10 +687,10 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (23~26차와 같은 MakeCode 통)`);
-  console.log("단계: 대기(타자) → 기분 → 안내 → 미션1(build) → 미션2(grill) → 미션3(mvp·판정+공유링크) → 미션4(problem·디버깅+퀴즈2+고친코드) → 미션5(worksheet·바이브) → 성찰. freeNav off. hideDoneButton true. 성찰 제출 → 사과 게임.");
-  console.log("미션1: 버튼 A 순환 빈칸(B·show_hand 제공). 미션2: 로고 터치 randint 빈칸. 미션3: 판정 elif 2개 빈칸 + 공유 링크(mb27_share, long). 미션4: 비김 누락 버그 고치기 + 형성평가 2문항(choice) + 고친 코드(mb27_fix, long 6000).");
-  console.log("미션5: vibe_code(microbit, 베이스=완성형 RPS_BASE=vibe-code.ts MICROBIT_RPS_BASE) + 서술칸 2개(AI가 한 일·내가 더한 기능).");
-  console.log("MakeCode 실측(2026-11-04): on_button_pressed·on_logo_event(TouchButtonEvent.PRESSED)·randint·show_icon(IconNames.HAPPY/MEH/SAD)·show_leds·show_hand(n)·if/elif/else 변환 확인. TouchButton.LOGO 는 컴파일 실패라 안 씀.");
+  console.log("단계: 대기(타자) → 기분 → 안내 → 미션1(build) → 미션2(grill) → 미션3(mvp) → 성찰. freeNav off. hideDoneButton true. 성찰 제출 → 사과 게임. (미션4·5는 DEFERRED_WORKSHEET 로 보존, 27차에서 숨김.)");
+  console.log("미션1: rps_sim(A/B 순환 시뮬 + 코드 생성, 제출 없음). 미션2: rps_fill(정답 입력 → (★미션★) 끼워 코드 생성, 제출 없음). 미션3: rps_judge(9가지 드롭다운 → 판정 코드 생성, 제출 없음). 모두 answers 자동저장.");
+  console.log("성찰 2문항(쉬운 말, 교사 요청). mb27-choose/result SVG 캡션 안 잘리게 viewBox 넓힘(2026-11-04).");
+  console.log("MakeCode 실측(2026-11-04): on_button_pressed·on_logo_event(TouchButtonEvent.PRESSED)·randint·show_icon(IconNames.*)·show_leds·show_hand(n)·if/elif/else·==/and 변환 확인. TouchButton.LOGO 는 컴파일 실패라 안 씀.");
   process.exit(0);
 }
 

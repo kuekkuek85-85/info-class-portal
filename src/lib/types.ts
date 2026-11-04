@@ -729,6 +729,17 @@ export interface WorksheetQuestion {
      * 지속되고 교사가 활동지로 열람한다(제출칸 없음 — 생성 시 자동저장). 갤러리 비공개 (dice-builder).
      */
     | "dice_builder"
+    /**
+     * rps_sim / rps_fill / rps_judge — 27차 가위바위보 인터랙티브 빌더 3종(rps-builders). dice_builder 와
+     * 같은 성격(순수 클라이언트·서버/AI 없음·'입력/체험 → 코드 자동 생성 → MakeCode 붙여넣기, 제출칸 없음').
+     *  · rps_sim   — A/B 버튼 순환을 화면에서 체험(LED 아이콘) → 순환 코드 생성(on_button_pressed A/B + show_hand).
+     *  · rps_fill  — 정답(ai = randint(1, 3))을 입력 → (★미션★) 자리에 끼워 전체 코드 생성.
+     *  · rps_judge — 9가지 경우(인간·AI·결과·LED아이콘) 드롭다운 조립 → if/elif + show_icon 코드 생성.
+     * 상태(선택값)는 answers[key] 에 JSON 자동저장, 교사가 활동지로 열람. 갤러리 비공개.
+     */
+    | "rps_sim"
+    | "rps_fill"
+    | "rps_judge"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
