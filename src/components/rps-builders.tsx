@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
  * 가위바위보(27차) 인터랙티브 빌더 3종 — 26차 dice-builder 와 같은 성격(순수 클라이언트, 서버·AI 없음,
  * '입력/체험 → 코드 자동 생성 → MakeCode 붙여넣기, 제출칸 없음'). 상태는 answers[key] 에 JSON 자동저장.
  *
- * 패 인코딩(기존 RPS 베이스와 일치): 1=가위, 2=보, 3=바위.
+ * 패 인코딩(기존 RPS 베이스와 일치): 1=가위, 2=바위, 3=보.
  *  · RpsSim(미션1)  — A/B 버튼 순환을 화면에서 체험(LED 아이콘) → 순환 코드 생성.
  *  · RpsFill(미션2) — 정답(ai = randint(1, 3))을 직접 입력 → (★미션★) 자리에 끼워 전체 코드 생성.
  *  · RpsJudge(미션3)— 9가지 경우(인간·AI·결과·LED아이콘) 드롭다운 조립 → if/elif + show_icon 코드 생성.
@@ -18,15 +18,15 @@ import { useMemo, useState } from "react";
 // ── 공통: 패 LED 패턴 / 이름 / show_hand·버튼 코드 조각 ──
 const HAND_PATTERNS: Record<number, string[]> = {
   1: ["11001", "11010", "00100", "11010", "11001"], // 가위
-  2: ["01110", "01111", "01111", "11111", "11111"], // 보
-  3: ["00000", "01110", "01110", "01110", "00000"], // 바위
+  2: ["00000", "01110", "01110", "01110", "00000"], // 바위
+  3: ["01110", "01111", "01111", "11111", "11111"], // 보
 };
-const HAND_NAMES: Record<number, string> = { 1: "가위", 2: "보", 3: "바위" };
+const HAND_NAMES: Record<number, string> = { 1: "가위", 2: "바위", 3: "보" };
 /** 패 드롭다운(번호 유지). 보기 순서는 가위·바위·보. */
 const HAND_OPTIONS = [
   { n: 1, label: "가위" },
-  { n: 3, label: "바위" },
-  { n: 2, label: "보" },
+  { n: 2, label: "바위" },
+  { n: 3, label: "보" },
 ];
 const RESULT_OPTIONS = ["이김", "비김", "짐"];
 const ICON_OPTIONS = [
@@ -49,19 +49,19 @@ const SHOW_HAND = `def show_hand(n):
             """)
     elif n == 2:
         basic.show_leds("""
+            . . . . .
             . # # # .
-            . # # # #
-            . # # # #
-            # # # # #
-            # # # # #
+            . # # # .
+            . # # # .
+            . . . . .
             """)
     else:
         basic.show_leds("""
-            . . . . .
             . # # # .
-            . # # # .
-            . # # # .
-            . . . . .
+            . # # # #
+            . # # # #
+            # # # # #
+            # # # # #
             """)`;
 
 const BTN_A = `def on_button_pressed_a():
@@ -170,13 +170,13 @@ export function RpsSim({
   }
   function pressA() {
     if (disabled) return;
-    const next = choice >= 3 ? 1 : choice + 1; // 가위→보→바위→가위
+    const next = choice >= 3 ? 1 : choice + 1; // 가위→바위→보→가위
     setChoice(next);
     persist(next);
   }
   function pressB() {
     if (disabled) return;
-    const next = choice <= 1 ? 3 : choice - 1; // 가위→바위→보→가위
+    const next = choice <= 1 ? 3 : choice - 1; // 가위→보→바위→가위
     setChoice(next);
     persist(next);
   }
@@ -188,10 +188,10 @@ export function RpsSim({
         <p className="t-body font-semibold">지금 내 패: {HAND_NAMES[choice]}</p>
         <div className="flex gap-3">
           <button type="button" onClick={pressA} disabled={disabled} className="pill pill-primary">
-            A 버튼 (가위→보→바위)
+            A 버튼 (가위→바위→보)
           </button>
           <button type="button" onClick={pressB} disabled={disabled} className="pill pill-primary">
-            B 버튼 (가위→바위→보)
+            B 버튼 (가위→보→바위)
           </button>
         </div>
         <p className="t-caption text-muted">

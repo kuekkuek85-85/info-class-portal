@@ -10,7 +10,7 @@
  * 로고 터치(v2)** 와 **선택 상태 변수**, 그리고 if/elif/else 로 **판정(내 패 vs AI 패)** 을 더해 '입력 →
  * 판단 → 출력' 이 다 든 작은 게임 하나를 완성한다. 26차와 달리 이어붙이기가 아니라 새 프로그램이다.
  *
- *   패 번호: 1=가위, 2=보, 3=바위.
+ *   패 번호: 1=가위, 2=바위, 3=보.
  *   미션1(build)  버튼 A/B 로 내 패 고르기(선택 상태 변수 순환). show_hand 표시 함수는 완성 제공, A 버튼
  *                 순환만 빈칸(B 버튼은 예시로 완성 제공 — 거꾸로 따라 보기).
  *   미션2(grill)  금색 로고 터치로 AI 패 뽑기 — randint(1,3). 로고 등록·show_hand 제공, randint 만 빈칸.
@@ -67,8 +67,8 @@ const FORCE = process.argv.includes("--force");
 const ACTIVITY_ID = "microbit-makecode";
 const MAKECODE_URL = "https://makecode.microbit.org/";
 
-/** show_hand 표시 함수 — 지금 패(1=가위·2=보·3=바위)를 LED 로 보여준다. 미션 내내 완성 제공(반복 LED 그리기). */
-const SHOW_HAND = `# show_hand: 패 번호(1=가위·2=보·3=바위)를 LED 그림으로 보여줘요 (다 돼 있어요)
+/** show_hand 표시 함수 — 지금 패(1=가위·2=바위·3=보)를 LED 로 보여준다. 미션 내내 완성 제공(반복 LED 그리기). */
+const SHOW_HAND = `# show_hand: 패 번호(1=가위·2=바위·3=보)를 LED 그림으로 보여줘요 (다 돼 있어요)
 def show_hand(n):
     if n == 1:
         basic.show_leds("""
@@ -80,19 +80,19 @@ def show_hand(n):
             """)
     elif n == 2:
         basic.show_leds("""
+            . . . . .
             . # # # .
-            . # # # #
-            . # # # #
-            # # # # #
-            # # # # #
+            . # # # .
+            . # # # .
+            . . . . .
             """)
     else:
         basic.show_leds("""
-            . . . . .
             . # # # .
-            . # # # .
-            . # # # .
-            . . . . .
+            . # # # #
+            . # # # #
+            # # # # #
+            # # # # #
             """)`;
 
 /** A 버튼(완성형 — 미션2·3 스타터에 그대로 들어감). */
@@ -118,12 +118,12 @@ input.on_button_pressed(Button.B, on_button_pressed_b)`;
  * (B를 '거꾸로' 따라서 A는 '다음 패로' 채운다. choice 에 1 더하고, 3 넘으면 1로.)
  */
 const CODE_M1 = `# 가위바위보 — 내 패 고르기 (A·B 버튼)
-# 패 번호: 1=가위, 2=보, 3=바위
+# 패 번호: 1=가위, 2=바위, 3=보
 choice = 1
 
 ${SHOW_HAND}
 
-# A 버튼: 다음 패로 (가위 → 보 → 바위)
+# A 버튼: 다음 패로 (가위 → 바위 → 보)
 def on_button_pressed_a():
     global choice
                              # (미션) ① 다음 패로 — choice 에 1 을 더해 다시 choice 에 담기
@@ -131,7 +131,7 @@ def on_button_pressed_a():
     show_hand(choice)
 input.on_button_pressed(Button.A, on_button_pressed_a)
 
-# B 버튼: 반대로 (가위 → 바위 → 보) — 이건 예시로 다 해 놨어요 (A를 거꾸로 따라 보기)
+# B 버튼: 반대로 (가위 → 보 → 바위) — 이건 예시로 다 해 놨어요 (A를 거꾸로 따라 보기)
 ${BTN_B_DONE}
 
 # 켜면 먼저 '가위' 를 보여줘요
@@ -141,7 +141,7 @@ show_hand(choice)`;
  * 미션2 스타터 — 금색 로고 터치로 AI 패 뽑기. A·B·show_hand 완성, 로고 함수의 randint 만 빈칸.
  */
 const CODE_M2 = `# 가위바위보 — 로고 터치로 AI 패 뽑기
-# 패 번호: 1=가위, 2=보, 3=바위
+# 패 번호: 1=가위, 2=바위, 3=보
 choice = 1
 ai = 0
 
@@ -165,7 +165,7 @@ show_hand(choice)`;
  * 이기는 두 elif 가 빈칸(지금은 그 둘이 else 로 빠져 '짐' 으로 뜬다 → 채우면 바르게 이김). 끝에 공유 링크 제출.
  */
 const CODE_M3 = `# 가위바위보 — 판정 (이김 / 비김 / 짐)
-# 패 번호: 1=가위, 2=보, 3=바위
+# 패 번호: 1=가위, 2=바위, 3=보
 choice = 1
 my = 0
 ai = 0
@@ -184,10 +184,10 @@ def on_logo_pressed():
     basic.pause(800)
     if my == ai:
         basic.show_icon(IconNames.MEH)          # 비김 (내 패 == AI 패)
-    elif my == 1 and ai == 2:
-        basic.show_icon(IconNames.HAPPY)        # 가위(1)가 보(2)를 이김
-                             # (미션) ① 바위(3)가 가위(1)를 이기는 경우도 더하기 (elif … HAPPY)
-                             # (미션) ② 보(2)가 바위(3)를 이기는 경우도 더하기 (elif … HAPPY)
+    elif my == 1 and ai == 3:
+        basic.show_icon(IconNames.HAPPY)        # 가위(1)가 보(3)를 이김
+                             # (미션) ① 바위(2)가 가위(1)를 이기는 경우도 더하기 (elif … HAPPY)
+                             # (미션) ② 보(3)가 바위(2)를 이기는 경우도 더하기 (elif … HAPPY)
     else:
         basic.show_icon(IconNames.SAD)          # 짐
     basic.pause(1500)
@@ -202,7 +202,7 @@ show_hand(choice)`;
  */
 const CODE_BUG = `# (버그) 비겼는데도 우는 얼굴('짐')이 떠요! 비김을 위한 갈림길이 빠졌어요.
 # 내 패와 AI 패가 '같을 때'(my == ai)를 어디에, 무엇으로 더해야 할까요?
-# 패 번호: 1=가위, 2=보, 3=바위
+# 패 번호: 1=가위, 2=바위, 3=보
 choice = 1
 my = 0
 ai = 0
@@ -219,11 +219,11 @@ def on_logo_pressed():
     ai = randint(1, 3)
     show_hand(ai)
     basic.pause(800)
-    if my == 1 and ai == 2:
+    if my == 1 and ai == 3:
         basic.show_icon(IconNames.HAPPY)
-    elif my == 3 and ai == 1:
+    elif my == 2 and ai == 1:
         basic.show_icon(IconNames.HAPPY)
-    elif my == 2 and ai == 3:
+    elif my == 3 and ai == 2:
         basic.show_icon(IconNames.HAPPY)
     else:
         basic.show_icon(IconNames.SAD)
@@ -252,19 +252,19 @@ def show_hand(n):
             """)
     elif n == 2:
         basic.show_leds("""
+            . . . . .
             . # # # .
-            . # # # #
-            . # # # #
-            # # # # #
-            # # # # #
+            . # # # .
+            . # # # .
+            . . . . .
             """)
     else:
         basic.show_leds("""
-            . . . . .
             . # # # .
-            . # # # .
-            . # # # .
-            . . . . .
+            . # # # #
+            . # # # #
+            # # # # #
+            # # # # #
             """)
 
 def on_button_pressed_a():
@@ -291,11 +291,11 @@ def on_logo_pressed():
     basic.pause(800)
     if my == ai:
         basic.show_icon(IconNames.MEH)
-    elif my == 1 and ai == 2:
+    elif my == 1 and ai == 3:
         basic.show_icon(IconNames.HAPPY)
-    elif my == 3 and ai == 1:
+    elif my == 2 and ai == 1:
         basic.show_icon(IconNames.HAPPY)
-    elif my == 2 and ai == 3:
+    elif my == 3 and ai == 2:
         basic.show_icon(IconNames.HAPPY)
     else:
         basic.show_icon(IconNames.SAD)
@@ -320,8 +320,8 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "build",
     label: "미션 1 — A·B 버튼으로 내 패 고르기",
     hint:
-      "가위바위보 게임을 만들어요! 먼저 'A·B 버튼' 으로 내 패(가위·보·바위)를 고르게 해요. 패 번호는\n" +
-      "1=가위, 2=보, 3=바위 예요.\n" +
+      "가위바위보 게임을 만들어요! 먼저 'A·B 버튼' 으로 내 패(가위·바위·보)를 고르게 해요. 패 번호는\n" +
+      "1=가위, 2=바위, 3=보 예요.\n" +
       "아래에서 A·B 버튼을 눌러 패가 어떻게 바뀌는지 체험한 뒤, '코드 생성' 을 눌러요. 나온 코드를 복사해\n" +
       "MakeCode 'Python' 에 (기존 코드 모두 지우고) 붙여넣어 실행하면, 실제 보드에서도 A·B 로 패가 바뀌어요.",
     kind: "note",
@@ -336,7 +336,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "build",
     label: "A·B 버튼 체험 + 코드 생성",
     hint:
-      "A 버튼(가위→보→바위)·B 버튼(가위→바위→보)을 눌러 보고, '코드 생성' 으로 순환 코드를 만들어\n" +
+      "A 버튼(가위→바위→보)·B 버튼(가위→보→바위)을 눌러 보고, '코드 생성' 으로 순환 코드를 만들어\n" +
       "복사해요. 따로 제출은 없어요 — 만들어 붙여넣어 보면 성공!",
     kind: "rps_sim",
     maxLength: 0,
@@ -547,7 +547,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         subtitle: "내 패 → AI 패 → 판정",
         note:
           "25·26차에서 익힌 변수·무작위·갈림길에, 오늘은 '버튼·로고 입력' 과 '판정' 을 더해 가위바위보\n" +
-          "게임을 만들어요. 패 번호는 1=가위, 2=보, 3=바위 예요.",
+          "게임을 만들어요. 패 번호는 1=가위, 2=바위, 3=보 예요.",
         rows: [
           { label: "미션 1", value: "A·B 버튼 체험 → 내 패 고르기 코드 생성" },
           { label: "미션 2", value: "로고 터치 AI 패 — 정답 넣어 코드 생성 (randint)" },

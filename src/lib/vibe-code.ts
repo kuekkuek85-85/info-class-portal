@@ -118,7 +118,7 @@ input.on_gesture(Gesture.SHAKE, on_gesture_shake)`;
 /**
  * 27차 가위바위보 기본 코드 — AI가 '여기에 기능을 더한' 전체 프로그램을 만들 바탕 (MakeCode static Python).
  *
- * A·B 버튼으로 내 패를 고르고(1=가위·2=보·3=바위), 금색 로고 터치로 AI 패(randint)를 뽑아 if/elif/else 로
+ * A·B 버튼으로 내 패를 고르고(1=가위·2=바위·3=보), 금색 로고 터치로 AI 패(randint)를 뽑아 if/elif/else 로
  * 이김(Happy)·비김(Meh)·짐(Sad)을 판정하는 완성 가위바위보다(미션1~3 완성형). 차시(27차 바이브 미션)는 이
  * 값을 vibeBaseCode 로 준다 — 서버 fallback(MICROBIT_MANBOGI_BASE)은 25차 전용이라 그대로 두고, 가위바위보는
  * 반드시 vibeBaseCode 를 넘긴다.
@@ -142,19 +142,19 @@ def show_hand(n):
             """)
     elif n == 2:
         basic.show_leds("""
+            . . . . .
             . # # # .
-            . # # # #
-            . # # # #
-            # # # # #
-            # # # # #
+            . # # # .
+            . # # # .
+            . . . . .
             """)
     else:
         basic.show_leds("""
-            . . . . .
             . # # # .
-            . # # # .
-            . # # # .
-            . . . . .
+            . # # # #
+            . # # # #
+            # # # # #
+            # # # # #
             """)
 
 def on_button_pressed_a():
@@ -181,11 +181,11 @@ def on_logo_pressed():
     basic.pause(800)
     if my == ai:
         basic.show_icon(IconNames.MEH)
-    elif my == 1 and ai == 2:
+    elif my == 1 and ai == 3:
         basic.show_icon(IconNames.HAPPY)
-    elif my == 3 and ai == 1:
+    elif my == 2 and ai == 1:
         basic.show_icon(IconNames.HAPPY)
-    elif my == 2 and ai == 3:
+    elif my == 3 and ai == 2:
         basic.show_icon(IconNames.HAPPY)
     else:
         basic.show_icon(IconNames.SAD)
