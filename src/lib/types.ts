@@ -917,6 +917,16 @@ export interface WorksheetQuestion {
    */
   vibeTarget?: "turtle" | "microbit";
   /**
+   * microbit 바이브 패널 문구에 쓰는 '만든 것' 이름 — 안내·입력 라벨의 "{noun}와 관련된 기능만",
+   * "{noun}에 어떤 기능을…". 안 주면 "만보기"(25차). 26차 주사위·27차 가위바위보가 여기서 덮어쓴다.
+   * (turtle 문구는 고정이라 이 값을 쓰지 않는다.)
+   */
+  vibeNoun?: string;
+  /**
+   * microbit 바이브 입력칸의 예시(placeholder) 덮어쓰기. 안 주면 25차 만보기 예시('걸음 수…').
+   */
+  vibePlaceholder?: string;
+  /**
    * ai_review 가 AI 에게 보낼 답들. 순서대로 이름표를 붙여 함께 보낸다.
    * 안 쓴 칸은 자동으로 빠진다 — 학생이 비워 둔 것까지 "왜 안 썼냐"고 묻지 않는다.
    */

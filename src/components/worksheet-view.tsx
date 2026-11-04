@@ -1009,6 +1009,8 @@ export function WorksheetView({
               onResult={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}
               target={question.vibeTarget}
+              projectNoun={question.vibeNoun}
+              examplePrompt={question.vibePlaceholder}
             />
           ) : question.kind === "ai_feedback" ? (
             /*

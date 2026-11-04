@@ -7,8 +7,8 @@ import { useMemo, useState } from "react";
  *
  * ## 무엇을 하나 (순수 클라이언트 · 서버·AI 없음)
  *
- * 학생이 ① 주사위 눈 1~6을 5×5 격자에 **자유로** 그리고(옆에 표준 '기준 눈' 참고 — 일치검사·잠금 없음,
- * 틀리게 그려도 됨: 정확성은 교사 순회로), ② 각 행마다 **if/elif/else 키워드를 직접 고르고** '그 숫자일 때
+ * 학생이 ① 주사위 눈 1~6을 5×5 격자에 **자유로** 그리고(기준·예시 패널 없이 직접 그림 — 일치검사·잠금
+ * 없음, 틀리게 그려도 됨: 정확성은 교사 순회로), ② 각 행마다 **if/elif/else 키워드를 직접 고르고** '그 숫자일 때
  * 어떤 눈을 보여줄지' 를 조립한다(조건 `number == N` 은 행 순서로 정해지고, else 를 고르면 조건은 사라진다).
  * '코드 생성' 을 누르면 흔들기 이벤트 + randint(1,6) + 학생이 조립한 if/elif/else + 각 분기의 show_leds 가
  * 든 **MakeCode Python 전체 코드**를 뽑아 복사한다.
@@ -33,21 +33,6 @@ const CELLS = 25;
 type Keyword = "if" | "elif" | "else";
 /** 학생이 아직 안 고른 상태("") 포함. 처음엔 전부 미선택으로 시작한다(프리필 없음, 교사 확정 2026-11-03). */
 type KwChoice = Keyword | "";
-
-/** 교사 확정 표준 주사위 눈 1~6 (5×5, 1=켜짐). 참고 이미지로만 보여 주고 강제하지 않는다. */
-const STANDARD_EYES: string[] = [
-  "00000" + "00000" + "00100" + "00000" + "00000", // 1
-  "10000" + "00000" + "00000" + "00000" + "00001", // 2
-  "10000" + "00000" + "00100" + "00000" + "00001", // 3
-  "10001" + "00000" + "00000" + "00000" + "10001", // 4
-  "10001" + "00000" + "00100" + "00000" + "10001", // 5
-  "10001" + "00000" + "10001" + "00000" + "10001", // 6
-];
-
-function standardOn(index: number): boolean[] {
-  const s = STANDARD_EYES[index] ?? "0".repeat(CELLS);
-  return Array.from({ length: CELLS }, (_, i) => s[i] === "1");
-}
 
 interface Branch {
   /** "" = 아직 안 고름(처음 상태) / if·elif·else = 학생이 직접 고른 값 */
@@ -241,11 +226,11 @@ export function DiceBuilder({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* 1) 눈 그리기 — 눈 N개, 각각 기준 눈 참고 + 5×5 격자 */}
+      {/* 1) 눈 그리기 — 눈 N개, 각각 5×5 격자(기준·예시 없이 직접 그림) */}
       <div className="flex flex-col gap-2">
-        <p className="t-body-sm font-semibold">① {eyeNoun}을 직접 그려요 (옆의 기준을 보고 따라 찍어요)</p>
+        <p className="t-body-sm font-semibold">① {eyeNoun}을 직접 그려요 (내 마음대로 찍어요)</p>
         <p className="t-caption text-muted">
-          기준과 똑같지 않아도 코드는 만들어져요. 틀린 데는 선생님이 돌아다니며 봐 줄 거예요.
+          정해진 모양은 없어요 — 내 마음대로 찍어도 코드는 만들어져요. 틀린 데는 선생님이 돌아다니며 봐 줄 거예요.
         </p>
         <div className="flex flex-col gap-3">
           {grids.map((grid, eyeIndex) => (
@@ -257,24 +242,8 @@ export function DiceBuilder({
                 {eyeNoun} {eyeIndex + 1}
               </span>
 
-              {/* 기준(참고) — 읽기 전용 */}
-              <div className="flex flex-col items-center gap-1">
-                <span className="t-caption text-muted">기준</span>
-                <div className="grid w-fit grid-cols-5 gap-0.5" aria-label={`기준 ${eyeNoun} ${eyeIndex + 1}`}>
-                  {standardOn(eyeIndex).map((cellOn, cell) => (
-                    <div
-                      key={cell}
-                      className={`h-4 w-4 rounded-sm border ${
-                        cellOn ? "border-ink bg-ink" : "border-line bg-surface"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-
               {/* 내가 그리기 — 토글 격자 */}
               <div className="flex flex-col items-center gap-1">
-                <span className="t-caption text-muted">내가 그리기</span>
                 <div className="grid w-fit grid-cols-5 gap-1">
                   {grid.map((cellOn, cell) => (
                     <button

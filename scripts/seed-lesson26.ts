@@ -204,7 +204,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "진짜 주사위처럼 숫자 대신 점(눈)이 뜨게 해 봐요. 이번엔 손으로 코드를 길게 치지 않아요 — 아래\n" +
       "'주사위 코드 조립기' 로 만들어요.\n" +
-      "   ① 눈 1~6을 5×5 칸에 직접 그려요. (옆에 '기준' 눈을 보고 따라 찍어요. 똑같지 않아도 괜찮아요.)\n" +
+      "   ① 눈 1~6을 5×5 칸에 직접 그려요. (내 마음대로 찍어도 돼요 — 똑같지 않아도 괜찮아요.)\n" +
       "   ② '어떤 숫자일 때 어떤 눈을 보여줄까' 를 드롭다운으로 골라요 (기본은 숫자 1→눈 1 … 로 맞춰 뒀어요).\n" +
       "   ③ '코드 생성' 을 누르면 흔들기 + 무작위 + if/elif/else 가 다 든 전체 코드가 나와요.\n" +
       "   ④ '코드 복사하기' 로 복사해 [MakeCode 열기] 에서 'Python' 에 붙여넣고 흔들어 봐요 — 눈이 떠요!\n" +
@@ -224,6 +224,8 @@ const WORKSHEET: WorksheetQuestion[] = [
       "눈 1~6을 그리고, 어떤 숫자에 어떤 눈을 보여줄지 고른 뒤 '코드 생성' 을 눌러요. 나온 코드를 복사해\n" +
       "MakeCode 'Python' 에 붙여넣어 흔들어 봐요.",
     kind: "dice_builder",
+    linkUrl: MAKECODE_URL,
+    linkLabel: "MakeCode 열기 (새 탭)",
     maxLength: 0,
   },
 
@@ -302,6 +304,9 @@ const WORKSHEET: WorksheetQuestion[] = [
       "'코드 복사하기' 로 복사해 아래 [MakeCode 열기] 로 열고 'Python' 에 붙여넣어 실행해요.",
     kind: "vibe_code",
     vibeTarget: "microbit",
+    // microbit 바이브 패널 문구를 '주사위' 맥락으로 (기본 noun 은 25차 만보기라 여기서 덮어씀).
+    vibeNoun: "주사위",
+    vibePlaceholder: "예) 6이 나오면 '삐' 소리가 나게 해 줘",
     // 바탕 = 눈 주사위 완성형. 서버 fallback(만보기)은 25차 전용이라, 주사위는 반드시 베이스를 넘긴다.
     vibeBaseCode: DICE_BASE,
     maxLength: 0,

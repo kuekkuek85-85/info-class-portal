@@ -22,44 +22,57 @@ interface Log {
   updatedAt: number;
 }
 
-/** 대상 — turtle(22차 똥피하기) / microbit(25차 만보기). 열기 링크·안내·예시가 달라진다. */
+/** 대상 — turtle(22차 똥피하기) / microbit(25차 만보기·26차 주사위·27차 가위바위보). 열기 링크·안내·예시가 달라진다. */
 type VibeTarget = "turtle" | "microbit";
 
 const ONECOMPILER_URL = "https://onecompiler.com/turtle";
 const MAKECODE_URL = "https://makecode.microbit.org/";
 
-/** 대상별 화면 문구 — 투명성 안내, 입력 안내·예시, 생성 코드 아래 '열기' 링크. */
-const COPY: Record<
-  VibeTarget,
-  {
-    notice: string;
-    promptLabel: string;
-    placeholder: string;
-    openUrl: string;
-    openLabel: string;
-    runHint: string;
-  }
-> = {
-  turtle: {
-    notice:
-      "내가 AI에게 보낸 말과 받은 코드는 저장되고, 선생님이 볼 수 있어요. 게임과 관련된 기능만 요청해요.",
-    promptLabel: "어떤 기능을 더하고 싶나요? 한 번에 하나씩, 동작을 말로 적어 보세요.",
-    placeholder: "예) 똥에 닿으면 목숨이 1 줄고, 목숨이 3개 다 떨어지면 게임 오버가 되게 해 줘",
-    openUrl: ONECOMPILER_URL,
-    openLabel: "OneCompiler 터틀 열기 (새 탭)",
-    runHint: "복사해서 붙여넣어 실행해 봐요. 한 번에 안 되면 정상이에요 — 설명을 보고 조금씩 고쳐요.",
-  },
-  microbit: {
-    notice:
-      "내가 AI에게 보낸 말과 받은 코드는 저장되고, 선생님이 볼 수 있어요. 만보기와 관련된 기능만 요청해요.",
-    promptLabel: "만보기에 어떤 기능을 더하고 싶나요? 한 번에 하나씩, 동작을 말로 적어 보세요.",
-    placeholder: "예) A와 B 버튼을 같이 누르면 걸음 수가 0으로 초기화되게 해 줘",
+/** 받침 유무로 조사 와/과 고르기 (주사위·만보기·가위바위보→와, 게임→과). */
+function waGwa(word: string): string {
+  const code = word.charCodeAt(word.length - 1);
+  if (code < 0xac00 || code > 0xd7a3) return "와"; // 한글 음절 아니면 기본값
+  return (code - 0xac00) % 28 === 0 ? "와" : "과"; // 종성 없음 → 와
+}
+
+interface VibeCopy {
+  notice: string;
+  promptLabel: string;
+  placeholder: string;
+  openUrl: string;
+  openLabel: string;
+  runHint: string;
+}
+
+/** turtle 문구 — 고정(22차). */
+const TURTLE_COPY: VibeCopy = {
+  notice:
+    "내가 AI에게 보낸 말과 받은 코드는 저장되고, 선생님이 볼 수 있어요. 게임과 관련된 기능만 요청해요.",
+  promptLabel: "어떤 기능을 더하고 싶나요? 한 번에 하나씩, 동작을 말로 적어 보세요.",
+  placeholder: "예) 똥에 닿으면 목숨이 1 줄고, 목숨이 3개 다 떨어지면 게임 오버가 되게 해 줘",
+  openUrl: ONECOMPILER_URL,
+  openLabel: "OneCompiler 터틀 열기 (새 탭)",
+  runHint: "복사해서 붙여넣어 실행해 봐요. 한 번에 안 되면 정상이에요 — 설명을 보고 조금씩 고쳐요.",
+};
+
+/**
+ * microbit 문구 — '만든 것' 이름(noun)으로 조립한다. noun 기본값은 "만보기"(25차)라서, 아무 것도 안
+ * 넘기면 25차와 글자 그대로 같다. 26차는 noun="주사위", 27차는 "가위바위보" 를 넘겨 덮어쓴다.
+ * placeholder 는 noun 과 별개(차시마다 예시가 다름) — 안 넘기면 25차 만보기 예시로 물러난다.
+ */
+const MICROBIT_DEFAULT_NOUN = "만보기";
+const MICROBIT_DEFAULT_PLACEHOLDER = "예) A와 B 버튼을 같이 누르면 걸음 수가 0으로 초기화되게 해 줘";
+function microbitCopy(noun: string, placeholder: string): VibeCopy {
+  return {
+    notice: `내가 AI에게 보낸 말과 받은 코드는 저장되고, 선생님이 볼 수 있어요. ${noun}${waGwa(noun)} 관련된 기능만 요청해요.`,
+    promptLabel: `${noun}에 어떤 기능을 더하고 싶나요? 한 번에 하나씩, 동작을 말로 적어 보세요.`,
+    placeholder,
     openUrl: MAKECODE_URL,
     openLabel: "MakeCode 열기 (새 탭)",
     runHint:
       "'코드 복사하기' 로 복사한 뒤 [MakeCode 열기] 로 열어 위쪽을 'Python' 으로 바꾸고, 기존 코드를 모두 지우고 붙여넣어 실행해요. 한 번에 안 되면 정상이에요 — 설명을 보고 조금씩 고쳐요.",
-  },
-};
+  };
+}
 
 function parse(raw: string): Log | null {
   if (!raw.trim()) return null;
@@ -77,15 +90,27 @@ export function VibeCodePanel({
   onResult,
   disabled,
   target = "turtle",
+  projectNoun,
+  examplePrompt,
 }: {
   questionKey: string;
   raw: string;
   onResult: (raw: string) => void;
   disabled?: boolean;
-  /** turtle(22차, 기본) / microbit(25차 만보기). 열기 링크·안내 문구를 고른다 */
+  /** turtle(22차, 기본) / microbit(25차 만보기·26차 주사위·27차 가위바위보). 열기 링크·안내 문구를 고른다 */
   target?: VibeTarget;
+  /** microbit 문구의 '만든 것' 이름 — 안 주면 "만보기"(25차). 26차="주사위" 등. turtle 에선 안 쓴다. */
+  projectNoun?: string;
+  /** microbit 입력칸 예시(placeholder) 덮어쓰기 — 안 주면 25차 만보기 예시. turtle 에선 안 쓴다. */
+  examplePrompt?: string;
 }) {
-  const copy = COPY[target];
+  const copy =
+    target === "microbit"
+      ? microbitCopy(
+          projectNoun ?? MICROBIT_DEFAULT_NOUN,
+          examplePrompt ?? MICROBIT_DEFAULT_PLACEHOLDER,
+        )
+      : TURTLE_COPY;
   const log = parse(raw);
   const entries = log?.entries ?? [];
   const latest = entries[entries.length - 1];
