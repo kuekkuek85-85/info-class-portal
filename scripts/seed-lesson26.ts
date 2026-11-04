@@ -9,10 +9,10 @@
  * 25차에서 익힌 흔들기 이벤트(on_gesture_shake + global)에 **이어붙여** "흔들면 주사위" 를 만든다.
  * 새 개념은 난수 randint(1,6) 와 조건 분기 if/elif/else, 그리고 노가다를 줄이는 포털 '주사위 코드
  * 조립기'(dice_builder). 미션 4개:
- *   1(build)  흔들면 randint(1,6) → show_number (숫자 주사위). 25차 코드 붙여넣기 + 빈칸.
+ *   1(build)  흔들면 randint(1,6) → show_number (숫자 주사위). 25차 코드 붙여넣기 + 빈칸. 공유 링크 제출(long).
  *   2(grill)  dice_builder — 눈 1~6 자유 그리기 + if/elif/else 드롭다운 조립 → 전체 코드 생성(제출칸 없음).
- *   3(problem) 디버깅 — "흔들어도 같은 숫자만"(randint 를 처음에 한 번만 굴린 버그) 찾아 고치고 공유 링크 제출.
- *   4(mvp)    바이브(vibe_code, microbit) — "6이 나오면 소리·불빛" 등 기능 얹기. 베이스 = 눈 주사위.
+ *   3(problem) 디버깅 — "흔들어도 같은 숫자만"(randint 를 처음에 한 번만 굴린 버그). 제출 대신 **선택형(choice) 1문항 + 이유(text)** 로 바꿈(교사 2026-11-04). 코드/링크 제출칸 없음.
+ *   4(mvp)    바이브(vibe_code, microbit) — "6이 나오면 소리·불빛" 등 기능 얹기. 베이스 = 눈 주사위. 제출칸 없음.
  *
  * 설계 문서: docs/superpowers/specs/2026-11-01-info-lesson26-dice-design.md (교사 승인 확정본).
  *
@@ -185,6 +185,16 @@ const WORKSHEET: WorksheetQuestion[] = [
     linkLabel: "MakeCode 열기 (새 탭)",
     maxLength: 0,
   },
+  {
+    key: "mb26_share1",
+    phase: "build",
+    label: "미션 1 — 숫자 주사위 공유 링크 제출",
+    hint:
+      "숫자 주사위가 되면(흔들면 1~6 숫자가 바뀜) MakeCode 위쪽 '공유(Share)' 를 눌러 만든 링크를 아래\n" +
+      "칸에 붙여넣어요. 적으면 자동으로 저장돼요(따로 제출 버튼은 없어요).",
+    kind: "long",
+    maxLength: 500,
+  },
 
   /* ── 미션 2 (grill) — 숫자를 주사위 눈으로 (dice_builder 도구) ── */
   {
@@ -228,7 +238,7 @@ const WORKSHEET: WorksheetQuestion[] = [
       "왜 그럴까요? 주사위(randint)가 '맨 처음에 딱 한 번만' 굴려지고 있어요. 흔들 때마다 새로 굴리게\n" +
       "하려면, randint 줄을 어디로 옮겨야 할까요? 그리고 옮긴 뒤 바깥 roll 을 바꾸려면 그 함수 첫 줄에\n" +
       "무엇을 더해야 할까요? (힌트: 25차 만보기에서 쓴 그 단어예요.)\n" +
-      "고쳐서 흔들 때마다 숫자가 바뀌면 성공! 무엇을 고쳤는지 아래 칸에 적어요(또는 고친 코드를 붙여넣어요).",
+      "고쳐서 흔들 때마다 숫자가 바뀌면 성공! 그다음 아래에서 '어떻게 고쳐야 할까요' 를 고르고, 이유를 한 줄 적어요.",
     kind: "note",
     imageUrl: "/mb26-dice-stuck.svg",
     imageAlt: "흔들어도 같은 숫자(3)만 계속 보이는 고장난 주사위 실행 결과",
@@ -240,14 +250,30 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
   {
-    key: "mb26_fix",
+    key: "mb26_q1",
     phase: "problem",
-    label: "미션 3 — 고친 주사위 공유 링크 제출",
+    label: "미션 3 — 어떻게 고쳐야 할까요? (하나 고르기)",
     hint:
-      "버그를 고쳐 흔들 때마다 숫자가 바뀌면, MakeCode 위쪽 '공유(Share)' 를 눌러 만든 링크를 아래 칸에\n" +
-      "붙여넣어요. 적으면 자동으로 저장돼요(따로 제출 버튼은 없어요).",
-    kind: "long",
-    maxLength: 500,
+      "흔들어도 똑같은 숫자만 나오는 주사위를, 흔들 때마다 새 숫자가 나오게 하려면 어떻게 고쳐야 할까요?\n" +
+      "알맞은 것을 하나 골라요.",
+    kind: "choice",
+    choices: [
+      "randint(1, 6) 줄을 흔들기 함수(on_gesture_shake) 안으로 옮기고, 함수 첫 줄에 global roll 을 더한다",
+      "basic.show_number(roll) 을 한 줄 더 쓴다",
+      "맨 위의 roll = randint(1, 6) 은 그대로 두고 basic.pause(500) 만 넣는다",
+      "roll 이라는 변수 이름을 다른 이름으로 바꾼다",
+    ],
+    maxLength: 0,
+  },
+  {
+    key: "mb26_why",
+    phase: "problem",
+    label: "미션 3 — 왜 그렇게 고치면 될까요? (이유 한 줄)",
+    hint:
+      "위에서 고른 방법으로 고치면 왜 흔들 때마다 숫자가 새로 바뀌는지, 내 말로 한 줄 적어 봐요.\n" +
+      "(힌트: 주사위(randint)를 '언제' 굴리게 되는지 생각해 봐요.)",
+    kind: "text",
+    maxLength: 300,
   },
 
   /* ── 미션 4 (mvp) — AI로 기능 추가 (바이브) ── */
@@ -457,8 +483,8 @@ async function main(): Promise<void> {
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (23~25차와 같은 MakeCode 통)`);
   console.log("단계: 대기(타자) → 기분 → 안내 → 미션1(build) → 미션2(grill·조립기) → 미션3(problem·디버깅) → 미션4(mvp·바이브) → 성찰. freeNav off. hideDoneButton true. 성찰 제출 → 사과 게임.");
-  console.log("미션1: 흔들기 뼈대 + randint(1,6)·show_number 빈칸. 미션2: dice_builder(눈 자유 그리기 + if/elif/else 드롭다운 조립 → 전체 코드 생성, 제출칸 없음).");
-  console.log("미션3: 디버깅 '흔들어도 같은 숫자만'(randint 를 핸들러 밖에 둔 버그) 고치고 MakeCode 공유(Share) 링크 제출(long). 미션4: vibe_code(microbit, 베이스=눈 주사위 DICE_BASE).");
+  console.log("미션1: 흔들기 뼈대 + randint(1,6)·show_number 빈칸 + 공유 링크 제출(mb26_share1, long). 미션2: dice_builder(제출칸 없음).");
+  console.log("미션3: 디버깅 '흔들어도 같은 숫자만'(randint 를 핸들러 밖에 둔 버그) — 선택형 1문항(mb26_q1, choice) + 이유(mb26_why, text). 코드/링크 제출칸 없음. 미션4: vibe_code(microbit, 베이스=눈 주사위 DICE_BASE, 제출칸 없음).");
   console.log("MakeCode 실측(2026-11-01): randint 전역 호출·show_leds 멀티라인·if/elif/else·흔들기 이어붙이기 변환 확인. global 누락은 roll2 지역변수를 만들어 '같은 숫자' 증상이 안 나므로 버그는 randint 위치로 잡음.");
   process.exit(0);
 }
