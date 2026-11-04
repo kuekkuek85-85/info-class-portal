@@ -85,7 +85,11 @@ function transform(questions: WorksheetQuestion[]): WorksheetQuestion[] {
       if (next.linkUrlByGroup) {
         const picked = next.linkUrlByGroup[GROUP_KEY];
         delete next.linkUrlByGroup;
+        // 분반 표에 이 분반 토큰이 있으면 그걸 쓴다. 없으면(계획이 오래돼 2기 토큰이
+        // 안 실린 경우) 이 분반 전용 CANVA_URL(=CANVA_INVITE_THU_2)로 물러나, 기본
+        // 주소가 아니라 목2기 초대가 학생에게 가게 한다. 둘 다 없을 때만 원래 linkUrl 유지.
         if (picked) next.linkUrl = picked;
+        else if (CANVA_URL) next.linkUrl = CANVA_URL;
       }
 
       if (next.kind === "echo" && next.echoKeys) {
