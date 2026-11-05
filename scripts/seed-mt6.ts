@@ -390,7 +390,7 @@ const WORKSHEET: WorksheetQuestion[] = [
    */
   {
     key: "_a5_intro",
-    phase: "wrapheal",
+    phase: "build",
     label: "공감으로 마음 잇기",
     hint:
       "관계를 살리는 마지막 열쇠는 ‘공감’ 이에요. 상대의 감정을 알아주는 한마디가 큰 힘이 됩니다.\n" +
@@ -400,7 +400,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "_a5_empathy_note",
-    phase: "wrapheal",
+    phase: "build",
     label: "① 공감 문장이란",
     hint:
       "공감 문장은 상대의 마음을 ‘읽어 주는’ 말이에요. [상황 되짚기] + [감정 알아주기] 로 만들어요.\n" +
@@ -411,7 +411,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "a5_empathy",
-    phase: "wrapheal",
+    phase: "build",
     // 개인 작성. 비공개.
     label: "아래 상황에 건넬 ‘공감 문장’ 을 만들어 보세요",
     hint:
@@ -422,7 +422,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
   {
     key: "a5_empathy_fb",
-    phase: "wrapheal",
+    phase: "build",
     /*
      * ★ 공감 문장 AI 피드백(나 전달법과 같은 방식). 서버가 a5_empathy 답을 Gemini 에 보내
      * (학번·이름 제외) [상황 되짚기]+[감정 알아주기] 두 요소가 담겼는지 보고 잘했다/힌트를 준다.
@@ -677,6 +677,12 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * mood(마음 체크인)는 phaseOrder 에서 뺀다 — 기분은 대기 화면에서 먼저 받으므로 별도 단계가
    * 중복이다(availablePhase 가 "phaseOrder 에 mood 없으면 단추 숨김"). moodCheckEnabled 는 켜 둔다.
    */
+  /*
+   * 교사 지시로 '공감 문장'과 '감정 대화'를 두 단계로 분리한다.
+   * 공감 문장(_a5_intro·_a5_empathy_note·a5_empathy·a5_empathy_fb)은 아직 안 쓰던 STEP 슬롯
+   * build 로 옮기고(화면 이름은 phaseLabels.build="공감 문장"), 감정 대화(a5_dialogue 등)는
+   * wrapheal 에 남긴다(phaseLabels.wrapheal="감정 대화"). grill(감정 위로 챗봇)과 안 겹친다.
+   */
   phaseOrder: [
     "waiting",
     "progress",
@@ -684,6 +690,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     "problem",
     "mvp",
     "gallery",
+    "build",
     "wrapheal",
     "grill",
     "reflection",
@@ -696,7 +703,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     problem: "갈등 상황 분석하기",
     mvp: "관계 캘리그래피",
     gallery: "캘리그래피 감상",
-    wrapheal: "공감 문장·감정 대화",
+    build: "공감 문장",
+    wrapheal: "감정 대화",
     grill: "감정 위로 챗봇",
     reflection: "마음일기",
   },

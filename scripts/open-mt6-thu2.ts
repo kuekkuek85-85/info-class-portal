@@ -117,21 +117,25 @@ async function main(): Promise<void> {
       console.error("  덮어쓰지 않고 멈춥니다. 다시 열려면 --force (실데이터 없을 때만 덮습니다).");
       process.exit(1);
     }
-    // 실데이터 가드 ①: 시작 안 한 세션만.
-    if (s.status !== "scheduled" || s.startedAt) {
-      console.error(`✗ ${SESSION_ID} 는 ${s.status} 상태(또는 이미 시작됨)라 덮지 않습니다 — 멈춥니다.`);
-      process.exit(1);
-    }
-    // 실데이터 가드 ②: 이 활동통(classNo 4)에 학생 작품이 있으면 멈춘다.
+    // 실데이터 가드: '진짜 학생'(학번 끝 2자리 1~39)의 출석/작품이 있으면 멈춘다.
+    // active 상태·테스트 계정(90번 등)은 선생님 테스트라 덮어도 된다(재오픈 시 대기로 초기화).
+    const realNum = (sid: unknown) => {
+      const n = Number(String(sid ?? "").slice(-2));
+      return Number.isFinite(n) && n >= 1 && n < 40;
+    };
+    const att = await db.collection("attendance").where("sessionId", "==", SESSION_ID).get();
+    const realAtt = att.docs.filter((a) => realNum((a.data() as { studentId?: string }).studentId));
+    let realArt = 0;
     if (activityId) {
       const arts = await db.collection("artifacts").where("activityId", "==", activityId).where("classNo", "==", CLASS_NO).get();
-      if (!arts.empty) {
-        console.error(`✗ ${activityId}(classNo ${CLASS_NO})에 학생 작품 ${arts.size}개가 있어 덮지 않습니다 — 멈춥니다.`);
-        process.exit(1);
-      }
+      realArt = arts.docs.filter((a) => realNum((a.data() as { studentId?: string }).studentId)).length;
+    }
+    if (realAtt.length > 0 || realArt > 0) {
+      console.error(`✗ ${SESSION_ID} 에 진짜 학생 데이터(출석 ${realAtt.length}·작품 ${realArt})가 있어 덮지 않습니다 — 멈춥니다.`);
+      process.exit(1);
     }
     code = String(s.code ?? "");
-    console.log(`↻ --force: 기존 세션(코드 ${code}, scheduled)을 덮어 다시 엽니다.`);
+    console.log(`↻ --force: 기존 세션(코드 ${code}, ${s.status}${att.size ? `, 테스트출석 ${att.size}명` : ""})을 덮어 다시 엽니다.`);
   } else {
     // 코드: 오늘 살아있는 세션들이 쓰는 코드는 피한다(리허설 코드13·14 포함).
     const all = await db.collection("classSessions").get();
