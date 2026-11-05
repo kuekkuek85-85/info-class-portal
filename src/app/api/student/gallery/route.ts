@@ -202,8 +202,16 @@ export async function GET() {
       return fail("not_found", "이 수업에서는 서로 구경하기를 하지 않아요.");
     }
 
-    /** 친구에게 보여줄 답 칸. 안 정했으면 지금까지처럼 전부 (types.ts 의 galleryAnswerKeys) */
-    const allowKeys = session.activity?.galleryAnswerKeys;
+    /*
+     * 힐링 스페이스(wrapheal) 그림 익명 감상: 이 단계에서는 **그림(strokes)만** 익명으로 싣고
+     * 답 글은 전부 뺀다(allowKeys 를 빈 배열로 → toCard 가 answers 를 {} 로 만든다). heal_*·
+     * plan_* 등 개인 글·마음일기는 카드에 안 나간다. 캐릭터 감상(gallery 단계)과는 session.phase
+     * 로 분기해 간섭하지 않는다(gallery 단계는 지금까지대로 galleryAnswerKeys=canva).
+     */
+    const onHealing =
+      session.activity?.healingGallery === true && session.phase === "wrapheal";
+    /** 친구에게 보여줄 답 칸. 힐링 감상이면 빈 배열(그림만). 안 정했으면 전부 (galleryAnswerKeys) */
+    const allowKeys = onHealing ? [] : session.activity?.galleryAnswerKeys;
 
     // 같은 반 것만 읽는다. 다른 반 담벼락은 보이지 않는다 (PRD 3.5)
     const all = (await listArtifacts(activityId, session.classNo)).filter(isVisible);
@@ -323,7 +331,9 @@ export async function GET() {
      * 빠지지 않는다. 배정만 노출하는 차시(assignedOnly)는 배정 순환 커버가 깨지지 않게 건드리지 않는다.
      */
     const hasShared = (row: (typeof visible)[number]) =>
-      !allowKeys || allowKeys.some((k) => (row.answers?.[k] ?? "").trim() !== "");
+      onHealing
+        ? (row.strokes?.length ?? 0) > 0 // 힐링 감상은 '그림을 그린' 학생만 카드로(답 글 무관)
+        : !allowKeys || allowKeys.some((k) => (row.answers?.[k] ?? "").trim() !== "");
 
     const works = inViewingOrder(
       visible

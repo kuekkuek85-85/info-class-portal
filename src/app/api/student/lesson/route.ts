@@ -202,6 +202,11 @@ export async function GET() {
                 (위 galleryEnabled·sourcesEnabled 와 똑같은 '한 줄씩 골라 내보내는' 함정이었다).
               */
               galleryOnly: session.activity.galleryOnly ?? false,
+              /*
+                힐링 스페이스(wrapheal) 그림 익명 감상 플래그. galleryOnly 와 똑같이, 이 줄을
+                빠뜨리면 클라이언트에서 undefined 가 되어 감상 탭이 안 열린다(① 에서 당한 누락 방지).
+              */
+              healingGallery: session.activity.healingGallery ?? false,
               // 감상 노출 범위. 감상 단계의 활동지 탭도 이 키가 가리키는 활동으로 좁힌다
               // (한 단계에만 걸렸을 때). 안 실으면 화면 쪽에서 좁히지 못한다.
               galleryAnswerKeys: session.activity.galleryAnswerKeys ?? [],

@@ -59,6 +59,8 @@ export interface ActivityInfo {
   galleryEnabled?: boolean;
   /** '감상 전용' 단계: gallery 단계에서 그림/활동지 탭 없이 순수 감상만 띄운다(types.ts 참조) */
   galleryOnly?: boolean;
+  /** 회고 뒤 그리기(wrapheal)에서 그림만 익명 감상을 연다(types.ts 참조) */
+  healingGallery?: boolean;
   /** 친구에게 보여줄 답 칸(감상 노출 범위). 감상 단계의 활동지 탭 범위도 이걸로 좁힌다 */
   galleryAnswerKeys?: string[];
   /** 그림 제목의 틀. 비면 "○○년의 △△" (artifact-title.ts) */
@@ -811,10 +813,15 @@ export default function LessonPage() {
    * 등)에서 감상 탭이 뜨면, 쓰기만 하면 되는 자리에 군더더기가 된다(교사 요청).
    */
   const scopedGallery = (session.activity?.galleryAnswerKeys?.length ?? 0) > 0;
+  /*
+   * 힐링 스페이스(wrapheal) 그림 익명 감상 — 이 단계에 한해 감상 탭을 연다(healingGallery).
+   * 기본은 지금까지대로 wrapheal 에 감상 탭이 없다.
+   */
+  const healingShare = viewPhase === "wrapheal" && session.activity?.healingGallery === true;
   const canShare =
     session.activity?.galleryEnabled !== false &&
-    viewPhase !== "wrapheal" &&
-    (!scopedGallery || viewPhase === "gallery");
+    (viewPhase !== "wrapheal" || healingShare) &&
+    (!scopedGallery || viewPhase === "gallery" || healingShare);
 
   /*
    * '감상 전용' 단계(galleryOnly) — gallery 단계에서 그림/활동지 탭 없이 순수 감상만 띄운다.
@@ -1809,7 +1816,7 @@ export default function LessonPage() {
           ))}
 
         {isWorkPhase && !showDone && !inGraphDraw && activeTab === "gallery" && (
-          <GalleryView disabled={closed} noun={workNoun} />
+          <GalleryView disabled={closed} noun={healingShare ? "힐링 스페이스" : workNoun} />
         )}
 
         {/*

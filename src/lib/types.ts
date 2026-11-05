@@ -1428,6 +1428,16 @@ export interface ActivityContent {
    */
   galleryOnly?: boolean;
   /**
+   * 회고 뒤 그리기(wrapheal) 단계에서 학생들이 그린 그림을 **서로 익명 감상**하게 연다.
+   *
+   * 기본(없음/false)은 지금까지 그대로 — wrapheal 엔 감상 탭이 없다(자기 공간을 그리는
+   * 자리라 서로 볼 것이 아니라는 기존 설계). true 면 wrapheal 에 한해 감상 탭을 띄우고,
+   * 서버 갤러리는 **그림(strokes)만** 익명으로 싣는다(allowKeys 를 비워 heal_*·plan_* 등
+   * 글이 카드에 안 나간다). 이미지 반응·댓글은 그대로. gallery 단계(캐릭터 감상)와는
+   * 서버가 session.phase 로 분기해 간섭하지 않는다. 마음 톡톡 3회기 힐링 스페이스용(opt-in).
+   */
+  healingGallery?: boolean;
+  /**
    * 감상 화면에서 부르는 말. 안 적으면 그림이 있으면 "작품", 없으면 "활동지".
    *
    * 감정을 나누는 활동에 "친구 활동지" 라고 하면 서로 숙제 검사하는 것처럼 읽힌다.

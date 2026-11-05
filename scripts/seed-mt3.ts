@@ -752,6 +752,12 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
      */
     galleryEnabled: true,
     galleryOnly: true,
+    /*
+     * 힐링 스페이스(wrapheal) 그림 익명 감상 — 그 단계에서 학생들이 그린 '나만의 힐링 스페이스'
+     * 그림을 서로 익명으로 보고 이모지·댓글. 그림(strokes)만 나가고 글(heal_*·plan_*)·마음일기는
+     * 안 나간다(서버가 wrapheal 에서 allowKeys 를 비운다). gallery 단계(캐릭터 감상)와 간섭 없음.
+     */
+    healingGallery: true,
     galleryAnswerKeys: ["canva_url", "canva_prompt"],
     /*
      * 카드에 캐릭터 링크와 프롬프트가 무엇인지 바로 읽히게 짧은 이름표를 붙인다
