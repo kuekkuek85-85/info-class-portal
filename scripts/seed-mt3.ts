@@ -193,6 +193,36 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 250,
   },
 
+  /*
+   * ── 지난 2회기 감정 캐릭터 (복습 감상용 · 표시 전용) ──────────────────
+   *
+   * 2회기(202)에서 같은 활동통(mt-2026-2)에 저장해 둔 canva_url·canva_prompt 를, 203 감상
+   * 갤러리 카드에서 **클릭 가능한 링크/프롬프트로 띄우기 위한 자리**다. 카드뉴스(card-news)는
+   * worksheet 에 그 key 문항이 있어야 답을 그리는데, 이 둘은 203 워크시트엔 없던 202 값이라
+   * 카드 상세에 안 떴다 — 그래서 여기에 넣는다.
+   *
+   * kind: "note" 라 **수업 화면에는 입력칸이 안 생긴다**(학생에게 다시 쓰라고 하지 않는다 —
+   * 값은 202 것이 그대로 있다). phase: "gallery" 는 STEP_PHASES 가 아니라 수업 단계 입력으로도
+   * 안 뜬다. 카드에서는 canva_url 이 주소라 "🎨 작품 보러 가기(새 창)" 링크로, canva_prompt 는
+   * 글로 나온다. 둘 다 galleryAnswerKeys 화이트리스트에 있어 서버가 익명으로 내보낸다.
+   */
+  {
+    key: "canva_url",
+    phase: "gallery",
+    label: "내 감정 캐릭터 (지난 시간에 만든 것)",
+    hint: "",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "canva_prompt",
+    phase: "gallery",
+    label: "캐릭터를 만든 프롬프트",
+    hint: "",
+    kind: "note",
+    maxLength: 0,
+  },
+
   // ── 나의 감정 쓰기 (25분) ───────────────────────────────
   {
     key: "_moodmeter_note",

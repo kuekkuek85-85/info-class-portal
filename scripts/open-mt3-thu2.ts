@@ -50,9 +50,17 @@ const GROUP_KEY = "mt-thu-2";
 const GROUP_LABEL = "목요일 2기";
 /** 화면에 안 보이는 데이터 통 번호. 2회기(mt-thu-2)와 같아야 지난 기록과 이어진다 */
 const CLASS_NO = 4;
-const DATE = process.argv[2] ?? "2026-11-05";
-const PERIOD = Number(process.argv[3] ?? 7);
+/** 위치 인자(날짜·교시)는 --플래그 를 뺀 것에서 읽는다 */
+const POSITIONAL = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+const DATE = POSITIONAL[0] ?? "2026-11-05";
+const PERIOD = Number(POSITIONAL[1] ?? 7);
 const SESSION_ID = `${DATE}__${PERIOD}__${GROUP_KEY}`;
+/**
+ * --force: 이미 있는 세션을 덮어 다시 연다(계획 편집 반영). 단 **실데이터 가드** —
+ * 아직 시작 안 한(scheduled·startedAt 없음) 세션만 덮는다. 수업이 시작됐거나(active·ended)
+ * 출석/제출 흔적이 있으면 멈추고 보고한다. 없으면 기존 코드를 그대로 재사용해 덮는다.
+ */
+const FORCE = process.argv.includes("--force");
 
 /** 2기 목요일 전용 캔바 토큰(있으면 _canva_login 에 직접, 남의 분반 기본값 금지) */
 const CANVA_THU_2 = process.env.CANVA_INVITE_MT_THU_2 ?? "";
@@ -115,16 +123,27 @@ async function main(): Promise<void> {
   const p = plan.data() as Record<string, unknown>;
 
   const existing = await db.collection("classSessions").doc(SESSION_ID).get();
+  let reuseCode = "";
   if (existing.exists) {
-    const s = existing.data() as { code: string; status: string; lessonNo: number };
-    console.log(`이미 있습니다 — ${SESSION_ID}  코드 ${s.code}  ${s.lessonNo}차시  ${s.status}`);
-    process.exit(0);
+    const s = existing.data() as { code?: string; status?: string; lessonNo?: number; startedAt?: unknown };
+    if (!FORCE) {
+      console.log(`이미 있습니다 — ${SESSION_ID}  코드 ${s.code}  ${s.lessonNo}차시  ${s.status}`);
+      console.log("  (덮어 다시 열려면 --force. 실데이터가 없을 때만 덮습니다.)");
+      process.exit(0);
+    }
+    // 실데이터 가드: 시작 안 한 세션만 덮는다.
+    if (s.status !== "scheduled" || s.startedAt) {
+      console.error(`✗ ${SESSION_ID} 는 ${s.status} 상태(또는 이미 시작됨)라 덮지 않습니다 — 멈춥니다.`);
+      process.exit(1);
+    }
+    reuseCode = String(s.code ?? "");
+    console.log(`↻ --force: 기존 세션(코드 ${reuseCode}, scheduled)을 덮어 다시 엽니다.`);
   }
 
   const activity = p.activity as { worksheet?: Record<string, unknown>[] } | undefined;
   const worksheet = resolveWorksheet(activity?.worksheet ?? []);
 
-  const code = await pickCode();
+  const code = reuseCode || (await pickCode());
 
   await db.collection("classSessions").doc(SESSION_ID).set({
     id: SESSION_ID,

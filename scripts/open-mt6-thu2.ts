@@ -16,10 +16,11 @@
  *    hideDoneButton on(마침 버튼 숨김). 계획의 game/freeNavigation 을 세션에서 덮는다.
  *  · 화요일 1기 메모 이어받기는 하지 않는다(공개수업 세션이라 빈 메모로 연다).
  *
- * ── 프라이버시(기존 206 설정 그대로) ──────────────────────────────
- *  · 서로의 마음 읽기(galleryEnabled)는 **끔**(목1기·화1기 오프너와 동일). 의사소통·공감·감정
- *    대화 글은 친구에게 안 나간다 — 서버 갤러리 라우트가 galleryEnabled:false 로 응답을 막는다.
- *  · 마음일기 비공개(reflectionPublic:false, 계획 그대로). 갤러리 익명 기본(galleryShowNames 없음).
+ * ── 프라이버시 ────────────────────────────────────────────────────
+ *  · 서로의 마음 읽기(galleryEnabled)는 **켬**(교사 지시·공개수업). 단 공유 대상은 계획의
+ *    galleryAnswerKeys=['a4_calli_image'](캘리그래피 이미지 한 칸)뿐 — seed-mt6 설계 그대로.
+ *    갈등·대화·챗봇 설계 등 그 밖의 칸은 화이트리스트 밖이라 서버가 응답에 안 싣는다(비공개).
+ *  · 마음일기 비공개(reflectionPublic:false, 계획 그대로). 갤러리 익명(galleryShowNames 없음).
  *  · 206 계획(seed-mt6) 내용은 **수정하지 않는다** — 세션으로 열기만 한다.
  */
 
@@ -52,9 +53,13 @@ const GROUP_KEY = "mt-thu-2";
 const GROUP_LABEL = "목요일 2기";
 /** 화면에 안 보이는 데이터 통 번호. 계획 groups 의 mt-thu-2 와 같아야 한다 */
 const CLASS_NO = 4;
-const DATE = process.argv[2] ?? "2026-11-05";
-const PERIOD = Number(process.argv[3] ?? 8);
+/** 위치 인자(날짜·교시)는 --플래그 를 뺀 것에서 읽는다 */
+const POSITIONAL = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+const DATE = POSITIONAL[0] ?? "2026-11-05";
+const PERIOD = Number(POSITIONAL[1] ?? 8);
 const SESSION_ID = `${DATE}__${PERIOD}__${GROUP_KEY}`;
+/** --force: 아직 시작 안 한(scheduled·실데이터 없음) 세션만 덮어 다시 연다 */
+const FORCE = process.argv.includes("--force");
 
 /** 목2기 전용 캔바 토큰(없으면 빈값). 기본값(다른 분반) 누수 금지 */
 const CANVA_THU_2 = process.env.CANVA_INVITE_MT_THU_2 ?? "";
@@ -99,35 +104,52 @@ async function main(): Promise<void> {
   const planDoc = plans.docs[0];
   const p = planDoc.data() as LessonPlan & Record<string, any>;
 
-  const existing = await db.collection("classSessions").doc(SESSION_ID).get();
-  if (existing.exists) {
-    const s = existing.data() as { code?: string; status?: string; lessonNo?: number };
-    // 실데이터 가드: 이미 있는 세션은 덮지 않는다(공개수업 전이라 비어 있어야 정상).
-    console.error(`✗ 이미 있습니다 — ${SESSION_ID} (코드 ${s.code}, ${s.status}, ${s.lessonNo}차시).`);
-    console.error("  덮어쓰지 않고 멈춥니다. 비우려면 먼저 이 세션을 확인/삭제하세요.");
-    process.exit(1);
-  }
-
   const original = (p.activity?.worksheet ?? []) as WorksheetQuestion[];
   const { kept, canva } = resolveWorksheet(original);
+  const activityId = (p.activity as { activityId?: string })?.activityId;
 
-  // 코드: 오늘 살아있는 세션들이 쓰는 코드는 피한다(리허설 코드13·14 포함).
-  const all = await db.collection("classSessions").get();
-  const taken = new Set(
-    all.docs
-      .map((d) => d.data() as { code?: string; status?: string; date?: string })
-      .filter((s) => s.status !== "ended" || s.date === DATE)
-      .map((s) => String(s.code ?? "")),
-  );
+  const existing = await db.collection("classSessions").doc(SESSION_ID).get();
   let code = "";
-  for (let n = 11; n <= 99; n += 1) {
-    if (!taken.has(String(n))) { code = String(n); break; }
+  if (existing.exists) {
+    const s = existing.data() as { code?: string; status?: string; lessonNo?: number; startedAt?: unknown };
+    if (!FORCE) {
+      console.error(`✗ 이미 있습니다 — ${SESSION_ID} (코드 ${s.code}, ${s.status}, ${s.lessonNo}차시).`);
+      console.error("  덮어쓰지 않고 멈춥니다. 다시 열려면 --force (실데이터 없을 때만 덮습니다).");
+      process.exit(1);
+    }
+    // 실데이터 가드 ①: 시작 안 한 세션만.
+    if (s.status !== "scheduled" || s.startedAt) {
+      console.error(`✗ ${SESSION_ID} 는 ${s.status} 상태(또는 이미 시작됨)라 덮지 않습니다 — 멈춥니다.`);
+      process.exit(1);
+    }
+    // 실데이터 가드 ②: 이 활동통(classNo 4)에 학생 작품이 있으면 멈춘다.
+    if (activityId) {
+      const arts = await db.collection("artifacts").where("activityId", "==", activityId).where("classNo", "==", CLASS_NO).get();
+      if (!arts.empty) {
+        console.error(`✗ ${activityId}(classNo ${CLASS_NO})에 학생 작품 ${arts.size}개가 있어 덮지 않습니다 — 멈춥니다.`);
+        process.exit(1);
+      }
+    }
+    code = String(s.code ?? "");
+    console.log(`↻ --force: 기존 세션(코드 ${code}, scheduled)을 덮어 다시 엽니다.`);
+  } else {
+    // 코드: 오늘 살아있는 세션들이 쓰는 코드는 피한다(리허설 코드13·14 포함).
+    const all = await db.collection("classSessions").get();
+    const taken = new Set(
+      all.docs
+        .map((d) => d.data() as { code?: string; status?: string; date?: string })
+        .filter((s) => s.status !== "ended" || s.date === DATE)
+        .map((s) => String(s.code ?? "")),
+    );
+    for (let n = 11; n <= 99; n += 1) {
+      if (!taken.has(String(n))) { code = String(n); break; }
+    }
+    if (!code) {
+      console.error("✗ 오늘 쓸 수 있는 수업 코드가 없습니다.");
+      process.exit(1);
+    }
+    await db.collection("codeReservations").doc(`${DATE}__${code}`).set({ date: DATE, code, createdAt: Date.now() });
   }
-  if (!code) {
-    console.error("✗ 오늘 쓸 수 있는 수업 코드가 없습니다.");
-    process.exit(1);
-  }
-  await db.collection("codeReservations").doc(`${DATE}__${code}`).set({ date: DATE, code, createdAt: Date.now() });
 
   await db.collection("classSessions").doc(SESSION_ID).set({
     id: SESSION_ID,
@@ -163,8 +185,14 @@ async function main(): Promise<void> {
     activity: {
       ...p.activity,
       worksheet: kept,
-      // 기존 206 설정 그대로 — 서로의 마음 읽기 끔(의사소통·공감 글은 친구에게 안 나감)
-      galleryEnabled: false,
+      /*
+       * 교사 지시(공개수업): 캘리그래피 익명 감상을 켠다 — seed-mt6 설계 그대로.
+       * galleryEnabled: true 로 '서로의 마음 읽기'를 열되, 공유 대상은 계획의
+       * galleryAnswerKeys=['a4_calli_image'](캘리그래피 이미지 한 칸)뿐이다. 갈등·대화·챗봇
+       * 설계 등 그 밖의 칸은 화이트리스트 밖이라 서버가 응답에 싣지 않는다(비공개 유지).
+       * galleryShowNames 는 켜지 않는다 → 익명(이름·학번 안 나감). 마음일기는 reflectionPublic:false.
+       */
+      galleryEnabled: true,
     },
     // ── 목2기 표준 덮어쓰기 ──
     game: EMPTY, // 대기 게임 없음(대기=마음 체크인만)
@@ -186,7 +214,7 @@ async function main(): Promise<void> {
   console.log(`  수업 코드  ${back.code}  · 상태 ${back.status} · 단계 ${back.phase} · rehearsal ${back.rehearsal}`);
   console.log(`  표준: 대기게임 ${(back.game as { heading?: string })?.heading ? "있음⚠" : "없음✓"} · freeNav ${back.freeNavigation ? "켬⚠" : "끔✓"} · hideDoneButton ${back.hideDoneButton ? "켬✓" : "끔⚠"} · 마음체크 ${back.moodCheckEnabled ? "켬✓" : "끔⚠"}`);
   console.log(`  phaseOrder ${po.length}단계 · mood ${po.includes("mood") ? "포함⚠" : "없음✓"}`);
-  console.log(`  서로의 마음 읽기 ${act.galleryEnabled ? "켬⚠" : "끔✓"} · 마음일기 ${back.reflectionPublic ? "공개⚠" : "비공개✓"}`);
+  console.log(`  서로의 마음 읽기 ${act.galleryEnabled ? "켬" : "끔"} · 나가는 칸 ${JSON.stringify(act.galleryAnswerKeys)} · 실명 ${act.galleryShowNames ? "예⚠" : "아니오(익명)✓"} · 마음일기 ${back.reflectionPublic ? "공개⚠" : "비공개✓"}`);
   const shown = canva ? canva.replace(/token=([^&]{4})[^&]*/, "token=$1…") : "(빈값)";
   const thu2Tok = CANVA_THU_2.match(/token=([^&]+)/)?.[1] ?? "";
   const myTok = canva.match(/token=([^&]+)/)?.[1] ?? "";
@@ -194,7 +222,7 @@ async function main(): Promise<void> {
   console.log(`  캔바 초대(캘리그래피)  ${shown}${label}`);
   console.log(`  남의 분반 토큰 실림  ${JSON.stringify(act).includes("linkUrlByGroup") ? "예 ← 문제⚠" : "아니오✓"}`);
   console.log("\n  시작: 대기(마음 체크인) → 오늘 할 일 → 말이 마음을 잇는다 → 갈등 분석 → 관계 캘리그래피(Canva)");
-  console.log("        → (캘리그래피 감상은 꺼져 있음) → 공감 문장·감정 대화 → 감정 위로 챗봇 → 마음일기");
+  console.log("        → 캘리그래피 감상(익명 · 이미지 한 칸만) → 공감 문장·감정 대화 → 감정 위로 챗봇 → 마음일기");
   process.exit(0);
 }
 
