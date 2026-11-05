@@ -196,6 +196,12 @@ export async function GET() {
                 반 전체에 걸린다 — 빠뜨렸을 때 조용히 열리는 쪽이라 특히 위험하다.
               */
               galleryEnabled: session.activity.galleryEnabled ?? true,
+              /*
+                '감상 전용' 단계 플래그(galleryOnly). 이 줄을 빠뜨리면 화면 쪽에서 undefined 가
+                되어 pureGallery 가 늘 false — gallery 단계에서 그림/활동지 탭이 그대로 뜬다
+                (위 galleryEnabled·sourcesEnabled 와 똑같은 '한 줄씩 골라 내보내는' 함정이었다).
+              */
+              galleryOnly: session.activity.galleryOnly ?? false,
               // 감상 노출 범위. 감상 단계의 활동지 탭도 이 키가 가리키는 활동으로 좁힌다
               // (한 단계에만 걸렸을 때). 안 실으면 화면 쪽에서 좁히지 못한다.
               galleryAnswerKeys: session.activity.galleryAnswerKeys ?? [],
