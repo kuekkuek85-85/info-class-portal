@@ -644,9 +644,21 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     url: "",
   },
 
-  // 6회기엔 평가 안내·영상이 없다.
   assessment: empty(),
-  video: empty(),
+
+  /*
+   * 나 전달법 영상 시청 — '말이 마음을 잇는다'(wrapmap) 바로 앞에서 교사가 공유 화면으로 함께
+   * 본다(교사 지시). video phase 슬롯을 쓴다. 학교망에서 유튜브 임베드가 막히면 교사가 아래
+   * url 로 직접 틀 수 있다. 추적 파라미터(?si=...)는 뗀 watch 주소(embed.ts 가 videoId 추출).
+   */
+  video: {
+    heading: "나 전달법 영상 시청",
+    body:
+      "‘너 때문에…’ 가 아니라 ‘나는 ~해’ 로 말하는 ‘나 전달법’ 을 영상으로 함께 봐요.\n" +
+      "상대를 탓하지 않고 내 감정과 바람을 전하는 말하기예요. 보고 나서 아래 활동을 이어 갑니다.\n" +
+      "(영상이 안 뜨면 선생님이 링크로 직접 틀어 주세요.)",
+    url: "https://www.youtube.com/watch?v=TT3npaX8els",
+  },
 
   /*
    * 마음일기 — 매 회기 루틴. reflectionPublic 은 반드시 false(비공개).
@@ -686,6 +698,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   phaseOrder: [
     "waiting",
     "progress",
+    "video",
     "wrapmap",
     "problem",
     "mvp",
@@ -699,6 +712,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   phaseLabels: {
     mood: "마음 체크인",
     progress: "오늘 할 일",
+    video: "나 전달법 영상 시청",
     wrapmap: "말이 마음을 잇는다",
     problem: "갈등 상황 분석하기",
     mvp: "관계 캘리그래피",
