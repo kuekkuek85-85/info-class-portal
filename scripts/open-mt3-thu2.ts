@@ -70,12 +70,14 @@ const EMPTY = { heading: "", body: "", url: "" };
 
 /**
  * 별도 '마음 체크인'(mood) 단계만 뺀 전체 순서. types.ts LESSON_PHASES 기준이되,
- * 교사 지시로 '마음일기'(reflection)를 '힐링 스페이스'(wrapheal) 뒤로 옮겼다 —
- * 감정 지도·힐링 스페이스를 먼저 하고 마지막에 마음일기를 쓴다.
+ * 교사 지시로 두 가지를 옮겼다:
+ *  · '지난 차시 감정 캐릭터 감상'(gallery)을 **맨 앞(복습)** 으로 — 대기 바로 뒤.
+ *  · '마음일기'(reflection)를 '힐링 스페이스'(wrapheal) **뒤** 로 — 마지막에 쓴다.
+ * 영화·예능(mvp)·나의 감정 쓰기(build) 단계는 그대로 둔다(교사가 수업 중 건너뛸 수 있음).
  */
 const PHASE_ORDER = [
-  "waiting", "wordquiz", "recheck", "progress", "assessment", "quiz", "video",
-  "problem", "mvp", "build", "grill", "draw", "worksheet", "gallery", "emotion",
+  "waiting", "gallery", "wordquiz", "recheck", "progress", "assessment", "quiz", "video",
+  "problem", "mvp", "build", "grill", "draw", "worksheet", "emotion",
   "wrapmap", "mooddiary", "wrapheal", "reflection", "done",
 ];
 
@@ -131,13 +133,19 @@ async function main(): Promise<void> {
       console.log("  (덮어 다시 열려면 --force. 실데이터가 없을 때만 덮습니다.)");
       process.exit(0);
     }
-    // 실데이터 가드: 시작 안 한 세션만 덮는다.
-    if (s.status !== "scheduled" || s.startedAt) {
-      console.error(`✗ ${SESSION_ID} 는 ${s.status} 상태(또는 이미 시작됨)라 덮지 않습니다 — 멈춥니다.`);
+    // 실데이터 가드: 이 세션에 '진짜 학생'(학번 끝 2자리 1~39) 출석이 있으면 멈춘다.
+    // active 상태·테스트 계정(90번 등)은 선생님 테스트라 덮어도 된다(교사 지시 — 재오픈 시 대기로 초기화).
+    const att = await db.collection("attendance").where("sessionId", "==", SESSION_ID).get();
+    const realStudents = att.docs.filter((a) => {
+      const n = Number(String((a.data() as { studentId?: string }).studentId ?? "").slice(-2));
+      return Number.isFinite(n) && n >= 1 && n < 40;
+    });
+    if (realStudents.length > 0) {
+      console.error(`✗ ${SESSION_ID} 에 진짜 학생 출석 ${realStudents.length}명이 있어 덮지 않습니다 — 멈춥니다.`);
       process.exit(1);
     }
     reuseCode = String(s.code ?? "");
-    console.log(`↻ --force: 기존 세션(코드 ${reuseCode}, scheduled)을 덮어 다시 엽니다.`);
+    console.log(`↻ --force: 기존 세션(코드 ${reuseCode}, ${s.status}${att.size ? `, 테스트출석 ${att.size}명` : ""})을 덮어 다시 엽니다.`);
   }
 
   const activity = p.activity as { worksheet?: Record<string, unknown>[] } | undefined;

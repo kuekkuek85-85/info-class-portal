@@ -57,6 +57,8 @@ export interface ActivityInfo {
    * 감정을 쓰는 차시는 false — 마음 이야기는 친구에게 보이지 않는다.
    */
   galleryEnabled?: boolean;
+  /** '감상 전용' 단계: gallery 단계에서 그림/활동지 탭 없이 순수 감상만 띄운다(types.ts 참조) */
+  galleryOnly?: boolean;
   /** 친구에게 보여줄 답 칸(감상 노출 범위). 감상 단계의 활동지 탭 범위도 이걸로 좁힌다 */
   galleryAnswerKeys?: string[];
   /** 그림 제목의 틀. 비면 "○○년의 △△" (artifact-title.ts) */
@@ -814,6 +816,12 @@ export default function LessonPage() {
     viewPhase !== "wrapheal" &&
     (!scopedGallery || viewPhase === "gallery");
 
+  /*
+   * '감상 전용' 단계(galleryOnly) — gallery 단계에서 그림/활동지 탭 없이 순수 감상만 띄운다.
+   * 마음 톡톡 3회기의 '지난 차시 감정 캐릭터 감상' 단계가 그렇다(그리기는 힐링 스페이스 단계에만).
+   */
+  const pureGallery = viewPhase === "gallery" && session.activity?.galleryOnly === true;
+
   /** 활동지를 그리기 앞에 두는 차시인가 (ActivityContent 의 worksheetFirst) */
   const worksheetFirst = Boolean(session.activity?.worksheetFirst);
 
@@ -847,8 +855,9 @@ export default function LessonPage() {
    * 마찬가지다 — 4차시처럼 글만 쓰는 활동에서 그리기로 보내면 고를 장소가 없는 빈
    * 화면이 뜬다. 렌더할 때 걸러 내는 편이 상태를 고쳐 쓰는 것보다 단순하다.
    */
-  const activeTab =
-    (!canDraw && workTab === "draw") || (!canShare && workTab === "gallery")
+  const activeTab = pureGallery
+    ? "gallery"
+    : (!canDraw && workTab === "draw") || (!canShare && workTab === "gallery")
       ? "worksheet"
       : workTab;
 
@@ -1559,7 +1568,7 @@ export default function LessonPage() {
           누를 곳이 아니라 지금 보고 있는 화면의 이름이다. 누르면 아무 일도 안 나는
           단추가 화면 맨 위에 있으면 학생은 그것부터 눌러 본다.
         */}
-        {isWorkPhase && !showDone && !inGraphDraw && !brainMerged && session.activity && Number(canDraw) + Number(canShare) > 0 && (
+        {isWorkPhase && !showDone && !inGraphDraw && !brainMerged && !pureGallery && session.activity && Number(canDraw) + Number(canShare) > 0 && (
           <div className="mb-5 flex gap-2">
             {/*
               그리기가 없는 차시도 있다 (4차시 직업 조사처럼 글만 쓰는 활동).

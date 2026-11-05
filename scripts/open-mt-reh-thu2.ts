@@ -64,13 +64,14 @@ const PHASE_ORDER_STD = [
   "reflection", "wrapmap", "mooddiary", "wrapheal", "done",
 ];
 /**
- * 203 전용 순서 — 교사 지시로 '마음일기'(reflection)를 '힐링 스페이스'(wrapheal) 뒤로 옮겼다.
- * 그래서 감정 지도·힐링 스페이스를 먼저 하고 마지막에 마음일기를 쓴다. 표준에서 reflection
- * 하나만 wrapheal 뒤로 뺀 것이라, 204(표준)에는 영향이 없다(204는 wrapmap/wrapheal 를 안 씀).
+ * 203 전용 순서 — 교사 지시로 두 가지를 옮겼다:
+ *  · '지난 차시 감정 캐릭터 감상'(gallery)을 맨 앞(대기 바로 뒤, 복습)으로.
+ *  · '마음일기'(reflection)를 '힐링 스페이스'(wrapheal) 뒤로(마지막).
+ * 표준(PHASE_ORDER_STD)에서 gallery·reflection 위치만 바꾼 것이라 204(표준)에는 영향이 없다.
  */
 const PHASE_ORDER_203 = [
-  "waiting", "wordquiz", "recheck", "progress", "assessment", "quiz", "video",
-  "problem", "mvp", "build", "grill", "draw", "worksheet", "gallery", "emotion",
+  "waiting", "gallery", "wordquiz", "recheck", "progress", "assessment", "quiz", "video",
+  "problem", "mvp", "build", "grill", "draw", "worksheet", "emotion",
   "wrapmap", "mooddiary", "wrapheal", "reflection", "done",
 ];
 

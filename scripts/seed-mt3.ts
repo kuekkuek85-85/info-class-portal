@@ -34,9 +34,10 @@
  *
  * ## 무엇이 친구에게 보이는가
  *
- * 고른 감정(share_feel)과 한 줄(share_line), 그리고 2회기에 만든 감정 캐릭터
- * 주소뿐이다. 경험 글(draft)·AI 비교·마음일기는 나가지 않는다. 거르는 자리는
- * 화면이 아니라 서버다 (gallery 라우트의 galleryAnswerKeys).
+ * '지난 차시 감정 캐릭터 감상'(감상 전용) 단계에서 2회기에 만든 감정 캐릭터
+ * — canva_url(클릭 링크)·canva_prompt — 만 익명으로 보인다. 감정 한 줄(share_*)·
+ * 영화예능 장면(scene_*)·경험 글(draft)·AI 비교·마음일기는 나가지 않는다.
+ * 거르는 자리는 화면이 아니라 서버다 (gallery 라우트의 galleryAnswerKeys).
  */
 
 import { cert, initializeApp } from "firebase-admin/app";
@@ -616,14 +617,14 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     heading: "오늘 할 일",
     body:
       "지난 시간에 감정 낱말 퀴즈와 인사이드 아웃 활동지까지 했어요. 오늘은 그 뒤를 합니다.\n\n" +
-      "① 영화·예능 속 내 마음 — 내 마음과 가까운 장면 하나 고르기\n" +
-      "② 나의 감정 쓰기 — 요즘 내 감정 낱말 하나 고르기\n" +
-      "③ 서로의 마음 읽기 — 같은 감정을 고른 친구 찾아보기\n" +
+      "① 지난 시간 감정 캐릭터 감상 — 친구들이 만든 캐릭터를 보고 반응·댓글 남기기\n" +
+      "② 영화·예능 속 내 마음 — 내 마음과 가까운 장면 하나 고르기\n" +
+      "③ 나의 감정 쓰기 — 요즘 내 감정 낱말 하나 고르기\n" +
       "④ AI 감정 렌즈 — 최근 있었던 일을 글로 쓰면 AI가 읽고 감정을 추측합니다\n\n" +
       "그 다음, 알아차린 감정을 다루는 연습을 합니다 — 감정 지도, 힐링 스페이스.\n" +
       "그리고 오늘을 마음일기로 마무리해요.\n\n" +
       "지난 시간에 쓴 것은 그대로 남아 있어요. 비어 있는 칸만 채우면 됩니다.\n" +
-      "친구에게 보이는 것은 고른 감정과 한 줄뿐이에요.",
+      "친구에게 보이는 것은 지난 시간에 만든 감정 캐릭터예요.",
     url: "",
   },
   assessment: empty(),
@@ -670,7 +671,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     progress: "오늘 할 일",
     mvp: "영화·예능 속 내 마음",
     build: "나의 감정 쓰기",
-    gallery: "서로의 마음 읽기",
+    gallery: "지난 차시 감정 캐릭터 감상",
     emotion: "AI 감정 렌즈",
     reflection: "마음일기",
     wrapmap: "감정 지도",
@@ -736,47 +737,39 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     },
 
     /*
-     * 서로의 마음을 나누는 시간을 연다. **여는 칸을 명시 목록으로 못 박는다.**
+     * 감상 단계를 **'지난 차시 감정 캐릭터 감상'** 으로 확정(교사 지시·공개수업).
      *
-     * "나만 그런 게 아니구나" 는 사회정서학습에서 가장 크게 작동하는 경험이라 열 값이
-     * 있다. 하지만 활동지를 통째로 열면 경험 글(draft)·AI 비교·마음일기까지 반 전체에
-     * 걸린다 — 그건 나누는 것이 아니라 새는 것이다.
+     * 이 단계는 2회기(202)에 만든 감정 캐릭터를 **익명으로 서로 감상만** 한다. 공유 칸은
+     * canva_url(눌러서 새 창으로 열리는 캐릭터 링크)·canva_prompt(캐릭터 프롬프트) 둘뿐이다.
+     * 감정 한 줄(share_*)·영화예능 장면(scene_*)은 이 단계에서 빼서 더 안전하다 — 그 값들을
+     * 감상 카드에도, 필터 항목에도 드러내지 않는다. 거르는 자리는 서버다(gallery 라우트의
+     * toCard) — 화면에서 숨겨도 응답엔 실리므로 화이트리스트에 없는 키는 아예 안 나간다.
      *
-     * 거르는 자리는 서버다 (gallery 라우트). 화면에서 고르면 안 보일 뿐 응답에는
-     * 실려 있어서, 개발자 도구를 여는 학생 하나면 다 읽힌다.
-     *
-     * ★ 교사 지시(공개수업)로 '익명 감상' 범위를 넓혔다 — 한 감상 화면에서 서로 익명으로:
-     *   · share_feel · share_line : 같은 감정을 고른 친구 찾기(기존)
-     *   · canva_url · canva_prompt : 2회기에 만든 감정 캐릭터(복습 감상)
-     *   · scene_what · scene_photo : 영화·예능 속 내 마음 — 장면 이름과 붙인 사진
-     * 이름·학번은 서버가 익명으로 가린다(galleryShowNames 를 켜지 않음 → author "").
-     *
-     * ★ 절대 안 나가는 취약 칸(서버 화이트리스트에서 제외) : scene_why·scene_help(장면을
-     *   내 최근 일과 이은 사연), draft(AI에게 쓴 경험 글), compare_hit·compare_why(AI 비교),
-     *   감정 지도·힐링(map_ · heal_ · plan_ 칸), 마음일기(reflectionPublic:false). 여기 목록에
-     *   없는 키는 응답에도 안 실린다 — 화면만이 아니라 서버에서 걸러진다.
+     * galleryOnly: true 로 '감상 전용' 단계로 만든다 — 그림/활동지 탭 없이 감상(보기)
+     * + 반응 이모지(👍 😮 💡 ❤️) + 댓글 한 칸만. 그리기는 '힐링 스페이스'(wrapheal)에만 있다.
+     * 익명(galleryShowNames 안 켬). draft·장면 사연(scene_why·scene_help)·AI 비교(compare_*)·
+     * 감정 지도·힐링·마음일기(reflectionPublic:false)는 비공개 유지.
      */
     galleryEnabled: true,
-    galleryAnswerKeys: ["share_feel", "share_line", "canva_url", "canva_prompt", "scene_what", "scene_photo"],
+    galleryOnly: true,
+    galleryAnswerKeys: ["canva_url", "canva_prompt"],
     /*
-     * 한 카드에 감정 한 줄·캐릭터·장면이 섞이므로 새 키에는 짧은 이름표를 붙여 무엇을 보는지
-     * 바로 읽히게 한다(gallery-view 의 summaryOf 가 sharedLabels 로 그린다). 기존 감정 두 칸
-     * (share_feel·share_line)은 지금처럼 이름표 없이 값만 — 문장 그대로 읽힌다.
+     * 카드에 캐릭터 링크와 프롬프트가 무엇인지 바로 읽히게 짧은 이름표를 붙인다
+     * (gallery-view 의 summaryOf 가 sharedLabels 로 그린다).
      */
     galleryAnswerLabels: {
       canva_url: "감정 캐릭터",
       canva_prompt: "캐릭터 프롬프트",
-      scene_what: "영화·예능 장면",
-      scene_photo: "장면 사진",
     },
-    galleryNoun: "이야기",
+    galleryNoun: "캐릭터",
 
     /*
-     * 같은 감정을 고른 친구끼리 모이게 하는 묶음. 이 활동의 핵심 장치다.
-     * 자유롭게 쓴 낱말 세 칸이 아니라 고르는 칸(share_feel)을 쓰는 이유는,
-     * 묶기가 글자가 정확히 같아야 걸리기 때문이다.
+     * 캐릭터 감상엔 묶음 필터가 필요 없다. '같은 감정'(share_feel) 필터는 뺀다 —
+     * 그 감정 값을 필터 항목으로도 드러내지 않으려는 것이다. 빈 묶음 하나를 둬서, 설정이
+     * 없을 때 뜨는 기본 '디지털 사회의 특성' 필터(그림 차시용)가 안 뜨게 한다
+     * (이 활동엔 특성·장소가 없다). 왼쪽 패널엔 '꼭 보기' 체크만 남는다.
      */
-    galleryFacets: [{ key: "feel", label: "같은 감정을 고른 친구", answerKeys: ["share_feel"] }],
+    galleryFacets: [{ key: "none", label: "", answerKeys: ["__none__"] }],
 
     /*
      * 남기는 칸은 **하나뿐이다.**
@@ -787,8 +780,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
      */
     feedbackPrompts: {
       found: {
-        label: "이 친구에게 해주고 싶은 따뜻한 말 한마디",
-        placeholder: "예) 나도 요즘 비슷해. 혼자만 그런 거 아니야.",
+        label: "이 캐릭터에서 어떤 감정이 느껴지나요?",
+        placeholder: "예) 따뜻해 보여요 / 씩씩한 느낌이에요 / 조금 외로워 보여요",
       },
       question: { label: "", placeholder: "" },
     },
@@ -847,8 +840,8 @@ async function main(): Promise<void> {
   console.log(`차시 번호 ${LESSON_NO}`);
   console.log("단계: 대기 → 마음 체크인 → 오늘 할 일 → 영화·예능 속 내 마음");
   console.log("      → 나의 감정 쓰기 → 서로의 마음 읽기 → AI 감정 렌즈 → 마음일기");
-  console.log("\n익명 감상(한 화면): 고른 감정(share_feel) · 한 줄(share_line) · 감정 캐릭터(canva_url·canva_prompt) · 영화예능 장면(scene_what·scene_photo)");
-  console.log("나가지 않는 것(취약): 장면 사연(scene_why·scene_help) · 경험 글(draft) · AI 비교(compare_*) · 감정지도/힐링 · 마음일기 — 이름·학번도 안 나감(익명)");
+  console.log("\n지난 차시 감정 캐릭터 감상(감상 전용 단계·galleryOnly): canva_url(클릭 링크)·canva_prompt 만 익명 공유 + 반응 이모지 + 댓글 한 칸. 그림/활동지 탭 없음.");
+  console.log("나가지 않는 것: 감정 한 줄(share_*)·장면(scene_*)·경험 글(draft)·AI 비교(compare_*)·감정지도/힐링·마음일기 — 전부 비공개. 이름·학번도 안 나감(익명).");
   process.exit(0);
 }
 

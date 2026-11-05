@@ -1419,6 +1419,15 @@ export interface ActivityContent {
    */
   galleryAnswerLabels?: Record<string, string>;
   /**
+   * '감상 전용' 단계로 만든다 — gallery 단계에서 그림/활동지 탭 없이 **순수 감상 화면**만 띄운다.
+   *
+   * 기본(없음/false)은 지금까지 그대로 — gallery 단계에서도 그림·활동지 탭이 함께 뜬다.
+   * true 면 gallery 단계에 한해 탭 줄을 숨기고 감상(보기+반응+댓글)만 보여준다. 그리기가
+   * 있는 차시(마음 톡톡 3회기의 힐링 스페이스)라도 '지난 차시 캐릭터 감상' 단계에는 탭이
+   * 없어야 해서 둔 플래그다. 다른 작업 단계(draw·wrapheal 등)에는 영향이 없다(gallery 단계만).
+   */
+  galleryOnly?: boolean;
+  /**
    * 감상 화면에서 부르는 말. 안 적으면 그림이 있으면 "작품", 없으면 "활동지".
    *
    * 감정을 나누는 활동에 "친구 활동지" 라고 하면 서로 숙제 검사하는 것처럼 읽힌다.
