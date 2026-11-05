@@ -218,9 +218,9 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "_words_note",
     phase: "build",
-    label: "쓰기① 나의 감정 낱말",
+    label: "나의 감정 낱말",
     hint:
-      "최근 일주일 동안 느낀 감정을 세 개 적어 봅시다.\n" +
+      "최근 일주일 동안 느낀 감정을 하나 적어 봅시다.\n" +
       "“기분 나빴다” 말고 더 정확한 낱말을 찾아보세요 — 아래 보기에서 골라도 좋아요.\n" +
       "지난 시간에 쓴 것이 남아 있으면 그대로 두어도 됩니다.",
     kind: "note",
@@ -229,28 +229,12 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "word1",
     phase: "build",
-    label: "감정 낱말 ① — 그리고 언제 그랬나요?",
+    /*
+     * 교사 지시로 낱말 칸을 셋(①②③)에서 하나로 줄였다. share_feel 은 그대로 둔다 —
+     * 친구 찾기의 묶음 열쇠라 고르는 칸이 따로 있어야 글자가 정확히 같아 묶인다.
+     */
+    label: "감정 낱말 — 그리고 언제 그랬나요?",
     hint: "낱말 하나와, 그때가 언제였는지 한 줄로.\n예) 서운함 — 친구가 약속을 갑자기 취소했을 때",
-    kind: "text",
-    examples: MOOD_WORDS,
-    examplesNote: MOOD_WORDS_NOTE,
-    maxLength: 80,
-  },
-  {
-    key: "word2",
-    phase: "build",
-    label: "감정 낱말 ② — 그리고 언제 그랬나요?",
-    hint: "",
-    kind: "text",
-    examples: MOOD_WORDS,
-    examplesNote: MOOD_WORDS_NOTE,
-    maxLength: 80,
-  },
-  {
-    key: "word3",
-    phase: "build",
-    label: "감정 낱말 ③ — 그리고 언제 그랬나요?",
-    hint: "",
     kind: "text",
     examples: MOOD_WORDS,
     examplesNote: MOOD_WORDS_NOTE,
@@ -262,10 +246,10 @@ const WORKSHEET: WorksheetQuestion[] = [
     /*
      * 친구 찾기의 열쇠가 되는 칸.
      *
-     * 위 세 칸은 자유롭게 쓰게 두었더니 글자가 저마다 달라서 묶이지 않는다.
+     * 위 낱말 칸은 자유롭게 쓰게 두어 글자가 저마다 달라 묶이지 않는다.
      * 감상 화면의 묶기는 글자가 정확히 같아야 걸린다. 그래서 고르는 칸을 하나 둔다.
      */
-    label: "위 셋 중에서, 요즘 나를 가장 크게 흔든 감정 하나를 골라 주세요",
+    label: "요즘 나를 가장 크게 흔든 감정 하나를 골라 주세요",
     hint: "이 칸으로 나와 비슷한 감정을 고른 친구들을 찾아볼 거예요.",
     kind: "choice",
     choices: MOOD_WORDS,
@@ -286,19 +270,25 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "text",
     maxLength: 80,
   },
+  // ── AI 감정 렌즈 (25분) ─────────────────────────────────
+  /*
+   * 교사 지시로 'AI에게 보여줄 글(draft)' 을 「나의 감정 쓰기」(build)에서 떼어 여기
+   * AI 감정 렌즈(emotion) 맨 앞으로 옮겼다 — 렌즈를 쓰기 바로 직전에 그 글을 쓰게.
+   * phase 가 emotion 이라 렌즈 단계 첫 칸으로 뜨고, 아래 _lens_recap·lens 가 이 draft 를 읽는다.
+   */
   {
     key: "_draft_note",
-    phase: "build",
-    label: "쓰기② AI에게 보여줄 글",
+    phase: "emotion",
+    label: "AI에게 보여줄 글",
     hint:
-      "잠시 뒤에 이 글을 AI가 읽고 “어떤 기분이었을까” 를 추측할 거예요.\n" +
+      "이제 이 글을 AI가 읽고 “어떤 기분이었을까” 를 추측할 거예요.\n" +
       "감정 낱말은 쓰지 마세요. 무슨 일이 있었는지만 적으면 AI가 알아맞혀야 해요.",
     kind: "note",
     maxLength: 0,
   },
   {
     key: "draft",
-    phase: "build",
+    phase: "emotion",
     /*
      * 렌즈에 보낼 글은 여기서 한 번만 쓴다. 렌즈 화면에 입력칸을 또 두면 학생은
      * 거기에 한 줄로 대충 적고, 그러면 추측이 얕아져서 견줄 것이 없어진다.
@@ -311,8 +301,6 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "long",
     maxLength: 400,
   },
-
-  // ── AI 감정 렌즈 (25분) ─────────────────────────────────
   {
     key: "_lens_note",
     phase: "emotion",
@@ -599,14 +587,13 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     body:
       "지난 시간에 감정 낱말 퀴즈와 인사이드 아웃 활동지까지 했어요. 오늘은 그 뒤를 합니다.\n\n" +
       "① 영화·예능 속 내 마음 — 내 마음과 가까운 장면 하나 고르기\n" +
-      "② 나의 감정 쓰기 — 낱말 세 개, 그리고 AI에게 보여줄 글\n" +
+      "② 나의 감정 쓰기 — 요즘 내 감정 낱말 하나 고르기\n" +
       "③ 서로의 마음 읽기 — 같은 감정을 고른 친구 찾아보기\n" +
-      "④ AI 감정 렌즈 — AI가 내 글을 읽고 감정을 추측합니다\n" +
-      "⑤ 마음일기\n\n" +
-      "마음일기까지 하고 나서, 시간이 남으면 두 가지를 더 합니다 — 감정 지도, 힐링 스페이스.\n" +
-      "여기까지가 감정을 알아차리는 연습이었다면, 그 둘은 알아차린 감정을 다루는 연습이에요.\n\n" +
+      "④ AI 감정 렌즈 — 최근 있었던 일을 글로 쓰면 AI가 읽고 감정을 추측합니다\n\n" +
+      "그 다음, 알아차린 감정을 다루는 연습을 합니다 — 감정 지도, 힐링 스페이스.\n" +
+      "그리고 오늘을 마음일기로 마무리해요.\n\n" +
       "지난 시간에 쓴 것은 그대로 남아 있어요. 비어 있는 칸만 채우면 됩니다.\n" +
-      "친구에게 보이는 것은 고른 감정과 한 줄뿐이에요. 나머지는 나만 봅니다.",
+      "친구에게 보이는 것은 고른 감정과 한 줄뿐이에요.",
     url: "",
   },
   assessment: empty(),
@@ -719,7 +706,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     },
 
     /*
-     * 서로의 마음을 나누는 시간을 연다. **다만 여는 칸을 딱 셋으로 못 박는다.**
+     * 서로의 마음을 나누는 시간을 연다. **여는 칸을 명시 목록으로 못 박는다.**
      *
      * "나만 그런 게 아니구나" 는 사회정서학습에서 가장 크게 작동하는 경험이라 열 값이
      * 있다. 하지만 활동지를 통째로 열면 경험 글(draft)·AI 비교·마음일기까지 반 전체에
@@ -728,11 +715,30 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
      * 거르는 자리는 서버다 (gallery 라우트). 화면에서 고르면 안 보일 뿐 응답에는
      * 실려 있어서, 개발자 도구를 여는 학생 하나면 다 읽힌다.
      *
-     * canva_url 은 2회기에 만든 감정 캐릭터다. 절반쯤만 있지만, 있는 사람 것은
-     * 보이는 편이 낫다 — 오늘 새로 만들지는 않는다.
+     * ★ 교사 지시(공개수업)로 '익명 감상' 범위를 넓혔다 — 한 감상 화면에서 서로 익명으로:
+     *   · share_feel · share_line : 같은 감정을 고른 친구 찾기(기존)
+     *   · canva_url · canva_prompt : 2회기에 만든 감정 캐릭터(복습 감상)
+     *   · scene_what · scene_photo : 영화·예능 속 내 마음 — 장면 이름과 붙인 사진
+     * 이름·학번은 서버가 익명으로 가린다(galleryShowNames 를 켜지 않음 → author "").
+     *
+     * ★ 절대 안 나가는 취약 칸(서버 화이트리스트에서 제외) : scene_why·scene_help(장면을
+     *   내 최근 일과 이은 사연), draft(AI에게 쓴 경험 글), compare_hit·compare_why(AI 비교),
+     *   감정 지도·힐링(map_ · heal_ · plan_ 칸), 마음일기(reflectionPublic:false). 여기 목록에
+     *   없는 키는 응답에도 안 실린다 — 화면만이 아니라 서버에서 걸러진다.
      */
     galleryEnabled: true,
-    galleryAnswerKeys: ["share_feel", "share_line", "canva_url"],
+    galleryAnswerKeys: ["share_feel", "share_line", "canva_url", "canva_prompt", "scene_what", "scene_photo"],
+    /*
+     * 한 카드에 감정 한 줄·캐릭터·장면이 섞이므로 새 키에는 짧은 이름표를 붙여 무엇을 보는지
+     * 바로 읽히게 한다(gallery-view 의 summaryOf 가 sharedLabels 로 그린다). 기존 감정 두 칸
+     * (share_feel·share_line)은 지금처럼 이름표 없이 값만 — 문장 그대로 읽힌다.
+     */
+    galleryAnswerLabels: {
+      canva_url: "감정 캐릭터",
+      canva_prompt: "캐릭터 프롬프트",
+      scene_what: "영화·예능 장면",
+      scene_photo: "장면 사진",
+    },
     galleryNoun: "이야기",
 
     /*
@@ -811,8 +817,8 @@ async function main(): Promise<void> {
   console.log(`차시 번호 ${LESSON_NO}`);
   console.log("단계: 대기 → 마음 체크인 → 오늘 할 일 → 영화·예능 속 내 마음");
   console.log("      → 나의 감정 쓰기 → 서로의 마음 읽기 → AI 감정 렌즈 → 마음일기");
-  console.log("\n친구에게 보이는 칸: 고른 감정 · 한 줄 · 감정 캐릭터 주소");
-  console.log("나가지 않는 것: 경험 글 · AI 비교 · 마음일기");
+  console.log("\n익명 감상(한 화면): 고른 감정(share_feel) · 한 줄(share_line) · 감정 캐릭터(canva_url·canva_prompt) · 영화예능 장면(scene_what·scene_photo)");
+  console.log("나가지 않는 것(취약): 장면 사연(scene_why·scene_help) · 경험 글(draft) · AI 비교(compare_*) · 감정지도/힐링 · 마음일기 — 이름·학번도 안 나감(익명)");
   process.exit(0);
 }
 

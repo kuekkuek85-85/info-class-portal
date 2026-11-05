@@ -60,11 +60,15 @@ const CANVA_THU_2 = process.env.CANVA_INVITE_MT_THU_2 ?? "";
 /** 표준: 대기 게임 없음·게임 설명 없음 */
 const EMPTY = { heading: "", body: "", url: "" };
 
-/** 별도 '마음 체크인'(mood) 단계만 뺀 전체 순서(= 202 와 같은 20단계). types.ts LESSON_PHASES 와 맞춤. */
+/**
+ * 별도 '마음 체크인'(mood) 단계만 뺀 전체 순서. types.ts LESSON_PHASES 기준이되,
+ * 교사 지시로 '마음일기'(reflection)를 '힐링 스페이스'(wrapheal) 뒤로 옮겼다 —
+ * 감정 지도·힐링 스페이스를 먼저 하고 마지막에 마음일기를 쓴다.
+ */
 const PHASE_ORDER = [
   "waiting", "wordquiz", "recheck", "progress", "assessment", "quiz", "video",
   "problem", "mvp", "build", "grill", "draw", "worksheet", "gallery", "emotion",
-  "reflection", "wrapmap", "mooddiary", "wrapheal", "done",
+  "wrapmap", "mooddiary", "wrapheal", "reflection", "done",
 ];
 
 async function pickCode(): Promise<string> {
