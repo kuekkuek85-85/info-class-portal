@@ -1628,7 +1628,7 @@ export default function LessonPage() {
                 onClick={() => setWorkTab("gallery")}
                 className={`pill flex-1 ${activeTab === "gallery" ? "pill-primary" : "pill-secondary"}`}
               >
-                {session.activity?.galleryTabLabel || `${workNoun} 감상`}
+                {healingShare ? "그림 감상" : session.activity?.galleryTabLabel || `${workNoun} 감상`}
               </button>
             )}
           </div>
