@@ -37,7 +37,9 @@ function parse(raw: string): Values {
 }
 
 function hasAny(values: Values): boolean {
-  return Object.values(values).some((v) => v.trim());
+  // 공백만 든 칸(Tab 들여쓰기 직후 등)도 '내용 있음' 으로 본다 — trim 으로 보면 공백이 지워져
+  // onChange("") 로 비워지고, 컨트롤드 재렌더가 Tab 공백을 되돌린다(빈 칸 첫 Tab 무반응 원인).
+  return Object.values(values).some((v) => v.length > 0);
 }
 
 /** 한 줄을 고정 글자 / 토큰 조각들로 쪼갠다. */
