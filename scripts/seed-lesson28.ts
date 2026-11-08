@@ -407,11 +407,12 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   },
   gameExplainer: empty(),
 
-  // 성찰 보상 게임 = 사과 게임(아크 일관). 성찰을 제출하면 '제출하고 게임하기' 로 열린다.
+  // 성찰 보상 게임 = UNO(교사 요청 2026-11-09). 성찰을 제출하면 '제출하고 게임하기' 로 열린다.
+  // rewardGame.url 은 외부 게임 주소를 그대로 받는다(reward-game-frame 이 iframe/링크로 연다).
   rewardGame: {
-    heading: "수고했어요! 🍎",
-    body: "성찰을 제출했으면 잠깐 사과 게임으로 쉬어요. 선생님이 부르면 돌아오세요.",
-    url: "https://fruit-box-game-delta.vercel.app/",
+    heading: "수고했어요! 🃏",
+    body: "성찰을 제출했으면 잠깐 UNO 로 쉬어요. 선생님이 부르면 돌아오세요.",
+    url: "https://uno-game-gilt.vercel.app/",
   },
 
   progress: empty(),
