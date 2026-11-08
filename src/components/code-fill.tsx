@@ -98,24 +98,15 @@ export function CodeFill({
    *  · Tab        → 포커스 이동 막고 커서에 공백 4칸 삽입.
    *  · Shift+Tab  → 커서 앞(줄머리 쪽) 공백을 최대 4칸 내어쓰기.
    *  · Enter      → 직전 줄 들여쓰기 유지, 직전 줄이 ':' 로 끝나면 4칸 더(파이썬 자동 들여쓰기).
-   * 컨트롤드 textarea 라 값을 바꾼 뒤 커서를 rAF 로 복원한다(같은 DOM 노드 유지).
+   * 삽입은 execCommand("insertText")/("delete") 로 한다 — 브라우저가 값·커서·실행취소를 직접 처리해
+   * 컨트롤드 textarea 라도 커서가 안 튄다(input 이벤트로 onChange 가 따라온다).
    */
-  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>, token: string) {
+  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>, _token: string) {
     if (disabled) return;
+    if (e.key !== "Tab" && e.key !== "Enter") return;
     const ta = e.currentTarget;
     const val = ta.value;
     const start = ta.selectionStart;
-    const end = ta.selectionEnd;
-    const restore = (text: string, caret: number) => {
-      setValue(token, text);
-      requestAnimationFrame(() => {
-        try {
-          ta.selectionStart = ta.selectionEnd = caret;
-        } catch {
-          /* 포커스가 이미 떠남 — 무시 */
-        }
-      });
-    };
 
     if (e.key === "Tab") {
       e.preventDefault();
@@ -123,9 +114,12 @@ export function CodeFill({
         const lineStart = val.lastIndexOf("\n", start - 1) + 1;
         const before = val.slice(lineStart, start);
         const removable = (before.match(/ {1,4}$/) ?? [""])[0].length;
-        if (removable > 0) restore(val.slice(0, start - removable) + val.slice(start), start - removable);
+        if (removable > 0) {
+          ta.setSelectionRange(start - removable, start);
+          document.execCommand("delete", false);
+        }
       } else {
-        restore(val.slice(0, start) + "    " + val.slice(end), start + 4);
+        document.execCommand("insertText", false, "    ");
       }
     } else if (e.key === "Enter") {
       e.preventDefault();
@@ -133,8 +127,7 @@ export function CodeFill({
       const curLine = val.slice(lineStart, start);
       let indent = (curLine.match(/^ */) ?? [""])[0];
       if (curLine.trimEnd().endsWith(":")) indent += "    ";
-      const insert = "\n" + indent;
-      restore(val.slice(0, start) + insert + val.slice(end), start + insert.length);
+      document.execCommand("insertText", false, "\n" + indent);
     }
   }
 
