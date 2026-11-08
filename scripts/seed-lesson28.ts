@@ -434,10 +434,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   video: empty(),
 
   // 성찰 — 쉬운 말로 가볍게 돌아보기. 개인적이라 비공개. 성찰 제출로 사과 게임이 열린다.
-  reflectionQuestions: [
-    "오늘 만든 똥피하기 뼈대에서 가장 재미있었던 점은 무엇이었나요? 한 줄로 적어 봐요.",
-    "미션 1·3 의 '버그'(주인공이 사라지거나 똥이 한 번만 떨어짐)를 직접 고쳐 보니 어땠나요?",
-  ],
+  reflectionQuestions: ["오늘 똥피하기 게임 구현에서 가장 어려웠던 부분은 어디인가요?"],
   reflectionPublic: false,
 
   // MakeCode(새 탭)·파이썬 타자(새 탭)가 붙은 단계에서 창을 옮기는 것을 이탈로 안 센다.
