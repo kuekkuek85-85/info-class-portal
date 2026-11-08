@@ -162,6 +162,32 @@ const AUTOSAVE_DELAY_MS = 1500;
 /** 교사가 단계를 넘긴 것을 학생 화면이 알아채는 주기 */
 const PHASE_POLL_MS = 4000;
 
+/**
+ * 마음 체크인 강제 관문.
+ *
+ * 교사가 되돌아가기(freeNavigation)를 끈 채 대기가 아닌 단계로 강제하면, 마음 체크인을 아직 안 낸
+ * 학생이 그걸 건너뛰어 버린다. 그래서 **freeNav 가 꺼진 강제 이동일 때만**, 아직 이번 세션 마음
+ * 체크인을 안 낸 학생(moodDone=false)을 강제 단계 대신 'mood' 로 돌린다. 체크인을 내면(moodDone=true)
+ * 다음부터 그대로 강제 단계로 간다(세션당 1회). freeNav 가 켜진 평상시에는 관문이 없다(기존과 동일).
+ *
+ * 완료 판정은 오직 서버 moodEntries 기록(= payload.mood != null = moodSaved) 하나만 본다.
+ */
+function gatePhase(
+  target: LessonPhase,
+  opts: { free: boolean; moodEnabled: boolean; moodDone: boolean },
+): LessonPhase {
+  if (
+    !opts.free &&
+    opts.moodEnabled &&
+    !opts.moodDone &&
+    target !== "waiting" &&
+    target !== "mood"
+  ) {
+    return "mood";
+  }
+  return target;
+}
+
 export default function LessonPage() {
   const router = useRouter();
   const [data, setData] = useState<LessonData | null>(null);
@@ -176,6 +202,8 @@ export default function LessonPage() {
   const [moodReason, setMoodReason] = useState("");
   const [moodSaving, setMoodSaving] = useState(false);
   const [moodSaved, setMoodSaved] = useState(false);
+  // 폴링 클로저가 '마음 체크인 완료' 최신값을 보도록 ref 로 미러링한다(상태만 보면 클로저에 갇힘).
+  const moodSavedRef = useRef(false);
 
   const [quiz, setQuiz] = useState<QuizState | null>(null);
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
@@ -377,7 +405,14 @@ export default function LessonPage() {
       const payload = result as LessonData;
       setData(payload);
       setPhase(payload.session.phase);
-      setViewPhase(payload.session.phase);
+      // 마음 체크인 관문 — freeNav off + 미완료면 강제 단계 대신 'mood' 로(gatePhase).
+      setViewPhase(
+        gatePhase(payload.session.phase, {
+          free: Boolean(payload.session.freeNavigation),
+          moodEnabled: payload.session.moodCheckEnabled,
+          moodDone: Boolean(payload.mood),
+        }),
+      );
       setFreeNav(Boolean(payload.session.freeNavigation));
       if (payload.session.phase === "worksheet") setWorkTab("worksheet");
       if (payload.session.phase === "gallery") setWorkTab("gallery");
@@ -409,6 +444,7 @@ export default function LessonPage() {
       setMood(payload.mood?.mood ?? "");
       setMoodReason(payload.mood?.reason ?? "");
       setMoodSaved(Boolean(payload.mood));
+      moodSavedRef.current = Boolean(payload.mood);
       setQuiz(payload.quiz);
       setQuizAnswers(payload.myQuizAnswers ?? []);
 
@@ -432,6 +468,8 @@ export default function LessonPage() {
   useEffect(() => {
     if (!data) return;
     let cancelled = false;
+    // 세션 내 불변 — 관문 판정용(중첩 async 안에서 data 가 null 로 넓어지는 것 방지)
+    const moodEnabled = data.session.moodCheckEnabled;
 
     async function tick() {
       const response = await fetch("/api/student/phase");
@@ -464,9 +502,16 @@ export default function LessonPage() {
       setViewPhase((current) => (current === previousPhase.current ? next : current));
       previousPhase.current = next;
 
-      // 되돌아가기가 꺼지면 모두 교사 단계로 모인다
+      // 되돌아가기가 꺼지면 모두 교사 단계로 모인다 — 단, 마음 체크인 미완료자는 먼저 'mood' 로 보낸다.
       const free = Boolean(result.freeNavigation);
-      if (!free) setViewPhase(next);
+      if (!free)
+        setViewPhase(
+          gatePhase(next, {
+            free: false,
+            moodEnabled,
+            moodDone: moodSavedRef.current,
+          }),
+        );
       setFreeNav(free);
       setFocusExempt((result.focusExempt as LessonPhase[] | undefined) ?? []);
 
@@ -741,7 +786,13 @@ export default function LessonPage() {
     });
     const result = await response.json();
     setMoodSaving(false);
-    if (result.ok) setMoodSaved(true);
+    if (result.ok) {
+      setMoodSaved(true);
+      moodSavedRef.current = true;
+      // 관문을 통과한 순간, freeNav off 로 'mood' 에 붙잡혀 있었으면 교사 강제 단계로 바로 이동
+      // (안 해도 다음 폴링에 자동 이동하지만, 즉각 넘어가게 한다).
+      if (!freeNav && viewPhase === "mood" && phase !== "mood") setViewPhase(phase);
+    }
   }
 
   if (loadError) {
