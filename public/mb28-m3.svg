@@ -1,12 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 184" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 184 216" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
   <style>
     .poop{animation:fall3 3.4s ease-in infinite}
-    @keyframes fall3{0%{transform:translateY(0);opacity:1}8%{transform:translateY(0);opacity:1}40%{transform:translateY(96px);opacity:1}50%{transform:translateY(120px);opacity:1}58%{transform:translateY(144px);opacity:0}100%{transform:translateY(144px);opacity:0}}
+    @keyframes fall3{0%{transform:translateY(0);opacity:1}8%{transform:translateY(0);opacity:1}40%{transform:translateY(96px);opacity:1}50%{transform:translateY(96px);opacity:1}60%{transform:translateY(120px);opacity:0}100%{transform:translateY(120px);opacity:0}}
+    .axis{fill:#8a8f98;font-size:9px}
+    .axlbl{fill:#64748b;font-size:9px;font-weight:700}
   </style>
-  <rect x="6" y="6" width="132" height="132" rx="18" fill="#17171b"/>
-  <g fill="#2a2a30"><circle cx="24" cy="24" r="7"/><circle cx="48" cy="24" r="7"/><circle cx="72" cy="24" r="7"/><circle cx="96" cy="24" r="7"/><circle cx="120" cy="24" r="7"/><circle cx="24" cy="48" r="7"/><circle cx="48" cy="48" r="7"/><circle cx="72" cy="48" r="7"/><circle cx="96" cy="48" r="7"/><circle cx="120" cy="48" r="7"/><circle cx="24" cy="72" r="7"/><circle cx="48" cy="72" r="7"/><circle cx="72" cy="72" r="7"/><circle cx="96" cy="72" r="7"/><circle cx="120" cy="72" r="7"/><circle cx="24" cy="96" r="7"/><circle cx="48" cy="96" r="7"/><circle cx="72" cy="96" r="7"/><circle cx="96" cy="96" r="7"/><circle cx="120" cy="96" r="7"/><circle cx="24" cy="120" r="7"/><circle cx="48" cy="120" r="7"/><circle cx="72" cy="120" r="7"/><circle cx="96" cy="120" r="7"/><circle cx="120" cy="120" r="7"/></g>
-  <circle cx="48" cy="120" r="7" fill="#ff5a5a"/>
-  <circle class="poop" cx="96" cy="24" r="7" fill="#b8860b"/>
-  <text x="72" y="160" text-anchor="middle" font-size="14" font-weight="700" fill="#171717">똥 한 개 떨어뜨리기</text>
-  <text x="72" y="177" text-anchor="middle" font-size="11" fill="#64748b">한 번 떨어지고 사라져요</text>
+  <rect x="26" y="22" width="132" height="132" rx="18" fill="#17171b"/>
+  <g fill="#2a2a30"><circle cx="44" cy="40" r="7"/><circle cx="68" cy="40" r="7"/><circle cx="92" cy="40" r="7"/><circle cx="116" cy="40" r="7"/><circle cx="140" cy="40" r="7"/><circle cx="44" cy="64" r="7"/><circle cx="68" cy="64" r="7"/><circle cx="92" cy="64" r="7"/><circle cx="116" cy="64" r="7"/><circle cx="140" cy="64" r="7"/><circle cx="44" cy="88" r="7"/><circle cx="68" cy="88" r="7"/><circle cx="92" cy="88" r="7"/><circle cx="116" cy="88" r="7"/><circle cx="140" cy="88" r="7"/><circle cx="44" cy="112" r="7"/><circle cx="68" cy="112" r="7"/><circle cx="92" cy="112" r="7"/><circle cx="116" cy="112" r="7"/><circle cx="140" cy="112" r="7"/><circle cx="44" cy="136" r="7"/><circle cx="68" cy="136" r="7"/><circle cx="92" cy="136" r="7"/><circle cx="116" cy="136" r="7"/><circle cx="140" cy="136" r="7"/></g>
+  <g class="axis" text-anchor="middle">
+    <text x="15" y="43">0</text><text x="15" y="67">1</text><text x="15" y="91">2</text><text x="15" y="115">3</text><text x="15" y="139">4</text>
+    <text x="44" y="171">0</text><text x="68" y="171">1</text><text x="92" y="171">2</text><text x="116" y="171">3</text><text x="140" y="171">4</text>
+  </g>
+  <text class="axlbl" x="15" y="29" text-anchor="middle">y</text>
+  <text class="axlbl" x="160" y="171">x</text>
+  <circle cx="68" cy="136" r="7" fill="#ff5a5a"/>
+  <circle class="poop" cx="116" cy="40" r="7" fill="#b8860b"/>
+  <text x="92" y="196" text-anchor="middle" font-size="14" font-weight="700" fill="#171717">똥 한 개 떨어뜨리기</text>
+  <text x="92" y="211" text-anchor="middle" font-size="11" fill="#64748b">한 번 떨어지고 사라져요</text>
 </svg>
