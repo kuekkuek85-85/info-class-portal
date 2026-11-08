@@ -94,12 +94,23 @@ export function CodeFill({
   }
 
   /**
+   * 컨트롤드 textarea 값을 '네이티브 setter + input 이벤트' 로 바꾼다. React onChange(setValue)가
+   * 그대로 따라오고(값이 상태와 같아 재렌더가 커서를 안 건드림), 커서도 유지된다. execCommand 는
+   * keydown 안·갓 포커스된 빈 칸에서 무동작이 되는 브라우저가 있어 쓰지 않는다(미션3 Tab 무반응 원인).
+   */
+  function applyEdit(ta: HTMLTextAreaElement, newValue: string, caret: number) {
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
+    if (setter) setter.call(ta, newValue);
+    else ta.value = newValue;
+    ta.selectionStart = ta.selectionEnd = caret;
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  /**
    * Python 들여쓰기를 위해 이 코드 입력칸에서만 Tab/Enter 를 가로챈다(탭 문자 아님, 공백 4칸).
    *  · Tab        → 포커스 이동 막고 커서에 공백 4칸 삽입.
    *  · Shift+Tab  → 커서 앞(줄머리 쪽) 공백을 최대 4칸 내어쓰기.
    *  · Enter      → 직전 줄 들여쓰기 유지, 직전 줄이 ':' 로 끝나면 4칸 더(파이썬 자동 들여쓰기).
-   * 삽입은 execCommand("insertText")/("delete") 로 한다 — 브라우저가 값·커서·실행취소를 직접 처리해
-   * 컨트롤드 textarea 라도 커서가 안 튄다(input 이벤트로 onChange 가 따라온다).
    */
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>, _token: string) {
     if (disabled) return;
@@ -107,6 +118,7 @@ export function CodeFill({
     const ta = e.currentTarget;
     const val = ta.value;
     const start = ta.selectionStart;
+    const end = ta.selectionEnd;
 
     if (e.key === "Tab") {
       e.preventDefault();
@@ -114,12 +126,9 @@ export function CodeFill({
         const lineStart = val.lastIndexOf("\n", start - 1) + 1;
         const before = val.slice(lineStart, start);
         const removable = (before.match(/ {1,4}$/) ?? [""])[0].length;
-        if (removable > 0) {
-          ta.setSelectionRange(start - removable, start);
-          document.execCommand("delete", false);
-        }
+        if (removable > 0) applyEdit(ta, val.slice(0, start - removable) + val.slice(start), start - removable);
       } else {
-        document.execCommand("insertText", false, "    ");
+        applyEdit(ta, val.slice(0, start) + "    " + val.slice(end), start + 4);
       }
     } else if (e.key === "Enter") {
       e.preventDefault();
@@ -127,7 +136,8 @@ export function CodeFill({
       const curLine = val.slice(lineStart, start);
       let indent = (curLine.match(/^ */) ?? [""])[0];
       if (curLine.trimEnd().endsWith(":")) indent += "    ";
-      document.execCommand("insertText", false, "\n" + indent);
+      const insert = "\n" + indent;
+      applyEdit(ta, val.slice(0, start) + insert + val.slice(end), start + insert.length);
     }
   }
 
