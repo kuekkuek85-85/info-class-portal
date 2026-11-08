@@ -378,10 +378,21 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   // 성찰 보상 게임 = UNO(교사 요청 2026-11-09). 성찰을 제출하면 '제출하고 게임하기' 로 열린다.
   // rewardGame.url 은 외부 게임 주소를 그대로 받는다(reward-game-frame 이 iframe/링크로 연다).
+  // requires: 미션4 메이크코드 공유 링크(mb28_share)가 '제출(비어있지 않음)' 돼야 게임이 열린다.
+  //   submitted:true → AI 채점이 아니라 입력만 본다. 비면 팝업으로 알리고 problem(미션4)로 보낸다.
+  //   (이 게이트 때문에 학생이 미션4 ↔ 성찰을 오갈 수 있게 freeNavigation: true 로 둔다.)
   rewardGame: {
     heading: "수고했어요! 🃏",
     body: "성찰을 제출했으면 잠깐 UNO 로 쉬어요. 선생님이 부르면 돌아오세요.",
     url: "https://uno-game-gilt.vercel.app/",
+    requires: [
+      {
+        key: "mb28_share",
+        label: "메이크코드 공유 링크 (미션 4)",
+        phase: "problem",
+        submitted: true,
+      },
+    ],
   },
 
   progress: empty(),
@@ -447,7 +458,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     problem: "미션 4 — 바닥 처리",
   },
   phaseOrder: ["waiting", "assessment", "build", "grill", "mvp", "problem", "reflection"],
-  freeNavigation: false,
+  // 보상 게이트(rewardGame.requires)가 '빠진 미션4로 이동 → 다시 성찰' 을 하려면 되돌아가기가 필요하다.
+  freeNavigation: true,
 
   activity: {
     activityId: ACTIVITY_ID,
