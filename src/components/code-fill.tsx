@@ -1,5 +1,6 @@
 "use client";
 
+// 28차 code_fill: 고정 코드 readonly + 인라인 빈칸(Tab=공백4칸) + 완성 코드 복사.
 import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
 
 import type { WorksheetQuestion } from "@/lib/types";
