@@ -78,17 +78,17 @@ x = 2
 
 def on_button_pressed_a():
     global x
-                             # (미션) 왼쪽으로 한 칸 — x 를 1 줄여서 다시 x 에 담기
+{{a}}
 input.on_button_pressed(Button.A, on_button_pressed_a)
 
 def on_button_pressed_b():
     global x
-    x = x + 1                # (예시) 오른쪽으로 한 칸 — 이건 해 놨어요
+    x = x + 1
 input.on_button_pressed(Button.B, on_button_pressed_b)
 
 def on_forever():
-    basic.clear_screen()     # 화면(LED) 모두 지우기 — 해 놨어요
-                             # (미션) 주인공 켜기 — 가로 x, 세로 4 자리에 불 켜기
+    basic.clear_screen()
+{{b}}
     basic.pause(200)
 basic.forever(on_forever)`;
 
@@ -103,13 +103,13 @@ x = 2
 def on_button_pressed_a():
     global x
     x = x - 1
-                             # (미션) 왼쪽 벽 — x 가 0 보다 작아지면 x 를 0 으로 (if 두 줄)
+{{a}}
 input.on_button_pressed(Button.A, on_button_pressed_a)
 
 def on_button_pressed_b():
     global x
     x = x + 1
-                             # (미션) 오른쪽 벽 — x 가 4 보다 커지면 x 를 4 로 (if 두 줄)
+{{b}}
 input.on_button_pressed(Button.B, on_button_pressed_b)
 
 def on_forever():
@@ -147,8 +147,8 @@ def on_forever():
     global poop_x, poop_y
     basic.clear_screen()
     led.plot(x, 4)
-                             # (미션) 똥을 한 칸 아래로 — poop_y 를 1 늘려서 다시 poop_y 에 담기
-                             # (미션) 똥 켜기 — 가로 poop_x, 세로 poop_y 자리에 불 켜기
+{{a}}
+{{b}}
     basic.pause(300)
 basic.forever(on_forever)`;
 
@@ -182,11 +182,78 @@ def on_forever():
     basic.clear_screen()
     led.plot(x, 4)
     poop_y = poop_y + 1
-                             # (미션) 바닥을 지나면(poop_y 가 4보다 커지면) poop_y 를 0 으로 되돌리고,
-                             # (미션) 새 칸에서 다시 — poop_x 에 0~4 중 무작위 수 담기
+{{a}}
     led.plot(poop_x, poop_y)
     basic.pause(300)
 basic.forever(on_forever)`;
+
+/**
+ * code_fill 빈칸(토큰) 설정 — 위 템플릿의 `{{a}}`/`{{b}}` 자리에 뜨는 인라인 편집칸. 힌트는 정답 영어
+ * 키워드를 직접 쓰지 않고 뜻으로 돌려 적고(coding-hint-indirect-answers), placeholder 는 흐린 들여쓰기
+ * 예시(복사 출력엔 안 들어감). 들여쓰기는 공백 4칸 — 학생이 그대로 쓰도록 안내한다.
+ */
+type Slot = NonNullable<WorksheetQuestion["codeSlots"]>[number];
+
+const SLOTS_M1: Slot[] = [
+  {
+    token: "a",
+    label: "왼쪽으로 한 칸",
+    hint: "x 를 1 줄여서 다시 x 에 담기 (바로 아래 B 버튼이 '1 늘리기' 예시예요 — 거꾸로)",
+    rows: 2,
+    placeholder: "    x = x - 1",
+  },
+  {
+    token: "b",
+    label: "주인공 켜기",
+    hint: "가로 x, 세로 4 자리에 불 하나 켜기 (화면에 점 하나 찍는 명령)",
+    rows: 2,
+    placeholder: "    led.plot(x, 4)",
+  },
+];
+
+const SLOTS_M2: Slot[] = [
+  {
+    token: "a",
+    label: "왼쪽 벽",
+    hint: "x 가 0 보다 작아지면 x 를 0 으로 (갈림길 if 두 줄, 들여쓰기 4칸)",
+    rows: 2,
+    placeholder: "    if x < 0:\n        x = 0",
+  },
+  {
+    token: "b",
+    label: "오른쪽 벽",
+    hint: "x 가 4 보다 커지면 x 를 4 로 (갈림길 if 두 줄)",
+    rows: 2,
+    placeholder: "    if x > 4:\n        x = 4",
+  },
+];
+
+const SLOTS_M3: Slot[] = [
+  {
+    token: "a",
+    label: "똥 한 칸 아래로",
+    hint: "poop_y 를 1 늘려서 다시 poop_y 에 담기 (세로로 한 칸 내려오기)",
+    rows: 2,
+    placeholder: "    poop_y = poop_y + 1",
+  },
+  {
+    token: "b",
+    label: "똥 켜기",
+    hint: "가로 poop_x, 세로 poop_y 자리에 불 하나 켜기",
+    rows: 2,
+    placeholder: "    led.plot(poop_x, poop_y)",
+  },
+];
+
+const SLOTS_M4: Slot[] = [
+  {
+    token: "a",
+    label: "바닥 처리",
+    hint: "똥이 바닥을 지나면(poop_y 가 4 보다 커지면) poop_y 를 0 으로 되돌리고, poop_x 에 0~4 중 무작위 수 담기 (갈림길 if 세 줄)",
+    rows: 3,
+    placeholder: "    if poop_y > 4:\n        poop_y = 0\n        poop_x = randint(0, 4)",
+  },
+];
 
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
@@ -206,19 +273,18 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "똥피하기를 만들어요! 먼저 주인공(아랫줄 불 하나)을 A·B 버튼으로 좌우로 움직여요.\n" +
       "좌표는 가로 x(0~4), 주인공은 맨 아랫줄(세로 4) 이에요.\n" +
-      "아래 '코드 복사하기' 로 스타터를 복사해 MakeCode 'Python' 에 (기존 코드 다 지우고) 붙여넣고,\n" +
-      "각 '# (미션)' 왼쪽 빈자리를 채워요:\n" +
-      "   ① A 버튼: 왼쪽으로 — x 를 1 줄여서 다시 x 에 담기 (B 는 예시로 해 놨어요, 거꾸로 따라 보기)\n" +
+      "아래 코드에서 ✎ 표시된 편집칸만 채워요(나머지는 그대로 둬요):\n" +
+      "   ① A 버튼: 왼쪽으로 — x 를 1 줄여서 다시 x 에 담기 (바로 아래 B 버튼이 '1 늘리기' 예시예요)\n" +
       "   ② 주인공 켜기 — 가로 x, 세로 4 자리에 불 하나 켜기 (화면에 점 하나 찍는 명령)\n" +
+      "다 채우면 '완성 코드 복사' 로 복사해 MakeCode 'Python' 에 (기존 코드 다 지우고) 붙여넣어요.\n" +
       "(A·B 로 움직여 봐요. 끝까지 가면 주인공이 화면 밖으로 사라지죠? 그건 미션 2에서 고쳐요.)",
-    kind: "note",
+    kind: "code_fill",
     imageUrl: "/mb28-m1.svg",
     imageAlt: "주인공 불 하나가 아랫줄에서 좌우로 움직이다 화면 밖으로 사라지는 실행 결과",
     imageSide: "right",
     imageSideWidth: "third",
-    code: CODE_M1,
-    linkUrl: MAKECODE_URL,
-    linkLabel: "MakeCode 열기 (새 탭)",
+    codeTemplate: CODE_M1,
+    codeSlots: SLOTS_M1,
     maxLength: 0,
   },
 
@@ -229,18 +295,18 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "미션 2 — 벽에서 멈추기",
     hint:
       "미션 1에서 주인공이 화면 밖으로 사라졌죠? 가로 x 는 0~4 만 되게, 벽에서 멈추게 고쳐요.\n" +
-      "'코드 복사하기' 로 스타터를 복사해 붙여넣고, 각 버튼의 '# (미션)' 자리에 '갈림길(if)' 두 줄을 써요:\n" +
+      "아래 코드의 ✎ 편집칸 두 곳에 '갈림길(if)' 두 줄씩을 써요(들여쓰기 그대로):\n" +
       "   ① 왼쪽: x 가 0 보다 작아지면 → x 를 0 으로\n" +
       "   ② 오른쪽: x 가 4 보다 커지면 → x 를 4 로\n" +
+      "다 채우면 '완성 코드 복사' 로 복사해 MakeCode 'Python' 에 붙여넣어요.\n" +
       "(이제 끝까지 가도 주인공이 벽에서 딱 멈춰요.)",
-    kind: "note",
+    kind: "code_fill",
     imageUrl: "/mb28-m2.svg",
     imageAlt: "주인공이 좌우로 움직이다 양쪽 끝(0과 4)에서 멈추는 실행 결과",
     imageSide: "right",
     imageSideWidth: "third",
-    code: CODE_M2,
-    linkUrl: MAKECODE_URL,
-    linkLabel: "MakeCode 열기 (새 탭)",
+    codeTemplate: CODE_M2,
+    codeSlots: SLOTS_M2,
     maxLength: 0,
   },
 
@@ -251,18 +317,18 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "미션 3 — 똥 한 개 떨어뜨리기",
     hint:
       "이제 똥을 떨어뜨려요! 똥은 아무 칸(가로 poop_x)에서 맨 위(세로 0)부터 아래로 내려와요.\n" +
-      "주인공 부분은 다 해 놨어요. '코드 복사하기' 로 붙여넣고, forever 의 '# (미션)' 두 자리를 채워요:\n" +
+      "주인공 부분은 다 해 놨어요. forever 의 ✎ 편집칸 두 곳을 채워요:\n" +
       "   ① 똥을 한 칸 아래로 — poop_y 를 1 늘려서 다시 poop_y 에 담기 (세로로 내려오기)\n" +
       "   ② 똥 켜기 — 가로 poop_x, 세로 poop_y 자리에 불 켜기\n" +
+      "다 채우면 '완성 코드 복사' 로 복사해 MakeCode 'Python' 에 붙여넣어요.\n" +
       "(똥이 한 번 떨어지면… 그 뒤로 안 보이죠? 바닥 처리가 없어서예요 — 미션 4에서 고쳐요.)",
-    kind: "note",
+    kind: "code_fill",
     imageUrl: "/mb28-m3.svg",
     imageAlt: "똥 불 하나가 위에서 아래로 한 번 떨어진 뒤 사라지는 실행 결과",
     imageSide: "right",
     imageSideWidth: "third",
-    code: CODE_M3,
-    linkUrl: MAKECODE_URL,
-    linkLabel: "MakeCode 열기 (새 탭)",
+    codeTemplate: CODE_M3,
+    codeSlots: SLOTS_M3,
     maxLength: 0,
   },
 
@@ -273,18 +339,18 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "미션 4 — 바닥에 닿으면 다시 위에서",
     hint:
       "똥이 한 번만 떨어지고 끝났죠? 바닥(세로 4)을 지나면 맨 위(0)로 올리고, 새 칸에서 다시 떨어지게 고쳐요.\n" +
-      "'코드 복사하기' 로 붙여넣고, forever 의 '# (미션)' 자리에 '갈림길(if)' 을 써요:\n" +
+      "forever 의 ✎ 편집칸에 '갈림길(if)' 세 줄을 써요(들여쓰기 그대로):\n" +
       "   · 똥이 바닥을 지나면(poop_y 가 4 보다 커지면) → poop_y 를 0 으로 되돌리고,\n" +
       "   · 새 칸에서 다시 — poop_x 에 0~4 중 '무작위' 로 수 하나 담기 (26차 주사위에서 쓴 그 명령)\n" +
+      "다 채우면 '완성 코드 복사' 로 복사해 MakeCode 'Python' 에 붙여넣어요.\n" +
       "(이제 똥이 계속 떨어져요! 주인공으로 피해 보세요. 충돌·점수는 다음 시간(29차)에 더해요.)",
-    kind: "note",
+    kind: "code_fill",
     imageUrl: "/mb28-m4.svg",
     imageAlt: "주인공이 아래에 있고 똥이 위에서 아래로 계속 반복해서 떨어지는 실행 결과",
     imageSide: "right",
     imageSideWidth: "third",
-    code: CODE_M4,
-    linkUrl: MAKECODE_URL,
-    linkLabel: "MakeCode 열기 (새 탭)",
+    codeTemplate: CODE_M4,
+    codeSlots: SLOTS_M4,
     maxLength: 0,
   },
   {

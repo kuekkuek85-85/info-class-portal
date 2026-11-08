@@ -740,6 +740,15 @@ export interface WorksheetQuestion {
     | "rps_sim"
     | "rps_fill"
     | "rps_judge"
+    /**
+     * code_fill — 코드 빈칸 채우기 (28차 똥피하기). 전체 코드가 한 블록 안에 읽기전용 등폭으로
+     * 보이고, 코드 중간의 `{{토큰}}` 자리마다 **인라인 2줄 편집칸**이 끼어 있다. 학생이 그 칸만
+     * 채우면 고정부와 합쳐 완성 코드가 되고, '완성 코드 복사' 로 전체를 복사한다(빈 칸이 하나라도
+     * 있으면 복사를 막고 그 칸으로 안내 → 출력에 `{{}}`/`___`/빈 줄이 안 남아 MakeCode 변환 안전).
+     * 순수 클라이언트(서버·AI 없음, 자동채점 없음). 입력은 answers[key] 에 {토큰: 글자} JSON 으로
+     * 자동저장돼 교사가 활동지로 열람한다. 갤러리 비공개 (code-fill · codeTemplate · codeSlots).
+     */
+    | "code_fill"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
@@ -838,6 +847,22 @@ export interface WorksheetQuestion {
   clozeLines?: ClozeLine[];
   /** cloze 아래에 AI 채점(제미나이) 단추를 띄운다 — 맞으면 칭찬, 틀리면 힌트 (clozeLines 에 정답 필요) */
   clozeGrade?: boolean;
+  /**
+   * code_fill(코드 빈칸 채우기)이 보여줄 전체 코드. `{{토큰}}` 자리마다 인라인 편집칸이 뜨고
+   * 나머지는 읽기전용 등폭으로 보인다. 토큰은 codeSlots 의 token 과 1:1 로 맞춘다.
+   */
+  codeTemplate?: string;
+  /** code_fill 의 각 빈칸(토큰) 설정. token 은 codeTemplate 의 `{{token}}` 과 맞춘다 */
+  codeSlots?: {
+    token: string;
+    label: string;
+    /** 그 칸에 무엇을 적을지 뜻으로 돌려 적은 안내(정답 영어 키워드 직접노출 금지) */
+    hint?: string;
+    /** 입력칸 줄 수(기본 2) */
+    rows?: number;
+    /** 빈칸 안 흐린 예시(들여쓰기 안내 겸). 복사 출력엔 안 들어간다 */
+    placeholder?: string;
+  }[];
   /**
    * submit 이 **최종 제출을 마친 학생에게만** 띄우는 링크.
    *

@@ -13,6 +13,7 @@ import { StreamsSolo } from "@/components/streams-solo";
 import { LedAnimator } from "@/components/led-animator";
 import { DiceBuilder } from "@/components/dice-builder";
 import { RpsSim, RpsFill, RpsJudge } from "@/components/rps-builders";
+import { CodeFill } from "@/components/code-fill";
 import { StreamsBroadcast } from "@/components/streams-broadcast";
 import { VibeCodePanel } from "@/components/vibe-code-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
@@ -1104,6 +1105,16 @@ export function WorksheetView({
             <RpsJudge
               questionKey={question.key}
               raw={value.answers[question.key] ?? ""}
+              onChange={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
+          ) : question.kind === "code_fill" ? (
+            /* 28차 — 고정 코드 readonly + {{토큰}} 자리만 인라인 2줄 편집칸 → 완성 코드 복사 (code-fill) */
+            <CodeFill
+              questionKey={question.key}
+              raw={value.answers[question.key] ?? ""}
+              template={question.codeTemplate ?? ""}
+              slots={question.codeSlots ?? []}
               onChange={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}
             />
