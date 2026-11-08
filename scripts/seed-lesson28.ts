@@ -17,7 +17,7 @@
  *   미션2(grill)   벽에서 멈추기 — if x<0:x=0 / if x>4:x=4 를 각 버튼에 더한다(미션1 버그를 고침).
  *   미션3(mvp)     똥 한 개 낙하 — **바닥 처리 없음**(한 번 떨어지고 사라지는 버그를 드러냄). 빈칸: poop_y+1, 똥 led.plot.
  *   미션4(problem) 바닥 처리 — if poop_y>4: poop_y=0; poop_x=randint(0,4) 로 계속 떨어지게(미션3 버그를 고침).
- *                  + 완성 코드 붙여넣기 제출(long, maxLength 6000) + 형성평가 2문항(벽 버그·바닥 리셋 개념).
+ *                  + 메이크코드 공유 링크 제출(mb28_share, long, 자동저장).
  *
  * 설계·실측: docs/superpowers/specs/2026-10-22-info-microbit-arc-lesson24-design.md 아크의 '똥피하기' 자리.
  *
@@ -255,8 +255,8 @@ function empty(): PhaseContent {
 
 // ─────────────────────────────────────────────────────────────
 // 활동지 — 미션 4개를 build·grill·mvp·problem 네 단계에 하나씩. 범용 슬롯을 빌려 이름은 phaseLabels 로 붙인다.
-// 각 미션은 note(스타터 code + MakeCode 링크 + 실행결과 SVG). 미션4 끝에 완성 코드 제출(long, 6000) + 형성평가
-// 2문항(choice). 코드 기록·제출은 비공개(갤러리 off). 각 미션에 실행결과 SVG(설명 우측 1/3 폭).
+// 각 미션은 code_fill(고정 코드 + 빈칸 + 실행결과 SVG). 미션4 끝에 메이크코드 공유 링크 제출(long, 자동저장).
+// 링크 기록은 비공개(갤러리 off). 각 미션에 실행결과 SVG(설명 우측 1/3 폭).
 // ─────────────────────────────────────────────────────────────
 const WORKSHEET: WorksheetQuestion[] = [
   /* ── 미션 1 (build) — 주인공 좌우 이동 (벽 처리 없음) ── */
@@ -326,7 +326,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
 
-  /* ── 미션 4 (problem) — 바닥 처리 + 완성 코드 제출 + 형성평가 ── */
+  /* ── 미션 4 (problem) — 바닥 처리 + 메이크코드 공유 링크 제출 ── */
   {
     key: "_mb28_m4",
     phase: "problem",
@@ -348,40 +348,15 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
   {
-    key: "mb28_code",
+    key: "mb28_share",
     phase: "problem",
-    label: "미션 4 — 완성 코드 붙여넣기",
+    label: "메이크코드 공유 링크 붙여넣기",
     hint:
-      "똥이 계속 떨어지면 완성이에요! MakeCode 'Python' 의 코드를 전체 선택(Ctrl+A) → 복사해 아래 칸에\n" +
-      "붙여넣어요. 적으면 자동으로 저장돼요(선생님이 볼 수 있어요).",
+      "똥이 계속 떨어지면 완성이에요! 만든 걸 선생님께 보여 줄 링크를 만들어 붙여넣어요.\n" +
+      "MakeCode 위쪽 '공유(Share)' → '프로젝트 공유' → 나온 링크를 '복사' 해서 아래 칸에 붙여넣기.\n" +
+      "붙여넣으면 자동으로 저장돼요(선생님이 볼 수 있어요).",
     kind: "long",
-    maxLength: 6000,
-  },
-  {
-    key: "mb28_q1",
-    phase: "problem",
-    label: "퀴즈 ① — 주인공이 화면 밖으로 사라진 까닭은?",
-    hint: "미션 1에서 주인공이 끝까지 가면 사라졌어요. 왜 그랬을까요?",
-    kind: "choice",
-    choices: [
-      "가로 x 가 0~4 를 벗어나 화면 밖 자리에 불을 켜려 해서 (벽 처리가 없어서)",
-      "주인공 색이 너무 어두워서",
-      "버튼을 너무 빨리 눌러서",
-    ],
-    maxLength: 0,
-  },
-  {
-    key: "mb28_q2",
-    phase: "problem",
-    label: "퀴즈 ② — 똥이 계속 떨어지게 하려면?",
-    hint: "똥이 한 번 떨어지고 사라지지 않고 계속 떨어지게 하려면, 바닥을 지난 똥을 어떻게 해야 할까요?",
-    kind: "choice",
-    choices: [
-      "바닥(4)을 지나면 세로(poop_y)를 0 으로 되돌려 맨 위에서 다시 떨어뜨린다",
-      "똥 색을 더 밝게 바꾼다",
-      "pause 시간을 더 길게 한다",
-    ],
-    maxLength: 0,
+    maxLength: 500,
   },
 ];
 
@@ -566,7 +541,7 @@ async function main(): Promise<void> {
   console.log(`\n활동 ID: ${ACTIVITY_ID} (23~27차와 같은 MakeCode 통)`);
   console.log("단계: 대기(타자) → 기분 → 안내 → 미션1(build) → 미션2(grill) → 미션3(mvp) → 미션4(problem) → 성찰. freeNav off. hideDoneButton true. 성찰 제출 → 사과 게임.");
   console.log("하이브리드 A: 버튼=이벤트 핸들러(즉시 반응), forever=그리기+똥. 조작 A=왼쪽/B=오른쪽. 좌표 x·y 0~4, 주인공 아랫줄(y=4).");
-  console.log("미션1 주인공 이동(벽 없음·버그) → 미션2 벽 처리 → 미션3 똥 낙하(바닥 없음·버그) → 미션4 바닥 리셋 + 완성코드 제출(mb28_code, long 6000) + 형성평가 2문항(choice).");
+  console.log("미션1 주인공 이동(벽 없음·버그) → 미션2 벽 처리 → 미션3 똥 낙하(바닥 없음·버그) → 미션4 바닥 리셋 + 메이크코드 공유 링크 제출(mb28_share, long).");
   console.log("MakeCode 실측(2026-11-08): on_button_pressed 이벤트 안 global x+경계·led.plot·clear_screen·randint·forever 변환 확인. '___'/'★★★' 안 씀.");
   process.exit(0);
 }
