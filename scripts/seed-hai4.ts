@@ -123,10 +123,79 @@ const WORKSHEET: WorksheetQuestion[] = [
     echoKeys: [
       { key: "will_fix", label: "다음 시간에 고치려고 적어 둔 것" },
       { key: "mvp_one", label: "내가 만들려던 것" },
-      { key: "build_url", label: "지난 시간에 뽑은 화면" },
     ],
     maxLength: 0,
   },
+
+  /*
+   * ── ① 지난 피드백 돌아보기 (1차 내 눈 · 2차 AI) ──────────────
+   *
+   * 학생들은 지난 시간(103)에 이미 1차(자기)·2차(AI) 살펴보기를 했다. 그때 쓴 답과
+   * AI 가 준 질문이 같은 활동 통(hai-2026-1기)에 그대로 있으므로, 열쇠를 같게 두면
+   * 오늘 화면에 다시 뜬다. 오늘은 그걸 돌아보고 '오늘 고칠 수정사항'(아래 grill 의
+   * fix_plan)을 정하는 출발점으로 쓴다. 전부 read-only(echo/ai_review 표시)다.
+   */
+  {
+    key: "_l4_review_intro",
+    phase: "build",
+    label: "② 지난 피드백 돌아보기 — 내 눈(1차) · AI(2차)",
+    hint:
+      "지난 시간에 ① 내 눈으로 보고 ② AI에게 검토받았어요.\n" +
+      "그때 쓴 것과 AI가 준 질문이 아래에 그대로 있어요. 다시 읽어 보세요 —\n" +
+      "여기에 선생님 피드백(③)까지 더해서, 오늘 고칠 것을 정합니다.",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "_l4_review_self",
+    phase: "build",
+    label: "1차 · 내 눈으로 본 것",
+    hint: "",
+    kind: "echo",
+    echoKeys: [
+      { key: "grill_a1", label: "이 화면을 누가 쓸까" },
+      { key: "grill_a2", label: "내가 만들려던 것과 다른 점" },
+      { key: "fix1", label: "그때 고친 것" },
+    ],
+    maxLength: 0,
+  },
+  {
+    /*
+     * 2차 AI 질문. 열쇠를 103 과 같은 "ai_review" 로 두어 지난 시간에 받은 질문이
+     * 그대로 뜬다(AiReviewPanel 이 저장된 { questions } 를 읽어 그린다). 버튼으로
+     * 새로 받아 볼 수도 있게 reviewFields 를 함께 둔다(ai-review 라우트가 세션에서 읽음).
+     * 이름·학번은 안 보낸다 — 자유 서술 답만 Gemini 로 간다.
+     */
+    key: "ai_review",
+    phase: "build",
+    label: "2차 · AI가 준 질문",
+    hint:
+      "지난 시간에 AI가 준 질문이 아래에 있어요. 고친 화면으로 새로 받아 볼 수도 있어요.\n" +
+      "보내는 것은 위에 쓴 글뿐이에요. 이름과 학번은 보내지 않습니다.",
+    kind: "ai_review",
+    maxLength: 0,
+    reviewCount: 3,
+    reviewFields: [
+      { key: "mvp_one", label: "만들려던 것" },
+      { key: "mvp_must1", label: "꼭 필요한 기능 ①" },
+      { key: "mvp_must2", label: "꼭 필요한 기능 ②" },
+      { key: "mvp_must3", label: "꼭 필요한 기능 ③" },
+      { key: "grill_a1", label: "누가 쓸지 스스로 답한 것" },
+      { key: "grill_a2", label: "생각과 다른 점을 스스로 답한 것" },
+      { key: "fix1", label: "1차에서 고친 것" },
+      { key: "fix2", label: "2차에서 고친 것" },
+    ],
+  },
+  {
+    key: "_l4_review_ai_fix",
+    phase: "build",
+    label: "",
+    hint: "",
+    kind: "echo",
+    echoKeys: [{ key: "fix2", label: "AI 질문을 보고 고친 것" }],
+    maxLength: 0,
+  },
+
   {
     key: "_l4_feedback_intro",
     phase: "build",
@@ -134,7 +203,7 @@ const WORKSHEET: WorksheetQuestion[] = [
      * 이 안내가 있어야 아래 teacher_note 가 "왜 벌써 떠 있지?" 로 안 읽힌다.
      * 3차시에는 선생님이 그 자리에서 돌며 썼지만, 오늘은 미리 써 둔 것을 바로 본다.
      */
-    label: "② 선생님이 미리 봐 두었어요",
+    label: "③ 선생님이 미리 봐 두었어요 (3차 피드백)",
     hint:
       "지난 시간에 만든 화면을 선생님이 수업 전에 하나씩 눌러 보고 한마디씩 남겨 두었어요.\n" +
       "그래서 오늘은 기다릴 필요가 없습니다 — 아래에 이미 떠 있어요.\n" +
@@ -213,7 +282,8 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "echo",
     echoKeys: [
       { key: "will_fix", label: "지난 시간에 고치려던 것" },
-      { key: "fix3", label: "3차시에 선생님 말을 보고 고친 것" },
+      { key: "fix1", label: "1차(내 눈)에 고친 것" },
+      { key: "fix2", label: "2차(AI)에 고친 것" },
     ],
     maxLength: 0,
   },
@@ -237,9 +307,10 @@ const WORKSHEET: WorksheetQuestion[] = [
      * 캔바로 가기 전에 계획을 한 줄 못 박는다. 백지로 캔바에 들어가면 이것저것
      * 만지다 시간을 다 쓴다. "선생님 말 + 위 두 팁" 을 재료로 하나만 정하게 한다.
      */
-    label: "오늘 고칠 것을 한두 가지만 정해 보세요",
+    label: "오늘 고칠 수정사항 — 위 피드백을 보고 정해 보세요",
     hint:
-      "선생님이 남긴 말과 위 두 팁을 보고, 오늘 실제로 고칠 것을 정합니다.\n" +
+      "1차(내 눈)·2차(AI)·3차(선생님) 피드백과 위 두 팁을 보고, 오늘 실제로 고칠 것을 정합니다.\n" +
+      "한두 가지면 충분해요.\n" +
       "예) 신청한 내용이 저장돼서, 다시 열어도 목록에 남아 있게 하겠다\n" +
       "예) ‘확인’ 버튼 이름을 ‘오늘 급식 보기’ 로 바꾸겠다\n" +
       "예) 날씨 API를 붙여서 진짜 오늘 날씨가 뜨게 하겠다",
@@ -349,11 +420,13 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   progress: {
     heading: "오늘 할 일",
     body:
-      "지난 시간에 각자 화면을 하나씩 뽑았어요. 오늘은 그걸 고쳐서 더 나은 것으로 만듭니다.\n\n" +
+      "지난 시간에 각자 화면을 하나씩 만들고, 내 눈(1차)·AI(2차)로 살펴봤어요.\n" +
+      "오늘은 그 피드백에 선생님 피드백(3차)까지 더해서, 고쳐서 더 나은 것으로 만듭니다.\n\n" +
       "다음 화면이 뜨면 맨 위 [캔바 열기] 를 먼저 누르세요. 지난 시간에 만든 화면은 캔바에 그대로 있어요.\n\n" +
-      "① 선생님이 남긴 말 — 수업 전에 선생님이 여러분 화면을 보고 미리 써 두었어요. 바로 떠 있습니다\n" +
-      "② 무엇을 고칠까 — 고치기 팁 두 개를 읽고, 오늘 고칠 것을 정하기\n" +
-      "③ 고치고 다시 내기 — 캔바에서 실제로 고치고, 무엇을 고쳤는지 적기\n\n" +
+      "① 지난 피드백 돌아보기 — 내가 쓴 1차·2차 살펴보기와 AI 질문이 그대로 떠 있어요\n" +
+      "   그 아래 ③ 선생님이 남긴 말 — 수업 전에 선생님이 미리 써 두었어요\n" +
+      "② 무엇을 고칠까 — 고치기 팁 두 개를 읽고, 오늘 고칠 수정사항을 정하기\n" +
+      "③ 고치고 다시 내기 — 캔바에서 실제로 고치고, 만든 화면 링크를 아래 칸에 내기\n\n" +
       "오늘의 큰 팁 하나: 캔바에는 ‘캔바 시트’ 가 있어서, 신청·기록처럼 쌓이는 데이터를\n" +
       "DB처럼 저장할 수 있어요. 자세한 건 안에서 설명해요.",
     url: "",
@@ -386,7 +459,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    */
   phaseLabels: {
     progress: "오늘 할 일",
-    build: "선생님이 남긴 말",
+    build: "지난 피드백 돌아보기",
     grill: "무엇을 고칠까",
     emotion: "고치고 다시 내기",
     reflection: "회고",

@@ -19,7 +19,9 @@ import { normalizeUrl } from "@/lib/url";
 
 const GROUPS = [
   { key: "hai-tue-1", label: "화요일 1기" },
+  { key: "hai-tue-2", label: "화요일 2기" },
   { key: "hai-thu-1", label: "목요일 1기" },
+  { key: "hai-thu-2", label: "목요일 2기" },
 ] as const;
 
 const ACTIVITY = "hai-2026-1기";
