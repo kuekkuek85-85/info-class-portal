@@ -62,11 +62,26 @@ function splitLine(line: string): Piece[] {
 /** 블러 때 정답과 대조해 띄우는 힌트. 'ok'=맞음(초록 체크), 나머지는 앰버 코칭. */
 type SlotHint = { kind: "ok" | "empty" | "indent" | "case" | "spell" | "general"; text: string };
 
-/** 뒤 공백만 제거(들여쓰기는 의미가 있어 보존). */
-function rstrip(s: string): string {
+/**
+ * 코드 본문 정규화 — '맞음'/서브힌트 비교용. 연산자·구두점 주변 공백은 무시하되(= `x - 1`↔`x-1`),
+ * 키워드·식별자 사이 공백(= `if x`)과 **각 줄 앞 들여쓰기는 그대로 둔다**(들여쓰기는 엄격 비교).
+ *  1) 줄마다 앞 들여쓰기(lead)는 보존, 나머지 본문만 정규화.
+ *  2) 본문의 여러 공백을 한 칸으로 축약.
+ *  3) 비(非)단어문자(= < > + - * / ( ) , : .)에 인접한 공백 제거 → 양쪽이 모두 단어문자인 공백만 남음.
+ */
+function normTokens(body: string): string {
+  return body
+    .replace(/\s+/g, " ")
+    .replace(/\s*([^\w\s])\s*/g, "$1")
+    .trim();
+}
+function normCode(s: string): string {
   return s
     .split("\n")
-    .map((l) => l.replace(/\s+$/g, ""))
+    .map((l) => {
+      const lead = (l.match(/^[ \t]*/) ?? [""])[0];
+      return lead + normTokens(l.slice(lead.length));
+    })
     .join("\n");
 }
 /** 각 줄 앞 들여쓰기 제거. */
@@ -105,8 +120,9 @@ function lev(a: string, b: string): number {
 function evalSlot(input: string, answer?: string): SlotHint | null {
   if (!input.trim()) return { kind: "empty", text: "빈 칸을 채워 보세요." };
   if (answer == null) return null;
-  const ni = rstrip(input);
-  const na = rstrip(answer);
+  // 연산자 주변 공백은 무시(x-1↔x - 1), 들여쓰기·키워드 사이 공백은 유지한 채 비교한다.
+  const ni = normCode(input);
+  const na = normCode(answer);
   if (ni === na) return { kind: "ok", text: "" };
   if (stripIndent(ni) === stripIndent(na))
     return { kind: "indent", text: "들여쓰기(앞 공백)를 확인해 보세요." };
