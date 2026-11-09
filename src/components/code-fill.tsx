@@ -1,7 +1,7 @@
 "use client";
 
 // 28차 code_fill: 고정 코드 readonly + 인라인 빈칸(Tab=공백4칸) + 완성 코드 복사.
-import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
+import { Fragment, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import type { WorksheetQuestion } from "@/lib/types";
 
@@ -58,6 +58,71 @@ function splitLine(line: string): Piece[] {
   return pieces;
 }
 
+// ── 자동 힌트(규칙 기반) ──────────────────────────────────────
+/** 블러 때 정답과 대조해 띄우는 힌트. 'ok'=맞음(초록 체크), 나머지는 앰버 코칭. */
+type SlotHint = { kind: "ok" | "empty" | "indent" | "case" | "spell" | "general"; text: string };
+
+/** 뒤 공백만 제거(들여쓰기는 의미가 있어 보존). */
+function rstrip(s: string): string {
+  return s
+    .split("\n")
+    .map((l) => l.replace(/\s+$/g, ""))
+    .join("\n");
+}
+/** 각 줄 앞 들여쓰기 제거. */
+function stripIndent(s: string): string {
+  return s
+    .split("\n")
+    .map((l) => l.replace(/^[ \t]+/, ""))
+    .join("\n");
+}
+/** 편집 거리(Levenshtein). */
+function lev(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      cur[j] = Math.min(
+        prev[j] + 1,
+        cur[j - 1] + 1,
+        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+
+/**
+ * 규칙 기반 즉시 힌트(순서대로). 정답 영어 키워드를 직접 노출하지 않는다(coding-hint-indirect-answers):
+ * 비었음 → 들여쓰기만 다름 → 대소문자만 다름 → 철자 근접 → 일반(설명 다시 보기). 맞으면 'ok'.
+ * answer 가 없으면(옛 데이터) 비었음만 보고 그 외엔 평가하지 않는다.
+ */
+function evalSlot(input: string, answer?: string): SlotHint | null {
+  if (!input.trim()) return { kind: "empty", text: "빈 칸을 채워 보세요." };
+  if (answer == null) return null;
+  const ni = rstrip(input);
+  const na = rstrip(answer);
+  if (ni === na) return { kind: "ok", text: "" };
+  if (stripIndent(ni) === stripIndent(na))
+    return { kind: "indent", text: "들여쓰기(앞 공백)를 확인해 보세요." };
+  if (ni.toLowerCase() === na.toLowerCase())
+    return { kind: "case", text: "대·소문자를 확인해 보세요." };
+  const ci = ni.replace(/\s/g, "");
+  const ca = na.replace(/\s/g, "");
+  const d = lev(ci, ca);
+  if (d > 0 && d <= Math.max(2, Math.floor(ca.length * 0.2)))
+    return { kind: "spell", text: "글자(스펠링)를 한 글자씩 다시 확인해 보세요." };
+  return { kind: "general", text: "무엇을 적는 칸인지 위 ✎ 설명을 다시 보고 채워 보세요." };
+}
+
+/** 'AI 도움' 연타 방지 쿨다운(슬롯당). */
+const AI_COOLDOWN_MS = 15_000;
+
 export function CodeFill({
   questionKey,
   raw,
@@ -78,6 +143,13 @@ export function CodeFill({
   const [err, setErr] = useState("");
   /** 완성 코드 미리보기(복사 버튼을 누르면 조립해 보여준다 — 클립보드가 막혀도 눌러서 직접 복사 가능). */
   const [shown, setShown] = useState("");
+  /** 토큰별 자동 힌트(블러 때 평가). null=안 보임(입력 중 숨김). */
+  const [hints, setHints] = useState<Record<string, SlotHint | null>>({});
+  /** 토큰별 'AI 도움' 결과·로딩·오류. */
+  const [aiHints, setAiHints] = useState<Record<string, string>>({});
+  const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
+  const [aiErr, setAiErr] = useState<Record<string, string>>({});
+  const aiCooldownRef = useRef<Record<string, number>>({});
 
   const slotByToken = useMemo(() => {
     const map: Record<string, (typeof slots)[number]> = {};
@@ -94,6 +166,48 @@ export function CodeFill({
     if (copied) setCopied(false);
     // 칸을 고치면 이전에 뽑아 둔 완성 코드는 흐려 둔다(다시 눌러 새로 뽑게)
     if (shown) setShown("");
+    // 입력 중엔 자동 힌트·AI 힌트를 숨긴다 — 다음 블러 때 다시 평가한다.
+    setHints((h) => (h[token] !== undefined && h[token] !== null ? { ...h, [token]: null } : h));
+    setAiHints((a) => (a[token] ? { ...a, [token]: "" } : a));
+    setAiErr((e) => (e[token] ? { ...e, [token]: "" } : e));
+  }
+
+  /** 블러 — 그 칸을 정답과 대조해 자동 힌트를 띄운다(맞으면 초록 체크). */
+  function evaluate(token: string, v: string) {
+    setHints((h) => ({ ...h, [token]: evalSlot(v, slotByToken[token]?.answer) }));
+  }
+
+  /** 'AI 도움' — 그 칸의 방향 힌트를 서버(Gemini)로 받는다. 슬롯당 쿨다운·로딩 중 비활성. */
+  async function askAi(token: string) {
+    if (disabled || aiLoading[token]) return;
+    const now = Date.now();
+    if (now - (aiCooldownRef.current[token] ?? 0) < AI_COOLDOWN_MS) {
+      setAiErr((e) => ({ ...e, [token]: "잠깐만요 — 조금 뒤에 다시 눌러요." }));
+      return;
+    }
+    aiCooldownRef.current[token] = now;
+    setAiErr((e) => ({ ...e, [token]: "" }));
+    setAiLoading((l) => ({ ...l, [token]: true }));
+    try {
+      const res = await fetch("/api/student/code-hint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: questionKey, token, input: values[token] ?? "" }),
+      });
+      const body = await res.json();
+      if (body.ok && typeof body.hint === "string") {
+        setAiHints((a) => ({ ...a, [token]: body.hint }));
+      } else {
+        setAiErr((e) => ({
+          ...e,
+          [token]: body.message || "AI가 지금 대답하지 못했어요. 잠시 뒤 다시 눌러요.",
+        }));
+      }
+    } catch {
+      setAiErr((e) => ({ ...e, [token]: "인터넷 연결을 확인하고 다시 눌러요." }));
+    } finally {
+      setAiLoading((l) => ({ ...l, [token]: false }));
+    }
   }
 
   /**
@@ -201,12 +315,50 @@ export function CodeFill({
                           value={values[p.token] ?? ""}
                           onChange={(e) => setValue(p.token, e.target.value)}
                           onKeyDown={(e) => handleKeyDown(e, p.token)}
+                          onBlur={(e) => evaluate(p.token, e.target.value)}
                           disabled={disabled}
                           rows={rows}
                           spellCheck={false}
                           aria-label={`${slot?.label ?? "빈칸"} (Tab 으로 공백 4칸 들여쓰기)`}
                           className="field w-full border-2 border-ink/40 bg-cream font-mono text-sm disabled:opacity-60"
                         />
+                        {/* 자동 힌트(블러 후) — 맞으면 초록 체크, 아니면 앰버 코칭. 입력 중엔 숨김. */}
+                        {(() => {
+                          const ht = hints[p.token];
+                          if (!ht) return null;
+                          if (ht.kind === "ok")
+                            return (
+                              <span className="t-caption font-sans font-semibold text-emerald-600">
+                                ✓ 맞아요
+                              </span>
+                            );
+                          const canAi = ht.kind !== "empty";
+                          return (
+                            <span className="flex flex-col gap-1 font-sans">
+                              <span className="t-caption text-amber-700">💡 {ht.text}</span>
+                              {canAi && (
+                                <span className="flex flex-wrap items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => void askAi(p.token)}
+                                    disabled={disabled || aiLoading[p.token]}
+                                    className="pill pill-secondary t-caption disabled:opacity-60"
+                                  >
+                                    {aiLoading[p.token] ? "AI가 생각 중…" : "막혔어요 · AI 도움"}
+                                  </button>
+                                  {aiErr[p.token] && (
+                                    <span className="t-caption text-rose-600">{aiErr[p.token]}</span>
+                                  )}
+                                </span>
+                              )}
+                              {aiHints[p.token] && (
+                                <span className="t-caption whitespace-pre-line rounded-md bg-amber-50 px-2 py-1 text-amber-800">
+                                  🤖 {aiHints[p.token]}
+                                </span>
+                              )}
+                            </span>
+                          );
+                        })()}
                       </span>
                     );
                   })()

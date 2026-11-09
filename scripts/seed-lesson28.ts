@@ -201,12 +201,14 @@ const SLOTS_M1: Slot[] = [
     label: "왼쪽으로 한 칸",
     hint: "x 를 1 줄여서 다시 x 에 담기 (바로 아래 B 버튼이 '1 늘리기' 예시예요 — 거꾸로)",
     rows: 2,
+    answer: "    x = x - 1",
   },
   {
     token: "b",
     label: "주인공 켜기",
     hint: "가로 x, 세로 4 자리에 불 하나 켜기 (화면에 점 하나 찍는 명령)",
     rows: 2,
+    answer: "    led.plot(x, 4)",
   },
 ];
 
@@ -216,12 +218,14 @@ const SLOTS_M2: Slot[] = [
     label: "왼쪽 벽",
     hint: "x 가 0 보다 작아지면 x 를 0 으로 (갈림길 if 두 줄, 들여쓰기 4칸)",
     rows: 2,
+    answer: "    if x < 0:\n        x = 0",
   },
   {
     token: "b",
     label: "오른쪽 벽",
     hint: "x 가 4 보다 커지면 x 를 4 로 (갈림길 if 두 줄)",
     rows: 2,
+    answer: "    if x > 4:\n        x = 4",
   },
 ];
 
@@ -231,12 +235,14 @@ const SLOTS_M3: Slot[] = [
     label: "똥 한 칸 아래로",
     hint: "poop_y 를 1 늘려서 다시 poop_y 에 담기 (세로로 한 칸 내려오기)",
     rows: 2,
+    answer: "    poop_y = poop_y + 1",
   },
   {
     token: "b",
     label: "똥 켜기",
     hint: "가로 poop_x, 세로 poop_y 자리에 불 하나 켜기",
     rows: 2,
+    answer: "    led.plot(poop_x, poop_y)",
   },
 ];
 
@@ -246,6 +252,7 @@ const SLOTS_M4: Slot[] = [
     label: "바닥 처리",
     hint: "똥이 바닥을 지나면(poop_y 가 4 보다 커지면) poop_y 를 0 으로 되돌리고, poop_x 에 0~4 중 무작위 수 담기 (갈림길 if 세 줄)",
     rows: 3,
+    answer: "    if poop_y > 4:\n        poop_y = 0\n        poop_x = randint(0, 4)",
   },
 ];
 
