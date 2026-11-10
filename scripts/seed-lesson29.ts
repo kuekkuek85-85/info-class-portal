@@ -69,13 +69,14 @@ const ACTIVITY_ID = "microbit-makecode";
 
 /**
  * 미션1 스타터 (= 28차 미션3) — 똥 한 개 낙하(바닥 처리 없음). 주인공 이동+벽 처리는 완성 제공(28차에서
- * 만든 뼈대). 학생은 forever 에 똥 낙하 두 줄만 더한다. 빈칸: ① poop_y 1 늘리기(세로로 한 칸 내려오기),
- * ② 똥 led.plot. 바닥 처리가 없어 poop_y 가 4를 넘으면 화면 밖이라 똥이 한 번 떨어지고 사라진다 → 미션2에서 고침.
+ * 만든 뼈대). 학생은 ✎ 세 곳을 채운다: ① 똥 시작 칸(poop_x 초기화, 맨 바깥 줄 — randint 로 무작위),
+ * ② poop_y 1 늘리기(세로로 한 칸 내려오기), ③ 똥 led.plot. 토큰은 읽기 순서(위→아래) = a·b·c.
+ * 바닥 처리가 없어 poop_y 가 4를 넘으면 화면 밖이라 똥이 한 번 떨어지고 사라진다 → 미션2에서 고침.
  */
 const CODE_M1 = `# 똥피하기 ③ — 똥 한 개 떨어뜨리기
 # 똥은 아무 칸(가로 poop_x)에서 맨 위(세로 0)부터 아래로 내려와요.
 x = 2
-poop_x = randint(0, 4)
+{{a}}
 poop_y = 0
 
 def on_button_pressed_a():
@@ -96,8 +97,8 @@ def on_forever():
     global poop_x, poop_y
     basic.clear_screen()
     led.plot(x, 4)
-{{a}}
 {{b}}
+{{c}}
     basic.pause(300)
 basic.forever(on_forever)`;
 
@@ -146,13 +147,20 @@ type Slot = NonNullable<WorksheetQuestion["codeSlots"]>[number];
 const SLOTS_M1: Slot[] = [
   {
     token: "a",
+    label: "똥 시작 칸 정하기",
+    hint: "똥이 처음 나타날 가로 칸(poop_x)을 0~4 중에서 '무작위' 로 하나 정해 담기 (주사위에서 쓴 그 명령, 맨 바깥 줄 — 들여쓰기 없음)",
+    rows: 2,
+    answer: "poop_x = randint(0, 4)",
+  },
+  {
+    token: "b",
     label: "똥 한 칸 아래로",
     hint: "poop_y 를 1 늘려서 다시 poop_y 에 담기 (세로로 한 칸 내려오기)",
     rows: 2,
     answer: "    poop_y = poop_y + 1",
   },
   {
-    token: "b",
+    token: "c",
     label: "똥 켜기",
     hint: "가로 poop_x, 세로 poop_y 자리에 불 하나 켜기",
     rows: 2,
@@ -187,9 +195,10 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint:
       "지난 시간에 만든 주인공(좌우로 움직이고 벽에서 멈추는) 은 코드에 이미 다 들어 있어요.\n" +
       "오늘은 그 위에 '똥' 을 얹어요! 똥은 아무 칸(가로 poop_x)에서 맨 위(세로 0)부터 아래로 내려와요.\n" +
-      "주인공 부분은 그대로 두고, forever 의 ✎ 편집칸 두 곳만 채워요:\n" +
-      "   ① 똥을 한 칸 아래로 — poop_y 를 1 늘려서 다시 poop_y 에 담기 (세로로 내려오기)\n" +
-      "   ② 똥 켜기 — 가로 poop_x, 세로 poop_y 자리에 불 켜기\n" +
+      "주인공 부분은 그대로 두고, ✎ 편집칸 세 곳을 채워요:\n" +
+      "   ① 똥 시작 칸 정하기 — 똥이 처음 나타날 가로 칸을 0~4 중 '무작위' 로 하나 정해요 (맨 위쪽, 들여쓰기 없는 줄)\n" +
+      "   ② 똥을 한 칸 아래로 — poop_y 를 1 늘려서 다시 poop_y 에 담기 (세로로 내려오기)\n" +
+      "   ③ 똥 켜기 — 가로 poop_x, 세로 poop_y 자리에 불 켜기\n" +
       "다 채우면 '완성 코드 복사' 로 복사해 MakeCode 'Python' 에 (기존 코드 다 지우고) 붙여넣어요.\n" +
       "(똥이 한 번 떨어지면… 그 뒤로 안 보이죠? 바닥 처리가 없어서예요 — 미션 2에서 고쳐요.)",
     kind: "code_fill",
@@ -215,8 +224,8 @@ const WORKSHEET: WorksheetQuestion[] = [
       "다 채우면 '완성 코드 복사' 로 복사해 MakeCode 'Python' 에 붙여넣어요.\n" +
       "(이제 똥이 계속 떨어져요! 주인공으로 피해 보세요. 충돌·점수는 다음 시간(30차)에 더해요.)",
     kind: "code_fill",
-    imageUrl: "/mb28-m4.svg",
-    imageAlt: "주인공이 아래에 있고 똥이 위에서 아래로 계속 반복해서 떨어지는 실행 결과",
+    imageUrl: "/mb29-m2.svg",
+    imageAlt: "주인공이 아래에 있고 똥이 서로 다른 두 칸(가로)에서 번갈아 위에서 아래로 계속 떨어지는 실행 결과",
     imageSide: "right",
     imageSideWidth: "third",
     codeTemplate: CODE_M2,
@@ -318,9 +327,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   video: empty(),
 
-  // 성찰 — 쉬운 말로 가볍게 돌아보기. 개인적이라 비공개. 성찰 제출로 UNO 가 열린다.
+  // 성찰 — 앞줄은 오늘 한 일 요약 안내, 뒷줄이 학생이 답을 적는 질문(30차 예고: 충돌·점수·똥 2개·AI).
+  // label 이 whitespace-pre-wrap 이라 \n 으로 두 줄이 그대로 뜬다. 자유 서술 1칸·자동저장, 비공개.
+  // 이 질문은 보상 게이트(mb29_share)를 바꾸지 않는다 — 게이트는 공유링크 제출 그대로.
   reflectionQuestions: [
-    "지난 시간에 만든 뼈대에 똥 낙하와 바닥 리셋을 얹었어요. 오늘 가장 어려웠던 부분은 어디였나요?",
+    "지난 시간에 만든 뼈대에 똥 낙하와 바닥 리셋을 얹었어요.\n다음 시간에 추가될 기능을 예상해 보세요.",
   ],
   reflectionPublic: false,
 
