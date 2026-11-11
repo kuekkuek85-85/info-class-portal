@@ -1949,7 +1949,9 @@ function PresenterSlidesButton({
   /** "app" = 앱(build_url) 우선 + 슬라이드 백업(8차). "slides" = 슬라이드 우선(7차 기본) */
   primary?: "app" | "slides";
 }) {
-  const [links, setLinks] = useState<Record<string, { slidesUrl: string; buildUrl: string }>>({});
+  const [links, setLinks] = useState<
+    Record<string, { slidesUrl: string; appUrl: string; appKind: "published" | "none" }>
+  >({});
 
   useEffect(() => {
     if (!activityId || !groupKey) return;
@@ -1961,13 +1963,21 @@ function PresenterSlidesButton({
         );
         const body = await response.json();
         if (cancelled || !body?.ok) return;
-        const map: Record<string, { slidesUrl: string; buildUrl: string }> = {};
+        const map: Record<
+          string,
+          { slidesUrl: string; appUrl: string; appKind: "published" | "none" }
+        > = {};
         for (const s of (body.students ?? []) as {
           studentId: string;
           slidesUrl?: string;
-          buildUrl?: string;
+          appUrl?: string;
+          appKind?: "published" | "none";
         }[]) {
-          map[s.studentId] = { slidesUrl: s.slidesUrl ?? "", buildUrl: s.buildUrl ?? "" };
+          map[s.studentId] = {
+            slidesUrl: s.slidesUrl ?? "",
+            appUrl: s.appUrl ?? "",
+            appKind: s.appKind ?? "none",
+          };
         }
         setLinks(map);
       } catch {
@@ -1981,10 +1991,11 @@ function PresenterSlidesButton({
   }, [activityId, groupKey]);
 
   const cur = links[studentId];
-  // 스킴이 빠졌어도 눌리게 https:// 를 채운다
-  const appUrl = normalizeUrl(cur?.buildUrl || "");
+  // 앱 링크는 게시(배포) 링크만 연다 (pickAppUrl 이 이미 스킴을 채워 돌려준다).
+  // 슬라이드는 스킴이 빠졌어도 눌리게 https:// 를 채운다
+  const appUrl = cur?.appUrl || "";
   const slidesUrl = normalizeUrl(cur?.slidesUrl || "");
-  const appOk = /^https?:\/\//i.test(appUrl);
+  const appOk = cur?.appKind === "published";
   const slidesOk = /^https?:\/\//i.test(slidesUrl);
   const open = (url: string) => window.open(url, "_blank", "noopener,noreferrer");
 

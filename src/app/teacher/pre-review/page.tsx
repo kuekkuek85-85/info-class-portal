@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { TeacherShell } from "@/components/teacher-shell";
 import { usePolled } from "@/lib/use-polled";
-import { normalizeUrl } from "@/lib/url";
+import { pickAppUrl } from "@/lib/url";
 
 /**
  * 「미리 피드백」 — 분반 전체를 한 페이지에서 검토하고, 수업 전에 피드백을 써 둔다.
@@ -120,9 +120,9 @@ function StudentCard({ row, onSaved }: { row: Row; onSaved: () => void }) {
   const [note, setNote] = useState(row.teacherNote || row.aiDraft || "");
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  // 스킴이 빠진 채 저장된 옛 링크도 눌리게 https:// 를 채워 준다 (normalizeUrl 이 trim 도 한다)
-  const buildUrl = normalizeUrl(row.answers.find((a) => a.key === "build_url")?.value ?? "");
-  const isLink = /^https?:\/\//i.test(buildUrl);
+  // 「앱 열기」는 게시(배포) 링크만 연다. build_url 에 캔바 편집 링크가 들어가 있고
+  // 진짜 게시 링크가 배포 칸(deploy_url)이나 다른 텍스트 칸에 적힌 경우까지 집어낸다.
+  const app = pickAppUrl(Object.fromEntries(row.answers.map((a) => [a.key, a.value])));
   const shown = row.answers.filter((a) => a.key !== "build_url");
   const fromDraft = !row.teacherNote && Boolean(row.aiDraft) && note === row.aiDraft;
 
@@ -149,14 +149,12 @@ function StudentCard({ row, onSaved }: { row: Row; onSaved: () => void }) {
           {row.number ?? "?"} · {row.name}
           {row.teacherNote.trim() && <span className="t-body-sm"> · 피드백 완료</span>}
         </p>
-        {isLink ? (
-          <a href={buildUrl} target="_blank" rel="noreferrer" className="pill pill-primary t-body-sm">
+        {app.kind === "published" ? (
+          <a href={app.url} target="_blank" rel="noreferrer" className="pill pill-primary t-body-sm">
             앱 열기 (새 창)
           </a>
-        ) : buildUrl ? (
-          <span className="t-caption">링크 아님: {buildUrl}</span>
         ) : (
-          <span className="t-caption">아직 앱 링크 없음</span>
+          <span className="t-caption">게시 링크 없음</span>
         )}
       </div>
 

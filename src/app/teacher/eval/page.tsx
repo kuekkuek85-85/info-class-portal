@@ -39,7 +39,8 @@ interface Row {
   studentId: string;
   name: string;
   number: number | null;
-  buildUrl: string;
+  appUrl: string;
+  appKind: "published" | "none";
   slidesUrl: string;
   pitch: string;
   hasEval: boolean;
@@ -154,7 +155,6 @@ function EvalForm({ row, onSaved }: { row: Row; onSaved: () => void }) {
   const [comment, setComment] = useState(row.comment ?? "");
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  const buildUrl = normalizeUrl(row.buildUrl);
   const slidesUrl = normalizeUrl(row.slidesUrl);
   const total = evalTotal(scores);
 
@@ -188,10 +188,12 @@ function EvalForm({ row, onSaved }: { row: Row; onSaved: () => void }) {
             슬라이드 열기
           </a>
         )}
-        {/^https?:\/\//i.test(buildUrl) && (
-          <a href={buildUrl} target="_blank" rel="noreferrer" className="pill pill-secondary t-body-sm">
+        {row.appKind === "published" ? (
+          <a href={row.appUrl} target="_blank" rel="noreferrer" className="pill pill-secondary t-body-sm">
             앱 열기
           </a>
+        ) : (
+          <span className="t-caption text-muted">게시 링크 없음</span>
         )}
       </div>
       {row.pitch && <p className="t-body-sm text-muted">{row.pitch}</p>}

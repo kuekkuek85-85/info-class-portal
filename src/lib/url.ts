@@ -37,3 +37,73 @@ export function normalizeUrl(raw: string): string {
  *   (그 대시보드 로직은 진로탐색 build_url 전용이라 여기 song_url 을 섞지 않는다).
  */
 export const URL_ANSWER_KEYS = new Set<string>(["build_url", "song_url"]);
+
+/**
+ * 작품 답에서 「앱 열기」로 열 **게시(배포) 링크**를 고른다.
+ *
+ * ## 왜 build_url 한 칸만으로는 안 되는가
+ *
+ * 오래도록 「앱 열기」는 build_url 한 칸만 href 로 썼다. 그런데 실제 제출을 보면
+ * build_url 에 캔바 **편집** 링크(`canva.com/design/.../edit`,
+ * `canva.com/ai/code/thread/…`)가 들어가 있고, 진짜 **게시** 링크
+ * (`…my.canva.site`, `canva.link`)는 '배포 링크' 칸(deploy_url)이나 드물게 소감·고침
+ * 같은 텍스트 칸에 적힌 경우가 많다. 편집 링크는 본인 캔바 로그인이 있어야 열리고
+ * 실행 화면이 아니라, 교사가 눌러도 앱이 안 뜬다. 그래서 편집 링크는 "앱"으로 치지 않는다.
+ *
+ * ## 규칙
+ *
+ *  1. **게시 도메인만** 열 수 있는 앱으로 본다 — `*.canva.site` · `canva.link` ·
+ *     `*.vercel.app` · `*.netlify.app` · `*.github.io`. 편집 도메인
+ *     (`canva.com/design/<id>/edit` · `canva.com/ai/thread/…` · `canva.com/ai/code/thread/…`)
+ *     은 게시로 치지 않는다.
+ *  2. **칸 우선순위**: `deploy_url` → `build_url` → 그 밖의 답 칸(fix2·fix4·grill_a2 …,
+ *     `_` 로 시작하는 안내 칸은 제외). 지정 두 칸은 값 전체가 링크라 스킴만 채워 쓰고,
+ *     그 밖의 텍스트 칸은 **본문은 건드리지 않고 http(s) URL 만 정규식으로 뽑는다**
+ *     (감정·소감 본문을 읽거나 저장하지 않는다 — 이 과목의 프라이버시 선).
+ *  3. 게시 링크가 하나도 없으면 `{ kind: "none" }` — 편집 링크라도 열지 않는다.
+ *     화면은 이때 "게시 링크 없음"을 보여준다.
+ *
+ * 분반을 가리지 않는다. build_url 에 이미 게시 링크를 낸 반(대부분)은 결과가 그대로다.
+ */
+const EDITOR_URL_RE =
+  /canva\.com\/(?:design\/[^\s/]+\/[^\s]*edit|ai\/thread\/|ai\/code\/thread\/)/i;
+const PUBLISHED_URL_RE =
+  /(?:\.canva\.site(?:[/:?#]|$)|\/\/(?:www\.)?canva\.link\/|\.vercel\.app(?:[/:?#]|$)|\.netlify\.app(?:[/:?#]|$)|\.github\.io(?:[/:?#]|$))/i;
+
+/** 이 URL 이 로그인 없이 열리는 게시(배포) 링크인가 (편집 링크는 false) */
+function isPublishedAppUrl(url: string): boolean {
+  const s = url.toLowerCase();
+  if (EDITOR_URL_RE.test(s)) return false;
+  return PUBLISHED_URL_RE.test(s);
+}
+
+/** 한 답 칸에서 후보 URL 들을 뽑는다 (지정 링크 칸 vs 일반 텍스트 칸을 다르게 다룬다) */
+function urlCandidates(key: string, value: unknown): string[] {
+  const raw = String(value ?? "").trim();
+  if (!raw) return [];
+  // 지정 링크 칸: 값 전체가 주소다(스킴이 빠져 있을 수 있어 normalizeUrl 로 채운다)
+  if (key === "deploy_url" || key === "build_url") return [normalizeUrl(raw)];
+  // 그 밖의 텍스트 칸: 본문은 그대로 두고 명시적 http(s) 주소만 뽑는다 (끝의 구두점은 턴다)
+  return [...raw.matchAll(/https?:\/\/[^\s"'<>]+/gi)].map((m) => m[0].replace(/[.,);]+$/, ""));
+}
+
+export function pickAppUrl(answers: Record<string, unknown> | null | undefined): {
+  url: string;
+  kind: "published" | "none";
+} {
+  const ans = answers ?? {};
+  // 우선순위대로 칸을 늘어놓는다: deploy_url → build_url → 그 밖의 답 칸
+  const ordered: [string, unknown][] = [];
+  if ("deploy_url" in ans) ordered.push(["deploy_url", ans.deploy_url]);
+  if ("build_url" in ans) ordered.push(["build_url", ans.build_url]);
+  for (const [k, v] of Object.entries(ans)) {
+    if (k === "deploy_url" || k === "build_url" || k.startsWith("_")) continue;
+    ordered.push([k, v]);
+  }
+  for (const [key, value] of ordered) {
+    for (const cand of urlCandidates(key, value)) {
+      if (isPublishedAppUrl(cand)) return { url: cand, kind: "published" };
+    }
+  }
+  return { url: "", kind: "none" };
+}
