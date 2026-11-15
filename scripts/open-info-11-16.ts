@@ -1,26 +1,27 @@
 /**
- * 11/16(월) 정보과 수업을 연다.
- *   4교시 1-4(24차) · 5교시 1-1(24차).
+ * 11/16(월) 정보과 정식 수업을 두 반 연다 (리허설 아님, 실제 수업).
+ *   4교시 1-4 — 29차 「똥피하기 만들기 ② (똥 떨어뜨리기)」  (기존 29차 재사용)
+ *   5교시 1-1 — 30차 「똥피하기 만들기 ③ (점수 + 게임 완성)」 (신규, seed-lesson30.ts)
  *
  *   node --env-file=.env.local scripts/open-info-11-16.ts [날짜]
  *
- * open-info-10-22.ts 를 복제했다. 세션 문서 ID 는 `날짜__교시__반`, 코드는 예약까지 한다.
- * 이미 있는 수업은 건드리지 않는다(두 번 돌려도 안전). 살아 있는 수업의 코드는 피해서 새 코드를 고른다.
+ * ## 반별 진도가 다르다 (교사 확인 2026-11-15)
+ *  · 1-1(1반)은 29차까지 마쳐 오늘 30차(점수·충돌로 게임 완성) 차례.
+ *  · 1-4(4반)은 아직 29차(똥 떨어뜨리기) 차례 — 1반보다 한 차시 뒤. 29차는 이미 있는 계획을 그대로 연다.
+ *  → 그래서 PLAN_LIST 에 반별로 다른 lessonNo 를 둔다. open-info-11-11.ts 복제(그 날은 네 반 29차 lockstep).
  *
- * ★ 24차 「나만의 LED 애니메이션 만들기」(마이크로비트 MakeCode 아크 2번째, seed-lesson24.ts) —
- *   23차에 바로 이어진다. 대기=지뢰찾기, 기분 → 안내(assessment) → 미션 1(build, 두근두근 하트에 pause)
- *   → 미션 2(grill, 포털 LED 애니메이터로 그려서 코드 생성 → MakeCode Python 붙여 실행) → 성찰.
- *   activityId microbit-makecode(23차와 같은 통). quiz·rewardGame·video·progress 없음. freeNavigation.
- *   ★ hideDoneButton: true — '다 했어요' 버튼 숨김(제출·통과·보상 없음, 공유 링크·애니메이터 자동저장).
- *   두 반 모두 10/22까지 23차를 마친 상태라 다음 차시 24가 같다.
+ * 세션 ID `날짜__교시__반`, 코드 예약까지. 이미 있는 수업은 안 건드린다(두 번 돌려도 안전). 살아 있는
+ * 수업의 코드는 피해서 새 코드를 고른다. 세션은 기본(대기) scheduled 로 연다 — 진행은 교사가 단추로 몬다.
  *
- * ★★ 세션 생성부는 lessonPlan 의 필드를 그대로 싣는다 — hideDoneButton·rewardGame(이 차시는 null)·
- *   progress·assessment·video·quiz(이 차시는 없음)·phaseOrder·phaseLabels·focusExempt·freeNavigation 을
- *   모두 싣는다. 특히 hideDoneButton·phaseOrder 가 빠지면 '다 했어요' 버튼이 뜨거나 단계 순서가 틀어진다.
- *   (그래도 안전하게, 연 뒤 `node --env-file=.env.local scripts/seed-lesson24.ts --force` 로 전체 내용을 한 번 더 맞춘다.)
+ * ★★ 29·30차 모두 rewardGame(29=UNO·30=스네이크)·phaseOrder·phaseLabels·freeNavigation(false)·focusExempt·
+ *   moodCheckEnabled·hideDoneButton 가 핵심이라 세션에 반드시 싣는다(informatics.md). 아래 세션 생성부가
+ *   lessonPlan 의 그 필드들을 그대로 싣는다(11-11 과 동일). rewardGame 이 비면 오류로 멈춘다(검증 포함).
  *
- * 각 반 30번(학번 1{반}30)은 테스트 학생(리허설) 관례 — 같은 scheduled 세션에 그 번호로 로그인하면 된다
- * (별도 리허설 세션을 만들지 않는다). 세션은 기본(대기)으로 연다 — 진행은 교사가 대시보드 단추로 몬다.
+ * ★ 먼저 두 차시 계획이 Firestore 에 등록돼 있어야 한다:
+ *     node --env-file=.env.local scripts/seed-lesson29.ts      (이미 있으면 갱신만 — 안전)
+ *     node --env-file=.env.local scripts/seed-lesson30.ts      (30차 신규 — 반드시 먼저)
+ *
+ * 각 반 30번(학번 1{반}30)은 테스트 학생(리허설) 관례 — 같은 scheduled 세션에 그 번호로 로그인한다.
  */
 
 import { cert, initializeApp } from "firebase-admin/app";
@@ -49,8 +50,8 @@ db.settings({ ignoreUndefinedProperties: true });
 
 const DATE = process.argv[2] ?? "2026-11-16";
 const PLAN_LIST: { period: number; classNo: number; lessonNo: number }[] = [
-  { period: 4, classNo: 4, lessonNo: 24 },
-  { period: 5, classNo: 1, lessonNo: 24 },
+  { period: 4, classNo: 4, lessonNo: 29 },
+  { period: 5, classNo: 1, lessonNo: 30 },
 ];
 
 async function pickCode(taken: Set<string>): Promise<string> {
@@ -90,7 +91,7 @@ async function main(): Promise<void> {
 
     const plans = await db.collection("lessonPlans").where("lessonNo", "==", lessonNo).get();
     if (plans.empty) {
-      console.error(`✗ ${lessonNo}차시 계획이 없습니다. seed 를 먼저 돌리세요.`);
+      console.error(`✗ ${lessonNo}차시 계획이 없습니다. seed-lesson${lessonNo}.ts 를 먼저 돌리세요.`);
       process.exit(1);
     }
     const plan = plans.docs[0];
@@ -114,22 +115,16 @@ async function main(): Promise<void> {
       createdAt: Date.now(),
       activity: p.activity,
       moodCheckEnabled: p.moodCheckEnabled,
-      // ★ '다 했어요 — 선생님께 알리기' 버튼 숨김(24차). 세션 API 가 session.hideDoneButton 을 읽으므로
-      //   여기 빠지면 버튼이 그대로 뜬다. 24차는 제출·통과·보상이 없고 공유 링크·애니메이터가 자동저장이다.
       hideDoneButton: p.hideDoneButton ?? false,
       game: p.game,
       gameExplainer: p.gameExplainer,
-      // ★★ 성찰 보상 게임 — 24차는 보상이 없어 null 로 들어간다(빠져도 되지만 명시해 둔다).
       rewardGame: p.rewardGame ?? null,
       progress: p.progress,
       assessment: p.assessment,
       video: p.video,
-      videoPrompts: p.videoPrompts ?? [],
-      // ★ 개념 퀴즈 — 24차는 quiz 가 없다(undefined → ignoreUndefinedProperties 로 안 실림).
-      quiz: p.quiz,
+      videoPrompts: [],
       reflectionQuestions: p.reflectionQuestions,
       reflectionPublic: p.reflectionPublic,
-      // ★ 단계 버튼 순서 — 없으면 LESSON_PHASES 기본으로 틀어진다(24차는 미션 1·2 가 build·grill 순).
       phaseOrder: p.phaseOrder ?? [],
       phaseLabels: p.phaseLabels ?? {},
       focusExempt: p.focusExempt ?? [],
@@ -139,14 +134,13 @@ async function main(): Promise<void> {
     const back = (await db.collection("classSessions").doc(sessionId).get()).data() as
       | Record<string, unknown>
       | undefined;
-    if (!back?.code || !back?.activity) {
-      console.error(`✗ ${period}교시 ${classNo}반 문서가 제대로 안 써졌습니다.`);
+    if (!back?.code || !back?.activity || !back?.rewardGame) {
+      console.error(`✗ ${period}교시 ${classNo}반 문서가 제대로 안 써졌습니다 (code/activity/rewardGame).`);
       process.exit(1);
     }
     console.log(
       `✓ ${period}교시 ${classNo}반 — ${lessonNo}차시 「${back.title}」  수업 코드 ${back.code}  ` +
-        `(hideDone=${back.hideDoneButton ? "Y" : "-"} reward=${back.rewardGame ? "Y" : "-"} quiz=${back.quiz ? "Y" : "-"} ` +
-        `phaseOrder=${Array.isArray(back.phaseOrder) ? (back.phaseOrder as unknown[]).length : "none"})`,
+        `(reward=${(back.rewardGame as { url?: string }).url} phaseOrder=${Array.isArray(back.phaseOrder) ? (back.phaseOrder as unknown[]).length : "none"} freeNav=${back.freeNavigation} hideDone=${back.hideDoneButton})`,
     );
   }
 
