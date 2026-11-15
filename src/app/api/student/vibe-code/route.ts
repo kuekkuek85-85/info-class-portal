@@ -9,7 +9,12 @@ import {
 import { activityIdFor } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
 import type { WorksheetQuestion } from "@/lib/types";
-import { vibeCodeGenerate, type VibeCodeEntry, type VibeCodeLog } from "@/lib/vibe-code";
+import {
+  MICROBIT_MANBOGI_BASE,
+  vibeCodeGenerate,
+  type VibeCodeEntry,
+  type VibeCodeLog,
+} from "@/lib/vibe-code";
 
 /**
  * 바이브 코딩 — 학생 프롬프트 → Gemini 코드 생성 (22차 vibe_code 문항).
@@ -94,9 +99,12 @@ export async function POST(request: Request) {
     const prompt = (body?.prompt ?? "").trim().slice(0, MAX_PROMPT);
     if (!prompt) return fail("invalid_input", "추가하고 싶은 기능을 적어 주세요.");
 
-    // 현재 게임 코드는 차시가 준 것(vibeBaseCode)을 쓴다 — 클라이언트가 보낸 코드는 신뢰하지 않는다.
-    const baseCode = (question.vibeBaseCode ?? question.code ?? "").trim();
-    if (!baseCode) return fail("server_error", "현재 게임 코드가 준비되지 않았어요. 선생님께 알려 주세요.");
+    // 바탕 코드·대상은 차시가 준 것(vibeBaseCode·vibeTarget)을 쓴다 — 클라이언트가 보낸 코드는 신뢰하지 않는다.
+    const target = question.vibeTarget ?? "turtle";
+    // microbit 은 차시가 바탕을 안 줘도 만보기 기본 코드로 물러난다(25차). turtle 은 예전처럼 차시가 꼭 준다.
+    const fallbackBase = target === "microbit" ? MICROBIT_MANBOGI_BASE : "";
+    const baseCode = (question.vibeBaseCode ?? question.code ?? fallbackBase).trim();
+    if (!baseCode) return fail("server_error", "현재 코드가 준비되지 않았어요. 선생님께 알려 주세요.");
 
     const activityId = activityIdFor(session);
     if (!activityId) return fail("not_found");
@@ -108,7 +116,7 @@ export async function POST(request: Request) {
       return fail("too_many_attempts", "이 태블릿에서 너무 많이 눌렀어요. 선생님께 알려 주세요.");
     }
 
-    const result = await vibeCodeGenerate({ baseCode, prompt });
+    const result = await vibeCodeGenerate({ baseCode, prompt, target });
     if (!result) {
       await logAiCall({
         studentId: me.studentId,

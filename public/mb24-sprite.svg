@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 184" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <style>
+    #bot{animation:b 1.2s linear infinite}
+    #mid{animation:m 1.2s linear infinite}
+    #top{animation:t 1.2s linear infinite}
+    @keyframes b{0%,24.9%{opacity:1}25%,100%{opacity:0}}
+    @keyframes m{0%,24.9%{opacity:0}25%,49.9%{opacity:1}50%,74.9%{opacity:0}75%,100%{opacity:1}}
+    @keyframes t{0%,49.9%{opacity:0}50%,74.9%{opacity:1}75%,100%{opacity:0}}
+    .on{fill:#5eead4}
+  </style>
+  <!-- 마이크로비트 보드 -->
+  <rect x="6" y="6" width="132" height="132" rx="18" fill="#17171b"/>
+  <!-- 꺼진 LED (바탕) -->
+  <g fill="#143a37">
+    <circle cx="24" cy="24" r="7"/><circle cx="48" cy="24" r="7"/><circle cx="72" cy="24" r="7"/><circle cx="96" cy="24" r="7"/><circle cx="120" cy="24" r="7"/>
+    <circle cx="24" cy="48" r="7"/><circle cx="48" cy="48" r="7"/><circle cx="72" cy="48" r="7"/><circle cx="96" cy="48" r="7"/><circle cx="120" cy="48" r="7"/>
+    <circle cx="24" cy="72" r="7"/><circle cx="48" cy="72" r="7"/><circle cx="72" cy="72" r="7"/><circle cx="96" cy="72" r="7"/><circle cx="120" cy="72" r="7"/>
+    <circle cx="24" cy="96" r="7"/><circle cx="48" cy="96" r="7"/><circle cx="72" cy="96" r="7"/><circle cx="96" cy="96" r="7"/><circle cx="120" cy="96" r="7"/>
+    <circle cx="24" cy="120" r="7"/><circle cx="48" cy="120" r="7"/><circle cx="72" cy="120" r="7"/><circle cx="96" cy="120" r="7"/><circle cx="120" cy="120" r="7"/>
+  </g>
+  <!-- 통통 튀는 공 (가운데 칸을 위아래로) -->
+  <circle id="bot" class="on" cx="72" cy="120" r="7"/>
+  <circle id="mid" class="on" cx="72" cy="72" r="7"/>
+  <circle id="top" class="on" cx="72" cy="24" r="7"/>
+  <text x="72" y="160" text-anchor="middle" font-size="14" font-weight="700" fill="#171717">예시 — 통통 튀는 공</text>
+  <text x="72" y="177" text-anchor="middle" font-size="11" fill="#64748b">프레임을 바꾸면 이렇게 움직여요</text>
+</svg>

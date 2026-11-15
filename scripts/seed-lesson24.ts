@@ -70,6 +70,21 @@ const ACTIVITY_ID = "microbit-makecode";
 /** MakeCode 블록/파이썬 에디터(공식). 새 탭으로 열어 '파이썬 보기' 에 생성 코드를 붙인다. */
 const MAKECODE_URL = "https://makecode.microbit.org/";
 
+/**
+ * 미션 1 뼈대 코드 — 복사해서 MakeCode '파이썬(Python) 보기' 의 기존 코드를 지우고 맨 처음에 붙여넣는다.
+ * 각 '# (미션)' 왼쪽 빈자리에 basic.pause(500) 을 한 줄씩 넣어 두근두근을 천천히 뛰게 완성한다.
+ */
+const CODE_M1 = `def on_forever():
+    # 큰 하트 출력
+    basic.show_icon(IconNames.HEART)
+                        # (미션) 0.5초(500ms) 멈춤
+
+    # 작은 하트 출력
+    basic.show_icon(IconNames.SMALL_HEART)
+                            # (미션) 0.5초(500ms) 멈춤
+
+basic.forever(on_forever)`;
+
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
@@ -82,31 +97,23 @@ function empty(): PhaseContent {
 const WORKSHEET: WorksheetQuestion[] = [
   /* ── 미션 1 (build) — 두근두근 하트에 pause 두 줄 넣기 ── */
   {
-    key: "_mb24_open1",
-    phase: "build",
-    label: "먼저 — MakeCode 열기",
-    hint:
-      "아래 [MakeCode 열기] 로 에디터를 새 탭에서 열어요. 미션 1은 23차처럼 블록으로 해요.\n" +
-      "왼쪽 시뮬레이터로 바로 확인해요(실물 보드·다운로드 없이).",
-    kind: "note",
-    linkUrl: MAKECODE_URL,
-    linkLabel: "MakeCode 열기 (새 탭)",
-    maxLength: 0,
-  },
-  {
     key: "_mb24_m1",
     phase: "build",
     label: "미션 1 — 두근두근 하트를 천천히 뛰게 (pause 두 줄)",
     hint:
-      "23차에서 만든 '큰 하트 ↔ 작은 하트' 가 너무 빨리 깜빡이면, 아이콘 사이에 '일시 중지(pause)' 를\n" +
-      "넣어 천천히 두근두근 되게 해요. 무한 반복(forever) 안을 이렇게 만들어요:\n\n" +
-      "  1. 아이콘 출력(show icon) — 하트(Heart)\n" +
-      "  2. 일시 중지(pause) — 500 ms   (한 줄 추가)\n" +
-      "  3. 아이콘 출력(show icon) — 작은 하트(Small heart)\n" +
-      "  4. 일시 중지(pause) — 500 ms   (또 한 줄 추가)\n\n" +
-      "즉 아이콘 출력 다음마다 일시 중지를 한 줄씩, 모두 두 줄을 넣는 거예요. 숫자(500)를 바꿔\n" +
-      "빠르기도 조절해 봐요. MakeCode에서 직접 블록으로 해 봅니다.",
+      "아래 '코드 복사하기' 로 뼈대 코드를 복사해, MakeCode '파이썬(Python) 보기' 의 기존 코드를\n" +
+      "모두 지우고(Ctrl+A → Delete) 맨 처음에 붙여넣어요. 그다음 각 '# (미션)' 왼쪽 빈자리에\n" +
+      "basic.pause(500) 을 한 줄씩 넣어, 큰 하트(HEART) ↔ 작은 하트(SMALL_HEART) 사이를 0.5초씩\n" +
+      "쉬게 해 두근두근을 천천히 뛰게 완성해요. 숫자(500)를 바꾸면 빠르기도 조절돼요.\n" +
+      "(아래 [MakeCode 열기] 로 새 탭에서 열어요. 왼쪽 시뮬레이터로 바로 확인!)",
     kind: "note",
+    imageUrl: "/mb23-heart.svg",
+    imageAlt: "마이크로비트 LED가 큰 하트와 작은 하트로 1초마다 번갈아 뛰는 움직이는 그림(실행 결과)",
+    imageSide: "right",
+    imageSideWidth: "third",
+    code: CODE_M1,
+    linkUrl: MAKECODE_URL,
+    linkLabel: "MakeCode 열기 (새 탭)",
     maxLength: 0,
   },
   {
@@ -133,11 +140,14 @@ const WORKSHEET: WorksheetQuestion[] = [
       "  4. 각 프레임의 '기다리기(ms)' 로 장면이 바뀌는 속도를 정해요.\n" +
       "  5. '미리보기' 로 포털에서 어떻게 재생되는지 먼저 확인해요.\n" +
       "  6. '코드 생성' 을 누르면 전체 MakeCode Python 코드가 나와요. '코드 복사하기' 로 복사해요.\n\n" +
-      "그다음 아래 [MakeCode 열기] 로 열어 위쪽을 'Python' 으로 바꾸고, 복사한 코드를 붙여넣으면\n" +
-      "시뮬레이터에서 내 애니메이션이 바로 돌아가요. 프레임 두 장 이상이면 움직임이 더 잘 보여요.",
+      "그다음 '코드 복사하기' 바로 밑의 [MakeCode 열기] 로 열어 위쪽을 'Python' 으로 바꾸고, 복사한 코드를\n" +
+      "붙여넣으면 시뮬레이터에서 내 애니메이션이 바로 돌아가요. 프레임 두 장 이상이면 움직임이 더 잘 보여요.\n" +
+      "(오른쪽은 예시예요 — 프레임을 바꾸면 이렇게 '움직이는' 애니메이션이 돼요.)",
     kind: "note",
-    linkUrl: MAKECODE_URL,
-    linkLabel: "MakeCode 열기 (새 탭)",
+    imageUrl: "/mb24-sprite.svg",
+    imageAlt: "마이크로비트 LED에서 공이 위아래로 통통 튀는 예시 애니메이션(움직이는 그림)",
+    imageSide: "right",
+    imageSideWidth: "third",
     maxLength: 0,
   },
   {
@@ -170,16 +180,22 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   // 자동저장이라 제출 버튼이 필요 없다(기본값 false, 다른 차시는 그대로 버튼이 보인다).
   hideDoneButton: true,
 
-  // 대기 화면 = 23차와 동일한 게임. (교사가 추후 스네이크 링크로 바꿀 예정 — 23차를 따라간다.)
+  // 대기 화면 = 파이썬 타자 도우미(정보 수업 표준, 교사 확정). url 이 "link:" 면 설명+새 탭 링크 카드로 뜬다.
   game: {
-    heading: "기다리는 동안 — 지뢰찾기",
+    heading: "기다리는 동안 — 파이썬 타자 연습",
     body:
-      "수업이 시작되길 기다리는 동안 잠깐 쉬어요.\n" +
-      "숫자를 단서로 지뢰가 없는 칸을 찾아 열면 돼요.\n" +
-      "수업이 시작되면 이 화면은 저절로 넘어가요.",
-    url: "https://mine-sweeper-game-seven.vercel.app/home",
+      "수업이 시작되길 기다리는 동안 파이썬 타자 연습을 해 봐요.\n" +
+      "아래 단추로 새 탭에서 열려요. 수업이 시작되면 돌아오세요.",
+    url: "link:https://python-typing-helper.vercel.app/",
   },
   gameExplainer: empty(),
+
+  // 성찰 보상 게임 = 스네이크(교사 확정). 성찰을 제출하면 '제출하고 게임하기' 로 열린다(requireReflection 기본).
+  rewardGame: {
+    heading: "수고했어요! 🎮",
+    body: "성찰을 제출했으면 잠깐 스네이크 게임으로 쉬어요. 선생님이 부르면 돌아오세요.",
+    url: "https://snake-game-iota-puce.vercel.app/",
+  },
 
   // 다음 시간(progress) 단계는 두지 않는다 — 안내(assessment)가 이미 있어 중복이다.
   progress: empty(),
@@ -243,7 +259,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    * MakeCode(새 탭) 링크가 붙은 미션 단계(build·grill)에서 창을 옮기는 것을 이탈로 세지 않는다.
    * 대기 게임은 iframe(새 탭 아님)이라 focusExempt 가 필요 없다.
    */
-  focusExempt: ["build", "grill"],
+  focusExempt: ["waiting", "build", "grill"],
   phaseLabels: {
     assessment: "안내",
     build: "미션 1 — 두근두근 하트",
@@ -255,9 +271,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
    */
   phaseOrder: ["waiting", "assessment", "build", "grill", "reflection"],
   /*
-   * 되돌아가기 켬 — 학생이 안내·미션 단계를 스스로 오갈 수 있다.
+   * 되돌아가기 끔 — 교사 표준(모든 차시 시작 시 off). 교사가 안내 → 미션1 → 미션2 순으로 단추로 몬다.
+   * 필요하면 수업 중 대시보드에서 켠다.
    */
-  freeNavigation: true,
+  freeNavigation: false,
 
   activity: {
     activityId: ACTIVITY_ID,
@@ -328,6 +345,7 @@ async function main(): Promise<void> {
           hideDoneButton: PLAN.hideDoneButton,
           game: PLAN.game,
           gameExplainer: PLAN.gameExplainer,
+          rewardGame: PLAN.rewardGame,
           progress: FieldValue.delete(),
           progressChecks: FieldValue.delete(),
           quiz: FieldValue.delete(),

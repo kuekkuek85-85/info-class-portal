@@ -32,6 +32,168 @@ export interface VibeCodeResult {
   explanation: string;
 }
 
+/** vibe_code 대상 — turtle(22차 똥피하기) / microbit(25차 만보기 MakeCode Python). 안 주면 turtle. */
+export type VibeTarget = "turtle" | "microbit";
+
+/**
+ * 25차 만보기 기본 코드 — AI가 '여기에 기능을 더한' 전체 프로그램을 만들 바탕 (MakeCode static Python).
+ *
+ * 흔들면 걸음 수(steps)가 1 늘고 숫자로 보여주는, 미션 1·2 를 합친 완성 만보기다. 차시가 vibeBaseCode 를
+ * 안 주면 서버가 이 값을 바탕으로 쓴다. 변수 이름은 영어 `steps`(교사 확정 2026-10-25). makecode.microbit.org
+ * '파이썬 보기' 에서 붙여넣기·블록 변환·시뮬레이터 동작 확인됨.
+ */
+export const MICROBIT_MANBOGI_BASE = `steps = 0
+
+def on_gesture_shake():
+    global steps
+    steps += 1
+    basic.show_number(steps)
+input.on_gesture(Gesture.SHAKE, on_gesture_shake)`;
+
+/**
+ * 26차 주사위 기본 코드 — AI가 '여기에 기능을 더한' 전체 프로그램을 만들 바탕 (MakeCode static Python).
+ *
+ * 흔들면 randint 로 1~6 을 뽑아, 교사 확정 표준 눈(show_leds)으로 보여 주는 완성 주사위다(미션1·2 를 합친
+ * '눈 주사위'). 변수 이름은 roll. 차시(26차 미션4 vibe_code)는 이 값을 vibeBaseCode 로 준다 — 서버 fallback
+ * (MICROBIT_MANBOGI_BASE)은 25차 전용이라 그대로 두고, 주사위는 반드시 vibeBaseCode 를 넘긴다.
+ * ※ seed 스크립트는 `import "server-only"` 때문에 이 모듈을 못 불러오므로, seed-lesson26 에 같은 문자열을
+ *    복제해 둔다(둘이 일치해야 함 — 한쪽을 고치면 다른 쪽도).
+ * makecode.microbit.org '파이썬 보기' 에서 붙여넣기·블록 변환·시뮬레이터 동작 확인(2026-11-01).
+ */
+export const MICROBIT_DICE_BASE = `roll = 0
+
+def on_gesture_shake():
+    global roll
+    roll = randint(1, 6)
+    if roll == 1:
+        basic.show_leds("""
+        . . . . .
+        . . . . .
+        . . # . .
+        . . . . .
+        . . . . .
+        """)
+    elif roll == 2:
+        basic.show_leds("""
+        # . . . .
+        . . . . .
+        . . . . .
+        . . . . .
+        . . . . #
+        """)
+    elif roll == 3:
+        basic.show_leds("""
+        # . . . .
+        . . . . .
+        . . # . .
+        . . . . .
+        . . . . #
+        """)
+    elif roll == 4:
+        basic.show_leds("""
+        # . . . #
+        . . . . .
+        . . . . .
+        . . . . .
+        # . . . #
+        """)
+    elif roll == 5:
+        basic.show_leds("""
+        # . . . #
+        . . . . .
+        . . # . .
+        . . . . .
+        # . . . #
+        """)
+    else:
+        basic.show_leds("""
+        # . . . #
+        . . . . .
+        # . . . #
+        . . . . .
+        # . . . #
+        """)
+input.on_gesture(Gesture.SHAKE, on_gesture_shake)`;
+
+/**
+ * 27차 가위바위보 기본 코드 — AI가 '여기에 기능을 더한' 전체 프로그램을 만들 바탕 (MakeCode static Python).
+ *
+ * A·B 버튼으로 내 패를 고르고(1=가위·2=바위·3=보), 금색 로고 터치로 AI 패(randint)를 뽑아 if/elif/else 로
+ * 이김(Happy)·비김(Meh)·짐(Sad)을 판정하는 완성 가위바위보다(미션1~3 완성형). 차시(27차 바이브 미션)는 이
+ * 값을 vibeBaseCode 로 준다 — 서버 fallback(MICROBIT_MANBOGI_BASE)은 25차 전용이라 그대로 두고, 가위바위보는
+ * 반드시 vibeBaseCode 를 넘긴다.
+ * ※ seed 스크립트는 `import "server-only"` 때문에 이 모듈을 못 불러오므로, seed-lesson27 에 같은 문자열을
+ *    복제해 둔다(둘이 일치해야 함 — 한쪽을 고치면 다른 쪽도).
+ * makecode.microbit.org '파이썬 보기' 에서 붙여넣기·블록 변환 확인(2026-11-04). 로고 터치는
+ * input.on_logo_event(TouchButtonEvent.PRESSED, …) — TouchButton.LOGO 는 컴파일 실패라 안 씀.
+ */
+export const MICROBIT_RPS_BASE = `choice = 1
+my = 0
+ai = 0
+
+def show_hand(n):
+    if n == 1:
+        basic.show_leds("""
+            # # . . #
+            # # . # .
+            . . # . .
+            # # . # .
+            # # . . #
+            """)
+    elif n == 2:
+        basic.show_leds("""
+            . . . . .
+            . # # # .
+            . # # # .
+            . # # # .
+            . . . . .
+            """)
+    else:
+        basic.show_leds("""
+            . # # # .
+            . # # # #
+            . # # # #
+            # # # # #
+            # # # # #
+            """)
+
+def on_button_pressed_a():
+    global choice
+    choice = choice + 1
+    if choice > 3:
+        choice = 1
+    show_hand(choice)
+input.on_button_pressed(Button.A, on_button_pressed_a)
+
+def on_button_pressed_b():
+    global choice
+    choice = choice - 1
+    if choice < 1:
+        choice = 3
+    show_hand(choice)
+input.on_button_pressed(Button.B, on_button_pressed_b)
+
+def on_logo_pressed():
+    global my, ai
+    my = choice
+    ai = randint(1, 3)
+    show_hand(ai)
+    basic.pause(800)
+    if my == ai:
+        basic.show_icon(IconNames.MEH)
+    elif my == 1 and ai == 3:
+        basic.show_icon(IconNames.HAPPY)
+    elif my == 2 and ai == 1:
+        basic.show_icon(IconNames.HAPPY)
+    elif my == 3 and ai == 2:
+        basic.show_icon(IconNames.HAPPY)
+    else:
+        basic.show_icon(IconNames.SAD)
+    basic.pause(1500)
+input.on_logo_event(TouchButtonEvent.PRESSED, on_logo_pressed)
+
+show_hand(choice)`;
+
 /** 아티팩트 answers[key] 에 저장하는 기록 한 건. */
 export interface VibeCodeEntry {
   prompt: string;
@@ -46,7 +208,8 @@ export interface VibeCodeLog {
   updatedAt: number;
 }
 
-function buildSystem(baseCode: string): string {
+/** 22차 turtle 똥피하기용 시스템 프롬프트 (OneCompiler 터틀 전체 코드). */
+function buildTurtleSystem(baseCode: string): string {
   return [
     "너는 중학교 1학년 학생이 파이썬 turtle '똥피하기' 게임에 기능 하나를 추가하도록 돕는 도우미다.",
     "아래 '현재 코드' 에, 학생이 말한 기능을 더해 전체가 실행 가능한 파이썬 코드를 만들어 준다.",
@@ -66,6 +229,59 @@ function buildSystem(baseCode: string): string {
     baseCode.slice(0, MAX_BASE_CODE),
     "```",
   ].join("\n");
+}
+
+/**
+ * 25차 마이크로비트 만보기용 시스템 프롬프트 (MakeCode static Python 전체 코드).
+ *
+ * 핵심: MicroPython(from microbit import *, display.show …)·turtle 이 아니라 **MakeCode static Python**
+ * 이다. makecode.microbit.org '파이썬 보기' 에 그대로 붙여 블록으로도 변환·실행돼야 한다. 아래 API·관례는
+ * 2026-10-25 에 실제 에디터에서 붙여넣기·블록 변환·시뮬레이터 동작을 확인한 것만 쓰게 못 박았다.
+ */
+function buildMicrobitSystem(baseCode: string): string {
+  return [
+    "너는 중학교 1학년 학생이 마이크로비트(micro:bit) 프로그램에 기능 하나를 추가하도록 돕는 도우미다.",
+    "아래 '현재 코드' 에, 학생이 말한 기능을 더한 **전체 프로그램**을 만들어 준다. 추가한 부분만이 아니라,",
+    "처음부터 끝까지 그대로 실행되는 완성 코드를 준다.",
+    "",
+    "가장 중요한 규칙 — 이 코드는 반드시 **MakeCode(makecode.microbit.org)의 static Python** 이어야 한다:",
+    "- MicroPython 이 아니다. 'from microbit import *', 'display.show', 'Image', 'while True:', 'import' 를 절대 쓰지 마라.",
+    "- turtle·pygame·input()·print() 같은 PC용 코드도 쓰지 마라. 오직 micro:bit MakeCode API 만 쓴다.",
+    "- 아래 '현재 코드' 에 이미 있는 변수와 틀을 그대로 쓴다. 함수 안에서 바깥 변수를 바꾸려면 그 함수 첫 줄에 'global 변수이름' 을 넣는다.",
+    "",
+    "쓸 수 있는 MakeCode API (아래 것들만, 실제 에디터에서 동작 확인됨):",
+    "- 화면: basic.show_number(값) · basic.show_icon(IconNames.HEART) · basic.show_string(\"HI\") · basic.clear_screen() · basic.pause(밀리초)",
+    "  (IconNames 예: HEART, SMALL_HEART, YES, NO, HAPPY, SAD, MEH, ASLEEP, DUCK, GHOST. show_string 의 글씨는 영어로.)",
+    "- LED 직접 그리기: basic.show_leds(\"\"\"...\"\"\") — 삼중따옴표 안에 다섯 줄, 각 줄 다섯 칸, 켜짐은 # 꺼짐은 . (칸 사이 공백).",
+    "- 무작위(난수): randint(1, 6) — 1~6 중 아무 수(양끝 포함). random. 같은 접두어 없이 그대로 쓴다.",
+    "- 입력(이벤트): 함수를 def 로 정의한 뒤 아래처럼 등록한다.",
+    "    흔들기 → input.on_gesture(Gesture.SHAKE, 함수)",
+    "    버튼  → input.on_button_pressed(Button.A, 함수) / Button.B / Button.AB (A+B 동시)",
+    "    핀 터치 → input.on_pin_pressed(TouchPin.P0, 함수)",
+    "    로고 터치(v2) → input.on_logo_event(TouchButtonEvent.PRESSED, 함수)  (TouchButton.LOGO 는 쓰지 마라)",
+    "- 반복: def on_forever(): ... 뒤에 basic.forever(on_forever)",
+    "- 소리(micro:bit v2): music.play(music.tone_playable(262, music.beat(BeatFraction.WHOLE)), music.PlaybackMode.UNTIL_DONE)",
+    "  (음 높이는 숫자 Hz. 262=도, 294=레, 330=미, 392=솔. 더 간단히는 그냥 이 한 줄을 그대로 쓴다.)",
+    "- 조건: if / elif / else 와 비교 == 를 쓸 수 있다.",
+    "",
+    "그 밖의 규칙:",
+    "- 중학교 1학년이 이해할 수 있게 짧고 쉽게. 현재 코드의 틀은 최대한 그대로 두고 요청 기능만 더한다.",
+    "- 들여쓰기는 공백 4칸. 파이썬 문법에 맞게(콜론·들여쓰기) 정확히 쓴다.",
+    "- 마이크로비트와 상관없는 요청, 또는 부적절한(폭력·혐오·개인정보·욕설 등) 요청은 코드를 주지 말고 정중히 거절한다.",
+    "- 아래 출력 형식을 반드시 지켜라:",
+    "    먼저 코드 한 덩어리를 ```python 과 ``` 사이에 넣는다.",
+    "    그다음 줄에 '설명:' 으로 시작해, 무엇을 어떻게 바꿨는지 2~4문장으로 쉽게 설명한다.",
+    "    (거절할 때는 코드 블록 없이 '설명:' 뒤에 왜 도와줄 수 없는지 한두 문장만 적는다.)",
+    "",
+    "현재 코드:",
+    "```python",
+    baseCode.slice(0, MAX_BASE_CODE),
+    "```",
+  ].join("\n");
+}
+
+function buildSystem(baseCode: string, target: VibeTarget): string {
+  return target === "microbit" ? buildMicrobitSystem(baseCode) : buildTurtleSystem(baseCode);
 }
 
 /** ```python ...``` 코드 블록과 그 뒤 '설명:' 을 갈라낸다. 형식이 어긋나도 최대한 건진다. */
@@ -96,11 +312,13 @@ function parseOutput(text: string): VibeCodeResult {
 export async function vibeCodeGenerate(input: {
   baseCode: string;
   prompt: string;
+  /** turtle(22차, 기본) / microbit(25차 만보기). 대상별 시스템 프롬프트를 고른다 */
+  target?: VibeTarget;
 }): Promise<VibeCodeResult | null> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
-  const system = buildSystem(input.baseCode);
+  const system = buildSystem(input.baseCode, input.target ?? "turtle");
   const userText = `추가하고 싶은 기능: ${input.prompt.trim().slice(0, MAX_PROMPT)}`;
 
   const controller = new AbortController();

@@ -57,6 +57,10 @@ export interface ActivityInfo {
    * 감정을 쓰는 차시는 false — 마음 이야기는 친구에게 보이지 않는다.
    */
   galleryEnabled?: boolean;
+  /** '감상 전용' 단계: gallery 단계에서 그림/활동지 탭 없이 순수 감상만 띄운다(types.ts 참조) */
+  galleryOnly?: boolean;
+  /** 회고 뒤 그리기(wrapheal)에서 그림만 익명 감상을 연다(types.ts 참조) */
+  healingGallery?: boolean;
   /** 친구에게 보여줄 답 칸(감상 노출 범위). 감상 단계의 활동지 탭 범위도 이걸로 좁힌다 */
   galleryAnswerKeys?: string[];
   /** 그림 제목의 틀. 비면 "○○년의 △△" (artifact-title.ts) */
@@ -158,6 +162,32 @@ const AUTOSAVE_DELAY_MS = 1500;
 /** 교사가 단계를 넘긴 것을 학생 화면이 알아채는 주기 */
 const PHASE_POLL_MS = 4000;
 
+/**
+ * 마음 체크인 강제 관문.
+ *
+ * 교사가 되돌아가기(freeNavigation)를 끈 채 대기가 아닌 단계로 강제하면, 마음 체크인을 아직 안 낸
+ * 학생이 그걸 건너뛰어 버린다. 그래서 **freeNav 가 꺼진 강제 이동일 때만**, 아직 이번 세션 마음
+ * 체크인을 안 낸 학생(moodDone=false)을 강제 단계 대신 'mood' 로 돌린다. 체크인을 내면(moodDone=true)
+ * 다음부터 그대로 강제 단계로 간다(세션당 1회). freeNav 가 켜진 평상시에는 관문이 없다(기존과 동일).
+ *
+ * 완료 판정은 오직 서버 moodEntries 기록(= payload.mood != null = moodSaved) 하나만 본다.
+ */
+function gatePhase(
+  target: LessonPhase,
+  opts: { free: boolean; moodEnabled: boolean; moodDone: boolean },
+): LessonPhase {
+  if (
+    !opts.free &&
+    opts.moodEnabled &&
+    !opts.moodDone &&
+    target !== "waiting" &&
+    target !== "mood"
+  ) {
+    return "mood";
+  }
+  return target;
+}
+
 export default function LessonPage() {
   const router = useRouter();
   const [data, setData] = useState<LessonData | null>(null);
@@ -172,6 +202,8 @@ export default function LessonPage() {
   const [moodReason, setMoodReason] = useState("");
   const [moodSaving, setMoodSaving] = useState(false);
   const [moodSaved, setMoodSaved] = useState(false);
+  // 폴링 클로저가 '마음 체크인 완료' 최신값을 보도록 ref 로 미러링한다(상태만 보면 클로저에 갇힘).
+  const moodSavedRef = useRef(false);
 
   const [quiz, setQuiz] = useState<QuizState | null>(null);
   const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
@@ -373,7 +405,14 @@ export default function LessonPage() {
       const payload = result as LessonData;
       setData(payload);
       setPhase(payload.session.phase);
-      setViewPhase(payload.session.phase);
+      // 마음 체크인 관문 — freeNav off + 미완료면 강제 단계 대신 'mood' 로(gatePhase).
+      setViewPhase(
+        gatePhase(payload.session.phase, {
+          free: Boolean(payload.session.freeNavigation),
+          moodEnabled: payload.session.moodCheckEnabled,
+          moodDone: Boolean(payload.mood),
+        }),
+      );
       setFreeNav(Boolean(payload.session.freeNavigation));
       if (payload.session.phase === "worksheet") setWorkTab("worksheet");
       if (payload.session.phase === "gallery") setWorkTab("gallery");
@@ -405,6 +444,7 @@ export default function LessonPage() {
       setMood(payload.mood?.mood ?? "");
       setMoodReason(payload.mood?.reason ?? "");
       setMoodSaved(Boolean(payload.mood));
+      moodSavedRef.current = Boolean(payload.mood);
       setQuiz(payload.quiz);
       setQuizAnswers(payload.myQuizAnswers ?? []);
 
@@ -428,6 +468,8 @@ export default function LessonPage() {
   useEffect(() => {
     if (!data) return;
     let cancelled = false;
+    // 세션 내 불변 — 관문 판정용(중첩 async 안에서 data 가 null 로 넓어지는 것 방지)
+    const moodEnabled = data.session.moodCheckEnabled;
 
     async function tick() {
       const response = await fetch("/api/student/phase");
@@ -460,9 +502,16 @@ export default function LessonPage() {
       setViewPhase((current) => (current === previousPhase.current ? next : current));
       previousPhase.current = next;
 
-      // 되돌아가기가 꺼지면 모두 교사 단계로 모인다
+      // 되돌아가기가 꺼지면 모두 교사 단계로 모인다 — 단, 마음 체크인 미완료자는 먼저 'mood' 로 보낸다.
       const free = Boolean(result.freeNavigation);
-      if (!free) setViewPhase(next);
+      if (!free)
+        setViewPhase(
+          gatePhase(next, {
+            free: false,
+            moodEnabled,
+            moodDone: moodSavedRef.current,
+          }),
+        );
       setFreeNav(free);
       setFocusExempt((result.focusExempt as LessonPhase[] | undefined) ?? []);
 
@@ -737,7 +786,13 @@ export default function LessonPage() {
     });
     const result = await response.json();
     setMoodSaving(false);
-    if (result.ok) setMoodSaved(true);
+    if (result.ok) {
+      setMoodSaved(true);
+      moodSavedRef.current = true;
+      // 관문을 통과한 순간, freeNav off 로 'mood' 에 붙잡혀 있었으면 교사 강제 단계로 바로 이동
+      // (안 해도 다음 폴링에 자동 이동하지만, 즉각 넘어가게 한다).
+      if (!freeNav && viewPhase === "mood" && phase !== "mood") setViewPhase(phase);
+    }
   }
 
   if (loadError) {
@@ -809,10 +864,21 @@ export default function LessonPage() {
    * 등)에서 감상 탭이 뜨면, 쓰기만 하면 되는 자리에 군더더기가 된다(교사 요청).
    */
   const scopedGallery = (session.activity?.galleryAnswerKeys?.length ?? 0) > 0;
+  /*
+   * 힐링 스페이스(wrapheal) 그림 익명 감상 — 이 단계에 한해 감상 탭을 연다(healingGallery).
+   * 기본은 지금까지대로 wrapheal 에 감상 탭이 없다.
+   */
+  const healingShare = viewPhase === "wrapheal" && session.activity?.healingGallery === true;
   const canShare =
     session.activity?.galleryEnabled !== false &&
-    viewPhase !== "wrapheal" &&
-    (!scopedGallery || viewPhase === "gallery");
+    (viewPhase !== "wrapheal" || healingShare) &&
+    (!scopedGallery || viewPhase === "gallery" || healingShare);
+
+  /*
+   * '감상 전용' 단계(galleryOnly) — gallery 단계에서 그림/활동지 탭 없이 순수 감상만 띄운다.
+   * 마음 톡톡 3회기의 '지난 차시 감정 캐릭터 감상' 단계가 그렇다(그리기는 힐링 스페이스 단계에만).
+   */
+  const pureGallery = viewPhase === "gallery" && session.activity?.galleryOnly === true;
 
   /** 활동지를 그리기 앞에 두는 차시인가 (ActivityContent 의 worksheetFirst) */
   const worksheetFirst = Boolean(session.activity?.worksheetFirst);
@@ -847,8 +913,9 @@ export default function LessonPage() {
    * 마찬가지다 — 4차시처럼 글만 쓰는 활동에서 그리기로 보내면 고를 장소가 없는 빈
    * 화면이 뜬다. 렌더할 때 걸러 내는 편이 상태를 고쳐 쓰는 것보다 단순하다.
    */
-  const activeTab =
-    (!canDraw && workTab === "draw") || (!canShare && workTab === "gallery")
+  const activeTab = pureGallery
+    ? "gallery"
+    : (!canDraw && workTab === "draw") || (!canShare && workTab === "gallery")
       ? "worksheet"
       : workTab;
 
@@ -1559,7 +1626,7 @@ export default function LessonPage() {
           누를 곳이 아니라 지금 보고 있는 화면의 이름이다. 누르면 아무 일도 안 나는
           단추가 화면 맨 위에 있으면 학생은 그것부터 눌러 본다.
         */}
-        {isWorkPhase && !showDone && !inGraphDraw && !brainMerged && session.activity && Number(canDraw) + Number(canShare) > 0 && (
+        {isWorkPhase && !showDone && !inGraphDraw && !brainMerged && !pureGallery && session.activity && Number(canDraw) + Number(canShare) > 0 && (
           <div className="mb-5 flex gap-2">
             {/*
               그리기가 없는 차시도 있다 (4차시 직업 조사처럼 글만 쓰는 활동).
@@ -1612,7 +1679,7 @@ export default function LessonPage() {
                 onClick={() => setWorkTab("gallery")}
                 className={`pill flex-1 ${activeTab === "gallery" ? "pill-primary" : "pill-secondary"}`}
               >
-                {session.activity?.galleryTabLabel || `${workNoun} 감상`}
+                {healingShare ? "그림 감상" : session.activity?.galleryTabLabel || `${workNoun} 감상`}
               </button>
             )}
           </div>
@@ -1800,7 +1867,7 @@ export default function LessonPage() {
           ))}
 
         {isWorkPhase && !showDone && !inGraphDraw && activeTab === "gallery" && (
-          <GalleryView disabled={closed} noun={workNoun} />
+          <GalleryView disabled={closed} noun={healingShare ? "힐링 스페이스" : workNoun} />
         )}
 
         {/*

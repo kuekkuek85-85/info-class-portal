@@ -329,6 +329,14 @@ export function LedAnimator({
             <button type="button" onClick={() => void copyCode()} className="pill pill-secondary t-body-sm self-start">
               {copied ? "복사됐어요" : "코드 복사하기"}
             </button>
+            <a
+              href="https://makecode.microbit.org/"
+              target="_blank"
+              rel="noreferrer"
+              className="pill pill-primary t-body-sm self-start"
+            >
+              MakeCode 열기 (새 탭)
+            </a>
             <p className="t-caption text-muted">
               MakeCode 를 열고 위쪽 메뉴에서 JavaScript 를 Python 으로 바꾼 뒤, 이 코드를 붙여넣으면 바로 돌아가요.
             </p>

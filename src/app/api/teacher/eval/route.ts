@@ -9,6 +9,7 @@ import {
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
 import { TEACHER_EVAL_MAX_COMMENT, sanitizeScores } from "@/lib/teacher-eval";
 import type { ClassNo } from "@/lib/types";
+import { pickAppUrl } from "@/lib/url";
 
 /**
  * 교사 전용 발표 평가 (인간과 인공지능 7·8차시).
@@ -45,12 +46,15 @@ export async function GET(request: Request) {
           getTeacherEval(activityId, student.studentId),
         ]);
         const answers = artifact?.answers ?? {};
+        // 「앱 열기」용 게시 링크 — build_url 이 편집 링크면 deploy_url·텍스트 칸까지 본다
+        const app = pickAppUrl(answers);
         return {
           studentId: student.studentId,
           name: student.name,
           number: student.number ?? null,
           // 발표를 보며 열어 볼 참고 링크 (학생 본인이 낸 자기 것)
-          buildUrl: String(answers.build_url ?? ""),
+          appUrl: app.url,
+          appKind: app.kind,
           slidesUrl: String(answers.slides_url ?? ""),
           pitch: String(answers.final_pitch ?? answers.mvp_one ?? ""),
           // 이미 평가했는지 + 값 (점수는 화면에서 펼치기 전까지 감춘다)

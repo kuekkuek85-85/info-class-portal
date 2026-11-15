@@ -11,6 +11,9 @@ import { RelayPanel } from "@/components/relay-panel";
 import { RulesResultPanel } from "@/components/rules-result-panel";
 import { StreamsSolo } from "@/components/streams-solo";
 import { LedAnimator } from "@/components/led-animator";
+import { DiceBuilder } from "@/components/dice-builder";
+import { RpsSim, RpsFill, RpsJudge } from "@/components/rps-builders";
+import { CodeFill } from "@/components/code-fill";
 import { StreamsBroadcast } from "@/components/streams-broadcast";
 import { VibeCodePanel } from "@/components/vibe-code-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
@@ -1007,6 +1010,9 @@ export function WorksheetView({
               raw={value.answers[question.key] ?? ""}
               onResult={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}
+              target={question.vibeTarget}
+              projectNoun={question.vibeNoun}
+              examplePrompt={question.vibePlaceholder}
             />
           ) : question.kind === "ai_feedback" ? (
             /*
@@ -1064,6 +1070,51 @@ export function WorksheetView({
             <LedAnimator
               questionKey={question.key}
               raw={value.answers[question.key] ?? ""}
+              onChange={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
+          ) : question.kind === "dice_builder" ? (
+            /*
+              주사위 코드 조립기 — 눈 1~6을 5×5 격자에 자유로 그리고(기준 눈 참고), 분기를 드롭다운으로
+              조립해 '코드 생성' 으로 흔들기+randint+if/elif/else+show_leds 전체 코드를 뽑는다. 순수
+              클라이언트(서버·AI 없음), 격자·분기는 answers 에 JSON 자동저장(제출칸 없음) (dice-builder · 26차).
+            */
+            <DiceBuilder
+              questionKey={question.key}
+              raw={value.answers[question.key] ?? ""}
+              onChange={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
+          ) : question.kind === "rps_sim" ? (
+            /* 27차 미션1 — A/B 순환 시뮬레이터 + 코드 생성(제출칸 없음) (rps-builders) */
+            <RpsSim
+              raw={value.answers[question.key] ?? ""}
+              onChange={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
+          ) : question.kind === "rps_fill" ? (
+            /* 27차 미션2 — 정답 입력 → (★미션★) 끼워 코드 생성(제출칸 없음) (rps-builders) */
+            <RpsFill
+              questionKey={question.key}
+              raw={value.answers[question.key] ?? ""}
+              onChange={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
+          ) : question.kind === "rps_judge" ? (
+            /* 27차 미션3 — 9가지 경우 드롭다운 빌더 → 판정 코드 생성(제출칸 없음) (rps-builders) */
+            <RpsJudge
+              questionKey={question.key}
+              raw={value.answers[question.key] ?? ""}
+              onChange={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
+          ) : question.kind === "code_fill" ? (
+            /* 28차 — 고정 코드 readonly + {{토큰}} 자리만 인라인 2줄 편집칸 → 완성 코드 복사 (code-fill) */
+            <CodeFill
+              questionKey={question.key}
+              raw={value.answers[question.key] ?? ""}
+              template={question.codeTemplate ?? ""}
+              slots={question.codeSlots ?? []}
               onChange={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}
             />

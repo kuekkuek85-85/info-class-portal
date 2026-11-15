@@ -81,6 +81,13 @@ const PHISH_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
+  /*
+   * 세특 생성 라우트가 런타임에 읽는 기재 요령 MD 를 서버 함수 번들에 포함시킨다.
+   * (src 소스는 배포 번들에 안 들어가므로, fs 로 읽으려면 명시적으로 포함해야 한다.)
+   */
+  outputFileTracingIncludes: {
+    "/api/teacher/record-comments": ["./docs/record-comment-guidelines.md"],
+  },
   async headers() {
     return [
       // 이 소품 경로만 프레이밍을 열고, 나머지 전 경로는 DENY 방어선을 그대로 받는다.

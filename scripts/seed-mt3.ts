@@ -34,9 +34,10 @@
  *
  * ## 무엇이 친구에게 보이는가
  *
- * 고른 감정(share_feel)과 한 줄(share_line), 그리고 2회기에 만든 감정 캐릭터
- * 주소뿐이다. 경험 글(draft)·AI 비교·마음일기는 나가지 않는다. 거르는 자리는
- * 화면이 아니라 서버다 (gallery 라우트의 galleryAnswerKeys).
+ * '지난 차시 감정 캐릭터 감상'(감상 전용) 단계에서 2회기에 만든 감정 캐릭터
+ * — canva_url(클릭 링크)·canva_prompt — 만 익명으로 보인다. 감정 한 줄(share_*)·
+ * 영화예능 장면(scene_*)·경험 글(draft)·AI 비교·마음일기는 나가지 않는다.
+ * 거르는 자리는 화면이 아니라 서버다 (gallery 라우트의 galleryAnswerKeys).
  */
 
 import { cert, initializeApp } from "firebase-admin/app";
@@ -193,6 +194,36 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 250,
   },
 
+  /*
+   * ── 지난 2회기 감정 캐릭터 (복습 감상용 · 표시 전용) ──────────────────
+   *
+   * 2회기(202)에서 같은 활동통(mt-2026-2)에 저장해 둔 canva_url·canva_prompt 를, 203 감상
+   * 갤러리 카드에서 **클릭 가능한 링크/프롬프트로 띄우기 위한 자리**다. 카드뉴스(card-news)는
+   * worksheet 에 그 key 문항이 있어야 답을 그리는데, 이 둘은 203 워크시트엔 없던 202 값이라
+   * 카드 상세에 안 떴다 — 그래서 여기에 넣는다.
+   *
+   * kind: "note" 라 **수업 화면에는 입력칸이 안 생긴다**(학생에게 다시 쓰라고 하지 않는다 —
+   * 값은 202 것이 그대로 있다). phase: "gallery" 는 STEP_PHASES 가 아니라 수업 단계 입력으로도
+   * 안 뜬다. 카드에서는 canva_url 이 주소라 "🎨 작품 보러 가기(새 창)" 링크로, canva_prompt 는
+   * 글로 나온다. 둘 다 galleryAnswerKeys 화이트리스트에 있어 서버가 익명으로 내보낸다.
+   */
+  {
+    key: "canva_url",
+    phase: "gallery",
+    label: "내 감정 캐릭터 (지난 시간에 만든 것)",
+    hint: "",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "canva_prompt",
+    phase: "gallery",
+    label: "캐릭터를 만든 프롬프트",
+    hint: "",
+    kind: "note",
+    maxLength: 0,
+  },
+
   // ── 나의 감정 쓰기 (25분) ───────────────────────────────
   {
     key: "_moodmeter_note",
@@ -218,9 +249,9 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "_words_note",
     phase: "build",
-    label: "쓰기① 나의 감정 낱말",
+    label: "나의 감정 낱말",
     hint:
-      "최근 일주일 동안 느낀 감정을 세 개 적어 봅시다.\n" +
+      "최근 일주일 동안 느낀 감정을 하나 적어 봅시다.\n" +
       "“기분 나빴다” 말고 더 정확한 낱말을 찾아보세요 — 아래 보기에서 골라도 좋아요.\n" +
       "지난 시간에 쓴 것이 남아 있으면 그대로 두어도 됩니다.",
     kind: "note",
@@ -229,28 +260,12 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "word1",
     phase: "build",
-    label: "감정 낱말 ① — 그리고 언제 그랬나요?",
+    /*
+     * 교사 지시로 낱말 칸을 셋(①②③)에서 하나로 줄였다. share_feel 은 그대로 둔다 —
+     * 친구 찾기의 묶음 열쇠라 고르는 칸이 따로 있어야 글자가 정확히 같아 묶인다.
+     */
+    label: "감정 낱말 — 그리고 언제 그랬나요?",
     hint: "낱말 하나와, 그때가 언제였는지 한 줄로.\n예) 서운함 — 친구가 약속을 갑자기 취소했을 때",
-    kind: "text",
-    examples: MOOD_WORDS,
-    examplesNote: MOOD_WORDS_NOTE,
-    maxLength: 80,
-  },
-  {
-    key: "word2",
-    phase: "build",
-    label: "감정 낱말 ② — 그리고 언제 그랬나요?",
-    hint: "",
-    kind: "text",
-    examples: MOOD_WORDS,
-    examplesNote: MOOD_WORDS_NOTE,
-    maxLength: 80,
-  },
-  {
-    key: "word3",
-    phase: "build",
-    label: "감정 낱말 ③ — 그리고 언제 그랬나요?",
-    hint: "",
     kind: "text",
     examples: MOOD_WORDS,
     examplesNote: MOOD_WORDS_NOTE,
@@ -262,10 +277,10 @@ const WORKSHEET: WorksheetQuestion[] = [
     /*
      * 친구 찾기의 열쇠가 되는 칸.
      *
-     * 위 세 칸은 자유롭게 쓰게 두었더니 글자가 저마다 달라서 묶이지 않는다.
+     * 위 낱말 칸은 자유롭게 쓰게 두어 글자가 저마다 달라 묶이지 않는다.
      * 감상 화면의 묶기는 글자가 정확히 같아야 걸린다. 그래서 고르는 칸을 하나 둔다.
      */
-    label: "위 셋 중에서, 요즘 나를 가장 크게 흔든 감정 하나를 골라 주세요",
+    label: "요즘 나를 가장 크게 흔든 감정 하나를 골라 주세요",
     hint: "이 칸으로 나와 비슷한 감정을 고른 친구들을 찾아볼 거예요.",
     kind: "choice",
     choices: MOOD_WORDS,
@@ -286,19 +301,25 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "text",
     maxLength: 80,
   },
+  // ── AI 감정 렌즈 (25분) ─────────────────────────────────
+  /*
+   * 교사 지시로 'AI에게 보여줄 글(draft)' 을 「나의 감정 쓰기」(build)에서 떼어 여기
+   * AI 감정 렌즈(emotion) 맨 앞으로 옮겼다 — 렌즈를 쓰기 바로 직전에 그 글을 쓰게.
+   * phase 가 emotion 이라 렌즈 단계 첫 칸으로 뜨고, 아래 _lens_recap·lens 가 이 draft 를 읽는다.
+   */
   {
     key: "_draft_note",
-    phase: "build",
-    label: "쓰기② AI에게 보여줄 글",
+    phase: "emotion",
+    label: "AI에게 보여줄 글",
     hint:
-      "잠시 뒤에 이 글을 AI가 읽고 “어떤 기분이었을까” 를 추측할 거예요.\n" +
+      "이제 이 글을 AI가 읽고 “어떤 기분이었을까” 를 추측할 거예요.\n" +
       "감정 낱말은 쓰지 마세요. 무슨 일이 있었는지만 적으면 AI가 알아맞혀야 해요.",
     kind: "note",
     maxLength: 0,
   },
   {
     key: "draft",
-    phase: "build",
+    phase: "emotion",
     /*
      * 렌즈에 보낼 글은 여기서 한 번만 쓴다. 렌즈 화면에 입력칸을 또 두면 학생은
      * 거기에 한 줄로 대충 적고, 그러면 추측이 얕아져서 견줄 것이 없어진다.
@@ -311,8 +332,6 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "long",
     maxLength: 400,
   },
-
-  // ── AI 감정 렌즈 (25분) ─────────────────────────────────
   {
     key: "_lens_note",
     phase: "emotion",
@@ -598,15 +617,14 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     heading: "오늘 할 일",
     body:
       "지난 시간에 감정 낱말 퀴즈와 인사이드 아웃 활동지까지 했어요. 오늘은 그 뒤를 합니다.\n\n" +
-      "① 영화·예능 속 내 마음 — 내 마음과 가까운 장면 하나 고르기\n" +
-      "② 나의 감정 쓰기 — 낱말 세 개, 그리고 AI에게 보여줄 글\n" +
-      "③ 서로의 마음 읽기 — 같은 감정을 고른 친구 찾아보기\n" +
-      "④ AI 감정 렌즈 — AI가 내 글을 읽고 감정을 추측합니다\n" +
-      "⑤ 마음일기\n\n" +
-      "마음일기까지 하고 나서, 시간이 남으면 두 가지를 더 합니다 — 감정 지도, 힐링 스페이스.\n" +
-      "여기까지가 감정을 알아차리는 연습이었다면, 그 둘은 알아차린 감정을 다루는 연습이에요.\n\n" +
+      "① 지난 시간 감정 캐릭터 감상 — 친구들이 만든 캐릭터를 보고 반응·댓글 남기기\n" +
+      "② 영화·예능 속 내 마음 — 내 마음과 가까운 장면 하나 고르기\n" +
+      "③ 나의 감정 쓰기 — 요즘 내 감정 낱말 하나 고르기\n" +
+      "④ AI 감정 렌즈 — 최근 있었던 일을 글로 쓰면 AI가 읽고 감정을 추측합니다\n\n" +
+      "그 다음, 알아차린 감정을 다루는 연습을 합니다 — 감정 지도, 힐링 스페이스.\n" +
+      "그리고 오늘을 마음일기로 마무리해요.\n\n" +
       "지난 시간에 쓴 것은 그대로 남아 있어요. 비어 있는 칸만 채우면 됩니다.\n" +
-      "친구에게 보이는 것은 고른 감정과 한 줄뿐이에요. 나머지는 나만 봅니다.",
+      "친구에게 보이는 것은 지난 시간에 만든 감정 캐릭터예요.",
     url: "",
   },
   assessment: empty(),
@@ -653,7 +671,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     progress: "오늘 할 일",
     mvp: "영화·예능 속 내 마음",
     build: "나의 감정 쓰기",
-    gallery: "서로의 마음 읽기",
+    gallery: "지난 차시 감정 캐릭터 감상",
     emotion: "AI 감정 렌즈",
     reflection: "마음일기",
     wrapmap: "감정 지도",
@@ -719,28 +737,45 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     },
 
     /*
-     * 서로의 마음을 나누는 시간을 연다. **다만 여는 칸을 딱 셋으로 못 박는다.**
+     * 감상 단계를 **'지난 차시 감정 캐릭터 감상'** 으로 확정(교사 지시·공개수업).
      *
-     * "나만 그런 게 아니구나" 는 사회정서학습에서 가장 크게 작동하는 경험이라 열 값이
-     * 있다. 하지만 활동지를 통째로 열면 경험 글(draft)·AI 비교·마음일기까지 반 전체에
-     * 걸린다 — 그건 나누는 것이 아니라 새는 것이다.
+     * 이 단계는 2회기(202)에 만든 감정 캐릭터를 **익명으로 서로 감상만** 한다. 공유 칸은
+     * canva_url(눌러서 새 창으로 열리는 캐릭터 링크)·canva_prompt(캐릭터 프롬프트) 둘뿐이다.
+     * 감정 한 줄(share_*)·영화예능 장면(scene_*)은 이 단계에서 빼서 더 안전하다 — 그 값들을
+     * 감상 카드에도, 필터 항목에도 드러내지 않는다. 거르는 자리는 서버다(gallery 라우트의
+     * toCard) — 화면에서 숨겨도 응답엔 실리므로 화이트리스트에 없는 키는 아예 안 나간다.
      *
-     * 거르는 자리는 서버다 (gallery 라우트). 화면에서 고르면 안 보일 뿐 응답에는
-     * 실려 있어서, 개발자 도구를 여는 학생 하나면 다 읽힌다.
-     *
-     * canva_url 은 2회기에 만든 감정 캐릭터다. 절반쯤만 있지만, 있는 사람 것은
-     * 보이는 편이 낫다 — 오늘 새로 만들지는 않는다.
+     * galleryOnly: true 로 '감상 전용' 단계로 만든다 — 그림/활동지 탭 없이 감상(보기)
+     * + 반응 이모지(👍 😮 💡 ❤️) + 댓글 한 칸만. 그리기는 '힐링 스페이스'(wrapheal)에만 있다.
+     * 익명(galleryShowNames 안 켬). draft·장면 사연(scene_why·scene_help)·AI 비교(compare_*)·
+     * 감정 지도·힐링·마음일기(reflectionPublic:false)는 비공개 유지.
      */
     galleryEnabled: true,
-    galleryAnswerKeys: ["share_feel", "share_line", "canva_url"],
-    galleryNoun: "이야기",
+    galleryOnly: true,
+    /*
+     * 힐링 스페이스(wrapheal) 그림 익명 감상 — 그 단계에서 학생들이 그린 '나만의 힐링 스페이스'
+     * 그림을 서로 익명으로 보고 이모지·댓글. 그림(strokes)만 나가고 글(heal_*·plan_*)·마음일기는
+     * 안 나간다(서버가 wrapheal 에서 allowKeys 를 비운다). gallery 단계(캐릭터 감상)와 간섭 없음.
+     */
+    healingGallery: true,
+    galleryAnswerKeys: ["canva_url", "canva_prompt"],
+    /*
+     * 카드에 캐릭터 링크와 프롬프트가 무엇인지 바로 읽히게 짧은 이름표를 붙인다
+     * (gallery-view 의 summaryOf 가 sharedLabels 로 그린다).
+     */
+    galleryAnswerLabels: {
+      canva_url: "감정 캐릭터",
+      canva_prompt: "캐릭터 프롬프트",
+    },
+    galleryNoun: "캐릭터",
 
     /*
-     * 같은 감정을 고른 친구끼리 모이게 하는 묶음. 이 활동의 핵심 장치다.
-     * 자유롭게 쓴 낱말 세 칸이 아니라 고르는 칸(share_feel)을 쓰는 이유는,
-     * 묶기가 글자가 정확히 같아야 걸리기 때문이다.
+     * 캐릭터 감상엔 묶음 필터가 필요 없다. '같은 감정'(share_feel) 필터는 뺀다 —
+     * 그 감정 값을 필터 항목으로도 드러내지 않으려는 것이다. 빈 묶음 하나를 둬서, 설정이
+     * 없을 때 뜨는 기본 '디지털 사회의 특성' 필터(그림 차시용)가 안 뜨게 한다
+     * (이 활동엔 특성·장소가 없다). 왼쪽 패널엔 '꼭 보기' 체크만 남는다.
      */
-    galleryFacets: [{ key: "feel", label: "같은 감정을 고른 친구", answerKeys: ["share_feel"] }],
+    galleryFacets: [{ key: "none", label: "", answerKeys: ["__none__"] }],
 
     /*
      * 남기는 칸은 **하나뿐이다.**
@@ -751,8 +786,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
      */
     feedbackPrompts: {
       found: {
-        label: "이 친구에게 해주고 싶은 따뜻한 말 한마디",
-        placeholder: "예) 나도 요즘 비슷해. 혼자만 그런 거 아니야.",
+        label: "이 캐릭터에서 어떤 감정이 느껴지나요?",
+        placeholder: "예) 따뜻해 보여요 / 씩씩한 느낌이에요 / 조금 외로워 보여요",
       },
       question: { label: "", placeholder: "" },
     },
@@ -811,8 +846,8 @@ async function main(): Promise<void> {
   console.log(`차시 번호 ${LESSON_NO}`);
   console.log("단계: 대기 → 마음 체크인 → 오늘 할 일 → 영화·예능 속 내 마음");
   console.log("      → 나의 감정 쓰기 → 서로의 마음 읽기 → AI 감정 렌즈 → 마음일기");
-  console.log("\n친구에게 보이는 칸: 고른 감정 · 한 줄 · 감정 캐릭터 주소");
-  console.log("나가지 않는 것: 경험 글 · AI 비교 · 마음일기");
+  console.log("\n지난 차시 감정 캐릭터 감상(감상 전용 단계·galleryOnly): canva_url(클릭 링크)·canva_prompt 만 익명 공유 + 반응 이모지 + 댓글 한 칸. 그림/활동지 탭 없음.");
+  console.log("나가지 않는 것: 감정 한 줄(share_*)·장면(scene_*)·경험 글(draft)·AI 비교(compare_*)·감정지도/힐링·마음일기 — 전부 비공개. 이름·학번도 안 나감(익명).");
   process.exit(0);
 }
 

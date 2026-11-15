@@ -1031,10 +1031,11 @@ function Dashboard() {
             <div className="flex flex-wrap gap-2">
               {/*
                 「미리 피드백」·「발표 평가」는 진로탐색(인간과 인공지능) 전용이라 헤더 전역 탭에서
-                빼고, 그 수업을 보고 있을 때만 여기에 버튼으로 띄운다. 미리 피드백은 모든 hai 차시,
+                빼고, 그 수업을 보고 있을 때만 여기에 버튼으로 띄운다. 미리 피드백은 hai 차시 중
+                1차시(102)를 뺀 나머지 — 1차시엔 아직 만든 작품이 없어 미리 써 둘 피드백이 없다.
                 발표 평가는 발표 차시(7·8차, lessonNo 107·108)에서만 뜬다.
               */}
-              {session.activity?.activityId?.startsWith("hai-") && (
+              {session.activity?.activityId?.startsWith("hai-") && session.lessonNo !== 102 && (
                 <Link href="/teacher/pre-review" className="pill pill-primary t-body-sm">
                   미리 피드백
                 </Link>
@@ -1948,7 +1949,9 @@ function PresenterSlidesButton({
   /** "app" = 앱(build_url) 우선 + 슬라이드 백업(8차). "slides" = 슬라이드 우선(7차 기본) */
   primary?: "app" | "slides";
 }) {
-  const [links, setLinks] = useState<Record<string, { slidesUrl: string; buildUrl: string }>>({});
+  const [links, setLinks] = useState<
+    Record<string, { slidesUrl: string; appUrl: string; appKind: "published" | "none" }>
+  >({});
 
   useEffect(() => {
     if (!activityId || !groupKey) return;
@@ -1960,13 +1963,21 @@ function PresenterSlidesButton({
         );
         const body = await response.json();
         if (cancelled || !body?.ok) return;
-        const map: Record<string, { slidesUrl: string; buildUrl: string }> = {};
+        const map: Record<
+          string,
+          { slidesUrl: string; appUrl: string; appKind: "published" | "none" }
+        > = {};
         for (const s of (body.students ?? []) as {
           studentId: string;
           slidesUrl?: string;
-          buildUrl?: string;
+          appUrl?: string;
+          appKind?: "published" | "none";
         }[]) {
-          map[s.studentId] = { slidesUrl: s.slidesUrl ?? "", buildUrl: s.buildUrl ?? "" };
+          map[s.studentId] = {
+            slidesUrl: s.slidesUrl ?? "",
+            appUrl: s.appUrl ?? "",
+            appKind: s.appKind ?? "none",
+          };
         }
         setLinks(map);
       } catch {
@@ -1980,10 +1991,11 @@ function PresenterSlidesButton({
   }, [activityId, groupKey]);
 
   const cur = links[studentId];
-  // 스킴이 빠졌어도 눌리게 https:// 를 채운다
-  const appUrl = normalizeUrl(cur?.buildUrl || "");
+  // 앱 링크는 게시(배포) 링크만 연다 (pickAppUrl 이 이미 스킴을 채워 돌려준다).
+  // 슬라이드는 스킴이 빠졌어도 눌리게 https:// 를 채운다
+  const appUrl = cur?.appUrl || "";
   const slidesUrl = normalizeUrl(cur?.slidesUrl || "");
-  const appOk = /^https?:\/\//i.test(appUrl);
+  const appOk = cur?.appKind === "published";
   const slidesOk = /^https?:\/\//i.test(slidesUrl);
   const open = (url: string) => window.open(url, "_blank", "noopener,noreferrer");
 

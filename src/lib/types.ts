@@ -720,6 +720,35 @@ export interface WorksheetQuestion {
      * 교사가 활동지로 열람한다. 갤러리 노출은 안 한다(비공개) (led-animator).
      */
     | "led_animator"
+    /**
+     * dice_builder — 포털 주사위 코드 조립기 (26차 주사위 게임). led_animator 의 확장이다. 학생이
+     * 주사위 눈 1~6을 5×5 격자에 **자유로** 그리고(옆에 표준 '기준 눈' 참고 이미지, 일치검사·잠금 없음),
+     * 각 숫자에 어떤 눈을 보여줄지 **드롭다운으로 분기(if/elif/else)를 조립**한다. '코드 생성' 을 누르면
+     * 흔들기 이벤트 + randint(1,6) + 조립된 if/elif/else + 각 분기 show_leds 가 든 MakeCode Python 전체
+     * 코드를 뽑는다. 순수 클라이언트(서버·AI 없음). 격자·분기 매핑은 answers[key] 에 JSON 으로 저장돼
+     * 지속되고 교사가 활동지로 열람한다(제출칸 없음 — 생성 시 자동저장). 갤러리 비공개 (dice-builder).
+     */
+    | "dice_builder"
+    /**
+     * rps_sim / rps_fill / rps_judge — 27차 가위바위보 인터랙티브 빌더 3종(rps-builders). dice_builder 와
+     * 같은 성격(순수 클라이언트·서버/AI 없음·'입력/체험 → 코드 자동 생성 → MakeCode 붙여넣기, 제출칸 없음').
+     *  · rps_sim   — A/B 버튼 순환을 화면에서 체험(LED 아이콘) → 순환 코드 생성(on_button_pressed A/B + show_hand).
+     *  · rps_fill  — 정답(ai = randint(1, 3))을 입력 → (★미션★) 자리에 끼워 전체 코드 생성.
+     *  · rps_judge — 9가지 경우(인간·AI·결과·LED아이콘) 드롭다운 조립 → if/elif + show_icon 코드 생성.
+     * 상태(선택값)는 answers[key] 에 JSON 자동저장, 교사가 활동지로 열람. 갤러리 비공개.
+     */
+    | "rps_sim"
+    | "rps_fill"
+    | "rps_judge"
+    /**
+     * code_fill — 코드 빈칸 채우기 (28차 똥피하기). 전체 코드가 한 블록 안에 읽기전용 등폭으로
+     * 보이고, 코드 중간의 `{{토큰}}` 자리마다 **인라인 2줄 편집칸**이 끼어 있다. 학생이 그 칸만
+     * 채우면 고정부와 합쳐 완성 코드가 되고, '완성 코드 복사' 로 전체를 복사한다(빈 칸이 하나라도
+     * 있으면 복사를 막고 그 칸으로 안내 → 출력에 `{{}}`/`___`/빈 줄이 안 남아 MakeCode 변환 안전).
+     * 순수 클라이언트(서버·AI 없음, 자동채점 없음). 입력은 answers[key] 에 {토큰: 글자} JSON 으로
+     * 자동저장돼 교사가 활동지로 열람한다. 갤러리 비공개 (code-fill · codeTemplate · codeSlots).
+     */
+    | "code_fill"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
@@ -819,6 +848,29 @@ export interface WorksheetQuestion {
   /** cloze 아래에 AI 채점(제미나이) 단추를 띄운다 — 맞으면 칭찬, 틀리면 힌트 (clozeLines 에 정답 필요) */
   clozeGrade?: boolean;
   /**
+   * code_fill(코드 빈칸 채우기)이 보여줄 전체 코드. `{{토큰}}` 자리마다 인라인 편집칸이 뜨고
+   * 나머지는 읽기전용 등폭으로 보인다. 토큰은 codeSlots 의 token 과 1:1 로 맞춘다.
+   */
+  codeTemplate?: string;
+  /** code_fill 의 각 빈칸(토큰) 설정. token 은 codeTemplate 의 `{{token}}` 과 맞춘다 */
+  codeSlots?: {
+    token: string;
+    label: string;
+    /** 그 칸에 무엇을 적을지 뜻으로 돌려 적은 안내(정답 영어 키워드 직접노출 금지) */
+    hint?: string;
+    /** 입력칸 줄 수(기본 2) */
+    rows?: number;
+    /** 빈칸 안 흐린 예시(들여쓰기 안내 겸). 복사 출력엔 안 들어간다 */
+    placeholder?: string;
+    /**
+     * 정답 문자열(들여쓰기 포함). 자동 힌트(규칙 기반)가 블러 때 학생 입력과 대조해 '맞음(초록 체크)'·
+     * '들여쓰기/대소문자/철자/일반' 힌트를 **클라이언트에서 즉시** 판정하는 데 쓴다(교사 확정 A안).
+     * 그래서 lesson DTO 로 그대로 내려간다 — devtools 로 보일 수 있으나 저위험 채우기 과제라 감수.
+     * 'AI 도움' 버튼의 서버 프롬프트에도 이 값이 쓰이되 "정답은 말하지 말고 방향만" 으로 지시한다.
+     */
+    answer?: string;
+  }[];
+  /**
    * submit 이 **최종 제출을 마친 학생에게만** 띄우는 링크.
    *
    * 먼저 끝낸 학생에게 줄 것이 필요하다. 남은 시간에 할 일이 없으면 옆 사람을
@@ -896,6 +948,27 @@ export interface WorksheetQuestion {
    * 서버가 이 필드에서만 읽는다. 학생 화면 code 블록과 달리 이건 서버 전용 입력이다(화면엔 안 그린다).
    */
   vibeBaseCode?: string;
+  /**
+   * vibe_code 의 대상 환경 — AI가 어떤 종류의 코드를 만들지, 생성 코드 아래 '열기' 링크가 어디로 갈지 정한다.
+   *
+   *  · "turtle"(기본) — 22차: 파이썬 turtle '똥피하기'. 화면 글씨는 영어, OneCompiler 터틀로 연다.
+   *  · "microbit" — 25차: MakeCode static Python 만보기. '걸음' 변수를 바탕으로 요청 기능을 더한 전체
+   *    프로그램을 만들고, makecode.microbit.org 로 연다(MicroPython·터틀 아님).
+   *
+   * 안 주면 "turtle" — 22차 문항은 그대로다(순수 추가). vibe-code.ts 가 대상별 시스템 프롬프트를,
+   * vibe-code-panel.tsx 가 대상별 열기 링크·안내를 고른다.
+   */
+  vibeTarget?: "turtle" | "microbit";
+  /**
+   * microbit 바이브 패널 문구에 쓰는 '만든 것' 이름 — 안내·입력 라벨의 "{noun}와 관련된 기능만",
+   * "{noun}에 어떤 기능을…". 안 주면 "만보기"(25차). 26차 주사위·27차 가위바위보가 여기서 덮어쓴다.
+   * (turtle 문구는 고정이라 이 값을 쓰지 않는다.)
+   */
+  vibeNoun?: string;
+  /**
+   * microbit 바이브 입력칸의 예시(placeholder) 덮어쓰기. 안 주면 25차 만보기 예시('걸음 수…').
+   */
+  vibePlaceholder?: string;
   /**
    * ai_review 가 AI 에게 보낼 답들. 순서대로 이름표를 붙여 함께 보낸다.
    * 안 쓴 칸은 자동으로 빠진다 — 학생이 비워 둔 것까지 "왜 안 썼냐"고 묻지 않는다.
@@ -1377,6 +1450,25 @@ export interface ActivityContent {
    * 넣은 키만 "이름표 · 값" 으로 뜨고, 없는 키·없는 차시는 지금까지처럼 값만 뜬다(회귀 없음).
    */
   galleryAnswerLabels?: Record<string, string>;
+  /**
+   * '감상 전용' 단계로 만든다 — gallery 단계에서 그림/활동지 탭 없이 **순수 감상 화면**만 띄운다.
+   *
+   * 기본(없음/false)은 지금까지 그대로 — gallery 단계에서도 그림·활동지 탭이 함께 뜬다.
+   * true 면 gallery 단계에 한해 탭 줄을 숨기고 감상(보기+반응+댓글)만 보여준다. 그리기가
+   * 있는 차시(마음 톡톡 3회기의 힐링 스페이스)라도 '지난 차시 캐릭터 감상' 단계에는 탭이
+   * 없어야 해서 둔 플래그다. 다른 작업 단계(draw·wrapheal 등)에는 영향이 없다(gallery 단계만).
+   */
+  galleryOnly?: boolean;
+  /**
+   * 회고 뒤 그리기(wrapheal) 단계에서 학생들이 그린 그림을 **서로 익명 감상**하게 연다.
+   *
+   * 기본(없음/false)은 지금까지 그대로 — wrapheal 엔 감상 탭이 없다(자기 공간을 그리는
+   * 자리라 서로 볼 것이 아니라는 기존 설계). true 면 wrapheal 에 한해 감상 탭을 띄우고,
+   * 서버 갤러리는 **그림(strokes)만** 익명으로 싣는다(allowKeys 를 비워 heal_*·plan_* 등
+   * 글이 카드에 안 나간다). 이미지 반응·댓글은 그대로. gallery 단계(캐릭터 감상)와는
+   * 서버가 session.phase 로 분기해 간섭하지 않는다. 마음 톡톡 3회기 힐링 스페이스용(opt-in).
+   */
+  healingGallery?: boolean;
   /**
    * 감상 화면에서 부르는 말. 안 적으면 그림이 있으면 "작품", 없으면 "활동지".
    *
@@ -2040,6 +2132,29 @@ export interface Reflection {
   /** 자동 임시저장된 미완성 상태인지 (PRD 3.4) */
   draft: boolean;
   createdAt: number;
+  updatedAt: number;
+}
+
+/**
+ * 생기부 세부특기사항 초안. 문서ID = `회차__과목열쇠__학번` (recordCommentId).
+ * 회차를 ID 에 넣어 12월 2차가 1차를 덮지 않는다.
+ */
+export interface RecordComment {
+  id: string;
+  /** 회차 ("1", "2" ...) */
+  round: string;
+  /** 과목 열쇠 (예: "info-2", "mt-1") */
+  subjectKey: string;
+  studentId: string;
+  classNo: ClassNo;
+  /** 분반 과목이면 분반 열쇠 */
+  groupKey?: string;
+  text: string;
+  /** draft = 생성된 그대로, edited = 교사가 손봄 */
+  status: "draft" | "edited";
+  /** ai = 모델 생성, fallback = 규칙 기반 대체 문안 */
+  source?: "ai" | "fallback";
+  model?: string;
   updatedAt: number;
 }
 
