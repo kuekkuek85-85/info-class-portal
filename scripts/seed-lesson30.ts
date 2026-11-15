@@ -265,7 +265,8 @@ const SLOTS_M1: Slot[] = [
     label: "똥에 맞으면 게임 끝",
     hint:
       "똥이 바닥줄(poop_y 가 4)에 닿았고 '그리고' 그 칸이 주인공과 같은 칸(poop_x 가 x)일 때 →\n" +
-      "playing 을 꺼짐으로 바꾸고, 슬픈 얼굴을 보여 줘요. (갈림길 if 세 줄, 들여쓰기 8칸)",
+      "playing 을 꺼짐으로 바꾸고, 슬픈 얼굴을 띄워요. 슬픈 얼굴 명령은 위 '새 개념' 설명의 예시\n" +
+      "( basic.show_icon(IconNames.SAD) ) 를 참고해 그대로 쓰면 돼요. (갈림길 if 세 줄, 들여쓰기 8칸)",
     rows: 3,
     answer: "        if poop_y == 4 and poop_x == x:\n            playing = False\n            basic.show_icon(IconNames.SAD)",
   },
@@ -329,8 +330,15 @@ const WORKSHEET: WorksheetQuestion[] = [
       "· 켜짐/꺼짐 스위치(playing): True(켜짐)면 게임이 돌아가고, False(꺼짐)면 멈춰요. forever 맨 앞에서\n" +
       "  'if playing:' 으로 감싸, 꺼지면 아무 것도 안 움직이게 해요(똥도 주인공도 멈춤).\n" +
       "· 그리고(and): 조건 두 개가 '모두' 맞아야 참이에요. 예) 'poop_y 가 4 이고 and poop_x 가 x' →\n" +
-      "  똥이 맨 아랫줄에 왔고, 그 칸이 바로 주인공 칸일 때 (= 부딪힘!).\n\n" +
-      "충돌하면 playing 을 끄고(False) 슬픈 얼굴(SAD)을 보여 줘요. 아래 미션에서 직접 채워요.",
+      "  똥이 맨 아랫줄에 왔고, 그 칸이 바로 주인공 칸일 때 (= 부딪힘!).\n" +
+      "· 슬픈 얼굴로 '게임 끝' 알리기: 똥에 맞으면 게임이 끝났다는 걸 눈에 보이게 알려 줘야겠죠? 마이크로비트\n" +
+      "  LED 화면에 '그림(아이콘) 보여주기' 명령을 쓰면, 기계에 미리 들어 있는 여러 표정 그림 중 하나를 골라\n" +
+      "  띄울 수 있어요. 여기선 그중 '슬픈 얼굴' 그림을 골라 띄워요. 이 명령은 문법이 길어 외우기 어려우니,\n" +
+      "  아래 예시를 그대로 보고 따라 쓰면 돼요:\n" +
+      "      슬픈 얼굴은 이렇게 띄워요  →  basic.show_icon(IconNames.SAD)\n" +
+      "  (이 한 줄을 쓰면 LED 에 슬픈 얼굴이 떠요. 괄호·점·대문자까지 똑같이 적어요.)\n\n" +
+      "정리하면 — 충돌하면 playing 을 꺼서(False) 멈추고, basic.show_icon(IconNames.SAD) 로 슬픈 얼굴을 띄워요.\n" +
+      "아래 미션에서 직접 채워요.",
     kind: "note",
     maxLength: 0,
   },
@@ -417,7 +425,7 @@ const WORKSHEET: WorksheetQuestion[] = [
       "   ② 둘 중 하나라도 맞으면 게임오버 — (첫째 똥 조건) '또는(or)' (둘째 똥 조건) 일 때 playing 끄고\n" +
       "      슬픈 얼굴·점수 보여 주기 (갈림길 if 네 줄)\n" +
       "다 채우면 '완성 코드 복사' 로 복사해 MakeCode 'Python' 에 붙여넣어요.\n" +
-      "(똥 두 개를 동시에 피하면 똥피하기 완성이에요! 다음은 AI로 나만의 기능을 더해요.)",
+      "(똥 두 개를 동시에 피하면 똥피하기 완성이에요! 이제 완성한 게임의 공유 링크를 선생님께 내요.)",
     kind: "code_fill",
     imageUrl: "/mb30-m3.svg",
     imageAlt: "똥 두 개가 서로 다른 칸에서 함께 떨어지고 주인공이 아래에서 피하는 실행 결과",
@@ -428,7 +436,13 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
 
-  /* ── 미션 4 (worksheet) — 바이브 코딩: AI로 나만의 기능 추가 (27차 메커니즘 재사용) ── */
+  /*
+   * ── [보류] 미션 4 (worksheet) — 바이브 코딩: AI로 나만의 기능 추가 (27차 메커니즘 재사용) ──
+   * 2026-11-16 교사 지시로 30차에서 제거(시간 부족). 31차 등 재사용 위해 아래 네 항목 원문 그대로 주석 보존.
+   * 되살릴 때: 이 블록을 유효 코드로 풀고 ① phaseOrder/phaseLabels/focusExempt 에 "worksheet" 추가
+   *   ② rewardGame.requires.phase 와 mb30_share.phase 를 "worksheet" 로 되돌리고 mb30_share 를 이 블록 끝으로.
+   *   (vibeBaseCode 는 위 DODGE_DONE 상수를 그대로 쓴다.)
+   *
   {
     key: "_mb30_vibe_intro",
     phase: "worksheet",
@@ -477,12 +491,15 @@ const WORKSHEET: WorksheetQuestion[] = [
     kind: "text",
     maxLength: 200,
   },
+   */
+
+  /* ── 미션 3 끝 — 완성 공유 링크 제출 (mvp 단계). 성찰 바로 앞 선형 단계라 UNO 게이트가 그대로 통과된다. ── */
   {
     key: "mb30_share",
-    phase: "worksheet",
+    phase: "mvp",
     label: "완성한 내 똥피하기 — 메이크코드 공유 링크 붙여넣기",
     hint:
-      "완성한(그리고 나만의 기능을 더한) 똥피하기를 선생님께 보여 줄 링크를 만들어 붙여넣어요.\n" +
+      "똥 두 개까지 완성한 똥피하기를 선생님께 보여 줄 링크를 만들어 붙여넣어요.\n" +
       "MakeCode 위쪽 '공유(Share)' → '프로젝트 공유' → 나온 링크를 '복사' 해서 아래 칸에 붙여넣기.\n" +
       "붙여넣으면 자동으로 저장돼요(선생님이 볼 수 있어요). 그다음 성찰을 내면 UNO 가 열려요.",
     kind: "long",
@@ -492,7 +509,7 @@ const WORKSHEET: WorksheetQuestion[] = [
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   lessonNo: LESSON_NO,
-  title: "똥피하기 만들기 ③ (완성 + AI로 나만의 기능)",
+  title: "똥피하기 만들기 ③ (완성)",
   moodCheckEnabled: true,
   hideDoneButton: true,
 
@@ -508,7 +525,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   // 성찰 보상 게임 = UNO. 성찰을 제출하면 '제출하고 게임하기' 로 열린다.
   // requires: 완성 공유 링크(mb30_share)가 '제출(비어있지 않음)' 돼야 게임이 열린다. submitted:true → 입력만 본다.
-  //   공유링크가 성찰 바로 앞 단계(worksheet)라 선형 흐름으로 통과된다. 비면 팝업으로 알리고 worksheet 로 보낸다.
+  //   공유링크가 미션3(mvp) 끝 = 성찰 바로 앞 단계라 선형 흐름으로 통과된다. 비면 팝업으로 알리고 mvp 로 보낸다.
   rewardGame: {
     heading: "수고했어요! 🃏",
     body: "성찰을 제출했으면 잠깐 UNO 로 쉬어요. 선생님이 부르면 돌아오세요.",
@@ -516,8 +533,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     requires: [
       {
         key: "mb30_share",
-        label: "완성 똥피하기 공유 링크 (미션 4)",
-        phase: "worksheet",
+        label: "완성 똥피하기 공유 링크 (미션 3)",
+        phase: "mvp",
         submitted: true,
       },
     ],
@@ -527,22 +544,21 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   // 안내 보드 — 오늘 할 일(미션 1·2·3·4) + 29차 이어가기 짚기.
   assessment: {
-    heading: "오늘 할 일 — 똥피하기 완성 + AI로 나만의 기능",
+    heading: "오늘 할 일 — 똥피하기 완성하기",
     body: "",
     url: "",
     tabs: [
       {
         label: "오늘은 이런 날",
-        subtitle: "충돌 → 점수 → 똥 2개 → AI 확장",
+        subtitle: "충돌 → 점수 → 똥 2개 → 공유",
         note:
           "지난 시간엔 똥이 계속 떨어지게 만들었어요. 오늘은 똥피하기를 '완성' 해요 — 똥에 맞으면 게임오버\n" +
-          "(미션1), 점수 세기(미션2), 똥 두 개(미션3). 그리고 마지막엔 AI에게 부탁해 '나만의 기능' 을 더해요\n" +
-          "(미션4, 바이브 코딩). 좌표는 가로 x·세로 y 둘 다 0~4, 주인공은 맨 아랫줄(세로 4). 조작 A=왼쪽, B=오른쪽.",
+          "(미션1), 점수 세기(미션2), 똥 두 개(미션3). 똥 두 개까지 완성하면 공유 링크를 선생님께 내요.\n" +
+          "좌표는 가로 x·세로 y 둘 다 0~4, 주인공은 맨 아랫줄(세로 4). 조작 A=왼쪽, B=오른쪽.",
         rows: [
           { label: "미션 1", value: "똥에 맞으면 게임 끝 (충돌 → 슬픈 얼굴)" },
           { label: "미션 2", value: "점수 세기 (오래 버틸수록 +1, 끝나면 숫자로)" },
-          { label: "미션 3", value: "똥 두 개! (하나라도 맞으면 게임오버)" },
-          { label: "미션 4", value: "AI로 나만의 기능 더하기 (바이브 코딩) + 공유 링크" },
+          { label: "미션 3", value: "똥 두 개! (하나라도 맞으면 게임오버) + 완성 공유 링크 내기" },
           { label: "채점은", value: "점수·자동채점 없어요 — 만들어 붙여넣어 보면 성공" },
         ],
         highlights: [
@@ -574,21 +590,20 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   // 성찰 — 쉬운 말로 가볍게 돌아보기. 개인적이라 비공개. 성찰 제출로 UNO 가 열린다.
   reflectionQuestions: [
-    "똥피하기를 완성하고 AI로 나만의 기능까지 더했어요. 오늘 가장 뿌듯했던 부분, 또는 가장 어려웠던 부분은 어디였나요?",
+    "똥피하기를 완성했어요. 오늘 가장 뿌듯했던 부분, 또는 가장 어려웠던 부분은 어디였나요?",
   ],
   reflectionPublic: false,
 
-  // MakeCode(새 탭)·파이썬 타자(새 탭)·바이브 코딩(MakeCode 새 탭)이 붙은 단계에서 창을 옮기는 것을 이탈로 안 센다.
-  focusExempt: ["waiting", "build", "grill", "mvp", "worksheet"],
+  // MakeCode(새 탭)·파이썬 타자(새 탭)가 붙은 단계에서 창을 옮기는 것을 이탈로 안 센다.
+  focusExempt: ["waiting", "build", "grill", "mvp"],
   phaseLabels: {
     assessment: "안내",
     build: "미션 1 — 충돌(게임오버)",
     grill: "미션 2 — 점수",
-    mvp: "미션 3 — 똥 2개",
-    worksheet: "미션 4 — AI로 나만의 기능",
+    mvp: "미션 3 — 똥 2개 + 공유",
   },
-  phaseOrder: ["waiting", "assessment", "build", "grill", "mvp", "worksheet", "reflection"],
-  // 교사 확정: 되돌아가기 off — 교사가 단계를 몰아준다. 공유링크(worksheet)가 성찰 바로 앞이라 게이트는
+  phaseOrder: ["waiting", "assessment", "build", "grill", "mvp", "reflection"],
+  // 교사 확정: 되돌아가기 off — 교사가 단계를 몰아준다. 공유링크(mvp 끝)가 성찰 바로 앞이라 게이트는
   // 선형 흐름으로 통과된다. 마음 체크인 강제 관문은 freeNav off 에서 유효하다.
   freeNavigation: false,
 
@@ -597,11 +612,11 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     places: [],
     year: 2036,
     worksheetIntro: {
-      heading: "똥피하기 만들기 ③ (완성 + AI로 나만의 기능)",
+      heading: "똥피하기 만들기 ③ (완성)",
       body:
         "지난 시간에 만든 '똥이 계속 떨어지는' 똥피하기를 완성해요 — 충돌·게임오버(미션1), 점수(미션2),\n" +
         "똥 두 개(미션3). 각 미션은 새 개념 설명을 먼저 읽고, 스타터를 복사해 MakeCode 에 붙여넣고 ✎ 빈자리만\n" +
-        "채워요. 마지막엔 AI에게 부탁해 나만의 기능을 더하고(미션4), 공유 링크를 내면 UNO 가 열려요.",
+        "채워요. 똥 두 개까지 완성하면 공유 링크를 내고, 성찰을 내면 UNO 가 열려요.",
     },
     worksheet: WORKSHEET,
     galleryEnabled: false,
@@ -679,9 +694,9 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (23~29차와 같은 MakeCode 통, 키 mb30_* 로 충돌 없음)`);
-  console.log("단계: 대기(타자) → 기분 → 안내 → 미션1(build 충돌) → 미션2(grill 점수) → 미션3(mvp 똥2개) → 미션4(worksheet 바이브+공유링크) → 성찰. freeNav OFF. hideDoneButton true. 성찰 제출 → UNO.");
-  console.log("미션마다 앞에 새 개념 note(playing·and / 점수·show_number / or). 바이브=완성 똥피하기(vibeBaseCode)에 AI가 기능 추가(27차 메커니즘 재사용).");
-  console.log("게이트: rewardGame.requires = mb30_share(submitted). 공유링크가 성찰 바로 앞 단계라 선형 흐름으로 통과.");
+  console.log("단계: 대기(타자) → 기분 → 안내 → 미션1(build 충돌) → 미션2(grill 점수) → 미션3(mvp 똥2개 + 공유링크) → 성찰. freeNav OFF. hideDoneButton true. 성찰 제출 → UNO.");
+  console.log("미션마다 앞에 새 개념 note(playing·and / 점수·show_number / or). ※ 미션4(바이브 코딩)는 2026-11-16 시간 부족으로 보류 — WORKSHEET 에 주석 보존(31차 재사용).");
+  console.log("게이트: rewardGame.requires = mb30_share(submitted, phase=mvp). 공유링크가 미션3 끝 = 성찰 바로 앞 단계라 선형 흐름으로 통과.");
   process.exit(0);
 }
 
