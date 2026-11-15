@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 184 216" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="26" y="22" width="132" height="132" rx="18" fill="#17171b"/>
+  <g fill="#2a2a30"><circle cx="44" cy="40" r="7"/><circle cx="68" cy="40" r="7"/><circle cx="92" cy="40" r="7"/><circle cx="116" cy="40" r="7"/><circle cx="140" cy="40" r="7"/><circle cx="44" cy="64" r="7"/><circle cx="68" cy="64" r="7"/><circle cx="92" cy="64" r="7"/><circle cx="116" cy="64" r="7"/><circle cx="140" cy="64" r="7"/><circle cx="44" cy="88" r="7"/><circle cx="68" cy="88" r="7"/><circle cx="92" cy="88" r="7"/><circle cx="116" cy="88" r="7"/><circle cx="140" cy="88" r="7"/><circle cx="44" cy="112" r="7"/><circle cx="68" cy="112" r="7"/><circle cx="92" cy="112" r="7"/><circle cx="116" cy="112" r="7"/><circle cx="140" cy="112" r="7"/><circle cx="44" cy="136" r="7"/><circle cx="68" cy="136" r="7"/><circle cx="92" cy="136" r="7"/><circle cx="116" cy="136" r="7"/><circle cx="140" cy="136" r="7"/></g>
+  <g fill="#ffd43b">
+    <circle cx="68" cy="40" r="7"/><circle cx="92" cy="40" r="7"/><circle cx="116" cy="40" r="7"/>
+    <circle cx="116" cy="64" r="7"/>
+    <circle cx="68" cy="88" r="7"/><circle cx="92" cy="88" r="7"/><circle cx="116" cy="88" r="7"/>
+    <circle cx="68" cy="112" r="7"/>
+    <circle cx="68" cy="136" r="7"/><circle cx="92" cy="136" r="7"/><circle cx="116" cy="136" r="7"/>
+  </g>
+  <text x="92" y="186" text-anchor="middle" font-size="14" font-weight="700" fill="#171717">게임 끝에 점수를 숫자로</text>
+  <text x="92" y="205" text-anchor="middle" font-size="11" fill="#64748b">버틴 만큼 점수가 올라요</text>
+</svg>
