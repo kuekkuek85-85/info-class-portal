@@ -1,22 +1,23 @@
 /**
- * 30차시 차시 계획 등록 — 「똥피하기 만들기 ③ (완성 + AI로 나만의 기능)」 (MakeCode 아크, 29차 이어가기).
+ * 30차시 차시 계획 등록 — 「똥피하기 만들기 ③ (완성)」 (MakeCode 아크, 29차 이어가기).
  *
  *   node --env-file=.env.local scripts/seed-lesson30.ts
  *   node --env-file=.env.local scripts/seed-lesson30.ts --force   (이미 학생이 들어온 수업도 덮어씀)
  *
- * ## 29차(똥 계속 낙하)에 이어 똥피하기를 '완성' + 바이브 코딩으로 자유 확장 (교사 확정 2026-11-10)
+ * ## 29차(똥 계속 낙하)에 이어 똥피하기를 '완성' (교사 확정 2026-11-10, 2026-11-16 수업 후 재구성)
  *
  * 28·29차에서 주인공 이동·벽 처리·똥 낙하·바닥 리셋까지 만들어 '똥이 계속 떨어지는' 뼈대를 완성했다.
- * 30차는 그 위에 **충돌·점수·여러 똥**을 얹어 게임을 완성하고, 마지막에 **바이브 코딩(AI로 나만의 기능)** 으로
- * 자기 게임을 자유롭게 확장한다(27차 vibe_code 메커니즘 재사용). 새 개념은 쓰기 직전 짧은 note 로 가르친다.
+ * 30차는 그 위에 **'그리고(and)' 개념 → 충돌(게임오버) → 점수**를 얹어 게임을 완성한다. 새 개념은 쓰기 직전에 가르친다.
  *
+ * ※ 2026-11-16 수업 결과 미션3(똥 2개)은 시간이 모자라 **31차로 이월**. 그리고 '그리고(and)' 를 미션1 앞에
+ *   **개념·퀴즈 단계(problem)** 로 분리해 먼저 익히게 했다. 바이브 코딩(미션4)은 앞서 보류됨(아래 [보류] 주석).
+ *
+ *   개념·퀴즈(problem)  '그리고(and)' — 두 조건이 모두 참일 때만 참. note 설명 + choice 퀴즈 2개(교사와 함께 확인).
  *   미션1(build)  충돌 → 게임오버 — playing on/off 스위치로 forever 를 가드하고, 똥 바닥줄(poop_y==4)이
- *                 주인공 칸(poop_x==x)과 '같을 때(and)' playing 을 끄고 SAD 를 보인다. (새 개념: playing·and)
+ *                 주인공 칸(poop_x==x)과 '같을 때(and)' playing 을 끄고 SAD 를 보인다. (새 개념: playing)
  *   미션2(grill)  점수 — 똥을 하나 피할 때(바닥 리셋) score+1, 게임오버 때 show_number(score). (새 개념: 점수·show_number)
- *   미션3(mvp)    똥 2개 — poop_x2/poop_y2 변수 2벌(리스트 미학습), 'or' 로 둘 중 하나라도 충돌 시 게임오버,
- *                 각 똥 리셋·점수. (새 개념: 변수 2벌·or)
- *   미션4(worksheet) 바이브 — 완성 똥피하기(vibeBaseCode)에 AI가 '내가 말한 기능 하나'를 더해 준다. 자유 확장.
- *                 + text 2칸(무엇을 더했나·내 자랑) + 메이크코드 공유 링크(mb30_share, long) 제출 → 성찰 → UNO.
+ *   → 미션1·2 완성 후 바로 성찰 → UNO. (공유링크 제출 없음 — 미션3 과 함께 31차로 이월.)
+ *   [31차 이월] 미션3(mvp) 똥 2개(변수 2벌·or) — CODE_M3/SLOTS_M3 상수에 보존. [보류] 미션4 바이브 — 아래 주석.
  *
  * 출처 미션: scratchpad dodge29_hybridA.py (3미션). ※ 구조 결정 — hybridA 는 `if 충돌 … else:(리셋+그리기)`
  *   구조지만, 본 차시 템플릿·vibeBaseCode 는 **충돌 판정을 그리기 뒤로 옮긴 평탄화(else 없음)** 버전을 쓴다.
@@ -26,11 +27,11 @@
  *   led.plot·randint·basic.forever·여러 global). 학생이 미션1~3 으로 만든 최종 코드 == vibeBaseCode.
  *
  * ## 세션 운영 (교사 확정 · 정보 수업 표준)
- *  · 대기 = 파이썬 타자 도우미(link:). 보상 = UNO(rewardGame, requires mb30_share submitted — 공유링크가
- *    성찰 바로 앞 선형 단계라 freeNavigation off 로도 통과). hideDoneButton true. 활동 통 microbit-makecode.
- *  · freeNavigation false — 되돌아가기 off, 마음 체크인 강제 관문 유효.
- *  · 구현 미션마다 실행결과 SVG 우측 1/3: 신규 /mb30-m1.svg(SAD 게임오버)·/mb30-m2.svg(점수 숫자)·
- *    /mb30-m3.svg(똥 2개). code_fill 미션은 maxLength 0(붙여넣기는 ✎칸).
+ *  · 대기 = 파이썬 타자 도우미(link:). 보상 = UNO(rewardGame, requires 비움 — 성찰 제출만으로 열림).
+ *    hideDoneButton true. 활동 통 microbit-makecode.
+ *  · freeNavigation false — 되돌아가기 off, 마음 체크인 강제 관문 유효. 흐름: 대기→기분→안내→and 개념·퀴즈→미션1→미션2→성찰.
+ *  · 구현 미션마다 실행결과 SVG 우측 1/3: /mb30-m1.svg(충돌→SAD)·/mb30-m2.svg(충돌→SAD→점수 숫자).
+ *    code_fill 미션은 maxLength 0(붙여넣기는 ✎칸). 들여쓰기 안내는 Tab 횟수로(Tab 1번=공백 4칸=한 단계).
  *  · '___'/'★★★' 리터럴 금지(블록 변환 깨짐). ✎칸은 own-line, 정답 영어 키워드 힌트 노출 금지.
  *
  * 바이브 걸림돌 점검: 학교망=25·26·27차에서 같은 Gemini 엔드포인트로 실제 수업했으므로 차단 아님.
@@ -266,7 +267,7 @@ const SLOTS_M1: Slot[] = [
     hint:
       "똥이 바닥줄(poop_y 가 4)에 닿았고 '그리고' 그 칸이 주인공과 같은 칸(poop_x 가 x)일 때 →\n" +
       "playing 을 꺼짐으로 바꾸고, 슬픈 얼굴을 띄워요. 슬픈 얼굴 명령은 위 '새 개념' 설명의 예시\n" +
-      "( basic.show_icon(IconNames.SAD) ) 를 참고해 그대로 쓰면 돼요. (갈림길 if 세 줄, 들여쓰기 8칸)",
+      "( basic.show_icon(IconNames.SAD) ) 를 참고해 그대로 쓰면 돼요. (갈림길 if 세 줄, 앞 if 줄은 Tab 2번, 그 안쪽 줄은 Tab 3번)",
     rows: 3,
     answer: "        if poop_y == 4 and poop_x == x:\n            playing = False\n            basic.show_icon(IconNames.SAD)",
   },
@@ -276,14 +277,14 @@ const SLOTS_M2: Slot[] = [
   {
     token: "a",
     label: "점수 1 올리기",
-    hint: "똥을 하나 피했으니(바닥에서 다시 떨어질 때) score 를 1 늘려서 다시 score 에 담기 (들여쓰기 12칸)",
+    hint: "똥을 하나 피했으니(바닥에서 다시 떨어질 때) score 를 1 늘려서 다시 score 에 담기 (들여쓰기 Tab 3번)",
     rows: 2,
     answer: "            score = score + 1",
   },
   {
     token: "b",
     label: "점수 보여주기",
-    hint: "게임이 끝났을 때, 지금까지 모은 score 를 숫자로 화면에 보여 주기 (들여쓰기 12칸)",
+    hint: "게임이 끝났을 때, 지금까지 모은 score 를 숫자로 화면에 보여 주기 (들여쓰기 Tab 3번)",
     rows: 2,
     answer: "            basic.show_number(score)",
   },
@@ -295,7 +296,7 @@ const SLOTS_M3: Slot[] = [
     label: "둘째 똥 바닥 처리",
     hint:
       "둘째 똥(poop_y2)도 바닥을 지나면(4 보다 커지면) poop_y2 를 0 으로, poop_x2 에 0~4 무작위 수,\n" +
-      "score 1 늘리기. 바로 위 첫째 똥 처리를 '거울처럼' 2 를 붙여 쓰면 돼요. (갈림길 if 네 줄, 들여쓰기 8칸)",
+      "score 1 늘리기. 바로 위 첫째 똥 처리를 '거울처럼' 2 를 붙여 쓰면 돼요. (갈림길 if 네 줄, 앞 if 줄은 Tab 2번, 그 안쪽 줄은 Tab 3번)",
     rows: 4,
     answer: "        if poop_y2 > 4:\n            poop_y2 = 0\n            poop_x2 = randint(0, 4)\n            score = score + 1",
   },
@@ -304,7 +305,7 @@ const SLOTS_M3: Slot[] = [
     label: "둘 중 하나라도 맞으면",
     hint:
       "두 똥 중 '하나라도' 주인공과 같은 칸에서 바닥에 닿으면 게임오버. (첫째 똥 조건) '또는' (둘째 똥 조건)\n" +
-      "일 때 → playing 을 끄고, 슬픈 얼굴과 점수를 보여 줘요. (갈림길 if 네 줄, 들여쓰기 8칸)",
+      "일 때 → playing 을 끄고, 슬픈 얼굴과 점수를 보여 줘요. (갈림길 if 네 줄, 앞 if 줄은 Tab 2번, 그 안쪽 줄은 Tab 3번)",
     rows: 4,
     answer:
       "        if (poop_y == 4 and poop_x == x) or (poop_y2 == 4 and poop_x2 == x):\n            playing = False\n            basic.show_icon(IconNames.SAD)\n            basic.show_number(score)",
@@ -316,10 +317,58 @@ function empty(): PhaseContent {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 활동지 — 구현 미션 3개(build·grill·mvp)에 하나씩, 각 미션 앞에 새 개념 설명(note). 끝에 바이브(worksheet):
+// 활동지 — and 개념·퀴즈(problem) + 구현 미션 2개(build·grill), 각 미션 앞에 새 개념 설명(note).
+//   미션3(mvp)·바이브(worksheet)는 31차 이월/보류로 아래 주석 보존:
 // note → vibe_code → text 2칸 → 메이크코드 공유 링크(long). 각 미션에 실행결과 SVG(설명 우측 1/3 폭).
 // ─────────────────────────────────────────────────────────────
 const WORKSHEET: WorksheetQuestion[] = [
+  /* ── and 개념·퀴즈 (problem) — 미션1 앞에 '그리고(and)' 를 먼저 익힌다. choice 퀴즈는 교사가 함께 확인 ── */
+  {
+    key: "_mb30_and_note",
+    phase: "problem",
+    label: "새 개념 — '그리고(and)'",
+    hint:
+      "오늘은 똥피하기를 '완성' 해요. 그 전에 꼭 필요한 '그리고(and)' 를 먼저 익혀요.\n\n" +
+      "· 그리고(and): 두 조건이 '모두' 참일 때만 참이에요. 하나라도 거짓이면 전체가 거짓이에요.\n" +
+      "    - 참 and 참  → 참 (둘 다 맞음)\n" +
+      "    - 참 and 거짓 → 거짓 (하나만 맞음)\n" +
+      "    - 거짓 and 거짓 → 거짓 (둘 다 틀림)\n" +
+      "· 똥피하기에서 '부딪힘' 은 두 조건이 모두 맞을 때예요:\n" +
+      "    똥이 맨 아랫줄에 왔고(poop_y 가 4) '그리고(and)' 그 칸이 주인공 칸(poop_x 가 x) → 부딪힘!\n" +
+      "    똥이 바닥에 왔어도 주인공과 다른 칸이면, 한 조건만 참이라 아직 안 부딪혀요.\n\n" +
+      "아래 퀴즈 두 개를 풀고 선생님과 함께 정답을 맞춰 봐요. (미션 1 에서 바로 써요.)",
+    kind: "note",
+    maxLength: 0,
+  },
+  {
+    key: "mb30_and_q1",
+    phase: "problem",
+    label: "퀴즈 ① — '그리고(and)' 는 언제 참일까?",
+    hint: "두 조건을 and 로 묶었을 때, 전체가 '참' 이 되는 경우는 어느 것일까요?",
+    kind: "choice",
+    choices: [
+      "두 조건이 '모두' 참일 때만",
+      "두 조건 중 '하나라도' 참이면",
+      "두 조건이 모두 거짓일 때",
+    ],
+    maxLength: 0,
+  },
+  {
+    key: "mb30_and_q2",
+    phase: "problem",
+    label: "퀴즈 ② — 이때 부딪힐까요?",
+    hint:
+      "똥이 맨 아랫줄에 왔어요(poop_y 가 4). 그런데 그 똥의 칸은 3 이고, 주인공은 1 에 있어요(poop_x 와 x 가 다름).\n" +
+      "'poop_y 가 4 and poop_x 가 x' 는 참일까요, 거짓일까요?",
+    kind: "choice",
+    choices: [
+      "거짓 — 한 조건만 참이라 and 는 거짓 (안 부딪힘)",
+      "참 — 똥이 바닥에 왔으니 부딪힘",
+      "and 는 둘 중 하나만 맞아도 참이라 부딪힘",
+    ],
+    maxLength: 0,
+  },
+
   /* ── 미션 1 (build) — 충돌 → 게임오버 ── */
   {
     key: "_mb30_m1_note",
@@ -329,8 +378,8 @@ const WORKSHEET: WorksheetQuestion[] = [
       "오늘은 똥피하기를 '완성' 해요! 먼저 똥에 맞으면 게임이 끝나게 만들어요.\n\n" +
       "· 켜짐/꺼짐 스위치(playing): True(켜짐)면 게임이 돌아가고, False(꺼짐)면 멈춰요. forever 맨 앞에서\n" +
       "  'if playing:' 으로 감싸, 꺼지면 아무 것도 안 움직이게 해요(똥도 주인공도 멈춤).\n" +
-      "· 그리고(and): 조건 두 개가 '모두' 맞아야 참이에요. 예) 'poop_y 가 4 이고 and poop_x 가 x' →\n" +
-      "  똥이 맨 아랫줄에 왔고, 그 칸이 바로 주인공 칸일 때 (= 부딪힘!).\n" +
+      "· 그리고(and)(앞 단계 복습): 두 조건이 '모두' 맞을 때만 참. 'poop_y 가 4 and poop_x 가 x' →\n" +
+      "  똥이 맨 아랫줄에 왔고 '그리고' 그 칸이 주인공 칸일 때 (= 부딪힘!).\n" +
       "· 슬픈 얼굴로 '게임 끝' 알리기: 똥에 맞으면 게임이 끝났다는 걸 눈에 보이게 알려 줘야겠죠? 마이크로비트\n" +
       "  LED 화면에 '그림(아이콘) 보여주기' 명령을 쓰면, 기계에 미리 들어 있는 여러 표정 그림 중 하나를 골라\n" +
       "  띄울 수 있어요. 여기선 그중 '슬픈 얼굴' 그림을 골라 띄워요. 이 명령은 문법이 길어 외우기 어려우니,\n" +
@@ -348,9 +397,9 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "미션 1 — 똥에 맞으면 게임 끝 (충돌 → 게임오버)",
     hint:
       "29차에서 만든 '똥이 계속 떨어지는' 코드예요. playing 스위치는 이미 켜 뒀어요.\n" +
-      "forever 의 ✎ 편집칸에 '충돌 판정' 세 줄을 써요(들여쓰기 그대로):\n" +
-      "   · 똥이 바닥줄(poop_y 가 4)에 닿았고 '그리고' 그 칸이 주인공 칸(poop_x 가 x)이면\n" +
-      "   · playing 을 꺼짐으로 바꾸고, 슬픈 얼굴을 보여 주기\n" +
+      "forever 의 ✎ 편집칸에 '충돌 판정' 세 줄을 써요(들여쓰기는 Tab 으로 넣어요 — 칸마다 Tab 몇 번인지 아래에 적어 뒀어요):\n" +
+      "   · 똥이 바닥줄(poop_y 가 4)에 닿았고 '그리고' 그 칸이 주인공 칸(poop_x 가 x)이면 (이 if 줄 — Tab 2번)\n" +
+      "   · playing 을 꺼짐으로 바꾸고, 슬픈 얼굴을 보여 주기 (그 안 두 줄 — Tab 3번. : 다음 Enter 치면 자동으로 한 칸 더)\n" +
       "다 채우면 '완성 코드 복사' 로 복사해 MakeCode 'Python' 에 (기존 코드 다 지우고) 붙여넣어요.\n" +
       "(이제 똥에 맞으면 슬픈 얼굴이 뜨고 멈춰요. 점수는 미션 2에서 더해요.)",
     kind: "code_fill",
@@ -384,9 +433,9 @@ const WORKSHEET: WorksheetQuestion[] = [
     label: "미션 2 — 점수 세기",
     hint:
       "충돌·게임오버는 미션 1에서 완성했어요. 이제 점수를 더해요.\n" +
-      "forever 의 ✎ 편집칸 두 곳을 채워요(들여쓰기 그대로):\n" +
-      "   ① 똥을 하나 피했을 때(바닥 리셋 안) — score 를 1 늘려서 다시 score 에 담기 (들여쓰기 12칸)\n" +
-      "   ② 게임이 끝났을 때 — 모은 score 를 숫자로 화면에 보여 주기 (들여쓰기 12칸)\n" +
+      "forever 의 ✎ 편집칸 두 곳을 채워요(들여쓰기는 Tab 으로 넣어요 — 칸마다 Tab 몇 번인지 아래에 적어 뒀어요):\n" +
+      "   ① 똥을 하나 피했을 때(바닥 리셋 안) — score 를 1 늘려서 다시 score 에 담기 (들여쓰기 Tab 3번)\n" +
+      "   ② 게임이 끝났을 때 — 모은 score 를 숫자로 화면에 보여 주기 (들여쓰기 Tab 3번)\n" +
       "다 채우면 '완성 코드 복사' 로 복사해 MakeCode 'Python' 에 붙여넣어요.\n" +
       "(이제 오래 버틸수록 점수가 오르고, 게임오버 때 숫자로 보여요.)",
     kind: "code_fill",
@@ -399,42 +448,16 @@ const WORKSHEET: WorksheetQuestion[] = [
     maxLength: 0,
   },
 
-  /* ── 미션 3 (mvp) — 똥 2개 ── */
-  {
-    key: "_mb30_m3_note",
-    phase: "mvp",
-    label: "새 개념 — 똥 두 개와 '또는(or)'",
-    hint:
-      "마지막으로 똥을 하나 더 늘려 더 어렵게! 똥 두 개가 같이 떨어져요.\n\n" +
-      "· 변수 한 벌 더: 둘째 똥은 poop_x2, poop_y2 처럼 이름 뒤에 2 를 붙여 '한 벌 더' 만들어요.\n" +
-      "  (낙하·그리기는 첫째 똥과 똑같이 한 벌 더 써 뒀어요 — 바닥 처리만 여러분이 거울처럼 채워요.)\n" +
-      "· 또는(or): 둘 중 '하나라도' 맞으면 게임오버예요. (첫째 똥이 주인공과 부딪힘) 'or' (둘째 똥이\n" +
-      "  주인공과 부딪힘) 처럼, 둘 중 하나만 참이어도 참이 돼요. (and=둘 다, or=하나라도 — 기억!)\n\n" +
-      "아래 미션에서 둘째 똥 바닥 처리와 'or' 충돌 판정을 채우면 똥피하기 완성!",
-    kind: "note",
-    maxLength: 0,
-  },
-  {
-    key: "_mb30_m3",
-    phase: "mvp",
-    label: "미션 3 — 똥 두 개! (하나라도 맞으면 게임오버)",
-    hint:
-      "똥을 한 벌 더 만들었어요(poop_x2, poop_y2). 낙하·그리기는 첫째 똥과 똑같이 넣어 뒀어요.\n" +
-      "forever 의 ✎ 편집칸 두 곳을 채워요(들여쓰기 그대로):\n" +
-      "   ① 둘째 똥 바닥 처리 — 바로 위 첫째 똥 처리를 '거울처럼' 2 를 붙여 쓰기 (갈림길 if 네 줄)\n" +
-      "   ② 둘 중 하나라도 맞으면 게임오버 — (첫째 똥 조건) '또는(or)' (둘째 똥 조건) 일 때 playing 끄고\n" +
-      "      슬픈 얼굴·점수 보여 주기 (갈림길 if 네 줄)\n" +
-      "다 채우면 '완성 코드 복사' 로 복사해 MakeCode 'Python' 에 붙여넣어요.\n" +
-      "(똥 두 개를 동시에 피하면 똥피하기 완성이에요! 이제 완성한 게임의 공유 링크를 선생님께 내요.)",
-    kind: "code_fill",
-    imageUrl: "/mb30-m3.svg",
-    imageAlt: "똥 두 개가 서로 다른 칸에서 함께 떨어지고 주인공이 아래에서 피하는 실행 결과",
-    imageSide: "right",
-    imageSideWidth: "third",
-    codeTemplate: CODE_M3,
-    codeSlots: SLOTS_M3,
-    maxLength: 0,
-  },
+  /*
+   * ── [31차 이월] 미션 3 (똥 2개 + 'or') ──
+   * 2026-11-16 교사 지시: 30차 수업 시간이 모자라 미션3 을 못 함 → 31차로 넘긴다.
+   * 바탕 코드·빈칸은 위 CODE_M3 / SLOTS_M3 상수에 그대로 보존(31차 seed 에서 재사용).
+   * 되살릴 때: 아래 note+code_fill(phase "mvp")을 유효 코드로 풀고 phaseOrder/phaseLabels/focusExempt 에 "mvp" 추가.
+   *
+  { key:"_mb30_m3_note", phase:"mvp", label:"새 개념 — 똥 두 개와 '또는(or)'", kind:"note", maxLength:0, hint: ... },
+  { key:"_mb30_m3", phase:"mvp", label:"미션 3 — 똥 두 개!", kind:"code_fill",
+    codeTemplate: CODE_M3, codeSlots: SLOTS_M3, imageUrl:"/mb30-m3.svg", ... },
+  */
 
   /*
    * ── [보류] 미션 4 (worksheet) — 바이브 코딩: AI로 나만의 기능 추가 (27차 메커니즘 재사용) ──
@@ -493,18 +516,7 @@ const WORKSHEET: WorksheetQuestion[] = [
   },
    */
 
-  /* ── 미션 3 끝 — 완성 공유 링크 제출 (mvp 단계). 성찰 바로 앞 선형 단계라 UNO 게이트가 그대로 통과된다. ── */
-  {
-    key: "mb30_share",
-    phase: "mvp",
-    label: "완성한 내 똥피하기 — 메이크코드 공유 링크 붙여넣기",
-    hint:
-      "똥 두 개까지 완성한 똥피하기를 선생님께 보여 줄 링크를 만들어 붙여넣어요.\n" +
-      "MakeCode 위쪽 '공유(Share)' → '프로젝트 공유' → 나온 링크를 '복사' 해서 아래 칸에 붙여넣기.\n" +
-      "붙여넣으면 자동으로 저장돼요(선생님이 볼 수 있어요). 그다음 성찰을 내면 UNO 가 열려요.",
-    kind: "long",
-    maxLength: 6000,
-  },
+  /* 미션3(똥 2개)·완성 공유링크(mb30_share) 는 31차로 이월. 30차는 미션1·2 완성 후 바로 성찰 → UNO. */
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
@@ -524,8 +536,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   gameExplainer: empty(),
 
   // 성찰 보상 게임 = UNO. 성찰을 제출하면 '제출하고 게임하기' 로 열린다.
-  // 미션3(똥 2개)을 시간상 뺐으므로 공유 링크(mb30_share) 제출을 게이트에서 요구하지 않는다.
-  //   → 성찰 제출만으로 UNO 가 열린다(미션3을 하든 안 하든 통과). 공유 링크 제출은 선택 사항으로 남겨 둠.
+  // 미션3(똥 2개)·공유링크를 31차로 이월했으므로 게이트는 비운다 → 성찰 제출만으로 UNO 가 열린다.
   rewardGame: {
     heading: "수고했어요! 🃏",
     body: "성찰을 제출했으면 잠깐 UNO 로 쉬어요. 선생님이 부르면 돌아오세요.",
@@ -535,7 +546,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   progress: empty(),
 
-  // 안내 보드 — 오늘 할 일(미션 1·2·3·4) + 29차 이어가기 짚기.
+  // 안내 보드 — 오늘 할 일(and 개념·퀴즈 + 미션 1·2) + 29차 이어가기 짚기.
   assessment: {
     heading: "오늘 할 일 — 똥피하기 완성하기",
     body: "",
@@ -543,37 +554,37 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     tabs: [
       {
         label: "오늘은 이런 날",
-        subtitle: "충돌 → 점수 → 똥 2개 → 공유",
+        subtitle: "and 익히기 → 충돌 → 점수",
         note:
-          "지난 시간엔 똥이 계속 떨어지게 만들었어요. 오늘은 똥피하기를 '완성' 해요 — 똥에 맞으면 게임오버\n" +
-          "(미션1), 점수 세기(미션2), 똥 두 개(미션3). 똥 두 개까지 완성하면 공유 링크를 선생님께 내요.\n" +
+          "지난 시간엔 똥이 계속 떨어지게 만들었어요. 오늘은 '그리고(and)' 를 먼저 익히고, 똥피하기를\n" +
+          "완성해요 — 똥에 맞으면 게임오버(미션1), 점수 세기(미션2). (똥 두 개는 다음 시간에 이어서 해요.)\n" +
           "좌표는 가로 x·세로 y 둘 다 0~4, 주인공은 맨 아랫줄(세로 4). 조작 A=왼쪽, B=오른쪽.",
         rows: [
+          { label: "개념·퀴즈", value: "'그리고(and)' — 두 조건이 모두 맞을 때만 참 (퀴즈로 확인)" },
           { label: "미션 1", value: "똥에 맞으면 게임 끝 (충돌 → 슬픈 얼굴)" },
           { label: "미션 2", value: "점수 세기 (오래 버틸수록 +1, 끝나면 숫자로)" },
-          { label: "미션 3", value: "똥 두 개! (하나라도 맞으면 게임오버) + 완성 공유 링크 내기" },
           { label: "채점은", value: "점수·자동채점 없어요 — 만들어 붙여넣어 보면 성공" },
         ],
         highlights: [
           "미션마다 스타터를 복사해 MakeCode 'Python' 에 붙여넣고, ✎ 편집칸만 채워요.",
-          "새 개념(playing·and / 점수·show_number / 또는 or)은 미션 바로 앞 설명을 먼저 읽어요.",
+          "새 개념(그리고 and / 켜짐·꺼짐 playing / 점수·show_number)은 미션 바로 앞 설명을 먼저 읽어요.",
         ],
       },
       {
         label: "오늘의 새 낱말",
-        subtitle: "켜짐/꺼짐 스위치 · 그리고(and) · 또는(or) · 점수",
+        subtitle: "그리고(and) · 켜짐/꺼짐 스위치 · 점수",
         note:
-          "playing 은 게임의 '켜짐/꺼짐 스위치' 예요(True/False). 똥에 맞으면 꺼서 멈춰요. '그리고(and)' 는 두\n" +
-          "조건이 '모두' 맞아야 참, '또는(or)' 은 '하나라도' 맞으면 참이에요. 점수(score)는 똥을 피할 때마다\n" +
+          "'그리고(and)' 는 두 조건이 '모두' 맞아야 참이에요(하나라도 틀리면 거짓). playing 은 게임의\n" +
+          "'켜짐/꺼짐 스위치' 예요(True/False) — 똥에 맞으면 꺼서 멈춰요. 점수(score)는 똥을 피할 때마다\n" +
           "1 씩 늘려(+1) 모았다가, 게임이 끝나면 숫자로 보여 줘요(show_number).",
         rows: [
-          { label: "켜짐/꺼짐 (playing)", value: "True=게임 진행, False=멈춤" },
           { label: "그리고 (and)", value: "두 조건이 모두 맞아야 참 (똥이 바닥 and 같은 칸)" },
-          { label: "또는 (or)", value: "둘 중 하나라도 맞으면 참 (똥1 or 똥2 충돌)" },
+          { label: "켜짐/꺼짐 (playing)", value: "True=게임 진행, False=멈춤" },
           { label: "점수 (score)", value: "피할 때마다 +1, 끝나면 숫자로 보여주기" },
+          { label: "들여쓰기", value: "✎ 칸에서 Tab 1번 = 한 단계(공백 4칸). if 줄은 Tab 2번, 그 안은 Tab 3번" },
         ],
         highlights: [
-          "and=둘 다, or=하나라도 — 이 둘만 확실히 구별하면 돼요.",
+          "and=두 조건 모두 맞아야 참 — 이것만 확실히 익히면 돼요.",
         ],
       },
     ],
@@ -588,16 +599,18 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   reflectionPublic: false,
 
   // MakeCode(새 탭)·파이썬 타자(새 탭)가 붙은 단계에서 창을 옮기는 것을 이탈로 안 센다.
-  focusExempt: ["waiting", "build", "grill", "mvp"],
+  // (problem=and 개념·퀴즈 는 포털 안에서만 하므로 면제 대상 아님.)
+  focusExempt: ["waiting", "build", "grill"],
   phaseLabels: {
     assessment: "안내",
+    problem: "and 개념·퀴즈",
     build: "미션 1 — 충돌(게임오버)",
     grill: "미션 2 — 점수",
-    mvp: "미션 3 — 똥 2개 + 공유",
   },
-  phaseOrder: ["waiting", "assessment", "build", "grill", "mvp", "reflection"],
-  // 교사 확정: 되돌아가기 off — 교사가 단계를 몰아준다. 공유링크(mvp 끝)가 성찰 바로 앞이라 게이트는
-  // 선형 흐름으로 통과된다. 마음 체크인 강제 관문은 freeNav off 에서 유효하다.
+  phaseOrder: ["waiting", "assessment", "problem", "build", "grill", "reflection"],
+  // 교사 확정: 되돌아가기 off — 교사가 단계를 몰아준다(안내 → and 개념·퀴즈 → 미션1 → 미션2 → 성찰).
+  // 미션3(똥 2개)은 31차로 이월. 성찰 제출만으로 UNO 가 열린다(rewardGame.requires 비움).
+  // 마음 체크인 강제 관문은 freeNav off 에서 유효하다.
   freeNavigation: false,
 
   activity: {
@@ -607,9 +620,9 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     worksheetIntro: {
       heading: "똥피하기 만들기 ③ (완성)",
       body:
-        "지난 시간에 만든 '똥이 계속 떨어지는' 똥피하기를 완성해요 — 충돌·게임오버(미션1), 점수(미션2),\n" +
-        "똥 두 개(미션3). 각 미션은 새 개념 설명을 먼저 읽고, 스타터를 복사해 MakeCode 에 붙여넣고 ✎ 빈자리만\n" +
-        "채워요. 똥 두 개까지 완성하면 공유 링크를 내고, 성찰을 내면 UNO 가 열려요.",
+        "먼저 '그리고(and)' 를 퀴즈로 익히고, 지난 시간에 만든 '똥이 계속 떨어지는' 똥피하기를 완성해요 —\n" +
+        "충돌·게임오버(미션1), 점수(미션2). 각 미션은 새 개념 설명을 먼저 읽고, 스타터를 복사해 MakeCode 에\n" +
+        "붙여넣고 ✎ 빈자리만 채워요(들여쓰기는 Tab 으로). 다 만든 뒤 성찰을 내면 UNO 가 열려요.",
     },
     worksheet: WORKSHEET,
     galleryEnabled: false,
@@ -687,9 +700,9 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (23~29차와 같은 MakeCode 통, 키 mb30_* 로 충돌 없음)`);
-  console.log("단계: 대기(타자) → 기분 → 안내 → 미션1(build 충돌) → 미션2(grill 점수) → 미션3(mvp 똥2개 + 공유링크) → 성찰. freeNav OFF. hideDoneButton true. 성찰 제출 → UNO.");
-  console.log("미션마다 앞에 새 개념 note(playing·and / 점수·show_number / or). ※ 미션4(바이브 코딩)는 2026-11-16 시간 부족으로 보류 — WORKSHEET 에 주석 보존(31차 재사용).");
-  console.log("게이트: rewardGame.requires = [] (미션3 시간상 보류 — 공유링크 요구 없음). 성찰 제출만으로 UNO 열림. mb30_share 칸은 선택 항목으로 남김.");
+  console.log("단계: 대기(타자) → 기분 → 안내 → and 개념·퀴즈(problem) → 미션1(build 충돌) → 미션2(grill 점수) → 성찰. freeNav OFF. hideDoneButton true. 성찰 제출 → UNO.");
+  console.log("개념·퀴즈: and(choice 2개, 교사와 함께 확인). 미션 앞 새 개념 note(playing / 점수·show_number). 들여쓰기 안내는 Tab 횟수(8칸=Tab 2번·12칸=Tab 3번).");
+  console.log("※ 미션3(똥 2개)은 2026-11-16 수업 후 31차로 이월(CODE_M3/SLOTS_M3 보존). 미션4(바이브)는 앞서 보류. 게이트: rewardGame.requires = [] — 성찰 제출만으로 UNO.");
   process.exit(0);
 }
 
