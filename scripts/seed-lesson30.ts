@@ -524,20 +524,13 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   gameExplainer: empty(),
 
   // 성찰 보상 게임 = UNO. 성찰을 제출하면 '제출하고 게임하기' 로 열린다.
-  // requires: 완성 공유 링크(mb30_share)가 '제출(비어있지 않음)' 돼야 게임이 열린다. submitted:true → 입력만 본다.
-  //   공유링크가 미션3(mvp) 끝 = 성찰 바로 앞 단계라 선형 흐름으로 통과된다. 비면 팝업으로 알리고 mvp 로 보낸다.
+  // 미션3(똥 2개)을 시간상 뺐으므로 공유 링크(mb30_share) 제출을 게이트에서 요구하지 않는다.
+  //   → 성찰 제출만으로 UNO 가 열린다(미션3을 하든 안 하든 통과). 공유 링크 제출은 선택 사항으로 남겨 둠.
   rewardGame: {
     heading: "수고했어요! 🃏",
     body: "성찰을 제출했으면 잠깐 UNO 로 쉬어요. 선생님이 부르면 돌아오세요.",
     url: "https://uno-game-gilt.vercel.app/",
-    requires: [
-      {
-        key: "mb30_share",
-        label: "완성 똥피하기 공유 링크 (미션 3)",
-        phase: "mvp",
-        submitted: true,
-      },
-    ],
+    requires: [],
   },
 
   progress: empty(),
@@ -696,7 +689,7 @@ async function main(): Promise<void> {
   console.log(`\n활동 ID: ${ACTIVITY_ID} (23~29차와 같은 MakeCode 통, 키 mb30_* 로 충돌 없음)`);
   console.log("단계: 대기(타자) → 기분 → 안내 → 미션1(build 충돌) → 미션2(grill 점수) → 미션3(mvp 똥2개 + 공유링크) → 성찰. freeNav OFF. hideDoneButton true. 성찰 제출 → UNO.");
   console.log("미션마다 앞에 새 개념 note(playing·and / 점수·show_number / or). ※ 미션4(바이브 코딩)는 2026-11-16 시간 부족으로 보류 — WORKSHEET 에 주석 보존(31차 재사용).");
-  console.log("게이트: rewardGame.requires = mb30_share(submitted, phase=mvp). 공유링크가 미션3 끝 = 성찰 바로 앞 단계라 선형 흐름으로 통과.");
+  console.log("게이트: rewardGame.requires = [] (미션3 시간상 보류 — 공유링크 요구 없음). 성찰 제출만으로 UNO 열림. mb30_share 칸은 선택 항목으로 남김.");
   process.exit(0);
 }
 
