@@ -930,6 +930,9 @@ export interface WorksheetQuestion {
     cond1True: boolean;
     /** 조건 2 의 참/거짓 정답 */
     cond2True: boolean;
+    /** 상황 그림 — 컴포넌트가 우측에 2단으로 그린다(공유 래퍼의 imageSide 를 쓰지 않는다) */
+    imageUrl?: string;
+    imageAlt?: string;
   };
   /** 칸 옆에 복사 단추를 붙인다 (다른 곳에 붙여 넣을 값일 때) */
   copyable?: boolean;

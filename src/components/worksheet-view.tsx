@@ -1214,6 +1214,8 @@ export function WorksheetView({
               cond2={question.andQuiz?.cond2 ?? ""}
               cond1True={question.andQuiz?.cond1True ?? false}
               cond2True={question.andQuiz?.cond2True ?? false}
+              imageUrl={question.andQuiz?.imageUrl}
+              imageAlt={question.andQuiz?.imageAlt}
               value={value.answers[question.key] ?? ""}
               onChange={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}

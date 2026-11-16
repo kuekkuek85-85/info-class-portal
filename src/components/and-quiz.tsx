@@ -45,6 +45,8 @@ export function AndQuiz({
   cond2,
   cond1True,
   cond2True,
+  imageUrl,
+  imageAlt,
   value,
   onChange,
   disabled,
@@ -53,6 +55,8 @@ export function AndQuiz({
   cond2: string;
   cond1True: boolean;
   cond2True: boolean;
+  imageUrl?: string;
+  imageAlt?: string;
   value: string;
   onChange: (raw: string) => void;
   disabled?: boolean;
@@ -102,7 +106,7 @@ export function AndQuiz({
   }
 
   const rowClass = (ok: boolean) =>
-    `flex flex-col gap-2 rounded-lg border-2 p-3 sm:flex-row sm:items-center sm:justify-between ${
+    `flex flex-col gap-1.5 rounded-lg border-2 p-3 ${
       graded ? (ok ? "border-ink bg-lime" : "border-ink bg-cream") : "border-line bg-canvas"
     }`;
 
@@ -122,7 +126,7 @@ export function AndQuiz({
         value={val}
         disabled={disabled || graded}
         onChange={(e) => pick(which, e.target.value as Pick)}
-        className="field font-mono text-sm sm:w-56 disabled:opacity-70"
+        className="field w-full font-mono text-sm disabled:opacity-70"
         aria-label="참 또는 거짓 고르기"
       >
         <option value="">고르기…</option>
@@ -136,76 +140,92 @@ export function AndQuiz({
     <div className="flex flex-col gap-3">
       <div className="rounded-lg bg-cream p-3">
         <p className="t-body-sm">
-          아래 상황에서 <b>조건 1</b> 과 <b>조건 2</b> 가 각각 참(True)인지 거짓(False)인지 고르고,
-          둘을 <b>and(그리고)</b> 로 묶은 <b>전체 결과</b> 도 골라 보세요. 다 고르면 「확인」을 눌러요.
+          <b>오른쪽 그림</b> 을 보고, <b>조건 1</b> 과 <b>조건 2</b> 가 각각 참(True)인지 거짓(False)인지
+          고르고, 둘을 <b>and(그리고)</b> 로 묶은 <b>전체 결과</b> 도 골라 보세요. 다 고르면 「확인」을 눌러요.
         </p>
       </div>
 
-      {/* 조건 1 */}
-      <div className={rowClass(correct.c1)}>
-        <p className="t-body-sm">
-          <span className="font-bold">조건 1</span> : {cond1}
-          {graded && (
-            <span className={`ml-2 font-bold ${correct.c1 ? "text-success" : ""}`}>
-              {correct.c1 ? "정답" : "오답"}
-            </span>
+      {/* 좌: 문제(드롭다운) · 우: 상황 그림 */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div className="flex flex-1 flex-col gap-3">
+          {/* 조건 1 */}
+          <div className={rowClass(correct.c1)}>
+            <p className="t-body-sm">
+              <span className="font-bold">조건 1</span> : {cond1}
+              {graded && (
+                <span className={`ml-2 font-bold ${correct.c1 ? "text-success" : ""}`}>
+                  {correct.c1 ? "정답" : "오답"}
+                </span>
+              )}
+            </p>
+            <Dropdown which="c1" val={c1} trueLabel="참(True)" falseLabel="거짓(False)" />
+          </div>
+
+          <p className="t-subhead text-center">그리고 (and)</p>
+
+          {/* 조건 2 */}
+          <div className={rowClass(correct.c2)}>
+            <p className="t-body-sm">
+              <span className="font-bold">조건 2</span> : {cond2}
+              {graded && (
+                <span className={`ml-2 font-bold ${correct.c2 ? "text-success" : ""}`}>
+                  {correct.c2 ? "정답" : "오답"}
+                </span>
+              )}
+            </p>
+            <Dropdown which="c2" val={c2} trueLabel="참(True)" falseLabel="거짓(False)" />
+          </div>
+
+          {/* 전체 결과 */}
+          <div className={rowClass(correct.r)}>
+            <p className="t-body-sm">
+              <span className="font-bold">전체 결과</span> (조건1 and 조건2)
+              {graded && (
+                <span className={`ml-2 font-bold ${correct.r ? "text-success" : ""}`}>
+                  {correct.r ? "정답" : "오답"}
+                </span>
+              )}
+            </p>
+            <Dropdown which="r" val={r} trueLabel="참(True) = 부딪힘" falseLabel="거짓(False) = 안 부딪힘" />
+          </div>
+
+          {!graded ? (
+            <button
+              type="button"
+              onClick={check}
+              disabled={disabled || !allPicked}
+              className="pill pill-primary self-start disabled:opacity-35"
+            >
+              {allPicked ? "확인" : "세 칸을 모두 골라 주세요"}
+            </button>
+          ) : (
+            <div className="flex flex-col gap-2 rounded-lg border-2 border-ink bg-surface px-4 py-4">
+              <p className={`t-subhead ${allOk ? "text-success" : ""}`}>
+                {allOk ? "잘했어요! 모두 맞혔어요 ✓" : "다시 한 번 생각해 볼까요?"}
+              </p>
+              <p className="t-body-sm">
+                조건 1 은 <TF v={cond1True ? "T" : "F"} />, 조건 2 는 <TF v={cond2True ? "T" : "F"} /> 이에요.
+                and 는 둘이 <b>모두 참</b> 일 때만 참이니, 전체 결과는{" "}
+                <b>{resultTrue ? "참(True) = 부딪힘" : "거짓(False) = 안 부딪힘"}</b> 이에요.
+              </p>
+              <button type="button" onClick={reset} disabled={disabled} className="pill pill-secondary self-start">
+                다시 풀기
+              </button>
+            </div>
           )}
-        </p>
-        <Dropdown which="c1" val={c1} trueLabel="참(True)" falseLabel="거짓(False)" />
-      </div>
-
-      <p className="t-subhead text-center">그리고 (and)</p>
-
-      {/* 조건 2 */}
-      <div className={rowClass(correct.c2)}>
-        <p className="t-body-sm">
-          <span className="font-bold">조건 2</span> : {cond2}
-          {graded && (
-            <span className={`ml-2 font-bold ${correct.c2 ? "text-success" : ""}`}>
-              {correct.c2 ? "정답" : "오답"}
-            </span>
-          )}
-        </p>
-        <Dropdown which="c2" val={c2} trueLabel="참(True)" falseLabel="거짓(False)" />
-      </div>
-
-      {/* 전체 결과 */}
-      <div className={rowClass(correct.r)}>
-        <p className="t-body-sm">
-          <span className="font-bold">전체 결과</span> (조건1 and 조건2)
-          {graded && (
-            <span className={`ml-2 font-bold ${correct.r ? "text-success" : ""}`}>
-              {correct.r ? "정답" : "오답"}
-            </span>
-          )}
-        </p>
-        <Dropdown which="r" val={r} trueLabel="참(True) = 부딪힘" falseLabel="거짓(False) = 안 부딪힘" />
-      </div>
-
-      {!graded ? (
-        <button
-          type="button"
-          onClick={check}
-          disabled={disabled || !allPicked}
-          className="pill pill-primary self-start disabled:opacity-35"
-        >
-          {allPicked ? "확인" : "세 칸을 모두 골라 주세요"}
-        </button>
-      ) : (
-        <div className="flex flex-col gap-2 rounded-lg border-2 border-ink bg-surface px-4 py-4">
-          <p className={`t-subhead ${allOk ? "text-success" : ""}`}>
-            {allOk ? "잘했어요! 모두 맞혔어요 ✓" : "다시 한 번 생각해 볼까요?"}
-          </p>
-          <p className="t-body-sm">
-            조건 1 은 <TF v={cond1True ? "T" : "F"} />, 조건 2 는 <TF v={cond2True ? "T" : "F"} /> 이에요.
-            and 는 둘이 <b>모두 참</b> 일 때만 참이니, 전체 결과는{" "}
-            <b>{resultTrue ? "참(True) = 부딪힘" : "거짓(False) = 안 부딪힘"}</b> 이에요.
-          </p>
-          <button type="button" onClick={reset} disabled={disabled} className="pill pill-secondary self-start">
-            다시 풀기
-          </button>
         </div>
-      )}
+
+        {imageUrl && (
+          <div className="sm:w-2/5 sm:shrink-0 sm:self-start">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imageUrl}
+              alt={imageAlt ?? "상황 그림"}
+              className="w-full rounded-xl border-2 border-line bg-canvas"
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

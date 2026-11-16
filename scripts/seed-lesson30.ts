@@ -367,11 +367,9 @@ const WORKSHEET: WorksheetQuestion[] = [
       cond2: "똥이 주인공과 같은 칸이다",
       cond1True: true, // 똥이 바닥에 있음 → 참
       cond2True: false, // 주인공과 다른 칸 → 거짓
+      imageUrl: "/mb30-and2.svg",
+      imageAlt: "똥은 맨 아랫줄 오른쪽 칸, 주인공은 맨 아랫줄 왼쪽 칸에 있어 서로 다른 칸인 상황",
     },
-    imageUrl: "/mb30-and2.svg",
-    imageAlt: "똥은 맨 아랫줄 오른쪽 칸, 주인공은 맨 아랫줄 왼쪽 칸에 있어 서로 다른 칸인 상황",
-    imageSide: "right",
-    imageSideWidth: "third",
     maxLength: 0,
   },
   {
@@ -387,11 +385,9 @@ const WORKSHEET: WorksheetQuestion[] = [
       cond2: "똥이 주인공과 같은 칸이다",
       cond1True: true, // 바닥 → 참
       cond2True: true, // 같은 칸 → 참
+      imageUrl: "/mb30-and3.svg",
+      imageAlt: "똥이 맨 아랫줄에서 주인공과 같은 칸에 겹쳐 있는 충돌 상황",
     },
-    imageUrl: "/mb30-and3.svg",
-    imageAlt: "똥이 맨 아랫줄에서 주인공과 같은 칸에 겹쳐 있는 충돌 상황",
-    imageSide: "right",
-    imageSideWidth: "third",
     maxLength: 0,
   },
 
