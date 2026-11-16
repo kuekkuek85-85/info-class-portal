@@ -591,6 +591,13 @@ export interface WorksheetQuestion {
     | "long"
     | "traits"
     | "choice"
+    /**
+     * and_quiz — '그리고(and)' 진리표 문항(30차). 상황을 조건1 and 조건2 로 주고, 학생이
+     * 조건1 참/거짓·조건2 참/거짓·전체(and) 참/거짓을 드롭다운으로 고른다. 전체 정답은
+     * cond1True && cond2True 로 정해지고 즉시 채점·해설한다(answers 에 고른 값 JSON 저장).
+     * imageUrl/imageSide 로 상황 그림을 우측에 붙인다. (and-quiz · andQuiz 참조)
+     */
+    | "and_quiz"
     | "multi"
     | "note"
     | "echo"
@@ -910,6 +917,20 @@ export interface WorksheetQuestion {
   typingUrl?: string;
   /** diagnostic 이 낼 진단 문항들 (12차). 자동 채점해 0~100 점수를 answers 에 남긴다 */
   diagnosticItems?: DiagnosticItem[];
+  /**
+   * and_quiz(30차) 문항 명세 — 두 조건과 각각의 참/거짓. 전체 결과는 cond1True && cond2True.
+   * 상황 그림은 같은 문항의 imageUrl/imageSide 로 붙인다.
+   */
+  andQuiz?: {
+    /** 조건 1 설명 (예: "똥이 맨 아랫줄에 닿았다") */
+    cond1: string;
+    /** 조건 2 설명 (예: "똥이 주인공과 같은 칸이다") */
+    cond2: string;
+    /** 조건 1 의 참/거짓 정답 */
+    cond1True: boolean;
+    /** 조건 2 의 참/거짓 정답 */
+    cond2True: boolean;
+  };
   /** 칸 옆에 복사 단추를 붙인다 (다른 곳에 붙여 넣을 값일 때) */
   copyable?: boolean;
   /**

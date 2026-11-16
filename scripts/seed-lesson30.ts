@@ -336,7 +336,8 @@ const WORKSHEET: WorksheetQuestion[] = [
       "· 똥피하기에서 '부딪힘' 은 두 조건이 모두 맞을 때예요:\n" +
       "    똥이 맨 아랫줄에 왔고(poop_y 가 4) '그리고(and)' 그 칸이 주인공 칸(poop_x 가 x) → 부딪힘!\n" +
       "    똥이 바닥에 왔어도 주인공과 다른 칸이면, 한 조건만 참이라 아직 안 부딪혀요.\n\n" +
-      "아래 퀴즈 두 개를 풀고 선생님과 함께 정답을 맞춰 봐요. (미션 1 에서 바로 써요.)",
+      "아래 퀴즈를 풀어 봐요. 퀴즈 ① 은 and 의 뜻, 퀴즈 ②③ 은 그림을 보고 참/거짓을 골라 맞혀 봐요.\n" +
+      "(여기서 익힌 and 를 미션 1 에서 바로 써요.)",
     kind: "note",
     maxLength: 0,
   },
@@ -356,16 +357,41 @@ const WORKSHEET: WorksheetQuestion[] = [
   {
     key: "mb30_and_q2",
     phase: "problem",
-    label: "퀴즈 ② — 이때 부딪힐까요?",
+    label: "퀴즈 ② - 이 상황, 부딪힐까요? (서로 다른 칸)",
     hint:
-      "똥이 맨 아랫줄까지 쭉 내려왔어요. 그런데 똥은 맨 오른쪽 칸에 있고, 주인공은 맨 왼쪽 칸에 있어요.\n" +
-      "'똥이 바닥에 닿음' 과 '똥이 주인공과 같은 칸' 두 가지를 and(그리고)로 묶으면, 지금 부딪힐까요?",
-    kind: "choice",
-    choices: [
-      "안 부딪혀요. 바닥엔 닿았지만 서로 다른 칸이라, 두 조건이 '모두' 참은 아니에요",
-      "부딪혀요. 똥이 바닥에 닿았으니까요",
-      "부딪혀요. and 는 둘 중 하나만 맞아도 참이니까요",
-    ],
+      "오른쪽 그림을 보고, 두 조건이 각각 참(True)인지 거짓(False)인지 고르고, 둘을 and 로 묶은\n" +
+      "전체 결과도 골라 보세요.",
+    kind: "and_quiz",
+    andQuiz: {
+      cond1: "똥이 맨 아랫줄(바닥)에 닿았다",
+      cond2: "똥이 주인공과 같은 칸이다",
+      cond1True: true, // 똥이 바닥에 있음 → 참
+      cond2True: false, // 주인공과 다른 칸 → 거짓
+    },
+    imageUrl: "/mb30-and2.svg",
+    imageAlt: "똥은 맨 아랫줄 오른쪽 칸, 주인공은 맨 아랫줄 왼쪽 칸에 있어 서로 다른 칸인 상황",
+    imageSide: "right",
+    imageSideWidth: "third",
+    maxLength: 0,
+  },
+  {
+    key: "mb30_and_q3",
+    phase: "problem",
+    label: "퀴즈 ③ - 이 상황, 부딪힐까요? (같은 칸)",
+    hint:
+      "이번에는 그림이 달라요. 두 조건이 각각 참(True)인지 거짓(False)인지 고르고, 둘을 and 로 묶은\n" +
+      "전체 결과도 골라 보세요.",
+    kind: "and_quiz",
+    andQuiz: {
+      cond1: "똥이 맨 아랫줄(바닥)에 닿았다",
+      cond2: "똥이 주인공과 같은 칸이다",
+      cond1True: true, // 바닥 → 참
+      cond2True: true, // 같은 칸 → 참
+    },
+    imageUrl: "/mb30-and3.svg",
+    imageAlt: "똥이 맨 아랫줄에서 주인공과 같은 칸에 겹쳐 있는 충돌 상황",
+    imageSide: "right",
+    imageSideWidth: "third",
     maxLength: 0,
   },
 

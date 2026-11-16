@@ -24,6 +24,7 @@ import { ClozeField } from "@/components/cloze-field";
 import { MoodRecheck } from "@/components/mood-recheck";
 import { ReceivedFeedbackPanel } from "@/components/received-feedback-panel";
 import { DiagnosticQuiz } from "@/components/diagnostic-quiz";
+import { AndQuiz } from "@/components/and-quiz";
 import { MaskingField } from "@/components/masking-field";
 import { ScamSim } from "@/components/scam-sim";
 import { TypingGame } from "@/components/typing-game";
@@ -1206,6 +1207,17 @@ export function WorksheetView({
                 </div>
               );
             })()
+          ) : question.kind === "and_quiz" ? (
+            /* '그리고(and)' 진리표 — 조건1·조건2·전체를 드롭다운으로 고르고 즉시 채점(30차) */
+            <AndQuiz
+              cond1={question.andQuiz?.cond1 ?? ""}
+              cond2={question.andQuiz?.cond2 ?? ""}
+              cond1True={question.andQuiz?.cond1True ?? false}
+              cond2True={question.andQuiz?.cond2True ?? false}
+              value={value.answers[question.key] ?? ""}
+              onChange={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
           ) : question.kind === "choice" ? (
             /*
               보기 중 하나. 고른 문구가 그대로 답이 된다.
