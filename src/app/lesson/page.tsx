@@ -16,6 +16,7 @@ import { QuizView, type QuizState } from "@/components/quiz-view";
 import { ReviewView } from "@/components/review-view";
 import { SiteFooter } from "@/components/site-footer";
 import { useFocusTracker } from "@/hooks/use-focus-tracker";
+import { LinkPromptModal } from "@/components/link-prompt-modal";
 import { ProgressCheckModal } from "@/components/progress-check-modal";
 import { RewardGameFrame } from "@/components/reward-game-frame";
 import { ReviewDescModal } from "@/components/review-desc-modal";
@@ -116,6 +117,8 @@ interface LessonData {
     freeNavigation?: boolean;
     /** "다 했어요 — 선생님께 알리기" 버튼 숨김 여부(24차~). 기본 false=보임 */
     hideDoneButton?: boolean;
+    /** 접속 직후 앱 링크 제출 모달을 띄울 학번 목록. 비면 아무에게도 안 뜸 */
+    linkPromptStudentIds?: string[];
     /** 단계 순서(차시가 정함). 되돌아가기 줄이 존중 — 여기 없는 단계(예: 기분)는 안 띄운다 */
     phaseOrder?: LessonPhase[];
     /** 이 차시에서만 쓰는 단계 이름 (되돌아가기 줄에 쓴다) */
@@ -1139,6 +1142,17 @@ export default function LessonPage() {
         자기 상태를 직접 받아 온다 — progressChecks 가 없는 차시에서는 아무것도 안 그린다.
       */}
       <ProgressCheckModal />
+
+      {/*
+        앱 게시 링크 제출 모달. 교사가 linkPromptStudentIds 에 넣은 학번으로 로그인한 학생에게만
+        접속 직후 한 번 뜬다. 목록이 없거나 학번이 없으면 컴포넌트가 아무것도 렌더하지 않는다
+        (다른 수업·학생 영향 0). 제출은 build_url 로 저장(/api/student/artifact 재사용).
+      */}
+      <LinkPromptModal
+        sessionId={data.session.id}
+        studentId={data.me.studentId}
+        promptIds={data.session.linkPromptStudentIds}
+      />
 
       {/*
         "내 앱 소개 최종 수정" 팝업 (동료 검토 직전). 자립형이라 여기 한 번 얹으면

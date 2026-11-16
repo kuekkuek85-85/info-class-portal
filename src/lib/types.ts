@@ -1943,6 +1943,15 @@ export interface ClassSession {
    * 지우면 안 된다 — 이 버튼은 수행평가 통과·DonePortal·보상 게이트의 방아쇠다.
    */
   hideDoneButton?: boolean;
+  /**
+   * 접속 직후 **앱 게시 링크 제출 모달**을 띄울 학번 목록 (기본 없음=아무에게도 안 뜸).
+   *
+   * 지난 차시에 링크를 못 냈거나 죽은 링크를 낸 학생만 교사가 콕 집어 넣는다. 이 배열에
+   * 든 학번으로 로그인한 학생에게만 모달이 뜨고, 제출하면 그 학생 작품의 build_url 로
+   * 저장된다(기존 /api/student/artifact 경로 재사용). 목록에 없거나 이 필드가 없는
+   * 세션에서는 모달이 **아무것도 렌더하지 않는다** — 다른 수업·학생에 영향 0.
+   */
+  linkPromptStudentIds?: string[];
   /** 진도 체크 팝업 설정 (도우미 선발 속도 체크). 없으면 팝업 없음 (ProgressChecks) */
   progressChecks?: ProgressChecks;
 
