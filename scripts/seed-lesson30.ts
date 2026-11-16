@@ -358,13 +358,13 @@ const WORKSHEET: WorksheetQuestion[] = [
     phase: "problem",
     label: "퀴즈 ② — 이때 부딪힐까요?",
     hint:
-      "똥이 맨 아랫줄에 왔어요(poop_y 가 4). 그런데 그 똥의 칸은 3 이고, 주인공은 1 에 있어요(poop_x 와 x 가 다름).\n" +
-      "'poop_y 가 4 and poop_x 가 x' 는 참일까요, 거짓일까요?",
+      "똥이 맨 아랫줄까지 쭉 내려왔어요. 그런데 똥은 맨 오른쪽 칸에 있고, 주인공은 맨 왼쪽 칸에 있어요.\n" +
+      "'똥이 바닥에 닿음' 과 '똥이 주인공과 같은 칸' 두 가지를 and(그리고)로 묶으면, 지금 부딪힐까요?",
     kind: "choice",
     choices: [
-      "거짓 — 한 조건만 참이라 and 는 거짓 (안 부딪힘)",
-      "참 — 똥이 바닥에 왔으니 부딪힘",
-      "and 는 둘 중 하나만 맞아도 참이라 부딪힘",
+      "안 부딪혀요. 바닥엔 닿았지만 서로 다른 칸이라, 두 조건이 '모두' 참은 아니에요",
+      "부딪혀요. 똥이 바닥에 닿았으니까요",
+      "부딪혀요. and 는 둘 중 하나만 맞아도 참이니까요",
     ],
     maxLength: 0,
   },
@@ -386,7 +386,7 @@ const WORKSHEET: WorksheetQuestion[] = [
       "  아래 예시를 그대로 보고 따라 쓰면 돼요:\n" +
       "      슬픈 얼굴은 이렇게 띄워요  →  basic.show_icon(IconNames.SAD)\n" +
       "  (이 한 줄을 쓰면 LED 에 슬픈 얼굴이 떠요. 괄호·점·대문자까지 똑같이 적어요.)\n\n" +
-      "정리하면 — 충돌하면 playing 을 꺼서(False) 멈추고, basic.show_icon(IconNames.SAD) 로 슬픈 얼굴을 띄워요.\n" +
+      "정리하면, 충돌하면 playing 을 꺼서(False) 멈추고, basic.show_icon(IconNames.SAD) 로 슬픈 얼굴을 띄워요.\n" +
       "아래 미션에서 직접 채워요.",
     kind: "note",
     maxLength: 0,
