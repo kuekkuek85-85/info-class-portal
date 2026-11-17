@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 236" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <!-- 왼쪽 : 변수 노가다 -->
+  <text x="112" y="24" text-anchor="middle" font-size="14" font-weight="700" fill="#171717">변수 여러 개 (노가다)</text>
+  <g>
+    <rect x="24" y="40" width="176" height="30" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="2"/>
+    <text x="36" y="60" font-size="13" fill="#171717" font-family="'Courier New',monospace">poop_x  = 1</text>
+    <rect x="24" y="78" width="176" height="30" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="2"/>
+    <text x="36" y="98" font-size="13" fill="#171717" font-family="'Courier New',monospace">poop_x2 = 3</text>
+    <rect x="24" y="116" width="176" height="30" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="2" stroke-dasharray="5 4"/>
+    <text x="36" y="136" font-size="13" fill="#9ca3af" font-family="'Courier New',monospace">poop_x3 = ?</text>
+  </g>
+  <text x="112" y="172" text-anchor="middle" font-size="11.5" fill="#64748b">똥마다 변수를 또 만들고</text>
+  <text x="112" y="190" text-anchor="middle" font-size="11.5" fill="#64748b">같은 코드를 또 복붙…</text>
+
+  <!-- 가운데 화살표 -->
+  <text x="230" y="112" text-anchor="middle" font-size="26" font-weight="700" fill="#94a3b8">→</text>
+
+  <!-- 오른쪽 : 리스트 하나 + 반복 -->
+  <text x="348" y="24" text-anchor="middle" font-size="14" font-weight="700" fill="#171717">리스트 하나 + 반복</text>
+  <text x="262" y="60" font-size="13" fill="#171717" font-family="'Courier New',monospace">xs =</text>
+  <g>
+    <rect x="300" y="44" width="42" height="34" rx="8" fill="#ffffff" stroke="#34d399" stroke-width="2"/>
+    <text x="321" y="67" text-anchor="middle" font-size="15" font-weight="700" fill="#171717">1</text>
+    <rect x="348" y="44" width="42" height="34" rx="8" fill="#ffffff" stroke="#34d399" stroke-width="2"/>
+    <text x="369" y="67" text-anchor="middle" font-size="15" font-weight="700" fill="#171717">3</text>
+    <rect x="396" y="44" width="42" height="34" rx="8" fill="#ffffff" stroke="#34d399" stroke-width="2" stroke-dasharray="5 4"/>
+    <text x="417" y="67" text-anchor="middle" font-size="15" font-weight="700" fill="#9ca3af">…</text>
+    <text x="321" y="94" text-anchor="middle" font-size="11" fill="#64748b">xs[0]</text>
+    <text x="369" y="94" text-anchor="middle" font-size="11" fill="#64748b">xs[1]</text>
+    <text x="417" y="94" text-anchor="middle" font-size="11" fill="#9ca3af">xs[2]</text>
+  </g>
+  <text x="348" y="130" text-anchor="middle" font-size="12.5" fill="#171717" font-family="'Courier New',monospace">for i in range(2)</text>
+  <text x="348" y="172" text-anchor="middle" font-size="11.5" fill="#64748b">같은 일을 i 만 바꿔</text>
+  <text x="348" y="190" text-anchor="middle" font-size="11.5" fill="#64748b">한 번만! (10개면 range(10))</text>
+
+  <text x="230" y="222" text-anchor="middle" font-size="11" fill="#94a3b8">리스트 = 여러 값을 한 묶음에 · 번호(인덱스)는 0 부터</text>
+</svg>
