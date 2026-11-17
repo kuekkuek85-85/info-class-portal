@@ -10,7 +10,7 @@
  * ★★ 31차는 rewardGame(UNO, requires=[] - 성찰 게이트 비움)·phaseOrder·phaseLabels·freeNavigation(false)·
  *   focusExempt·moodCheckEnabled·hideDoneButton 가 모두 핵심이라 lessonPlan 에서 읽어 세션에 그대로 싣는다
  *   (informatics.md). 세션은 기본(대기) scheduled 로 연다.
- *   흐름: 안내 → 미션①(노가다) → 리스트 개념 → 미션②(리팩토링) → 미션③(AI) → 성찰.
+ *   흐름: 안내 → 미션①(변수 하나하나) → 리스트 개념 → 미션②(리팩토링) → 미션③(AI) → 성찰.
  */
 
 import { cert, initializeApp } from "firebase-admin/app";

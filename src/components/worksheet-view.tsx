@@ -14,6 +14,7 @@ import { LedAnimator } from "@/components/led-animator";
 import { DiceBuilder } from "@/components/dice-builder";
 import { RpsSim, RpsFill, RpsJudge } from "@/components/rps-builders";
 import { CodeFill } from "@/components/code-fill";
+import { CodeChoose } from "@/components/code-choose";
 import { StreamsBroadcast } from "@/components/streams-broadcast";
 import { VibeCodePanel } from "@/components/vibe-code-panel";
 import { EmotionQuiz } from "@/components/emotion-quiz";
@@ -1115,6 +1116,18 @@ export function WorksheetView({
               questionKey={question.key}
               raw={value.answers[question.key] ?? ""}
               template={question.codeTemplate ?? ""}
+              slots={question.codeSlots ?? []}
+              onChange={(raw) => setAnswer(question.key, raw)}
+              disabled={disabled}
+            />
+          ) : question.kind === "code_choose" ? (
+            /* 31차 미션② — 좌(참조 '변수 하나하나' 코드) · 우(리스트 코드, 빈칸은 보기 선택) (code-choose) */
+            <CodeChoose
+              raw={value.answers[question.key] ?? ""}
+              template={question.codeTemplate ?? ""}
+              refTemplate={question.codeRefTemplate ?? ""}
+              refLabel={question.codeRefLabel}
+              chooseLabel={question.codeChooseLabel}
               slots={question.codeSlots ?? []}
               onChange={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}

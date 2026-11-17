@@ -756,6 +756,16 @@ export interface WorksheetQuestion {
      * 자동저장돼 교사가 활동지로 열람한다. 갤러리 비공개 (code-fill · codeTemplate · codeSlots).
      */
     | "code_fill"
+    /**
+     * code_choose — 코드 빈칸 '선택'으로 채우기 (31차 미션② 리스트 리팩토링). code_fill 과 달리 자유 타자가
+     * 없다. 왼쪽에 참조 코드(codeRefTemplate, 읽기전용 '변수 하나하나' 완성본)를, 오른쪽에 리팩토링 코드
+     * (codeTemplate, `{{토큰}}` 자리)를 **좌우로 나란히** 보여 주고, 오른쪽 빈칸마다 보기(codeSlots.options,
+     * 오답 포함)를 드롭다운으로 고른다. 「확인」을 누르면 codeSlots.answer 와 대조해 칸마다 정답/오답을
+     * 표시하고, 모두 맞으면 왜 그런지 한 줄(codeSlots.why)과 '완성 코드 복사' 가 열린다. 양쪽 모두 줄 번호
+     * 거터(선택·복사에 안 딸려옴). 선택값은 answers[key] 에 {토큰: 고른 보기} JSON 으로 저장(교사 열람).
+     * 순수 클라이언트(서버·AI 없음) (code-choose · codeRefTemplate · codeTemplate · codeSlots.options/answer/why).
+     */
+    | "code_choose"
     | "submit";
   /**
    * echo 가 다시 보여줄 답들.
@@ -859,6 +869,16 @@ export interface WorksheetQuestion {
    * 나머지는 읽기전용 등폭으로 보인다. 토큰은 codeSlots 의 token 과 1:1 로 맞춘다.
    */
   codeTemplate?: string;
+  /**
+   * code_choose(31차 미션②) 왼쪽에 보여줄 **참조 코드**(읽기전용, '변수 하나하나' 완성본). `{{토큰}}` 없이
+   * 통째로 줄 번호와 함께 뜬다. 오른쪽(codeTemplate, 리스트 리팩토링)과 좌우로 대비돼 "같은 동작인데 짧다"
+   * 를 보인다.
+   */
+  codeRefTemplate?: string;
+  /** code_choose 왼쪽 참조 코드 칸의 제목(기본 "변수 하나하나"). */
+  codeRefLabel?: string;
+  /** code_choose 오른쪽 선택 코드 칸의 제목(기본 "리스트로 정리"). */
+  codeChooseLabel?: string;
   /** code_fill 의 각 빈칸(토큰) 설정. token 은 codeTemplate 의 `{{token}}` 과 맞춘다 */
   codeSlots?: {
     token: string;
@@ -869,6 +889,17 @@ export interface WorksheetQuestion {
     rows?: number;
     /** 빈칸 안 흐린 예시(들여쓰기 안내 겸). 복사 출력엔 안 들어간다 */
     placeholder?: string;
+    /**
+     * code_choose 전용 — 이 빈칸의 드롭다운 보기(오답 포함). 있으면 자유 타자 대신 '고르기' 가 된다.
+     * 순서대로 뜨므로(정답을 맨 앞에 두지 않는다) 눌러 맞추기 어렵게 그럴듯한 오답을 섞는다. code_fill 은
+     * 이 값을 무시한다.
+     */
+    options?: string[];
+    /**
+     * code_choose 전용 — 모두 맞혔을 때 이 칸이 '왜 그런지' 한 줄 설명(리스트/인덱스/반복 의미). code_fill 은
+     * 이 값을 무시한다.
+     */
+    why?: string;
     /**
      * 정답 문자열(들여쓰기 포함). 자동 힌트(규칙 기반)가 블러 때 학생 입력과 대조해 '맞음(초록 체크)'·
      * '들여쓰기/대소문자/철자/일반' 힌트를 **클라이언트에서 즉시** 판정하는 데 쓴다(교사 확정 A안).

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 236" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
-  <!-- 왼쪽 : 변수 노가다 -->
-  <text x="112" y="24" text-anchor="middle" font-size="14" font-weight="700" fill="#171717">변수 여러 개 (노가다)</text>
+  <!-- 왼쪽 : 변수 하나하나 -->
+  <text x="112" y="24" text-anchor="middle" font-size="14" font-weight="700" fill="#171717">변수 여러 개 (하나하나)</text>
   <g>
     <rect x="24" y="40" width="176" height="30" rx="8" fill="#ffffff" stroke="#f87171" stroke-width="2"/>
     <text x="36" y="60" font-size="13" fill="#171717" font-family="'Courier New',monospace">poop_x  = 1</text>

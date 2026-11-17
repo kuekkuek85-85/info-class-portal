@@ -139,6 +139,21 @@ function evalSlot(input: string, answer?: string): SlotHint | null {
 /** 'AI 도움' 연타 방지 쿨다운(슬롯당). */
 const AI_COOLDOWN_MS = 15_000;
 
+/**
+ * 코드 왼쪽 줄 번호 거터(전 차시 공통 표준, 31차~). select-none·aria-hidden 이라 드래그 선택·복사·
+ * 화면낭독에 안 딸려온다(복붙 시 번호가 안 섞임). 등폭·tabular-nums 로 자리 정렬이 안 깨진다.
+ */
+function Ln({ n }: { n: number }) {
+  return (
+    <span
+      aria-hidden
+      className="w-8 shrink-0 select-none border-r border-line/60 pr-2 text-right tabular-nums text-muted/60"
+    >
+      {n}
+    </span>
+  );
+}
+
 export function CodeFill({
   questionKey,
   raw,
@@ -304,14 +319,19 @@ export function CodeFill({
           if (!hasSlot) {
             // 고정 줄 — 읽기전용. 빈 줄은 높이 유지.
             return (
-              <div key={i} className="whitespace-pre text-ink/90">
+              <div key={i} className="flex gap-2">
+                <Ln n={i + 1} />
+                <span className="flex-1 whitespace-pre text-ink/90">
                 {line === "" ? " " : line}
+                </span>
               </div>
             );
           }
           return (
-            <div key={i} className="flex flex-wrap items-start gap-1 py-1">
-              {pieces.map((p, j) =>
+            <div key={i} className="flex gap-2">
+              <Ln n={i + 1} />
+              <div className="flex min-w-0 flex-1 flex-wrap items-start gap-1 py-1">
+                {pieces.map((p, j) =>
                 p.kind === "text" ? (
                   <span key={j} className="whitespace-pre text-ink/90">
                     {p.text}
@@ -379,7 +399,8 @@ export function CodeFill({
                     );
                   })()
                 ),
-              )}
+                )}
+              </div>
             </div>
           );
         })}
@@ -417,7 +438,18 @@ export function CodeFill({
       {/* 완성 코드 — 복사 버튼을 누르면 조립해 보여준다. 자동 복사가 막혀도 눌러서 직접 복사할 수 있다. */}
       {shown && (
         <div className="flex flex-col gap-1">
-          <p className="t-body-sm font-semibold">완성 코드 (눌러서 전체 선택 → 복사)</p>
+          <p className="t-body-sm font-semibold">완성 코드 (줄 번호는 보기용 — 복사엔 안 들어가요)</p>
+          <div className="overflow-x-auto rounded-lg border border-line bg-surface p-3 font-mono text-sm leading-relaxed">
+            {shown.split("\n").map((l, i) => (
+              <div key={i} className="flex gap-2">
+                <Ln n={i + 1} />
+                <span className="flex-1 whitespace-pre text-ink/90">{l.length === 0 ? " " : l}</span>
+              </div>
+            ))}
+          </div>
+          <p className="t-caption text-muted">
+            자동 복사가 막혔으면 아래 칸을 눌러 전체 선택한 뒤 복사하세요 (줄 번호 없음).
+          </p>
           <textarea
             readOnly
             value={shown}
