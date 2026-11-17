@@ -321,6 +321,8 @@ const SLOTS_M2: Slot[] = [
     options: ["1, 3", "[1, 3]", "[1][3]", "(1, 3)"],
     answer: "[1, 3]",
     why: "리스트는 대괄호 [ ] 안에 값을 쉼표로 나열해요. 그러면 xs[0]=1, xs[1]=3 이 돼요.",
+    // 왼쪽 3줄 poop_x = ..., 5줄 poop_x2 = ... (두 똥의 가로 위치 변수 두 개 → 리스트 xs 하나)
+    refLines: [3, 5],
   },
   {
     token: "rng",
@@ -328,6 +330,8 @@ const SLOTS_M2: Slot[] = [
     options: ["range(1)", "2", "range(2)", "[0, 1, 2]"],
     answer: "range(2)",
     why: "range(2) 는 i 를 0, 1 로 두 번 돌려 줘요 - 똥이 두 개니까요.",
+    // 왼쪽 29~32줄(첫째 똥 바닥 처리)과 33~36줄(둘째 똥 바닥 처리) - 똑같은 블록을 두 번 쓴 곳
+    refLines: [29, 30, 31, 32, 33, 34, 35, 36],
   },
   {
     token: "idx1",
@@ -335,6 +339,8 @@ const SLOTS_M2: Slot[] = [
     options: ["0", "i", "1", "2"],
     answer: "i",
     why: "i 를 쓰면 0일 땐 첫째 똥, 1일 땐 둘째 똥에 자동으로 적용돼요. 똥마다 따로 안 써도 돼요.",
+    // 왼쪽 27줄 poop_y = poop_y + 1, 28줄 poop_y2 = poop_y2 + 1 → ys[i] = ys[i] + 1 한 줄
+    refLines: [27, 28],
   },
   {
     token: "idx2",
@@ -342,6 +348,8 @@ const SLOTS_M2: Slot[] = [
     options: ["x", "0", "i", "1"],
     answer: "i",
     why: "led.plot(xs[i], ys[i]) - 지금 반복이 도는 i 번째 똥을 그 자리에 그려요.",
+    // 왼쪽 39줄 led.plot(poop_x, poop_y), 40줄 led.plot(poop_x2, poop_y2) → led.plot(xs[i], ys[i]) 한 줄
+    refLines: [39, 40],
   },
 ];
 

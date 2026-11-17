@@ -87,6 +87,22 @@
 
   --accent-magenta: #cd4239;
   --success: #2c8c66;
+
+  /*
+   * 코드 짝 맞추기 색 (code_choose, 31차~).
+   *
+   * 오른쪽 빈칸과 왼쪽 대응 줄을 같은 색으로 묶는다. 바탕은 위 파스텔 블록을 그대로 써서
+   * 먹색 코드가 11:1 이상으로 읽히고, 진한 쪽(-strong)은 글자가 아니라 막대·테두리에만 쓴다.
+   * 색만으로 구분하지 않도록 화면에는 번호 배지(1~4)를 함께 붙인다.
+   */
+  --slot-1: var(--block-mint);
+  --slot-1-strong: #3b6ea8;
+  --slot-2: var(--block-lilac);
+  --slot-2-strong: #7b4a9a;
+  --slot-3: var(--block-lime);
+  --slot-3-strong: #2c8c66;
+  --slot-4: var(--block-coral);
+  --slot-4-strong: #b5473e;
 }
 
 @theme inline {
@@ -109,6 +125,15 @@
   --color-navy: var(--block-navy);
   --color-magenta: var(--accent-magenta);
   --color-success: var(--success);
+
+  --color-slot-1: var(--slot-1);
+  --color-slot-1-strong: var(--slot-1-strong);
+  --color-slot-2: var(--slot-2);
+  --color-slot-2-strong: var(--slot-2-strong);
+  --color-slot-3: var(--slot-3);
+  --color-slot-3-strong: var(--slot-3-strong);
+  --color-slot-4: var(--slot-4);
+  --color-slot-4-strong: var(--slot-4-strong);
 
   /* 기존 마크업이 쓰던 이름은 새 토큰으로 이어 붙인다 */
   --color-background: var(--canvas);
