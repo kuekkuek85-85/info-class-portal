@@ -38,8 +38,8 @@ db.settings({ ignoreUndefinedProperties: true });
 
 const DATE = process.argv[2] ?? "2026-11-27";
 const PLAN_LIST: { period: number; classNo: number; lessonNo: number; planDocId?: string; pending?: string }[] = [
-  { period: 3, classNo: 3, lessonNo: 34, pending: "34차 아직 없음 - seed-lesson34.ts 만든 뒤 pending 지우기" },
-  { period: 5, classNo: 1, lessonNo: 34, pending: "34차 아직 없음 - seed-lesson34.ts 만든 뒤 pending 지우기" },
+  { period: 3, classNo: 3, lessonNo: 34 },
+  { period: 5, classNo: 1, lessonNo: 34 },
   { period: 6, classNo: 2, lessonNo: 33 },
 ];
 

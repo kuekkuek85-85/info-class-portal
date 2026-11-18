@@ -76,6 +76,22 @@ function listDisplay(raw: string): string {
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return raw;
+    /*
+     * rows 문항 답(객체 배열 JSON, 예: 33차 입력·처리·출력 표)도 사람이 읽게 - 한 줄은 칸 값을 " → " 로,
+     * 줄끼리는 " / " 로 잇는다. 34차가 33차 표를 echo 할 때 JSON 이 날것으로 뜨지 않게(2026-11-19).
+     */
+    if (parsed.some((v) => v && typeof v === "object" && !Array.isArray(v))) {
+      const lines = parsed
+        .filter((v): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v))
+        .map((row) =>
+          Object.values(row)
+            .map((cell) => String(cell ?? "").trim())
+            .filter(Boolean)
+            .join(" → "),
+        )
+        .filter(Boolean);
+      return lines.length > 0 ? lines.join(" / ") : "";
+    }
     const items = parsed.filter((v): v is string => typeof v === "string" && v.trim().length > 0);
     return items.length > 0 ? items.map((v) => v.trim()).join(" · ") : raw;
   } catch {

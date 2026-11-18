@@ -36,7 +36,8 @@ export function normalizeUrl(raw: string): string {
  *   galleryAnswerKeys 화이트리스트가, 앱 링크 제출 판정은 교사 대시보드가 따로 정한다
  *   (그 대시보드 로직은 진로탐색 build_url 전용이라 여기 song_url 을 섞지 않는다).
  */
-export const URL_ANSWER_KEYS = new Set<string>(["build_url", "song_url"]);
+// mb34_link: 34차 수행평가 MakeCode 공유 링크(스킴이 빠져도 https:// 를 채워 눌러 열리게).
+export const URL_ANSWER_KEYS = new Set<string>(["build_url", "song_url", "mb34_link"]);
 
 /**
  * 작품 답에서 「앱 열기」로 열 **게시(배포) 링크**를 고른다.
