@@ -4,13 +4,16 @@
  *   node --env-file=.env.local scripts/open-info-32-31-1123.ts [날짜]
  *
  * 시간표(교사 제공 2026-11-18):
- *   2교시 1-1 → 32차 · 3교시 1-4 → (압축안 결정 대기) · 5교시 1-2 → 새 31차 · 6교시 1-3 → 32차
+ *   2교시 1-1 → 32차 · 3교시 1-4 → 30차 · 5교시 1-2 → 새 31차 · 6교시 1-3 → 32차
+ *   1-4 는 압축 안 B(교사 확정): 11/23 30차 그대로 → 11/25(수) 32차 1-4판(seed-lesson32-c4.ts) → 11/26(목) 33차.
+ *   다음 주 다른 날은 open-info-1125.ts (11/26·11/27 은 33·34차 제작 뒤 준비).
  *
  * open-info-31-1-3.ts 복제. 차이:
  *  · reflectionAnswerKey 를 세션에 싣는다 - 32차 성찰을 공유 답안 문서(mb32_pa_problem)에도 저장해
  *    33차에서 다시 보여 주려면 꼭 필요하다(옛 open 스크립트엔 없다).
- *  · 1-4 는 압축안(32차 설계 C)이 정해질 때까지 lessonNo 를 비워 두고 건너뛴다.
- *  · 31차·32차 모두 phaseOrder·phaseLabels·rewardGame·focusExempt·freeNavigation 을 계획에서 그대로 싣는다.
+ *  · 1-4 30차는 기존 30차 open 스크립트(open-info-30-1-2.ts)와 같은 필드를 싣는다(30차엔 reflectionAnswerKey 없음).
+ *  · 30·31·32차 모두 phaseOrder·phaseLabels·rewardGame·focusExempt·freeNavigation 을 계획에서 그대로 싣는다.
+ *  · 계획은 lessonNo 로 찾되 variant 가 붙은 계획(32차 1-4판 lesson32-c4)은 건너뛴다.
  *
  * 열기 전 확인: 32차 새 그림(/mb32-*.svg)이 배포돼 있어야 한다(푸시 뒤). seed-lesson32.ts 로 계획을 먼저 넣는다.
  */
@@ -43,7 +46,7 @@ const DATE = process.argv[2] ?? "2026-11-23";
 /** lessonNo 가 null 이면 결정 대기로 건너뛴다. */
 const PLAN_LIST: { period: number; classNo: number; lessonNo: number | null; note?: string }[] = [
   { period: 2, classNo: 1, lessonNo: 32 },
-  { period: 3, classNo: 4, lessonNo: null, note: "1-4 압축안(32차 설계 C) 결정 대기" },
+  { period: 3, classNo: 4, lessonNo: 30 },
   { period: 5, classNo: 2, lessonNo: 31 },
   { period: 6, classNo: 3, lessonNo: 32 },
 ];
@@ -81,11 +84,12 @@ async function main(): Promise<void> {
     }
 
     const plans = await db.collection("lessonPlans").where("lessonNo", "==", lessonNo).get();
-    if (plans.empty) {
+    // variant 계획(32차 1-4판 등)은 건너뛴다 - 반별 판은 전용 open 스크립트로 연다.
+    const plan = plans.docs.find((d) => !(d.data() as { variant?: string }).variant);
+    if (!plan) {
       console.error(`✗ ${lessonNo}차시 계획이 없습니다. seed-lesson${lessonNo}.ts 를 먼저 돌리세요.`);
       process.exit(1);
     }
-    const plan = plans.docs[0];
     const p = plan.data() as Record<string, unknown>;
     const code = await pickCode(taken);
 
