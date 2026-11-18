@@ -31,6 +31,8 @@ const NAV = [
   { href: "/teacher/students", label: "명렬표" },
   { href: "/teacher/data", label: "데이터" },
   { href: "/teacher/record-comments", label: "생기부" },
+  // 정보 33~34차 수행평가(피지컬 컴퓨팅 프로젝트) 채점 - 학생별 32~34차 산출물 + 영역 ①② 상·중·하
+  { href: "/teacher/pa-grading", label: "수행평가" },
 ] as const;
 
 export function TeacherShell({ children }: { children: ReactNode }) {
