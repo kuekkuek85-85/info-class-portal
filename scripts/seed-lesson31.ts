@@ -1,8 +1,15 @@
 /**
- * 31차시 차시 계획 등록 - 「똥피하기 ④ - 리스트로 똥 여러 개」 (MakeCode 아크, 30차 이어가기).
+ * 31차시 차시 계획 등록 - 「똥피하기 ④ - 똥 여러 개와 리스트」 (MakeCode 아크, 30차 이어가기).
  *
  *   node --env-file=.env.local scripts/seed-lesson31.ts
  *   node --env-file=.env.local scripts/seed-lesson31.ts --force   (이미 학생이 들어온 수업도 덮어씀)
+ *
+ * ## ★ 2026-11-18 수업 후 범위 축소 (교사 결정) - 아래 본문보다 이 절이 우선
+ *  · 1-1·1-3 실제 수업이 '리스트 개념' 까지 갔다. 31차는 미션①(변수 하나하나) + 리스트 개념에서 끝낸다.
+ *    phaseOrder = waiting → assessment → build → problem → reflection.
+ *  · 미션②(리스트로 정리, code_choose)·미션③(AI 바이브)은 32차로 옮긴다. 코드·빈칸·정답·refLines·why·그림·
+ *    바이브 설정은 한 글자도 안 바꾸고 scripts/lesson32-carryover.ts 로 옮겼다(32차 seed 가 import).
+ *  · 아래 본문에 남은 미션②③ 설명은 당시 설계 기록이다.
  *
  * ## 30차(똥피하기 완성, 똥 1개 + 충돌·점수)에 이어 '리스트' 를 배운다 (교사 확정 2026-11-17)
  *
@@ -135,149 +142,6 @@ def on_forever():
 basic.forever(on_forever)`;
 
 /**
- * 미션 ② 는 code_choose(선택형) - 직접 타자 없음. 왼쪽 = 참조('변수 하나하나') 완성 코드(DODGE_VARS_DONE,
- * 읽기전용), 오른쪽 = 리스트 리팩토링 코드(CODE_M2, `{{토큰}}` 자리를 드롭다운으로 고름). 빈칸은 '의미 있는
- * 자리' 넷: 리스트 리터럴(lit = [1, 3]) · 반복 범위(rng = range(2)) · 인덱스 접근 둘(idx1·idx2 = i).
- * 네 칸을 다 맞히면 완성 코드 = DODGE_LIST_DONE 과 같아진다(= 미션③ vibeBaseCode). 좌우로 "같은 동작인데
- * 리스트 쪽이 짧다" 가 드러난다. 양쪽 다 줄 번호 거터.
- */
-const CODE_M2 = `# 똥피하기 ⑧ - 리스트로 깔끔하게! (변수 여러 벌 → 리스트 하나 + 반복)
-# 똥들의 가로는 xs, 세로는 ys 라는 '리스트(묶음)' 하나에 모았어요.
-# for 반복이 i 를 0, 1 로 바꿔 가며 '같은 일' 을 해 줘요 - 한 번만 적으면 돼요.
-xs = {{lit}}
-ys = [0, 2]
-x = 2
-playing = True
-score = 0
-
-def on_button_pressed_a():
-    global x
-    x = x - 1
-    if x < 0:
-        x = 0
-input.on_button_pressed(Button.A, on_button_pressed_a)
-
-def on_button_pressed_b():
-    global x
-    x = x + 1
-    if x > 4:
-        x = 4
-input.on_button_pressed(Button.B, on_button_pressed_b)
-
-def on_forever():
-    global playing, score
-    if playing:
-        basic.clear_screen()
-        led.plot(x, 4)
-        for i in {{rng}}:
-            ys[{{idx1}}] = ys[i] + 1
-            if ys[i] > 4:
-                ys[i] = 0
-                xs[i] = randint(0, 4)
-                score = score + 1
-            led.plot(xs[{{idx2}}], ys[i])
-            if ys[i] == 4 and xs[i] == x:
-                playing = False
-                basic.show_icon(IconNames.SAD)
-                basic.show_number(score)
-    basic.pause(300)
-basic.forever(on_forever)`;
-
-/**
- * 미션 ② 왼쪽 참조 코드 - 미션① 에서 만든 '변수 하나하나' 완성본(똥 2벌·or). 읽기전용으로 오른쪽 리스트
- * 코드와 좌우 대비해 "변수를 또 만들고 같은 코드를 또 쓴" 길이를 눈으로 보게 한다.
- */
-const DODGE_VARS_DONE = `# 똥피하기 ⑦ - 똥 두 개 (변수를 하나하나)
-x = 2
-poop_x = randint(0, 4)
-poop_y = 0
-poop_x2 = randint(0, 4)
-poop_y2 = 2
-playing = True
-score = 0
-
-def on_button_pressed_a():
-    global x
-    x = x - 1
-    if x < 0:
-        x = 0
-input.on_button_pressed(Button.A, on_button_pressed_a)
-
-def on_button_pressed_b():
-    global x
-    x = x + 1
-    if x > 4:
-        x = 4
-input.on_button_pressed(Button.B, on_button_pressed_b)
-
-def on_forever():
-    global poop_x, poop_y, poop_x2, poop_y2, playing, score
-    if playing:
-        poop_y = poop_y + 1
-        poop_y2 = poop_y2 + 1
-        if poop_y > 4:
-            poop_y = 0
-            poop_x = randint(0, 4)
-            score = score + 1
-        if poop_y2 > 4:
-            poop_y2 = 0
-            poop_x2 = randint(0, 4)
-            score = score + 1
-        basic.clear_screen()
-        led.plot(x, 4)
-        led.plot(poop_x, poop_y)
-        led.plot(poop_x2, poop_y2)
-        if (poop_y == 4 and poop_x == x) or (poop_y2 == 4 and poop_x2 == x):
-            playing = False
-            basic.show_icon(IconNames.SAD)
-            basic.show_number(score)
-    basic.pause(300)
-basic.forever(on_forever)`;
-
-/**
- * 바이브 코딩 바탕(미션③) = 완성된 '리스트' 똥피하기 (미션② 를 ✎칸까지 다 채운 코드). AI가 여기에 '학생이 말한
- * 기능' 을 더한다. makecode.microbit.org 'Python' 변환 전제. 서버 fallback(만보기)은 25차 전용이라 반드시 넘긴다.
- */
-const DODGE_LIST_DONE = `xs = [1, 3]
-ys = [0, 2]
-x = 2
-playing = True
-score = 0
-
-def on_button_pressed_a():
-    global x
-    x = x - 1
-    if x < 0:
-        x = 0
-input.on_button_pressed(Button.A, on_button_pressed_a)
-
-def on_button_pressed_b():
-    global x
-    x = x + 1
-    if x > 4:
-        x = 4
-input.on_button_pressed(Button.B, on_button_pressed_b)
-
-def on_forever():
-    global playing, score
-    if playing:
-        basic.clear_screen()
-        led.plot(x, 4)
-        for i in range(2):
-            ys[i] = ys[i] + 1
-            if ys[i] > 4:
-                ys[i] = 0
-                xs[i] = randint(0, 4)
-                score = score + 1
-            led.plot(xs[i], ys[i])
-            if ys[i] == 4 and xs[i] == x:
-                playing = False
-                basic.show_icon(IconNames.SAD)
-                basic.show_number(score)
-    basic.pause(300)
-basic.forever(on_forever)`;
-
-/**
  * code_fill 빈칸(토큰) - 위 템플릿의 `{{a}}`/`{{b}}` 자리 인라인 편집칸. 힌트는 정답 영어 키워드를 직접
  * 쓰지 않고 뜻으로 돌려 적는다(coding-hint-indirect-answers). answer 를 채워 blur 자동 힌트가 작동하게 한다.
  * 들여쓰기 공백은 hint 로만(Tab 횟수) 안내. 전부 own-line 블록.
@@ -307,56 +171,12 @@ const SLOTS_M1: Slot[] = [
   },
 ];
 
-/**
- * 미션 ② code_choose 빈칸 - 드롭다운 '보기 선택'(자유 타자 없음). options 에 그럴듯한 오답을 섞고, answer 로
- * 채점한다. 모두 맞히면 why(왜 그런지 한 줄, 리스트/인덱스/반복 의미)를 보여 준다. 정답을 options 맨 앞에
- * 두지 않는다. lit/rng/idx1/idx2 를 맞히면 완성 코드 = DODGE_LIST_DONE.
- */
-const SLOTS_M2: Slot[] = [
-  {
-    token: "lit",
-    label: "똥들의 가로 위치 리스트",
-    options: ["1, 3", "[1, 3]", "[1][3]", "(1, 3)"],
-    answer: "[1, 3]",
-    why: "대괄호 [ ] 안에 쉼표로 나열 → xs[0]=1, xs[1]=3. 1, 3 은 처음 자리일 뿐, 바닥에 닿으면 무작위로 바뀌어요.",
-    // 왼쪽 3줄 poop_x = ..., 5줄 poop_x2 = ... (두 똥의 가로 위치 변수 두 개 → 리스트 xs 하나)
-    refLines: [3, 5],
-  },
-  {
-    token: "rng",
-    label: "몇 번 반복할지 (범위)",
-    options: ["range(1)", "2", "range(2)", "[0, 1, 2]"],
-    answer: "range(2)",
-    why: "range(2) 는 i 를 0, 1 로 두 번 돌려 줘요 - 똥이 두 개니까요.",
-    // 왼쪽 29~32줄(첫째 똥 바닥 처리)과 33~36줄(둘째 똥 바닥 처리) - 똑같은 블록을 두 번 쓴 곳
-    refLines: [29, 30, 31, 32, 33, 34, 35, 36],
-  },
-  {
-    token: "idx1",
-    label: "떨어뜨릴 똥의 번호",
-    options: ["0", "i", "1", "2"],
-    answer: "i",
-    why: "i 가 0이면 첫째 똥, 1이면 둘째 똥 - 똥마다 따로 안 써도 돼요.",
-    // 왼쪽 27줄 poop_y = poop_y + 1, 28줄 poop_y2 = poop_y2 + 1 → ys[i] = ys[i] + 1 한 줄
-    refLines: [27, 28],
-  },
-  {
-    token: "idx2",
-    label: "그릴 똥의 번호",
-    options: ["x", "0", "i", "1"],
-    answer: "i",
-    why: "led.plot(xs[i], ys[i]) - 지금 반복이 도는 i 번째 똥을 그 자리에 그려요.",
-    // 왼쪽 39줄 led.plot(poop_x, poop_y), 40줄 led.plot(poop_x2, poop_y2) → led.plot(xs[i], ys[i]) 한 줄
-    refLines: [39, 40],
-  },
-];
-
 function empty(): PhaseContent {
   return { heading: "", body: "", url: "" };
 }
 
 // ─────────────────────────────────────────────────────────────
-// 활동지 - 미션①(변수 하나하나, build) → 리스트 개념·퀴즈(problem) → 미션②(리팩토링, grill) → 미션③(AI, worksheet).
+// 활동지 - 미션①(변수 하나하나, build) → 리스트 개념·퀴즈(problem). (미션②③은 32차 - lesson32-carryover.ts)
 //   각 구현 미션 앞에 새 개념 note. 개념 단계엔 note(대비 그림) + 확인 퀴즈(choice 3개).
 // ─────────────────────────────────────────────────────────────
 const WORKSHEET: WorksheetQuestion[] = [
@@ -444,76 +264,11 @@ const WORKSHEET: WorksheetQuestion[] = [
     ],
     maxLength: 0,
   },
-
-  /* ── 미션 ② (grill) - 리스트로 리팩토링 ── */
-  {
-    key: "_mb31_m2_note",
-    phase: "grill",
-    label: "새 개념 - 리스트로 다시 쓰기 (인덱스 xs[i] · 반복)",
-    hint:
-      "똑같이 움직이는 똥피하기를 리스트로 짧게 다시 써요.\n" +
-      "반복이 i 를 0, 1 로 바꾸면 xs[i]·ys[i] 가 똥을 하나씩 가리켜요. 아래 표처럼요.",
-    kind: "note",
-    imageUrl: "/mb31-loop.svg",
-    imageAlt: "i 가 0 이면 xs[0], ys[0] 으로 첫째 똥, i 가 1 이면 xs[1], ys[1] 로 둘째 똥을 가리킨다는 표",
-    maxLength: 0,
-  },
-  {
-    key: "_mb31_m2",
-    phase: "grill",
-    label: "미션 ② - 리스트 + 반복으로 정리하기 (보기 골라 채우기)",
-    hint:
-      "빈칸 네 곳을 보기에서 골라 「확인」을 눌러요.\n" +
-      "모두 맞으면 '완성 코드 복사' 를 눌러요.\n" +
-      "MakeCode 'Python' 에 다 지우고 붙여넣어요.",
-    kind: "code_choose",
-    imageUrl: "/mb31-m2.svg",
-    imageAlt: "똥 두 개가 똑같이 떨어지지만, 코드는 리스트와 반복으로 한 번만 써서 짧아진 실행 결과",
-    imageSide: "right",
-    imageSideWidth: "third",
-    codeRefTemplate: DODGE_VARS_DONE,
-    codeRefLabel: "변수 하나하나",
-    codeChooseLabel: "리스트로 정리",
-    codeTemplate: CODE_M2,
-    codeSlots: SLOTS_M2,
-    maxLength: 0,
-  },
-
-  /* ── 미션 ③ (worksheet) - AI(바이브 코딩)로 나만의 기능 더하기 ── */
-  {
-    key: "_mb31_vibe_intro",
-    phase: "worksheet",
-    label: "미션 ③ - AI에게 기능 하나를 부탁하기 (보너스)",
-    hint:
-      "더하고 싶은 기능을 한 문장으로 말하면, AI가 전체 코드를 만들어 줘요.\n" +
-      "복사해서 MakeCode 'Python' 에 붙여넣어 실행해요. 안 되면 다시 부탁해요.\n" +
-      "(보낸 말과 받은 코드는 선생님이 볼 수 있어요.)",
-    kind: "note",
-    imageUrl: "/mb31-vibe-ideas.svg",
-    imageAlt: "부탁해 볼 기능 예시 네 가지: 맞으면 삐 소리, 점수 10 넘으면 하트, 똥을 세 개로, A+B 로 처음부터 다시",
-    maxLength: 0,
-  },
-  {
-    key: "mb31_vibe",
-    phase: "worksheet",
-    label: "AI에게 기능 부탁하기 - 똥피하기에 더할 기능을 말로 적어요",
-    hint: "기능은 한 번에 하나씩, 무엇이 어떻게 되면 좋을지 적어요.",
-    kind: "vibe_code",
-    vibeTarget: "microbit",
-    // 바탕 = 완성형 '리스트' 똥피하기. 서버 fallback(만보기)은 25차 전용이라, 똥피하기는 반드시 베이스를 넘긴다.
-    vibeBaseCode: DODGE_LIST_DONE,
-    vibeNoun: "똥피하기",
-    vibePlaceholder: "예: 똥을 세 개로 늘려 줘",
-    maxLength: 0,
-  },
-  // (교사 확정) 미션③ 은 'AI로 나만의 기능 추가' 활동 자체(note + vibe_code)만 남긴다.
-  //   이전의 text 칸 두 개(AI가 뭘 했나 / 내가 더한 기능)와 공유 링크(long) 는 제거.
-  //   제거한 칸은 성찰 게이트(rewardGame.requires=[])·galleryAnswerKeys 어디에도 안 걸려 있었다(UNO 는 성찰 제출만으로 열림).
 ];
 
 const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   lessonNo: LESSON_NO,
-  title: "똥피하기 ④ - 리스트와 AI",
+  title: "똥피하기 ④ - 똥 여러 개와 리스트",
   moodCheckEnabled: true,
   hideDoneButton: true,
 
@@ -538,25 +293,23 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   progress: empty(),
 
-  // 안내 보드 - 오늘 할 일(변수 하나하나 → 리스트 개념 → 리팩토링 → AI) + 30차 이어가기 짚기.
+  // 안내 보드 - 오늘 할 일(변수 하나하나 → 리스트 개념) + 30차 이어가기 짚기.
   assessment: {
-    heading: "오늘 할 일 - 리스트로 똥 여러 개를 깔끔하게",
+    heading: "오늘 할 일 - 똥 여러 개, 그리고 리스트",
     body: "",
     url: "",
     tabs: [
       {
         label: "오늘은 이런 날",
-        subtitle: "변수를 하나하나 → 리스트로 편하게",
+        subtitle: "변수를 하나하나 → 리스트 알아보기",
         note:
           "지난 시간 똥 1개 → 오늘은 똥 여러 개! 아래 순서로 가요.\n" +
           "좌표 x·y 는 0~4, 주인공은 맨 아랫줄. A=왼쪽, B=오른쪽.",
         rows: [
           { label: "미션 ①", value: "똥 두 개 (변수 하나하나 - 같은 코드를 또 복붙)" },
           { label: "리스트 개념", value: "여러 값을 한 묶음에 · 번호(인덱스)는 0부터 · 반복(for)" },
-          { label: "미션 ②", value: "리스트 + 반복으로 다시 쓰기 (같은 동작, 짧은 코드)" },
-          { label: "미션 ③", value: "AI로 나만의 기능 더하기 (보너스)" },
         ],
-        highlights: ["스타터를 MakeCode 'Python' 에 붙여넣고, 빈칸만 채우거나 골라요."],
+        highlights: ["스타터를 MakeCode 'Python' 에 붙여넣고, 빈칸만 채워요."],
       },
       {
         label: "오늘의 새 낱말",
@@ -566,7 +319,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
           { label: "리스트 (xs, ys)", value: "여러 값을 한 묶음에: xs = [1, 3]" },
           { label: "인덱스 (xs[0])", value: "번호로 꺼내기, ★0부터★: xs[0]=첫째, xs[1]=둘째" },
           { label: "반복 (for)", value: "for i in range(2): i 를 0,1 로 바꿔 같은 일 한 번만" },
-          { label: "들여쓰기", value: "Tab 1번 = 한 단계. for 안 if 는 Tab 3번, 그 안은 Tab 4번" },
+          { label: "들여쓰기", value: "Tab 1번 = 한 단계. 갈림길 줄은 Tab 2번, 그 안은 Tab 3번" },
         ],
         highlights: [
           "리스트는 0부터 센다 - xs[0] 이 첫째 값. 이것만 확실히 익히면 돼요.",
@@ -577,26 +330,25 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   video: empty(),
 
-  // 성찰 - 똥피하기 아크를 마무리하며 전체를 돌아본다. 개인적이라 비공개. 성찰 제출로 UNO 가 열린다.
+  // 성찰 - 31차 범위(똥 여러 개 + 리스트 개념)만 돌아본다. 아크 전체 돌아보기("기억에 남는 기능")는 32차로.
+  // 개인적이라 비공개. 성찰 제출로 UNO 가 열린다.
   reflectionQuestions: [
-    "지금까지 똥피하기를 만들었어요. 기억에 남는 기능은 무엇인가요?",
+    "똥을 두 개로 늘리며 같은 코드를 또 써 봤어요. 리스트를 쓰면 무엇이 편해질까요?",
   ],
   reflectionPublic: false,
 
-  // MakeCode(새 탭)·파이썬 타자(새 탭)·바이브(AI/새 탭)가 붙은 단계에서 창을 옮기는 것을 이탈로 안 센다.
+  // MakeCode(새 탭)·파이썬 타자(새 탭)가 붙은 단계에서 창을 옮기는 것을 이탈로 안 센다.
   // (problem=리스트 개념·퀴즈 는 포털 안에서만 하므로 면제 대상 아님.)
-  focusExempt: ["waiting", "build", "grill", "worksheet"],
+  focusExempt: ["waiting", "build"],
   phaseLabels: {
     assessment: "안내",
     build: "미션 ① 똥 여러 개(변수 하나하나)",
     problem: "리스트 개념",
-    grill: "미션 ② 리스트로 정리",
-    worksheet: "미션 ③ AI로 나만의 기능",
   },
-  // 교사 확정: 되돌아가기 off - 교사가 단계를 몰아준다. '새 개념은 가르친 뒤 쓰게' → 리팩토링(grill) 앞에
-  // 반드시 리스트 개념(problem)이 온다. 성찰 제출만으로 UNO 가 열린다(rewardGame.requires 비움).
-  // 마음 체크인 강제 관문은 freeNav off 에서 유효하다.
-  phaseOrder: ["waiting", "assessment", "build", "problem", "grill", "worksheet", "reflection"],
+  // 2026-11-18 교사 결정: 31차는 '리스트 개념' 에서 끝낸다(실제 수업이 거기까지 갔다).
+  // 미션②(리스트로 정리)·미션③(AI 바이브)은 32차로 - 내용은 scripts/lesson32-carryover.ts 에 보존.
+  // 되돌아가기 off, 성찰 제출만으로 UNO(rewardGame.requires 비움), 마음 체크인 강제 관문 유효.
+  phaseOrder: ["waiting", "assessment", "build", "problem", "reflection"],
   freeNavigation: false,
 
   activity: {
@@ -604,10 +356,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     places: [],
     year: 2036,
     worksheetIntro: {
-      heading: "똥피하기 완성하기",
+      heading: "똥 여러 개와 리스트",
       body:
-        "미션① 변수 하나하나 → 리스트 개념 → 미션② 리스트로 정리 → 미션③ AI 보너스\n" +
-        "다 만든 뒤 성찰을 내면 UNO 가 열려요.",
+        "미션① 변수 하나하나 → 리스트 개념(퀴즈)\n" +
+        "다 한 뒤 성찰을 내면 UNO 가 열려요.",
     },
     worksheet: WORKSHEET,
     galleryEnabled: false,
@@ -631,6 +383,8 @@ async function main(): Promise<void> {
       },
       { merge: true },
     );
+    // merge 는 맵을 깊게 합쳐서, 빠진 단계 이름(grill·worksheet)이 phaseLabels 에 남는다 - 통째로 바꾼다.
+    await doc.ref.update({ phaseLabels: PLAN.phaseLabels });
     console.log(`↻ 갱신 - ${PLAN.title} (${doc.id})`);
 
     const live = await db
@@ -677,6 +431,7 @@ async function main(): Promise<void> {
         },
         { merge: true },
       );
+      await session.ref.update({ phaseLabels: PLAN.phaseLabels });
     }
     console.log(`   아직 아무도 안 들어온 수업 ${scheduled.length}개에 반영`);
   } else {
@@ -685,9 +440,9 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n활동 ID: ${ACTIVITY_ID} (23~30차와 같은 MakeCode 통, 키 mb31_* 로 충돌 없음)`);
-  console.log("단계: 대기(타자) → 기분 → 안내 → 미션①(build 변수 하나하나) → 리스트 개념(problem) → 미션②(grill 리팩토링) → 미션③(worksheet AI) → 성찰. freeNav OFF. hideDoneButton true. 성찰 제출 → UNO.");
+  console.log("단계: 대기(타자) → 기분 → 안내 → 미션①(build 변수 하나하나) → 리스트 개념(problem) → 성찰. freeNav OFF. hideDoneButton true. 성찰 제출 → UNO. (미션②③은 32차)");
   console.log("리스트 개념: note(대비 그림 /mb31-list.svg) + 확인 choice 3개(xs[0]·ys[1]·하나하나vs리스트). 미션 앞 새 개념 note. 들여쓰기 안내는 Tab 횟수(for 안 if 는 Tab 3번·그 안은 Tab 4번).");
-  console.log("※ ⚠ list/for/range 는 30차까지 실측 집합에 없음 - 수업 전 makecode.microbit.org 'Python' 에서 미션② 변환·실행 실측 필요. 게이트: rewardGame.requires = [] - 성찰 제출만으로 UNO.");
+  console.log("게이트: rewardGame.requires = [] - 성찰 제출만으로 UNO.");
   process.exit(0);
 }
 
