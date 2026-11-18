@@ -1032,6 +1032,18 @@ export interface WorksheetQuestion {
    */
   vibePlaceholder?: string;
   /**
+   * vibe_code 전용 - "내 코드로 이어서 부탁하기"(33~34차 수행평가). 켜면 학생이 출발점을 고른다:
+   * 처음 코드(vibeBaseCode) / 마지막으로 받은 코드에서 이어서 / 내 코드 붙여넣고 이어서.
+   * '이어서' 는 서버가 저장된 기록에서 직접 꺼낸다(클라이언트 값을 믿지 않음). '내 코드' 는 6000자까지.
+   * 꺼 두면(기본) 예전처럼 매번 vibeBaseCode 에서 새로 만든다.
+   */
+  vibeContinue?: boolean;
+  /**
+   * vibe_code 전용 - 이 칸 기록이 아직 없을 때 '이어서' 가 출발할 다른 바이브 칸의 키(예: 34차가 "mb33_vibe").
+   * 기록은 학번별 공유 답안 문서에 있어 차시를 넘어 이어진다.
+   */
+  vibeContinueFromKey?: string;
+  /**
    * ai_review 가 AI 에게 보낼 답들. 순서대로 이름표를 붙여 함께 보낸다.
    * 안 쓴 칸은 자동으로 빠진다 — 학생이 비워 둔 것까지 "왜 안 썼냐"고 묻지 않는다.
    */

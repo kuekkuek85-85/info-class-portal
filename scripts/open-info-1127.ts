@@ -40,7 +40,7 @@ const DATE = process.argv[2] ?? "2026-11-27";
 const PLAN_LIST: { period: number; classNo: number; lessonNo: number; planDocId?: string; pending?: string }[] = [
   { period: 3, classNo: 3, lessonNo: 34, pending: "34차 아직 없음 - seed-lesson34.ts 만든 뒤 pending 지우기" },
   { period: 5, classNo: 1, lessonNo: 34, pending: "34차 아직 없음 - seed-lesson34.ts 만든 뒤 pending 지우기" },
-  { period: 6, classNo: 2, lessonNo: 33, pending: "33차 아직 없음 - seed-lesson33.ts 만든 뒤 pending 지우기" },
+  { period: 6, classNo: 2, lessonNo: 33 },
 ];
 
 async function pickCode(taken: Set<string>): Promise<string> {
@@ -127,8 +127,8 @@ async function main(): Promise<void> {
     });
 
     const back = (await db.collection("classSessions").doc(sessionId).get()).data() as Record<string, unknown> | undefined;
-    if (!back?.code || !back?.activity || !back?.rewardGame) {
-      console.error(`✗ ${period}교시 ${classNo}반 문서가 제대로 안 써졌습니다 (code/activity/rewardGame).`);
+    if (!back?.code || !back?.activity || (p.rewardGame && !back?.rewardGame)) {
+      console.error(`✗ ${period}교시 ${classNo}반 문서가 제대로 안 써졌습니다 (code/activity/rewardGame). 33·34차는 보상 게임이 없어 rewardGame 을 검사하지 않는다.`);
       process.exit(1);
     }
     console.log(

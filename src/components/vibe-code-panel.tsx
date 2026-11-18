@@ -16,6 +16,8 @@ interface Entry {
   code: string;
   explanation: string;
   at: number;
+  /** 이어서 부탁하기 문항만: 어디서 출발했나 */
+  from?: "base" | "last" | "mine";
 }
 interface Log {
   entries: Entry[];
@@ -74,6 +76,14 @@ function microbitCopy(noun: string, placeholder: string): VibeCopy {
   };
 }
 
+/** 이어서 부탁하기의 출발점 (서버 VibeCodeEntry.from 과 같다) */
+type StartFrom = "base" | "last" | "mine";
+const START_LABEL: Record<StartFrom, string> = {
+  base: "처음 코드에서",
+  last: "마지막으로 받은 코드에서 이어서",
+  mine: "내 코드 붙여넣고 이어서",
+};
+
 function parse(raw: string): Log | null {
   if (!raw.trim()) return null;
   try {
@@ -92,11 +102,17 @@ export function VibeCodePanel({
   target = "turtle",
   projectNoun,
   examplePrompt,
+  continueEnabled = false,
+  continueRaw = "",
 }: {
   questionKey: string;
   raw: string;
   onResult: (raw: string) => void;
   disabled?: boolean;
+  /** "내 코드로 이어서 부탁하기"(문항 vibeContinue). 켜면 출발점(처음 / 이어서 / 내 코드)을 고른다 */
+  continueEnabled?: boolean;
+  /** vibeContinueFromKey 칸의 기록(예: 34차에서 33차 기록) - 이 칸이 비었을 때 '이어서' 가 가능한지 본다 */
+  continueRaw?: string;
   /** turtle(22차, 기본) / microbit(25차 만보기·26차 주사위·27차 가위바위보). 열기 링크·안내 문구를 고른다 */
   target?: VibeTarget;
   /** microbit 문구의 '만든 것' 이름 — 안 주면 "만보기"(25차). 26차="주사위" 등. turtle 에선 안 쓴다. */
@@ -120,16 +136,31 @@ export function VibeCodePanel({
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
+  /** 이어서 고칠 코드가 있나 - 이 칸 기록, 없으면 앞 차시 칸 기록(continueRaw). 실제 코드는 서버가 꺼낸다 */
+  const hasPrevious =
+    entries.some((e) => e.code) || (parse(continueRaw)?.entries ?? []).some((e) => e.code);
+  const [pickedFrom, setPickedFrom] = useState<StartFrom | null>(null);
+  const from: StartFrom = !continueEnabled ? "base" : pickedFrom ?? (hasPrevious ? "last" : "base");
+  const [mine, setMine] = useState("");
+
   async function send() {
     const prompt = draft.trim();
     if (!prompt || loading || disabled) return;
+    if (from === "mine" && !mine.trim()) {
+      setError("이어서 고칠 내 코드를 붙여넣어 주세요.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
       const response = await fetch("/api/student/vibe-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: questionKey, prompt }),
+        body: JSON.stringify({
+          key: questionKey,
+          prompt,
+          ...(continueEnabled ? { from, ...(from === "mine" ? { code: mine } : {}) } : {}),
+        }),
       });
       const body = await response.json();
       if (body.ok && body.log) {
@@ -162,6 +193,48 @@ export function VibeCodePanel({
         🔎 {copy.notice}
       </p>
 
+      {/* 출발점 고르기 - 이어서 부탁하기 문항만. 글은 두 줄까지. */}
+      {continueEnabled && (
+        <fieldset className="flex flex-col gap-2 rounded-lg border border-line bg-surface p-3" disabled={disabled || loading}>
+          <legend className="t-body-sm font-semibold">어디서부터 부탁할까요?</legend>
+          <div className="flex flex-wrap gap-2">
+            {(["base", "last", "mine"] as const).map((option) => {
+              const off = option === "last" && !hasPrevious;
+              return (
+                <label
+                  key={option}
+                  className={`pill t-body-sm cursor-pointer ${from === option ? "pill-primary" : "pill-secondary"} ${off ? "opacity-40" : ""}`}
+                >
+                  <input
+                    type="radio"
+                    name={`vibe-from-${questionKey}`}
+                    value={option}
+                    checked={from === option}
+                    disabled={off}
+                    onChange={() => setPickedFrom(option)}
+                    className="sr-only"
+                  />
+                  {START_LABEL[option]}
+                </label>
+              );
+            })}
+          </div>
+          {from === "last" && (
+            <p className="t-caption text-muted">지난번에 받은 코드에 이어서 고쳐 달라고 해요.</p>
+          )}
+          {from === "mine" && (
+            <textarea
+              value={mine}
+              onChange={(event) => setMine(event.target.value.slice(0, 6000))}
+              rows={6}
+              spellCheck={false}
+              placeholder="MakeCode 'Python' 에 있는 내 코드를 전부 복사해 붙여넣어요. (예시 코드를 붙여도 돼요)"
+              className="field font-mono text-sm"
+            />
+          )}
+        </fieldset>
+      )}
+
       <div className="flex flex-col gap-2">
         <label htmlFor={`vibe-${questionKey}`} className="t-body-sm font-semibold">
           {copy.promptLabel}
@@ -189,7 +262,10 @@ export function VibeCodePanel({
 
       {latest && (
         <div className="flex flex-col gap-2 rounded-lg border-2 border-line bg-canvas p-3">
-          <p className="t-caption">내가 요청한 것: {latest.prompt}</p>
+          <p className="t-caption">
+            내가 요청한 것: {latest.prompt}
+            {latest.from && <span className="text-muted"> ({START_LABEL[latest.from]})</span>}
+          </p>
           {latest.explanation && (
             <p className="whitespace-pre-line rounded-md bg-cream px-3 py-2 t-body-sm">
               {latest.explanation}
@@ -197,14 +273,31 @@ export function VibeCodePanel({
           )}
           {latest.code ? (
             <>
-              <textarea
-                readOnly
-                value={latest.code}
-                rows={Math.min(latest.code.split("\n").length, 22)}
-                spellCheck={false}
-                onFocus={(event) => event.currentTarget.select()}
-                className="field font-mono text-sm"
-              />
+              {/* 줄 번호 표준(31차~): 번호는 select-none 이라 복사에 안 딸려온다. 긴 줄은 접지 않고 칸 안에서 가로 스크롤. */}
+              <div className="max-h-[32rem] overflow-auto rounded-lg border border-line bg-surface p-3 font-mono text-sm leading-relaxed">
+                {latest.code.split("\n").map((line, i) => (
+                  <div key={i} className="flex gap-2">
+                    <span
+                      aria-hidden
+                      className="w-8 shrink-0 select-none border-r border-line/60 pr-2 text-right tabular-nums text-muted/60"
+                    >
+                      {i + 1}
+                    </span>
+                    <span className="flex-1 whitespace-pre text-ink/90">{line === "" ? " " : line}</span>
+                  </div>
+                ))}
+              </div>
+              <details className="t-caption text-muted">
+                <summary className="cursor-pointer">복사가 안 되면 여기를 눌러 직접 복사해요 (줄 번호 없음)</summary>
+                <textarea
+                  readOnly
+                  value={latest.code}
+                  rows={Math.min(latest.code.split("\n").length, 22)}
+                  spellCheck={false}
+                  onFocus={(event) => event.currentTarget.select()}
+                  className="field mt-2 w-full font-mono text-sm"
+                />
+              </details>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"

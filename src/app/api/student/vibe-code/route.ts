@@ -38,6 +38,8 @@ const WINDOW_MS = 60 * 60_000;
 const MAX_PROMPT = 500;
 /** 아티팩트에 쌓아 둘 기록 최대 개수 (Firestore 문서 방어). 오래된 것부터 버린다 */
 const MAX_ENTRIES = 12;
+/** '내 코드로 이어서' 에 붙여넣을 수 있는 최대 길이 (vibe-code.ts 의 MAX_BASE_CODE 와 같다) */
+const MAX_MINE_CODE = 6000;
 
 function parseLog(raw: string | undefined): VibeCodeLog | null {
   if (!raw?.trim()) return null;
@@ -91,7 +93,7 @@ export async function POST(request: Request) {
     if (!session) return fail("session_expired");
     if (isSessionClosed(session)) return fail("session_expired", "이 수업은 끝났어요.");
 
-    const body = await readJson<{ key?: string; prompt?: string }>(request);
+    const body = await readJson<{ key?: string; prompt?: string; from?: string; code?: string }>(request);
     const key = body?.key ?? "";
     const question = findQuestion(session, key);
     if (!question) return fail("not_found");
@@ -103,11 +105,50 @@ export async function POST(request: Request) {
     const target = question.vibeTarget ?? "turtle";
     // microbit 은 차시가 바탕을 안 줘도 만보기 기본 코드로 물러난다(25차). turtle 은 예전처럼 차시가 꼭 준다.
     const fallbackBase = target === "microbit" ? MICROBIT_MANBOGI_BASE : "";
-    const baseCode = (question.vibeBaseCode ?? question.code ?? fallbackBase).trim();
-    if (!baseCode) return fail("server_error", "현재 코드가 준비되지 않았어요. 선생님께 알려 주세요.");
+    const questionBase = (question.vibeBaseCode ?? question.code ?? fallbackBase).trim();
 
     const activityId = activityIdFor(session);
     if (!activityId) return fail("not_found");
+
+    const artifact = await ensureArtifact({
+      activityId,
+      studentId: me.studentId,
+      classNo: session.classNo,
+      year: session.activity?.year ?? new Date().getFullYear(),
+    });
+    const existing = parseLog(artifact.answers?.[key]) ?? { entries: [], updatedAt: 0 };
+
+    /*
+     * 출발점(vibeContinue 문항만, 33~34차 수행평가).
+     *  · last - 마지막으로 받은 코드에서 이어서. **서버가 기록에서 직접 꺼낸다**(이 칸 → 없으면
+     *           vibeContinueFromKey 칸). 학생이 보낸 코드를 '이어서' 라며 끼워 넣을 수 없다.
+     *  · mine - 학생이 붙여넣은 자기 코드. 길이만 막는다(학번·이름은 여전히 안 보낸다).
+     *  · 그 밖 - 처음 코드(questionBase). vibeContinue 가 꺼진 문항은 늘 이것이다(예전과 같음).
+     */
+    let from: "base" | "last" | "mine" = "base";
+    let baseCode = questionBase;
+    let startCode: string | undefined;
+    if (question.vibeContinue && body?.from === "last") {
+      const own = existing.entries.filter((e) => e.code).at(-1)?.code;
+      const fromKey = question.vibeContinueFromKey;
+      const prev = !own && fromKey
+        ? parseLog(artifact.answers?.[fromKey])?.entries.filter((e) => e.code).at(-1)?.code
+        : undefined;
+      const code = (own ?? prev ?? "").trim();
+      if (!code) return fail("invalid_input", "이어서 고칠 코드가 아직 없어요. '처음 코드' 로 먼저 받아 보세요.");
+      from = "last";
+      baseCode = code;
+    } else if (question.vibeContinue && body?.from === "mine") {
+      const code = (body?.code ?? "").trim();
+      if (!code) return fail("invalid_input", "이어서 고칠 내 코드를 붙여넣어 주세요.");
+      if (code.length > MAX_MINE_CODE) {
+        return fail("invalid_input", `코드가 너무 길어요(${MAX_MINE_CODE}자까지). 필요한 부분만 붙여넣어 주세요.`);
+      }
+      from = "mine";
+      baseCode = code;
+      startCode = code;
+    }
+    if (!baseCode) return fail("server_error", "현재 코드가 준비되지 않았어요. 선생님께 알려 주세요.");
 
     if (!rateLimit(`vibecode:${me.studentId}`, PER_STUDENT, WINDOW_MS)) {
       return fail("too_many_attempts", "오늘 AI에게 코드를 받을 수 있는 횟수를 다 썼어요.");
@@ -126,23 +167,30 @@ export async function POST(request: Request) {
       return fail("server_error", "AI가 잠시 코드를 만들지 못하고 있어요. 조금 뒤에 다시 보내 보세요.");
     }
 
-    const artifact = await ensureArtifact({
+    // 생성에 수십 초 걸린다 - 그사이 바뀌었을 수 있으니 기록을 새로 읽는다.
+    const fresh = await ensureArtifact({
       activityId,
       studentId: me.studentId,
       classNo: session.classNo,
       year: session.activity?.year ?? new Date().getFullYear(),
     });
-    const existing = parseLog(artifact.answers?.[key]) ?? { entries: [], updatedAt: 0 };
+    const latestLog = parseLog(fresh.answers?.[key]) ?? existing;
     const now = Date.now();
-    const entry: VibeCodeEntry = { prompt, code: result.code, explanation: result.explanation, at: now };
+    const entry: VibeCodeEntry = {
+      prompt,
+      code: result.code,
+      explanation: result.explanation,
+      at: now,
+      ...(question.vibeContinue ? { from } : {}),
+      ...(startCode ? { startCode } : {}),
+    };
     const log: VibeCodeLog = {
       // 오래된 것부터 버리고 최신 MAX_ENTRIES 개만 남긴다 (Firestore 문서 방어).
-      entries: [...existing.entries, entry].slice(-MAX_ENTRIES),
+      entries: [...latestLog.entries, entry].slice(-MAX_ENTRIES),
       updatedAt: now,
     };
-    await updateArtifact(artifact.id, {
-      answers: { ...artifact.answers, [key]: JSON.stringify(log) },
-    });
+    // 이 키 하나만 merge 로 쓴다 - answers 전체를 펼쳐 쓰면 생성 중에 학생이 저장한 다른 답을 옛 값으로 덮는다.
+    await updateArtifact(fresh.id, { answers: { [key]: JSON.stringify(log) } });
     await logAiCall({
       studentId: me.studentId,
       sessionId: session.id,

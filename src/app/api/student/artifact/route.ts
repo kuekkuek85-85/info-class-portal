@@ -207,8 +207,13 @@ export async function POST(request: Request) {
        *  ② 병합 저장(merge)에 클라이언트의 옛 값을 실으면, 그 사이 라우트가 새로 쓴 턴을 덮어쓴다.
        * 그래서 쓰기 맵에서 아예 지운다 — merge 저장이 서버의 현재 값을 그대로 보존한다.
        */
+      /*
+       * vibe_code 도 서버 전용이다(api/student/vibe-code 가 기록 JSON 을 쓴다). 빠져 있던 동안 학생 화면의
+       * 자동저장이 이 칸을 maxLength 0 → 500자로 잘라 덮어써서 기록 JSON 이 깨졌다(2026-11-19 확인: 22·25·26·31차
+       * 기록 대부분이 정확히 500자로 잘림). 33~34차 수행평가는 이 기록이 채점 근거라 반드시 막는다.
+       */
       const serverOwned = (kind?: string) =>
-        kind === "comfort_bot" || kind === "emotion_lens" || kind === "ai_feedback";
+        kind === "comfort_bot" || kind === "emotion_lens" || kind === "ai_feedback" || kind === "vibe_code";
       const answers: Record<string, string> = { ...(artifact.answers ?? {}) };
       for (const q of activity.worksheet ?? []) {
         if (serverOwned(q.kind)) delete answers[q.key];

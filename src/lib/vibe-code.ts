@@ -200,6 +200,13 @@ export interface VibeCodeEntry {
   code: string;
   explanation: string;
   at: number;
+  /**
+   * 어디서 출발했나(vibeContinue 문항만): base=처음 코드, last=마지막으로 받은 코드에서 이어서,
+   * mine=학생이 붙여넣은 코드. 없으면 예전 기록(=base).
+   */
+  from?: "base" | "last" | "mine";
+  /** from=mine 일 때 학생이 붙여넣은 출발 코드(교사가 무엇에서 시작했는지 보게). 6000자까지. */
+  startCode?: string;
 }
 
 /** 아티팩트 answers[key] 에 JSON 으로 담기는 바이브 코딩 기록 전체. */
@@ -263,6 +270,13 @@ function buildMicrobitSystem(baseCode: string): string {
     "- 소리(micro:bit v2): music.play(music.tone_playable(262, music.beat(BeatFraction.WHOLE)), music.PlaybackMode.UNTIL_DONE)",
     "  (음 높이는 숫자 Hz. 262=도, 294=레, 330=미, 392=솔. 더 간단히는 그냥 이 한 줄을 그대로 쓴다.)",
     "- 조건: if / elif / else 와 비교 == 를 쓸 수 있다.",
+    "- 본체 센서 값 읽기(숫자를 돌려준다, forever 안에서 읽어 비교):",
+    "    빛 input.light_level() (0~255) · 온도 input.temperature() (섭씨) · 나침반 input.compass_heading() (0~359)",
+    "    소리 크기 input.sound_level() (0~255, v2) · 기울기 input.rotation(Rotation.PITCH) / input.rotation(Rotation.ROLL)",
+    "    가속도 input.acceleration(Dimension.X) / Dimension.Y / Dimension.Z",
+    "- 기울기·흔들기 이벤트: input.on_gesture(Gesture.TILT_LEFT, 함수) · Gesture.TILT_RIGHT · Gesture.LOGO_UP · Gesture.SCREEN_DOWN",
+    "- 큰 소리 이벤트(v2): input.on_sound(DetectedSound.LOUD, 함수)",
+    "- 이 프로그램은 마이크로비트 본체 부품만 쓴다(버튼·로고·센서·LED·스피커). 핀에 따로 연결하는 부품은 쓰지 마라.",
     "",
     "그 밖의 규칙:",
     "- 중학교 1학년이 이해할 수 있게 짧고 쉽게. 현재 코드의 틀은 최대한 그대로 두고 요청 기능만 더한다.",

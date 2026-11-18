@@ -1015,6 +1015,10 @@ export function WorksheetView({
               target={question.vibeTarget}
               projectNoun={question.vibeNoun}
               examplePrompt={question.vibePlaceholder}
+              continueEnabled={question.vibeContinue === true}
+              continueRaw={
+                question.vibeContinueFromKey ? value.answers[question.vibeContinueFromKey] ?? "" : ""
+              }
             />
           ) : question.kind === "ai_feedback" ? (
             /*
