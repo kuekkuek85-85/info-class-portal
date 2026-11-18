@@ -213,7 +213,7 @@ export function CodeFill({
     if (disabled || aiLoading[token]) return;
     const now = Date.now();
     if (now - (aiCooldownRef.current[token] ?? 0) < AI_COOLDOWN_MS) {
-      setAiErr((e) => ({ ...e, [token]: "잠깐만요 — 조금 뒤에 다시 눌러요." }));
+      setAiErr((e) => ({ ...e, [token]: "잠깐만요 - 조금 뒤에 다시 눌러요." }));
       return;
     }
     aiCooldownRef.current[token] = now;
@@ -342,9 +342,10 @@ export function CodeFill({
                     const rows = slot?.rows ?? 2;
                     return (
                       <span key={j} className="flex min-w-[14rem] flex-1 flex-col gap-1">
-                        <span className="t-caption font-sans font-semibold text-muted">
+                        {/* whitespace-pre-line: 힌트의 줄바꿈(\n)을 살린다 - 안 살리면 한 덩어리 문단이 돼 읽기 힘들다 */}
+                        <span className="t-caption whitespace-pre-line font-sans font-semibold text-muted">
                           ✎ {slot?.label ?? p.token}
-                          {slot?.hint ? ` — ${slot.hint}` : ""}
+                          {slot?.hint ? ` - ${slot.hint}` : ""}
                           <span className="font-normal"> (Tab=들여쓰기)</span>
                         </span>
                         <textarea
@@ -438,7 +439,7 @@ export function CodeFill({
       {/* 완성 코드 — 복사 버튼을 누르면 조립해 보여준다. 자동 복사가 막혀도 눌러서 직접 복사할 수 있다. */}
       {shown && (
         <div className="flex flex-col gap-1">
-          <p className="t-body-sm font-semibold">완성 코드 (줄 번호는 보기용 — 복사엔 안 들어가요)</p>
+          <p className="t-body-sm font-semibold">완성 코드 (줄 번호는 보기용 - 복사엔 안 들어가요)</p>
           <div className="overflow-x-auto rounded-lg border border-line bg-surface p-3 font-mono text-sm leading-relaxed">
             {shown.split("\n").map((l, i) => (
               <div key={i} className="flex gap-2">

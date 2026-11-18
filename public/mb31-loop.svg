@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 168" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <!-- 반복이 i 를 바꾸면 xs[i]·ys[i] 가 똥을 하나씩 가리킨다 (31차 미션② 개념 표) -->
+  <!-- 머리줄 -->
+  <rect x="8" y="8" width="544" height="34" rx="8" fill="#23251d"/>
+  <text x="70" y="31" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">i 가</text>
+  <text x="250" y="31" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">꺼내는 값</text>
+  <text x="455" y="31" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">가리키는 똥</text>
+
+  <!-- i = 0 -->
+  <rect x="8" y="50" width="544" height="44" rx="8" fill="#dceaf6"/>
+  <text x="70" y="78" text-anchor="middle" font-size="18" font-weight="700" fill="#23251d" font-family="'Courier New',monospace">i = 0</text>
+  <text x="250" y="78" text-anchor="middle" font-size="18" fill="#23251d" font-family="'Courier New',monospace">xs[0], ys[0]</text>
+  <circle cx="396" cy="72" r="11" fill="#b8860b"/>
+  <text x="396" y="77" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">1</text>
+  <text x="468" y="78" text-anchor="middle" font-size="16" font-weight="700" fill="#23251d">첫째 똥</text>
+
+  <!-- i = 1 -->
+  <rect x="8" y="100" width="544" height="44" rx="8" fill="#e7d8ee"/>
+  <text x="70" y="128" text-anchor="middle" font-size="18" font-weight="700" fill="#23251d" font-family="'Courier New',monospace">i = 1</text>
+  <text x="250" y="128" text-anchor="middle" font-size="18" fill="#23251d" font-family="'Courier New',monospace">xs[1], ys[1]</text>
+  <circle cx="396" cy="122" r="11" fill="#b8860b"/>
+  <text x="396" y="127" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">2</text>
+  <text x="468" y="128" text-anchor="middle" font-size="16" font-weight="700" fill="#23251d">둘째 똥</text>
+
+  <!-- 화살표 -->
+  <text x="146" y="78" text-anchor="middle" font-size="18" fill="#63655b">→</text>
+  <text x="146" y="128" text-anchor="middle" font-size="18" fill="#63655b">→</text>
+  <text x="352" y="78" text-anchor="middle" font-size="18" fill="#63655b">→</text>
+  <text x="352" y="128" text-anchor="middle" font-size="18" fill="#63655b">→</text>
+
+  <text x="280" y="162" text-anchor="middle" font-size="12" fill="#63655b">코드는 한 번만 써도, 반복이 두 똥에 차례로 적용해 줘요</text>
+</svg>

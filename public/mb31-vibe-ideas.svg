@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 150" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <!-- AI에게 부탁해 볼 기능 예시 4가지 (31차 미션③) -->
+  <text x="280" y="20" text-anchor="middle" font-size="14" font-weight="700" fill="#23251d">이런 걸 부탁해 봐요</text>
+
+  <rect x="8" y="34" width="128" height="104" rx="10" fill="#f7d6d3"/>
+  <text x="72" y="72" text-anchor="middle" font-size="26">🔔</text>
+  <text x="72" y="100" text-anchor="middle" font-size="13" font-weight="700" fill="#23251d">맞으면</text>
+  <text x="72" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="#23251d">'삐' 소리</text>
+
+  <rect x="146" y="34" width="128" height="104" rx="10" fill="#f6e2e0"/>
+  <text x="210" y="72" text-anchor="middle" font-size="26">❤️</text>
+  <text x="210" y="100" text-anchor="middle" font-size="13" font-weight="700" fill="#23251d">점수 10 넘으면</text>
+  <text x="210" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="#23251d">하트 보이기</text>
+
+  <rect x="284" y="34" width="128" height="104" rx="10" fill="#d9eddf"/>
+  <g fill="#b8860b"><circle cx="330" cy="66" r="7"/><circle cx="348" cy="58" r="7"/><circle cx="366" cy="70" r="7"/></g>
+  <text x="348" y="100" text-anchor="middle" font-size="13" font-weight="700" fill="#23251d">똥을 세 개로</text>
+  <text x="348" y="120" text-anchor="middle" font-size="12" fill="#23251d">(리스트라 쉬워요)</text>
+
+  <rect x="422" y="34" width="130" height="104" rx="10" fill="#dceaf6"/>
+  <text x="487" y="72" text-anchor="middle" font-size="26">🔄</text>
+  <text x="487" y="100" text-anchor="middle" font-size="13" font-weight="700" fill="#23251d">A+B 누르면</text>
+  <text x="487" y="120" text-anchor="middle" font-size="13" font-weight="700" fill="#23251d">처음부터 다시</text>
+</svg>
