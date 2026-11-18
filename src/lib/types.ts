@@ -1762,6 +1762,15 @@ export interface LessonPlan {
   reflectionImage?: string;
   /** 다른 학생의 성찰 글을 볼 수 있는지. 기본값 false (PRD 3.4) */
   reflectionPublic: boolean;
+  /**
+   * 성찰 답을 학번별 공유 답안 문서(artifacts/활동ID__학번)의 이 키에도 한 벌 저장한다.
+   *
+   * 성찰은 원래 reflections/{세션}__{학번} 에만 남아서, 다음 차시 활동지가 echoKeys 로 다시
+   * 보여 줄 수 없다. 32차 성찰("해결하고 싶은 학교생활 속 불편")을 33차 수행평가 첫 단계에서 다시
+   * 보여 주려고 둔다. 서버(성찰 저장 API)가 세션 문서에서 직접 읽으므로 학생 DTO 엔 안 실어도 된다.
+   * 없으면 예전과 똑같다.
+   */
+  reflectionAnswerKey?: string;
   /** 이 차시에서만 쓰는 단계 이름 (4차시 진도 안내 → AI 직업 관상 체험) */
   phaseLabels?: Partial<Record<LessonPhase, string>>;
   /**
@@ -1882,6 +1891,8 @@ export interface ClassSession {
   /** 성찰 화면에 함께 띄울 그림 (LessonPlan 쪽 설명 참조) */
   reflectionImage?: string;
   reflectionPublic: boolean;
+  /** 성찰 답을 공유 답안 문서의 이 키에도 저장 (LessonPlan 쪽 설명 참조) */
+  reflectionAnswerKey?: string;
   quiz?: QuizContent;
   activity?: ActivityContent;
   lessonNo: number;

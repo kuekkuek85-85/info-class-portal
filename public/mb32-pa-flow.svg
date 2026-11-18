@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 210" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <!-- 수행평가(33~34차) 흐름: ① 문제 정의 → ② 구성요소 설계 → ③ AI로 구현·검토 → ④ 성찰 → 제출 -->
+  <!-- 차시 띠 -->
+  <rect x="4" y="6" width="330" height="26" rx="13" fill="#23251d"/>
+  <text x="169" y="24" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">33차</text>
+  <rect x="352" y="6" width="364" height="26" rx="13" fill="#23251d"/>
+  <text x="534" y="24" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">34차</text>
+
+  <!-- 단계 상자 -->
+  <rect x="4" y="44" width="150" height="120" rx="12" fill="#dceaf6"/>
+  <text x="79" y="80" text-anchor="middle" font-size="22" font-weight="700" fill="#23251d">①</text>
+  <text x="79" y="108" text-anchor="middle" font-size="14" font-weight="700" fill="#23251d">문제 발견·정의</text>
+  <text x="79" y="130" text-anchor="middle" font-size="12" fill="#23251d">학교생활 속</text>
+  <text x="79" y="146" text-anchor="middle" font-size="12" fill="#23251d">불편 찾기</text>
+
+  <rect x="184" y="44" width="150" height="120" rx="12" fill="#e7d8ee"/>
+  <text x="259" y="80" text-anchor="middle" font-size="22" font-weight="700" fill="#23251d">②</text>
+  <text x="259" y="108" text-anchor="middle" font-size="14" font-weight="700" fill="#23251d">구성요소 설계</text>
+  <text x="259" y="130" text-anchor="middle" font-size="12" fill="#23251d">입력(센서)·출력</text>
+  <text x="259" y="146" text-anchor="middle" font-size="12" fill="#23251d">고르기</text>
+
+  <rect x="352" y="44" width="160" height="120" rx="12" fill="#d9eddf"/>
+  <text x="432" y="80" text-anchor="middle" font-size="22" font-weight="700" fill="#23251d">③</text>
+  <text x="432" y="108" text-anchor="middle" font-size="14" font-weight="700" fill="#23251d">AI로 구현·검토</text>
+  <text x="432" y="130" text-anchor="middle" font-size="12" fill="#23251d">포털 AI 답을</text>
+  <text x="432" y="146" text-anchor="middle" font-size="12" fill="#23251d">따져 보고 고치기</text>
+
+  <rect x="542" y="44" width="174" height="120" rx="12" fill="#f7d6d3"/>
+  <text x="629" y="80" text-anchor="middle" font-size="22" font-weight="700" fill="#23251d">④</text>
+  <text x="629" y="108" text-anchor="middle" font-size="14" font-weight="700" fill="#23251d">성찰</text>
+  <text x="629" y="130" text-anchor="middle" font-size="12" fill="#23251d">기대 효과·장점,</text>
+  <text x="629" y="146" text-anchor="middle" font-size="12" fill="#23251d">더 좋게 하기</text>
+
+  <!-- 화살표 -->
+  <g fill="#63655b" font-size="20" text-anchor="middle">
+    <text x="169" y="110">→</text><text x="343" y="110">→</text><text x="527" y="110">→</text>
+  </g>
+
+  <!-- 제출 -->
+  <rect x="200" y="176" width="320" height="28" rx="14" fill="#f7a501"/>
+  <text x="360" y="195" text-anchor="middle" font-size="13" font-weight="700" fill="#23251d">제출 - 모든 과정이 포털에 자동으로 기록돼요</text>
+</svg>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 270" font-family="'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <!-- 수행평가에서 쓰는 마이크로비트 본체 내장 부품 (외부 부품 없음) -->
+  <!-- 가운데 보드 -->
+  <rect x="270" y="40" width="180" height="150" rx="16" fill="#17171b"/>
+  <rect x="300" y="52" width="120" height="14" rx="7" fill="#2a2a30"/>
+  <text x="360" y="63" text-anchor="middle" font-size="10" fill="#d3d6cb">로고(터치)</text>
+  <g fill="#ff5a5a">
+    <circle cx="326" cy="86" r="5"/><circle cx="343" cy="86" r="5"/><circle cx="360" cy="86" r="5"/><circle cx="377" cy="86" r="5"/><circle cx="394" cy="86" r="5"/>
+    <circle cx="326" cy="103" r="5"/><circle cx="343" cy="103" r="5"/><circle cx="360" cy="103" r="5"/><circle cx="377" cy="103" r="5"/><circle cx="394" cy="103" r="5"/>
+    <circle cx="326" cy="120" r="5"/><circle cx="343" cy="120" r="5"/><circle cx="360" cy="120" r="5"/><circle cx="377" cy="120" r="5"/><circle cx="394" cy="120" r="5"/>
+    <circle cx="326" cy="137" r="5"/><circle cx="343" cy="137" r="5"/><circle cx="360" cy="137" r="5"/><circle cx="377" cy="137" r="5"/><circle cx="394" cy="137" r="5"/>
+    <circle cx="326" cy="154" r="5"/><circle cx="343" cy="154" r="5"/><circle cx="360" cy="154" r="5"/><circle cx="377" cy="154" r="5"/><circle cx="394" cy="154" r="5"/>
+  </g>
+  <circle cx="292" cy="120" r="12" fill="#63655b"/><text x="292" y="125" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">A</text>
+  <circle cx="428" cy="120" r="12" fill="#63655b"/><text x="428" y="125" text-anchor="middle" font-size="12" font-weight="700" fill="#ffffff">B</text>
+  <text x="360" y="182" text-anchor="middle" font-size="11" fill="#d3d6cb">마이크로비트 본체</text>
+
+  <!-- 입력 -->
+  <text x="125" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#23251d">입력 (센서)</text>
+  <g font-size="13" fill="#23251d">
+    <rect x="10" y="38" width="230" height="26" rx="13" fill="#dceaf6"/><text x="125" y="56" text-anchor="middle">버튼 A·B</text>
+    <rect x="10" y="70" width="230" height="26" rx="13" fill="#dceaf6"/><text x="125" y="88" text-anchor="middle">로고 터치</text>
+    <rect x="10" y="102" width="230" height="26" rx="13" fill="#dceaf6"/><text x="125" y="120" text-anchor="middle">기울기·흔들기 (가속도)</text>
+    <rect x="10" y="134" width="230" height="26" rx="13" fill="#dceaf6"/><text x="125" y="152" text-anchor="middle">빛 · 온도</text>
+    <rect x="10" y="166" width="230" height="26" rx="13" fill="#dceaf6"/><text x="125" y="184" text-anchor="middle">소리 감지 (마이크)</text>
+    <rect x="10" y="198" width="230" height="26" rx="13" fill="#dceaf6"/><text x="125" y="216" text-anchor="middle">나침반</text>
+  </g>
+  <text x="255" y="124" font-size="20" fill="#63655b">→</text>
+
+  <!-- 출력 -->
+  <text x="595" y="26" text-anchor="middle" font-size="15" font-weight="700" fill="#23251d">출력 (액추에이터)</text>
+  <g font-size="13" fill="#23251d">
+    <rect x="480" y="86" width="230" height="26" rx="13" fill="#f7d6d3"/><text x="595" y="104" text-anchor="middle">LED 5×5 (그림·글자·숫자)</text>
+    <rect x="480" y="122" width="230" height="26" rx="13" fill="#f7d6d3"/><text x="595" y="140" text-anchor="middle">스피커 (소리·음악)</text>
+  </g>
+  <text x="456" y="124" font-size="20" fill="#63655b">→</text>
+
+  <text x="360" y="256" text-anchor="middle" font-size="12" fill="#63655b">수행평가에서는 본체 안의 부품만 써요 (따로 연결하는 부품 없음)</text>
+</svg>
