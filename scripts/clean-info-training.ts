@@ -13,7 +13,7 @@
  *   · attendance · moodEntries · reflections · quizAnswers   sessionId 가 그 세션들
  *   · aiQuota         문서 ID 가 "세션ID__" 로 시작
  *   · artifacts       activityId 가 microbit-makecode__training(__rehearsal)
- *   · aiCallLogs      연수 자리 학번 + (sessionId 가 연수 세션이거나 없음) + 2026-11-22~24 생성분
+ *   · aiCallLogs      연수 자리 학번 + (sessionId 가 연수 세션, 또는 sessionId 없이 연수 세션 날짜(KST) 안에 생긴 것)
  *   · students        연수 자리 학번 중 temporary 이고 이름이 빈 문서만 (이름 있는 문서는 절대 안 지움)
  *   · typingScores    연수 자리 학번 문서(있으면)
  */
@@ -55,9 +55,10 @@ for (const cls of ["06", "07"]) {
   for (let n = 90; n <= 99; n += 1) SEATS.push(`1${cls}${n}`);
 }
 
-/** aiCallLogs 시각 범위 (KST 11/22 00:00 ~ 11/25 00:00) */
-const LOG_FROM = Date.parse("2026-11-21T15:00:00Z");
-const LOG_TO = Date.parse("2026-11-24T15:00:00Z");
+/** 그 날짜(KST) 하루의 시작 epoch ms */
+function kstDayStart(date: string): number {
+  return Date.parse(`${date}T00:00:00+09:00`);
+}
 
 function chunks<T>(list: T[], size = 30): T[][] {
   const out: T[][] = [];
@@ -105,15 +106,18 @@ async function main(): Promise<void> {
     for (const d of snap.docs) add(`artifacts/${d.id}`, d.ref);
   }
 
-  // AI 호출 기록 - 연수 자리 + 연수 세션(또는 세션 없음) + 연수 기간
+  // AI 호출 기록 - 연수 자리 + (연수 세션 ID 가 찍힌 것, 또는 세션 ID 없이 연수 세션 날짜 안에 생긴 것)
   const sessionSet = new Set(sessionIds);
+  const dates = targets.map((d) => String((d.data() as { date?: string }).date ?? "")).filter(Boolean).sort();
+  const LOG_FROM = dates.length ? kstDayStart(dates[0]) : Number.POSITIVE_INFINITY;
+  const LOG_TO = dates.length ? kstDayStart(dates[dates.length - 1]) + 24 * 60 * 60 * 1000 : 0;
   for (const part of chunks(SEATS)) {
     const snap = await db.collection("aiCallLogs").where("studentId", "in", part).get();
     for (const d of snap.docs) {
       const log = d.data() as { sessionId?: string; createdAt?: number };
       const inTime = (log.createdAt ?? 0) >= LOG_FROM && (log.createdAt ?? 0) < LOG_TO;
-      const inSession = log.sessionId ? sessionSet.has(log.sessionId) : !ONLY_REHEARSAL;
-      if (inTime && inSession) add(`aiCallLogs/${d.id}`, d.ref);
+      const ours = log.sessionId ? sessionSet.has(log.sessionId) : inTime;
+      if (ours) add(`aiCallLogs/${d.id}`, d.ref);
     }
   }
 

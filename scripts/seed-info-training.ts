@@ -164,6 +164,8 @@ const NOTES: { key: string; phase: LessonPhase; label: string; hint: string; ima
 ];
 
 const DASH = new RegExp("[\\u2014\\u2013]", "g");
+/** 코드 첫 줄 "# 똥피하기 ⑦" 의 원문자 번호 (①~⑳) */
+const MISSION_HEADER = new RegExp("^# 똥피하기 [\\u2460-\\u2473]", "m");
 
 /** 문자열 안의 긴 대쉬·엔 대쉬를 짧은 하이픈으로 (코드 틀 주석·빈칸 힌트에 남은 옛 표기) */
 function undash<T>(value: T): T {
@@ -208,6 +210,11 @@ async function buildPlan() {
     const src = (await sheet(p.lessonNo)).find((q) => q.key === p.from);
     if (!src) throw new Error(`${p.lessonNo}차에 ${p.from} 문항이 없습니다.`);
     const copy = undash(structuredClone(src));
+    // 코드 첫 줄 주석의 미션 번호(①③⑦⑧ 등, 학교 수업 안 번호)를 차시 번호로 바꾼다 - 연수 단계 이름(①~④)과 헷갈리지 않게.
+    // 왼쪽 비교 코드(codeRefTemplate)는 31차 결과물이라 31차로 적는다. 줄 수는 그대로라 refLines 가 안 어긋난다.
+    const tag = (n: number) => `# 똥피하기 (${n}차)`;
+    if (copy.codeTemplate) copy.codeTemplate = copy.codeTemplate.replace(MISSION_HEADER, tag(p.lessonNo));
+    if (copy.codeRefTemplate) copy.codeRefTemplate = copy.codeRefTemplate.replace(MISSION_HEADER, tag(31));
     picked.set(p.key, { ...copy, ...p.extra, key: p.key, phase: p.phase, label: p.label, hint: p.hint });
   }
 
