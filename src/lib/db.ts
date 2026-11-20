@@ -4,6 +4,7 @@ import { FieldPath, FieldValue, type Query } from "firebase-admin/firestore";
 
 import { dateKeyKST } from "./datetime";
 import { db } from "./firebase-admin";
+import { pickSeat, type SeatMap, type SeatPick } from "./name-entry";
 import { recordCommentId } from "./record-comment-id";
 import { DEFAULT_RELAY_TOPICS, splitIntoGroups, type RelayGroup } from "./relay";
 import { BOARD_SIZE, emptyBoard, makeDeck, shuffle, type Slot } from "./streams";
@@ -92,6 +93,11 @@ export const COLLECTIONS = {
   typingScores: "typingScores",
   /** 생기부 세특 초안. 문서 ID = `회차__과목열쇠__학번` (recordCommentId). */
   recordComments: "recordComments",
+  /**
+   * 성함 입장 세션(nameEntry, 교사 연수)의 자리 배정표. 문서 ID = 세션ID.
+   * { seats: { 학번: { name, key, at } } } - 이름은 이 문서와 그 세션 출석 문서(displayName)에만 둔다.
+   */
+  seatMaps: "seatMaps",
   meta: "meta",
 } as const;
 
@@ -1505,6 +1511,45 @@ export async function claimDemoSeat(
     }
   }
   return null;
+}
+
+/**
+ * 성함 입장 세션에서 이름 하나에 자리(임시 학번) 하나를 준다 (name-entry.ts 의 pickSeat).
+ *
+ * 배정표 문서 하나를 트랜잭션으로 읽고 쓴다. 스무 명이 동시에 눌러도 같은 빈 자리를 둘이 받지 않고,
+ * 같은 이름이 다시 오면(새로고침·다른 기기) 같은 자리를 돌려준다. 다 차면 { kind: "full" }.
+ */
+export async function claimNamedSeat(
+  sessionId: string,
+  name: string,
+  key: string,
+): Promise<SeatPick> {
+  const ref = db().collection(COLLECTIONS.seatMaps).doc(sessionId);
+  return db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const seats = ((snap.data()?.seats ?? {}) as SeatMap) || {};
+    const pick = pickSeat(seats, key);
+    if (pick.kind === "new") {
+      tx.set(
+        ref,
+        { sessionId, seats: { [pick.seat]: { name, key, at: Date.now() } }, updatedAt: Date.now() },
+        { merge: true },
+      );
+    }
+    return pick;
+  });
+}
+
+/** 성함 입장 참가자의 표시 이름을 그 세션 출석 문서에 얹는다 (대시보드가 추가 읽기 없이 보여 준다) */
+export async function setAttendanceDisplayName(
+  sessionId: string,
+  studentId: string,
+  displayName: string,
+): Promise<void> {
+  await db()
+    .collection(COLLECTIONS.attendance)
+    .doc(entryId(sessionId, studentId))
+    .set({ displayName }, { merge: true });
 }
 
 export async function listAttendance(sessionId: string): Promise<Attendance[]> {

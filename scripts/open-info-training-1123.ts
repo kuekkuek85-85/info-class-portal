@@ -119,6 +119,8 @@ async function main(): Promise<void> {
     status: "scheduled",
     phase: "waiting",
     rehearsal: REHEARSAL,
+    // 성함 입장: 학번 대신 성함을 받고 서버가 6반·7반 임시 자리(20석)를 배정한다 (src/lib/name-entry.ts)
+    nameEntry: true,
     rewardGame: null,
     videoPrompts: [],
     teacherNote: "",
@@ -136,6 +138,7 @@ async function main(): Promise<void> {
   if (back.freeNavigation !== false) problems.push("freeNavigation");
   if (!Array.isArray(back.phaseOrder) || (back.phaseOrder as unknown[]).length === 0) problems.push("phaseOrder");
   if (back.status !== "scheduled") problems.push(`status=${back.status}`);
+  if (back.nameEntry !== true) problems.push("nameEntry");
   if (problems.length) {
     console.error(`✗ ${sessionId} 가 기대와 다릅니다: ${problems.join(", ")}`);
     process.exit(1);

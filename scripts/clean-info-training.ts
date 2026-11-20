@@ -10,7 +10,8 @@
  * 지우는 것 - 연수 세션과 연수 자리 번호에 묶인 것만. 전 과목을 훑는 clear-rehearsals 방식은 쓰지 않는다.
  *   · classSessions   groupKey == "info-training" (본 세션 + 리허설 세션)
  *   · codeReservations 그 세션들의 날짜__코드
- *   · attendance · moodEntries · reflections · quizAnswers   sessionId 가 그 세션들
+ *   · seatMaps        그 세션들의 성함 배정표 (참가자 성함이 담긴 문서)
+ *   · attendance · moodEntries · reflections · quizAnswers   sessionId 가 그 세션들 (출석의 displayName 에도 성함)
  *   · aiQuota         문서 ID 가 "세션ID__" 로 시작
  *   · artifacts       activityId 가 microbit-makecode__training(__rehearsal)
  *   · aiCallLogs      연수 자리 학번 + (sessionId 가 연수 세션, 또는 sessionId 없이 연수 세션 날짜(KST) 안에 생긴 것)
@@ -90,6 +91,11 @@ async function main(): Promise<void> {
       const snap = await db.collection(name).where("sessionId", "in", part).get();
       for (const d of snap.docs) add(`${name}/${d.id}`, d.ref);
     }
+  }
+  // 성함 배정표 (참가자 성함이 담긴 문서) - 문서 ID = 세션ID
+  for (const id of sessionIds) {
+    const seatMap = db.collection("seatMaps").doc(id);
+    if ((await seatMap.get()).exists) add(`seatMaps/${id} (성함 배정표)`, seatMap);
   }
   for (const id of sessionIds) {
     const snap = await db

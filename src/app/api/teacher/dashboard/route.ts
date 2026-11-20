@@ -230,7 +230,11 @@ export async function GET(request: Request) {
 
       return {
         studentId: entry.studentId,
-        name: nameOf.get(entry.studentId) ?? "",
+        /*
+         * 성함 입장 세션(교사 연수)은 명렬표에 이름이 없고 출석 문서에 displayName 이 있다.
+         * 정규 수업 출석에는 displayName 이 없으므로 결과는 예전과 같다(명렬표 이름, 없으면 "").
+         */
+        name: nameOf.get(entry.studentId) || entry.displayName || "",
         /** 이름을 가릴 때 대신 보여줄 자리 — 교사는 출석부로 바로 찾을 수 있어야 한다 */
         number: roster.find((s) => s.studentId === entry.studentId)?.number ?? null,
         temporary: !nameOf.get(entry.studentId),

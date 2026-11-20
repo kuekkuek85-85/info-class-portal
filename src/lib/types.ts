@@ -1988,6 +1988,14 @@ export interface ClassSession {
    */
   demo?: boolean;
   /**
+   * 성함 입장 (교사 연수 세션 전용, 기본 없음).
+   *
+   * 켜진 세션은 수업 코드 다음에 학번 대신 성함(별명 가능)을 받고, 서버가 임시 자리 풀(6반·7반 90~99)에서
+   * 자리를 배정한다(/api/student/name-entry, name-entry.ts). 같은 이름이 다시 오면 같은 자리.
+   * 이 값이 없는 세션(정규 수업 전부)은 학번 입장 경로(identify·confirm)를 그대로 쓴다.
+   */
+  nameEntry?: boolean;
+  /**
    * 학생이 **지나온 단계로 되돌아갈 수 있는가** (기본 꺼짐).
    *
    * 다 같이 한 곳을 봐야 하는 구간이 있고 — 퀴즈 문항을 함께 읽을 때가 그렇다 —
@@ -2063,6 +2071,11 @@ export interface Attendance {
   classNo: ClassNo;
   date: string;
   joinedAt: number;
+  /**
+   * 성함 입장 세션(nameEntry)에서 참가자가 적은 이름 (최대 20자). 정규 수업 출석에는 없다.
+   * 대시보드가 명렬표 이름 대신 이것을 보여 준다(「임시 90번」 대신).
+   */
+  displayName?: string;
 
   /*
    * 이탈(집중 확인) 누적치.

@@ -61,6 +61,8 @@ export async function POST(request: Request) {
        * "102차시" 는 아무 뜻이 없다. 둘 다 감추고 제목만 보여준다.
        */
       mixed: Boolean(session.groupKey),
+      /** 성함 입장 세션(교사 연수)이면 true. 정규 수업은 늘 false 라 화면이 그대로 학번을 묻는다 */
+      nameEntry: session.nameEntry === true,
     });
   });
 }

@@ -13,7 +13,7 @@ import { DigitDisplay, NumberPad } from "@/components/number-pad";
  * 이름을 조회할 수 있다. 코드가 앞에 있으면 그 교실에 있는 학생만 이름 확인 화면에 도달한다.
  */
 
-type Step = "code" | "studentId" | "confirm";
+type Step = "code" | "studentId" | "confirm" | "name" | "nameConfirm";
 
 interface CodeInfo {
   classNo: number;
@@ -22,7 +22,12 @@ interface CodeInfo {
   period: number;
   /** 반이 섞인 수업(선택과목). 반·차시 번호를 감춘다 */
   mixed?: boolean;
+  /** 성함 입장 세션(교사 연수). 켜진 세션만 학번 대신 성함을 묻는다 */
+  nameEntry?: boolean;
 }
+
+/** 성함 최대 글자 수 (서버 name-entry.ts 의 NAME_MAX 와 같다) */
+const NAME_MAX = 20;
 
 interface Identified {
   studentId: string;
@@ -40,8 +45,10 @@ export default function EntryPage() {
   const [identified, setIdentified] = useState<Identified | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [name, setName] = useState("");
 
   const length = step === "code" ? 2 : 5;
+  const trimmedName = name.replace(/\s+/g, " ").trim();
 
   const post = useCallback(async (url: string, body: unknown) => {
     const response = await fetch(url, {
@@ -64,8 +71,10 @@ export default function EntryPage() {
         setCode("");
         return;
       }
-      setCodeInfo(result as unknown as CodeInfo);
-      setStep("studentId");
+      const info = result as unknown as CodeInfo;
+      setCodeInfo(info);
+      // 성함 입장 세션(교사 연수)만 성함을 묻는다. 정규 수업은 nameEntry 가 false 라 예전처럼 학번으로 간다.
+      setStep(info.nameEntry === true ? "name" : "studentId");
     },
     [post],
   );
@@ -135,6 +144,22 @@ export default function EntryPage() {
     setStep("studentId");
   }
 
+  // ── 성함 입장 (nameEntry 세션 전용) ──
+  async function nameYes() {
+    if (!trimmedName) return;
+    setBusy(true);
+    setError("");
+    const result = await post("/api/student/name-entry", { name: trimmedName });
+    setBusy(false);
+
+    if (!result.ok) {
+      setError(result.message ?? "다시 시도해 주세요.");
+      setStep("name");
+      return;
+    }
+    router.replace("/lesson");
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-6 px-5 py-8">
       <header className="text-center">
@@ -189,6 +214,87 @@ export default function EntryPage() {
           >
             수업 코드 다시 입력
           </button>
+        </section>
+      )}
+
+      {step === "name" && (
+        <form
+          className="flex flex-col gap-5"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!trimmedName || busy) return;
+            setError("");
+            setStep("nameConfirm");
+          }}
+        >
+          {codeInfo && (
+            <p className="block bg-lime t-body-sm text-center">
+              <b className="font-bold">{codeInfo.title}</b>
+            </p>
+          )}
+          <label className="flex flex-col gap-2">
+            <span className="t-subhead text-center">
+              <b className="font-bold">성함</b>을 적어 주세요
+            </span>
+            <input
+              type="text"
+              value={name}
+              onChange={(event) => setName(Array.from(event.target.value).slice(0, NAME_MAX).join(""))}
+              maxLength={NAME_MAX}
+              autoComplete="off"
+              autoFocus
+              className="field text-center t-subhead"
+            />
+          </label>
+          <button type="submit" className="pill pill-primary pill-block" disabled={!trimmedName || busy}>
+            다음
+          </button>
+          <button
+            type="button"
+            className="pill pill-ghost t-body-sm self-center"
+            onClick={() => {
+              setStep("code");
+              setCode("");
+              setName("");
+              setError("");
+            }}
+          >
+            수업 코드 다시 입력
+          </button>
+        </form>
+      )}
+
+      {step === "nameConfirm" && (
+        <section
+          className="block flex flex-col gap-5 bg-cream text-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="name-confirm-title"
+        >
+          <h2 id="name-confirm-title" className="t-headline leading-relaxed">
+            {trimmedName} 님으로 들어갈까요?
+          </h2>
+          <p className="t-body-sm">
+            성함은 이 연수 수업 기록에만 남고, 연수가 끝나면 지웁니다.
+          </p>
+          <p className="rounded-md bg-surface px-4 py-3 text-left t-body-sm">
+            수업 화면을 벗어나면 <b>벗어난 시간</b>이 기록되고, 강사가 볼 수 있어요.
+            <br />
+            어느 앱이나 사이트로 갔는지는 <b>알 수 없고, 기록되지도 않아요.</b>
+          </p>
+          <div className="flex flex-col gap-3">
+            <button type="button" className="pill pill-primary pill-block" onClick={nameYes} disabled={busy}>
+              {busy ? "들어가는 중…" : "네, 들어갈게요"}
+            </button>
+            <button
+              type="button"
+              className="pill pill-secondary pill-block"
+              onClick={() => setStep("name")}
+              disabled={busy}
+            >
+              성함 고치기
+            </button>
+          </div>
         </section>
       )}
 
