@@ -1,8 +1,9 @@
 /**
- * 교사 연수 세션 열기 (2026-11-23 20:00, 줌). 승인 전 실행 금지.
+ * 교사 연수 세션 열기 (2026-11-22(일) 20:00, 줌 - 11/23 에서 정정). 파일 이름은 옛 날짜 그대로 둔다.
  *
- *   node --env-file=.env.local scripts/open-info-training-1123.ts                        # 본 세션: 11/23 8교시
- *   node --env-file=.env.local scripts/open-info-training-1123.ts --rehearsal 2026-11-22 # 리허설: 그날 9교시
+ *   node --env-file=.env.local scripts/open-info-training-1123.ts                        # 본 세션: 11/22 8교시
+ *   node --env-file=.env.local scripts/open-info-training-1123.ts --date 2026-11-23      # 본 세션 날짜를 바꿀 때
+ *   node --env-file=.env.local scripts/open-info-training-1123.ts --rehearsal 2026-11-21 # 리허설: 그날 9교시 (본 세션 날짜 전날까지)
  *
  * 먼저 seed-info-training.ts 로 lessonPlans/info-training 을 넣어 둔다.
  *
@@ -18,7 +19,7 @@
  *   세션 문서에 계획 전체를 복사하므로 rewardGame(없음)·phaseOrder·phaseLabels·focusExempt·freeNavigation 이 다 실린다.
  *
  * ## 낮 수업과 안 섞이게
- *   코드는 50번부터 빈 번호를 예약한다(11/23 낮 수업 10~13 과 거리를 둔다). 이미 있으면 다시 만들지 않는다.
+ *   코드는 50번부터 빈 번호를 예약한다(정규 수업 10번대와 거리를 둔다). 이미 있으면 다시 만들지 않는다.
  */
 
 import { cert, initializeApp } from "firebase-admin/app";
@@ -50,9 +51,13 @@ const GROUP_LABEL = "교사 연수";
 /** 데이터 통 반 번호. 연수 학번(10690~ · 10790~)의 반과 상관없이 출석·작품에 이 값이 붙는다 */
 const CLASS_BUCKET = 7;
 
+/** 연수 날짜 (2026-11-22 일요일 20:00 으로 정정, 교사 확인). --date 로 바꿀 수 있다 */
+const MAIN_DATE_DEFAULT = "2026-11-22";
+const dateAt = process.argv.indexOf("--date");
+const MAIN_DATE = dateAt !== -1 ? (process.argv[dateAt + 1] ?? "") : MAIN_DATE_DEFAULT;
 const rehearsalAt = process.argv.indexOf("--rehearsal");
 const REHEARSAL = rehearsalAt !== -1;
-const DATE = REHEARSAL ? (process.argv[rehearsalAt + 1] ?? "") : "2026-11-23";
+const DATE = REHEARSAL ? (process.argv[rehearsalAt + 1] ?? "") : MAIN_DATE;
 /** 본 세션 8교시(시각표 밖, 6시간 상한). 리허설은 대시보드 리허설과 같은 9교시(그날이 지나면 닫힘) */
 const PERIOD = REHEARSAL ? 9 : 8;
 
@@ -60,7 +65,11 @@ if (!/^\d{4}-\d{2}-\d{2}$/.test(DATE)) {
   console.error("✗ 날짜 형식은 2026-11-22 입니다. 예) --rehearsal 2026-11-22");
   process.exit(1);
 }
-if (REHEARSAL && DATE >= "2026-11-23") {
+if (!/^\d{4}-\d{2}-\d{2}$/.test(MAIN_DATE)) {
+  console.error("✗ --date 형식은 2026-11-22 입니다.");
+  process.exit(1);
+}
+if (REHEARSAL && DATE >= MAIN_DATE) {
   console.error("✗ 리허설은 연수 전날까지만 엽니다(본 세션과 같은 날 리허설 세션을 두면 대시보드 선택이 헷갈린다).");
   process.exit(1);
 }
