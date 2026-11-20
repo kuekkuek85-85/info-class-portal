@@ -51,7 +51,8 @@ export function nameKey(normalized: string): string {
 }
 
 export type SeatPick =
-  | { kind: "existing"; seat: string }
+  /** name = 처음 적었던 이름(표시는 첫 이름으로 고정 - 다시 들어올 때 띄어쓰기·대소문자가 달라도 안 바뀐다) */
+  | { kind: "existing"; seat: string; name: string }
   | { kind: "new"; seat: string }
   | { kind: "full" };
 
@@ -61,7 +62,7 @@ export type SeatPick =
  */
 export function pickSeat(seats: SeatMap, key: string, pool: readonly string[] = TRAINING_SEATS): SeatPick {
   for (const [seat, record] of Object.entries(seats)) {
-    if (record?.key === key) return { kind: "existing", seat };
+    if (record?.key === key) return { kind: "existing", seat, name: record.name };
   }
   const free = pool.find((seat) => !seats[seat]);
   return free ? { kind: "new", seat: free } : { kind: "full" };

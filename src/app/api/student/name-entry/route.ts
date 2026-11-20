@@ -46,6 +46,8 @@ export async function POST(request: Request) {
       return fail("too_many_attempts", "자리가 다 찼어요. 강사에게 알려 주세요.");
     }
     const studentId = pick.seat;
+    // 다시 들어온 사람은 처음 적은 이름으로 보인다 (띄어쓰기·대소문자를 달리 적어도 표시가 안 흔들린다)
+    const shown = pick.kind === "existing" ? pick.name : name;
 
     // 시작 전 수업은 코드 단계에서 이미 걸러진다. 혹시 남아 있어도 정규 confirm 과 달리 여기서 시작시키지 않는다.
     await recordAttendance({
@@ -55,16 +57,16 @@ export async function POST(request: Request) {
       date: session.date,
       joinedAt: Date.now(),
     });
-    await setAttendanceDisplayName(session.id, studentId, name);
+    await setAttendanceDisplayName(session.id, studentId, shown);
 
     await createStudentSession({
       studentId,
-      name,
+      name: shown,
       classNo: session.classNo,
       sessionId: session.id,
       temporary: true,
     });
 
-    return ok({ studentId, name, rejoined: pick.kind === "existing" });
+    return ok({ studentId, name: shown, rejoined: pick.kind === "existing" });
   });
 }

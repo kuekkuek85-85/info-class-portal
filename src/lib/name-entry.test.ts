@@ -44,15 +44,16 @@ test("같은 이름이 다시 오면 같은 자리 (공백·대소문자 차이 
   const seats: SeatMap = {};
   take(seats, "김연수");
   take(seats, "Teacher Kim");
-  assert.deepEqual(take(seats, "  김연수 "), { kind: "existing", seat: "10690" });
-  assert.deepEqual(take(seats, "teacher   kim"), { kind: "existing", seat: "10691" });
+  assert.deepEqual(take(seats, "  김연수 "), { kind: "existing", seat: "10690", name: "김연수" });
+  // 다시 들어올 때 적은 모양이 달라도 표시 이름은 처음 것 그대로
+  assert.deepEqual(take(seats, "teacher   kim"), { kind: "existing", seat: "10691", name: "Teacher Kim" });
 });
 
 test("20석이 다 차면 full, 그래도 기존 이름은 자기 자리로 들어온다", () => {
   const seats: SeatMap = {};
   for (let i = 1; i <= 20; i += 1) assert.equal(take(seats, `참가자${i}`).kind, "new");
   assert.deepEqual(take(seats, "새로운 사람"), { kind: "full" });
-  assert.deepEqual(take(seats, "참가자7"), { kind: "existing", seat: "10696" });
+  assert.deepEqual(take(seats, "참가자7"), { kind: "existing", seat: "10696", name: "참가자7" });
 });
 
 test("빈 자리가 중간에 있으면 그 자리부터 채운다", () => {
