@@ -63,6 +63,7 @@
 
 import { cert, initializeApp } from "firebase-admin/app";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
+import { readFileSync } from "node:fs";
 
 import type { LessonPlan, PhaseContent, WorksheetQuestion } from "../src/lib/types.ts";
 
@@ -89,6 +90,11 @@ db.settings({ ignoreUndefinedProperties: true });
 
 const LESSON_PLANS = "lessonPlans";
 const LESSON_NO = 31;
+
+/** public/mb31-list.svg 를 데이터 주소로 (리스트 개념 그림, range 뺀 판). 이 스크립트가 있는 곳 기준으로 읽는다 */
+const MB31_LIST_IMAGE =
+  "data:image/svg+xml;charset=utf-8," +
+  encodeURIComponent(readFileSync(new URL("../public/mb31-list.svg", import.meta.url), "utf8").trim());
 const FORCE = process.argv.includes("--force");
 
 /** 23~30차와 같은 MakeCode 피지컬 아크 전용 통 (키 mb31_* 로 충돌 없음). */
@@ -220,7 +226,9 @@ const WORKSHEET: WorksheetQuestion[] = [
       "리스트는 여러 값을 한 묶음에 담아요. 번호(인덱스)는 0번부터!\n" +
       "반복(for)으로 같은 일을 한 번만 써요. 아래 그림을 보고 퀴즈를 풀어요.",
     kind: "note",
-    imageUrl: "/mb31-list.svg",
+    // 2026-11-23: 그림에서 range 를 뺐다(안 배운 개념). 수업 중엔 배포를 못 하므로 public/mb31-list.svg 를
+    // 데이터 주소로 계획에 직접 싣는다 - 배포 없이 바로 반영되고, CSP 가 img-src data: 를 허용한다.
+    imageUrl: MB31_LIST_IMAGE,
     imageAlt:
       "왼쪽은 poop_x·poop_x2·poop_x3 처럼 변수를 하나하나 따로 만드는 방식, 오른쪽은 xs=[1,3,…] 리스트 하나에 모아 인덱스(0,1,2)로 꺼내고 for 반복으로 한 번만 쓰는 모습을 대비한 그림",
     maxLength: 0,
@@ -258,7 +266,7 @@ const WORKSHEET: WorksheetQuestion[] = [
     hint: "똥을 2개에서 10개로 늘릴 때, 어느 쪽이 더 편할까요?",
     kind: "choice",
     choices: [
-      "리스트 + 반복 - range 숫자만 바꾸면 거의 끝",
+      "리스트 + 반복 - 같은 코드는 한 번만, 리스트에 자리만 늘리면 돼요",
       "변수 하나하나 - 변수와 복붙을 여덟 벌 더 만들기",
       "둘 다 똑같이 힘들다",
     ],
@@ -318,7 +326,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         rows: [
           { label: "리스트 (xs, ys)", value: "여러 값을 한 묶음에: xs = [1, 3]" },
           { label: "인덱스 (xs[0])", value: "번호로 꺼내기, ★0부터★: xs[0]=첫째, xs[1]=둘째" },
-          { label: "반복 (for)", value: "for i in range(2): i 를 0,1 로 바꿔 같은 일 한 번만" },
+          { label: "반복 (for)", value: "리스트 자리(0번, 1번)마다 같은 일을 반복 - 코드는 한 번만 적어요" },
           { label: "들여쓰기", value: "Tab 1번 = 한 단계. 갈림길 줄은 Tab 2번, 그 안은 Tab 3번" },
         ],
         highlights: [

@@ -29,9 +29,9 @@
     <text x="369" y="94" text-anchor="middle" font-size="11" fill="#64748b">xs[1]</text>
     <text x="417" y="94" text-anchor="middle" font-size="11" fill="#9ca3af">xs[2]</text>
   </g>
-  <text x="348" y="130" text-anchor="middle" font-size="12.5" fill="#171717" font-family="'Courier New',monospace">for i in range(2)</text>
+  <text x="348" y="130" text-anchor="middle" font-size="12.5" font-weight="700" fill="#171717">리스트 자리마다 반복</text>
   <text x="348" y="172" text-anchor="middle" font-size="11.5" fill="#64748b">같은 일을 i 만 바꿔</text>
-  <text x="348" y="190" text-anchor="middle" font-size="11.5" fill="#64748b">한 번만! (10개면 range(10))</text>
+  <text x="348" y="190" text-anchor="middle" font-size="11.5" fill="#64748b">한 번만 적어요!</text>
 
   <text x="230" y="222" text-anchor="middle" font-size="11" fill="#94a3b8">리스트 = 여러 값을 한 묶음에 · 번호(인덱스)는 0 부터</text>
 </svg>
