@@ -15,13 +15,14 @@ type Slot = NonNullable<WorksheetQuestion["codeSlots"]>[number];
 /**
  * 미션 ② 는 code_choose(선택형) - 직접 타자 없음. 왼쪽 = 참조('변수 하나하나') 완성 코드(DODGE_VARS_DONE,
  * 읽기전용), 오른쪽 = 리스트 리팩토링 코드(CODE_M2, `{{토큰}}` 자리를 드롭다운으로 고름). 빈칸은 '의미 있는
- * 자리' 넷: 리스트 리터럴(lit = [1, 3]) · 반복 범위(rng = range(2)) · 인덱스 접근 둘(idx1·idx2 = i).
+ * 자리' 넷: 리스트 리터럴(lit = [1, 3]) · 무작위 새 칸(rnd = randint(0, 4)) · 인덱스 접근 둘(idx1·idx2 = i).
+ * (2026-11-23: 반복 범위 range 빈칸은 뺐다 - 안 배운 개념이라 for i in range(2) 는 완성해서 준다.)
  * 네 칸을 다 맞히면 완성 코드 = DODGE_LIST_DONE 과 같아진다(= 미션③ vibeBaseCode). 좌우로 "같은 동작인데
  * 리스트 쪽이 짧다" 가 드러난다. 양쪽 다 줄 번호 거터.
  */
 export const CODE_M2 = `# 똥피하기 ⑧ - 리스트로 깔끔하게! (변수 여러 벌 → 리스트 하나 + 반복)
 # 똥들의 가로는 xs, 세로는 ys 라는 '리스트(묶음)' 하나에 모았어요.
-# for 반복이 i 를 0, 1 로 바꿔 가며 '같은 일' 을 해 줘요 - 한 번만 적으면 돼요.
+# for i in range(2): 줄은 i 를 0, 1 로 바꿔 가며 '같은 일' 을 두 번 해 줘요 (그대로 두면 돼요).
 xs = {{lit}}
 ys = [0, 2]
 x = 2
@@ -47,11 +48,11 @@ def on_forever():
     if playing:
         basic.clear_screen()
         led.plot(x, 4)
-        for i in {{rng}}:
+        for i in range(2):
             ys[{{idx1}}] = ys[i] + 1
             if ys[i] > 4:
                 ys[i] = 0
-                xs[i] = randint(0, 4)
+                xs[i] = {{rnd}}
                 score = score + 1
             led.plot(xs[{{idx2}}], ys[i])
             if ys[i] == 4 and xs[i] == x:
@@ -159,7 +160,7 @@ basic.forever(on_forever)`;
 /**
  * 미션 ② code_choose 빈칸 - 드롭다운 '보기 선택'(자유 타자 없음). options 에 그럴듯한 오답을 섞고, answer 로
  * 채점한다. 모두 맞히면 why(왜 그런지 한 줄, 리스트/인덱스/반복 의미)를 보여 준다. 정답을 options 맨 앞에
- * 두지 않는다. lit/rng/idx1/idx2 를 맞히면 완성 코드 = DODGE_LIST_DONE.
+ * 두지 않는다. lit/rnd/idx1/idx2 를 맞히면 완성 코드 = DODGE_LIST_DONE.
  */
 export const SLOTS_M2: Slot[] = [
   {
@@ -172,15 +173,6 @@ export const SLOTS_M2: Slot[] = [
     refLines: [3, 5],
   },
   {
-    token: "rng",
-    label: "몇 번 반복할지 (범위)",
-    options: ["range(1)", "2", "range(2)", "[0, 1, 2]"],
-    answer: "range(2)",
-    why: "range(2) 는 i 를 0, 1 로 두 번 돌려 줘요 - 똥이 두 개니까요.",
-    // 왼쪽 29~32줄(첫째 똥 바닥 처리)과 33~36줄(둘째 똥 바닥 처리) - 똑같은 블록을 두 번 쓴 곳
-    refLines: [29, 30, 31, 32, 33, 34, 35, 36],
-  },
-  {
     token: "idx1",
     label: "떨어뜨릴 똥의 번호",
     options: ["0", "i", "1", "2"],
@@ -188,6 +180,20 @@ export const SLOTS_M2: Slot[] = [
     why: "i 가 0이면 첫째 똥, 1이면 둘째 똥 - 똥마다 따로 안 써도 돼요.",
     // 왼쪽 27줄 poop_y = poop_y + 1, 28줄 poop_y2 = poop_y2 + 1 → ys[i] = ys[i] + 1 한 줄
     refLines: [27, 28],
+  },
+  /*
+   * 2026-11-23 교사 피드백: range 빈칸 제거(학생들이 range 를 배운 적이 없다). for i in range(2) 줄은
+   * 완성된 채로 주고, 그 자리 대신 이미 배운 '무작위(randint)' 함수 빈칸을 둔다(26차 주사위 · 29차 똥 시작 칸).
+   * 값 3(lit·idx1·idx2) : 함수 1(rnd) 비율 유지.
+   */
+  {
+    token: "rnd",
+    label: "바닥에 닿은 똥의 새 가로 칸",
+    options: ["randint(4, 0)", "randint(0, 4)", "randint(0, 5)", "random(0, 4)"],
+    answer: "randint(0, 4)",
+    why: "randint(0, 4) 는 0~4 중 무작위 수 하나 - 화면 가로 칸이 0~4 라서요(주사위에서 쓴 그 명령).",
+    // 왼쪽 31줄 poop_x = randint(0, 4), 35줄 poop_x2 = randint(0, 4) → xs[i] = randint(0, 4) 한 줄
+    refLines: [31, 35],
   },
   {
     token: "idx2",
