@@ -2,10 +2,13 @@
  * 「인간과 인공지능」 6차시 · 화요일 2기 수업을 연다.
  *
  *   node --env-file=.env.local scripts/open-hai6-tue2.ts
- *   node --env-file=.env.local scripts/open-hai6-tue2.ts 2026-11-24 1
+ *   node --env-file=.env.local scripts/open-hai6-tue2.ts 2026-12-01 1
  *
  * open-hai6-tue1.ts 를 복제해 **화요일 2기**로 맞춘 것이다. 분반 값(GROUP_KEY hai-tue-2 ·
- * GROUP_LABEL 화요일 2기 · CLASS_NO 2 · 기본 날짜 2026-11-24)과 캔바 초대 주소 고르기만 다르다.
+ * GROUP_LABEL 화요일 2기 · CLASS_NO 2 · 기본 날짜 2026-12-01)과 캔바 주소 고르기만 다르다.
+ * (11/24 에 한 번 열었다가 교사 지시로 그 수업을 5차시 보충(seed-hai5b-tue2)으로 바꿨다.)
+ * 발표자료는 교사가 낸 캔바 과제 링크(CANVA_SLIDES_ASSIGN_TUE_2, .env.local)가 있으면
+ * ⑥ 템플릿 버튼 자리를 그 과제 링크로 바꾼다. 토큰이 화2기 초대 토큰과 다르면 멈춘다.
  * 세션 ID 는 `${날짜}__${교시}__hai-tue-2`. 활동 통(hai-2026-1기)·계획(106)은 그대로라,
  * 화2기가 2~5차시에 쓴 답·앱 링크·받은 피드백이 오늘 그대로 열린다.
  *
@@ -46,7 +49,7 @@ const GROUP_KEY = "hai-tue-2";
 const GROUP_LABEL = "화요일 2기";
 /** 화면에 안 보이는 데이터 통 번호. 2~5차시와 같아야 지난 답·앱·받은 피드백이 열린다 */
 const CLASS_NO = 2;
-const DATE = process.argv[2] ?? "2026-11-24";
+const DATE = process.argv[2] ?? "2026-12-01";
 const PERIOD = Number(process.argv[3] ?? 1);
 
 /**
@@ -113,6 +116,30 @@ async function main(): Promise<void> {
     }
     return { ...rest, linkUrl: picked };
   });
+
+  // 발표자료 캔바 과제 링크 (교사가 준 것, 화2기 초대 + 과제로 바로 가기). 없으면 계획의 공용 템플릿 그대로
+  const assign = process.env.CANVA_SLIDES_ASSIGN_TUE_2 ?? "";
+  if (assign) {
+    const tok = (u: string) => u.match(/token=([^&]+)/)?.[1] ?? "";
+    if (tok(assign) !== tok(process.env.CANVA_INVITE_TUE_2 ?? "")) {
+      console.error("✗ 발표자료 과제 링크의 토큰이 화요일 2기 초대 토큰과 다릅니다. 열지 않습니다.");
+      process.exit(1);
+    }
+    for (let i = 0; i < worksheet.length; i += 1) {
+      const q = worksheet[i];
+      if (q.key !== "_l6_slides_intro") continue;
+      worksheet[i] = {
+        ...q,
+        label: "⑥ 발표 슬라이드 만들기 - 선생님이 낸 캔바 과제를 열어 채워요",
+        hint: String(q.hint ?? "").replace(
+          /^아래 \[발표자료 템플릿 열기\] 를 누르면, 선생님이 준비한 발표용 슬라이드가 새 탭에 떠요\.\n그대로 고칠 수 있는 내 편집본이에요\./,
+          "아래 [발표자료 과제 열기] 를 누르면 선생님이 낸 캔바 과제가 새 탭에 떠요.\n과제에서 시작하면 내 편집본이 생겨요.",
+        ),
+        linkUrl: assign,
+        linkLabel: "발표자료 과제 열기 (새 탭)",
+      };
+    }
+  }
 
   const code = await pickCode();
 
