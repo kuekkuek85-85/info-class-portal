@@ -150,16 +150,8 @@ const worksheet = [
     copyText: "지금 이 코드를 이어서 고쳐 줘. 바꾸고 싶은 점: ",
     maxLength: 0,
   },
-  {
-    key: "fix_teacher",
-    phase: "emotion",
-    label: "선생님 피드백 중 반영한 것",
-    hint:
-      "지난 시간에 쓴 것이 있으면 아래에 그대로 있어요. 오늘 더 고쳤으면 이어서 적어요.\n" +
-      "예) 첫 화면에 무슨 앱인지 안 보인다고 하셔서, 맨 위에 제목을 넣었어요",
-    kind: "long",
-    maxLength: 300,
-  },
+  // 「선생님 피드백 중 반영한 것」(fix_teacher) 입력칸은 교사 지시(11/24)로 뺐다. 지난주 답은
+  // 데이터에 그대로 있고, 위 '지난 시간에 여기까지 했어요' 와 AI 질문 재료로만 읽는다.
   {
     key: "fix5",
     phase: "emotion",
