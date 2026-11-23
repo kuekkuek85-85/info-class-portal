@@ -109,7 +109,6 @@ const PLAN_C4: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> & { variant: s
     grill: "미션 ① AI로 나만의 기능",
     problem: "마이크로비트 총정리",
     assessment: "수행평가 안내",
-    reflection: "성찰 - 해결하고 싶은 불편 · 써 보고 싶은 입력·출력",
   },
   // 2026-11-23: 입력·출력 고르기는 성찰 글쓰기 [1] 로 합쳤다(lesson32-plan.ts reflectionQuestions)
   phaseOrder: ["waiting", "grill", "problem", "assessment", "reflection"],

@@ -240,7 +240,6 @@ export const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     grill: "미션 ② AI로 나만의 기능",
     problem: "마이크로비트 총정리",
     assessment: "수행평가 안내",
-    reflection: "성찰 - 해결하고 싶은 불편 · 써 보고 싶은 입력·출력",
   },
   phaseOrder: ["waiting", "build", "grill", "problem", "assessment", "reflection"],
   freeNavigation: false,
