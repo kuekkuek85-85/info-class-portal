@@ -13,7 +13,7 @@
  * ## 흐름 (약 43분)
  *   대기(타자)·마음 체크인 3 → ① 리스트 개념·확인 퀴즈(31차, problem) 6 → ② 리스트로 정리(32차 미션①, build) 8
  *   → ③ AI로 나만의 기능(32차 미션②, grill) 6 → 총정리 + 수행평가 안내(assessment, 탭 7개) 12
- *   → 성찰 ① 써 보고 싶은 입력·출력(mvp) 2 → 성찰 ② 실생활 속 불편(reflection) 4 → UNO
+ *   → 성찰 한 페이지(reflection: [0] 실생활 속 불편 · [1] 써 보고 싶은 입력·출력) 5 → UNO
  *
  * ## 뺀 것
  *   31차 미션 ①(변수 하나하나 빈칸, 8분) - 그 완성 코드가 32차 미션① 왼쪽 비교 코드로 그대로 보인다.
@@ -29,7 +29,7 @@ import { cert, initializeApp } from "firebase-admin/app";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
 import type { LessonPlan, WorksheetQuestion } from "../src/lib/types.ts";
-import { MISSION_AI, MISSION_LIST, PLAN, REFLECT_PICK, RECAP } from "./lesson32-plan.ts";
+import { MISSION_AI, MISSION_LIST, PLAN, RECAP } from "./lesson32-plan.ts";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -110,10 +110,9 @@ async function buildPlan() {
       build: "② 리스트로 정리 (32차)",
       grill: "③ AI로 나만의 기능 (32차)",
       assessment: "총정리 + 수행평가 안내",
-      mvp: "성찰 ① 써 보고 싶은 입력·출력",
-      reflection: "성찰 ② 해결하고 싶은 불편",
+      reflection: "성찰 - 해결하고 싶은 불편 · 써 보고 싶은 입력·출력",
     },
-    phaseOrder: ["waiting", "problem", "build", "grill", "assessment", "mvp", "reflection"],
+    phaseOrder: ["waiting", "problem", "build", "grill", "assessment", "reflection"],
     assessment: { ...PLAN.assessment, tabs: [...recapTabs, ...(PLAN.assessment.tabs ?? [])] },
     activity: {
       ...PLAN.activity!,
@@ -123,7 +122,7 @@ async function buildPlan() {
           "① 리스트 개념 → ② 리스트로 정리 → ③ AI로 나만의 기능 → 총정리·수행평가 안내 → 성찰\n" +
           "다 한 뒤 성찰을 내면 UNO 가 열려요.",
       },
-      worksheet: [...concept, ...MISSION_LIST, ...MISSION_AI, ...REFLECT_PICK],
+      worksheet: [...concept, ...MISSION_LIST, ...MISSION_AI],
     },
   };
   return plan;

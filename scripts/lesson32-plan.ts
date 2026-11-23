@@ -101,7 +101,8 @@ export const REFLECT_PICK: WorksheetQuestion[] = [
   },
 ];
 
-export const WORKSHEET: WorksheetQuestion[] = [...MISSION_LIST, ...MISSION_AI, ...RECAP, ...REFLECT_PICK];
+// REFLECT_PICK(성찰 ① 단계)은 2026-11-23 오후에 성찰 글쓰기([1])로 합쳐 활동지에서 뺐다. 정의는 기록으로 남긴다.
+export const WORKSHEET: WorksheetQuestion[] = [...MISSION_LIST, ...MISSION_AI, ...RECAP];
 
 /**
  * 수행평가 진행 순서 그림(public/mb32-pa-flow.svg)을 데이터 주소로 싣는다.
@@ -221,9 +222,13 @@ export const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
 
   // 성찰 - 수행평가로 잇기. 글은 mb32_pa_problem 에도 저장돼 33차에서 다시 보인다.
   // 2026-11-23: 학교생활 → 실생활로 넓힘(주제가 겹치지 않게). 예시는 학교 밖 상황을 섞는다.
+  // 2026-11-23(1-2 수업 중) 교사 지시: 입력·출력 고르기를 성찰 한 페이지의 글쓰기로 합친다(배포 없이).
+  // 불편 질문을 [0] 에 그대로 둬서 이미 낸 답의 번호가 밀리지 않게 하고, 입력·출력을 [1] 로 붙인다.
   reflectionQuestions: [
     "마이크로비트로 해결하고 싶은 실생활 속 불편은 무엇인가요? (한두 줄)\n" +
       "예) 집에서 화분 물 주기를 잊어요 · 운동할 때 횟수를 자꾸 까먹어요 · 밤에 방이 깜깜해 넘어질 뻔해요",
+    "다음 프로젝트에 써 보고 싶은 입력과 출력을 한두 줄로 적어요.\n" +
+      "예) 버튼 A · 흔들기 · 빛 → LED 그림 · 소리",
   ],
   reflectionPublic: false,
   reflectionAnswerKey: PA_PROBLEM_KEY,
@@ -235,10 +240,9 @@ export const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     grill: "미션 ② AI로 나만의 기능",
     problem: "마이크로비트 총정리",
     assessment: "수행평가 안내",
-    mvp: "성찰 ① 써 보고 싶은 입력·출력",
-    reflection: "성찰 ② 해결하고 싶은 불편",
+    reflection: "성찰 - 해결하고 싶은 불편 · 써 보고 싶은 입력·출력",
   },
-  phaseOrder: ["waiting", "build", "grill", "problem", "assessment", "mvp", "reflection"],
+  phaseOrder: ["waiting", "build", "grill", "problem", "assessment", "reflection"],
   freeNavigation: false,
 
   activity: {

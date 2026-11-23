@@ -119,11 +119,14 @@ const STEP2: WorksheetQuestion[] = [
     key: "_mb33_echo_want",
     phase: "mvp",
     label: "지난 시간에 끌렸던 부품",
-    hint: "참고만 해요. 내 문제에 맞는 것으로 다시 골라요.",
+    hint: "성찰에 적은 입력·출력이나 그때 고른 부품이 보여요.\n참고만 하고, 내 문제에 맞는 것으로 다시 골라요.",
     kind: "echo",
+    // 2026-11-23: 1-2·1-3·1-4 는 입력·출력을 고르기 대신 32차 성찰 글([1])로 적었다. 성찰 글 전체가
+    // mb32_pa_problem 에 한 벌 저장되므로(불편 + 입력·출력) 그 줄을 먼저 보여 준다. 1-1 은 고른 부품이 아래에 보인다.
     echoKeys: [
-      { key: "mb32_want_in", label: "써 보고 싶던 입력" },
-      { key: "mb32_want_out", label: "써 보고 싶던 출력" },
+      { key: "mb32_pa_problem", label: "32차 성찰 글 (불편 · 써 보고 싶은 입력·출력)" },
+      { key: "mb32_want_in", label: "고른 입력" },
+      { key: "mb32_want_out", label: "고른 출력" },
     ],
     maxLength: 0,
   },
