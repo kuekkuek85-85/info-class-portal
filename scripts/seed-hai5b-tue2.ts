@@ -16,8 +16,9 @@
  *
  * 105 의 활동 통(hai-2026-1기)과 답 키(fix_teacher, fix5, build_url), 동료 검토 설정을 그대로 써서
  * 지난 시간에 쓴 답·검토 의견과 받은 피드백(AI·선생님·친구)이 이어서 보인다.
- * 흐름: 마음 체크인 → 동료 피드백 기준 → 동료 피드백 하기 → 받은 피드백 확인 → 캔바에서 고치기
- *       → 고친 것 기록 → 회고
+ * 흐름: 마음 체크인 → 동료 피드백 기준 → 동료 피드백 하기 → 받은 피드백 확인 → 캔바에서 고치기 → 회고
+ * (교사 지시로 '캔바에서 고치기' 와 '고친 것 기록' 을 한 단계(emotion)로 합쳤다. emotion 을 남긴 것은
+ *  lesson/page 의 finalWorkPhase 가 LESSON_PHASES 순서상 마지막 활동 단계를 고르기 때문이다.)
  * 캔바 초대 주소는 .env.local 의 CANVA_INVITE_TUE_2 에서만 읽는다(저장소에 토큰 없음).
  */
 
@@ -113,10 +114,33 @@ const worksheet = [
     kind: "received_feedback",
     maxLength: 0,
   },
-  // ---------------------------------------------------------------- 캔바에서 고치기 (mvp)
+  {
+    /*
+     * AI 질문을 아직 한 번도 안 받은 학생이 많다(화2기 22명 중 12명). 104 와 같은 열쇠
+     * "ai_review" 라 이미 받은 학생은 그 질문이 그대로 뜨고, 없는 학생은 여기서 받는다.
+     * 받으면 위 표의 AI 칸에도 들어간다. 이름·학번은 안 보낸다 - 자유 서술 답만 간다.
+     */
+    key: "ai_review",
+    phase: "build",
+    label: "AI 질문이 아직 없으면 여기서 받아 보세요",
+    hint:
+      "버튼을 누르면 AI가 내 앱 설명을 보고 질문 세 개를 해 줘요. 점수는 없어요.\n" +
+      "보내는 것은 내가 쓴 글뿐이에요. 이름과 학번은 보내지 않습니다.",
+    kind: "ai_review",
+    maxLength: 0,
+    reviewCount: 3,
+    reviewFields: [
+      { key: "mvp_one", label: "만들려던 것" },
+      { key: "mvp_must1", label: "꼭 필요한 기능 ①" },
+      { key: "mvp_must2", label: "꼭 필요한 기능 ②" },
+      { key: "mvp_must3", label: "꼭 필요한 기능 ③" },
+      { key: "fix_teacher", label: "선생님 피드백으로 고친 것" },
+    ],
+  },
+  // ---------------------------------------------------------------- 캔바에서 고치기 (emotion)
   {
     key: "_l5b_fix_guide",
-    phase: "mvp",
+    phase: "emotion",
     label: "④ 캔바에서 앱 고치기",
     hint:
       "골라 둔 피드백 하나를 캔바 AI 에게 그대로 부탁해 보세요.\n" +
@@ -128,7 +152,7 @@ const worksheet = [
   },
   {
     key: "fix_teacher",
-    phase: "mvp",
+    phase: "emotion",
     label: "선생님 피드백 중 반영한 것",
     hint:
       "지난 시간에 쓴 것이 있으면 아래에 그대로 있어요. 오늘 더 고쳤으면 이어서 적어요.\n" +
@@ -136,7 +160,6 @@ const worksheet = [
     kind: "long",
     maxLength: 300,
   },
-  // ---------------------------------------------------------------- 고친 것 기록 (emotion)
   {
     key: "fix5",
     phase: "emotion",
@@ -171,20 +194,24 @@ const plan = {
   progress: { heading: "", body: "", url: "" },
   assessment: { heading: "", body: "", url: "" },
   video: { heading: "", body: "", url: "" },
-  reflectionQuestions: ["오늘 받은 피드백 중 무엇을 고쳤나요? 고치고 나서 앱이 어떻게 달라졌나요?"],
+  // 교사 지시(11/24): 내가 못 본 것을 다른 눈(AI·선생님·친구)이 찾아 준 경험을 돌아본다
+  reflectionQuestions: [
+    "친구·선생님·AI 피드백 중에서, 나는 몰랐는데 다른 사람이 찾아 준 것이 있었나요?\n" +
+      "무엇이었고, 어떻게 고쳤는지(아직이면 어떻게 고칠지) 적어 보세요.\n" +
+      "예) 버튼이 작아 누르기 어렵다는 걸 친구가 알려 줘서, 버튼을 크게 키웠어요.",
+  ],
   reflectionPublic: false,
   // 교사 결정 대기 - 지난 화2기 세션들과 같은 값(켬)을 유지한다
   freeNavigation: true,
-  phaseOrder: ["mood", "grill", "gallery", "build", "mvp", "emotion", "reflection", "done"],
+  phaseOrder: ["mood", "grill", "gallery", "build", "emotion", "reflection", "done"],
   phaseLabels: {
     grill: "동료 피드백 기준",
     gallery: "동료 피드백 하기",
     build: "받은 피드백 확인",
-    mvp: "캔바에서 고치기",
-    emotion: "고친 것 기록",
+    emotion: "캔바에서 고치기",
     reflection: "회고",
   },
-  focusExempt: ["grill", "gallery", "build", "mvp", "emotion", "worksheet"],
+  focusExempt: ["grill", "gallery", "build", "emotion", "worksheet"],
   activity: {
     activityId: "hai-2026-1기",
     places: [],
