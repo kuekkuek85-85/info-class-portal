@@ -213,6 +213,8 @@ export async function GET() {
               // 감상 노출 범위. 감상 단계의 활동지 탭도 이 키가 가리키는 활동으로 좁힌다
               // (한 단계에만 걸렸을 때). 안 실으면 화면 쪽에서 좁히지 못한다.
               galleryAnswerKeys: session.activity.galleryAnswerKeys ?? [],
+              // 배정만 노출하는 동료 검토 차시. 되돌아가기 목록에 감상을 단독 단계로 띄울지 정한다(lesson/page 의 galleryStandalone)
+              galleryAssignedOnly: session.activity.galleryAssignedOnly === true,
               galleryNoun: session.activity.galleryNoun ?? "",
               // 왼쪽 활동지 탭 이름. 안 실으면 화면이 기본값 "활동지 쓰기" 로 물러난다
               worksheetTabLabel: session.activity.worksheetTabLabel ?? "",

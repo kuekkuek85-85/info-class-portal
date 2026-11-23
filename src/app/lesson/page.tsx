@@ -64,6 +64,8 @@ export interface ActivityInfo {
   healingGallery?: boolean;
   /** 친구에게 보여줄 답 칸(감상 노출 범위). 감상 단계의 활동지 탭 범위도 이걸로 좁힌다 */
   galleryAnswerKeys?: string[];
+  /** 배정만 노출하는 동료 검토 차시인가 (되돌아가기의 단독 감상 단계 판단용). 안 오면 false */
+  galleryAssignedOnly?: boolean;
   /** 그림 제목의 틀. 비면 "○○년의 △△" (artifact-title.ts) */
   artifactTitle?: string;
   /** 그림판 밑그림. "head" 면 머리 윤곽선을 획 밑에 깐다 */
@@ -1073,6 +1075,22 @@ export default function LessonPage() {
    * 차시 순서에서 '현재 단계까지'만 자르고, 목록 순서도 차시 순서를 따른다.
    * phaseOrder 가 없는 차시는 기존대로 LESSON_PHASES 를 쓴다(동작 불변).
    */
+  /*
+   * 감상(gallery)을 되돌아가기 목록에 단독 단계로 띄우는 차시인가.
+   *
+   * 보통 감상은 그리기·활동지 버튼 안의 탭이라 목록에서 뺀다. 그런데 그 버튼이 아예 없는
+   * 차시(인간과 인공지능 5차시 보충: 동료 검토를 배정만으로 하는 단계)에서는 들어갈 자리가
+   * 없어, 교사가 다음 단계로 넘기면 학생이 검토로 돌아올 수 없었다. 아래 조건을 모두 갖춘
+   * 차시에서만 단독 단계로 띄운다 - 그 밖의 차시는 지금까지와 같다.
+   *  · phaseOrder 에 gallery 를 명시했고, 감상을 열고(galleryEnabled), 배정만 노출(galleryAssignedOnly)
+   *  · 그리기(장소)도, 활동지(worksheet) 단계 문항도 없다 = 감상을 품을 버튼이 없다
+   */
+  const galleryStandalone =
+    Boolean(session.phaseOrder?.includes("gallery")) &&
+    session.activity?.galleryEnabled !== false &&
+    session.activity?.galleryAssignedOnly === true &&
+    (session.activity?.places.length ?? 0) === 0 &&
+    questionsFor("worksheet").length === 0;
   const phaseSeq: readonly LessonPhase[] = session.phaseOrder?.length
     ? session.phaseOrder
     : LESSON_PHASES;
@@ -1095,7 +1113,7 @@ export default function LessonPage() {
      * 그리기·활동지·감상은 한 묶음이라 안에서 이미 오갈 수 있다. 목록에는 하나만 둔다.
      * 대표는 보통 "그리기"인데, 그리기가 없는 차시에서는 "활동지"가 그 자리를 맡는다.
      */
-    if (item === "gallery") return false;
+    if (item === "gallery") return galleryStandalone;
     // 선택과목 단계 — 그 단계에 쓸 문항이 있을 때만 버튼에 남는다
     if (STEP_PHASES.includes(item)) return questionsFor(item).length > 0;
     if (item === "worksheet") {
@@ -1228,7 +1246,11 @@ export default function LessonPage() {
               <button
                 key={item}
                 type="button"
-                onClick={() => setViewPhase(item)}
+                onClick={() => {
+                  setViewPhase(item);
+                  // 단독 감상 단계(galleryStandalone)로 돌아가면 검토 탭을 바로 편다
+                  if (item === "gallery") setWorkTab("gallery");
+                }}
                 className={`pill t-body-sm ${
                   viewPhase === item ? "pill-primary" : "pill-secondary"
                 }`}
