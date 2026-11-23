@@ -4,7 +4,8 @@
  *   node --env-file=.env.local scripts/open-info-1125.ts [날짜]
  *
  * 시간표(2026-11-18 확정, 반마다 3차시):
- *   2교시 1-4 → 32차 1-4판(계획 문서 lesson32-c4) · 3교시 1-2 → 32차 · 5교시 1-1 → 33차 · 6교시 1-3 → 33차
+ *   2교시 1-4 → 31·32차 합본(계획 문서 lesson31-32-c4) · 3교시 1-2 → 33차 · 5교시 1-1 → 33차 · 6교시 1-3 → 33차
+ *   (2026-11-23 교사 지시: 1-2 는 11/23 에 31·32차 합본을 마쳐 33차로 당김, 1-4 는 11/25 에 합본)
  *
  * · 33차는 아직 없다 - lessonNo 33 칸은 pending 으로 두고 건너뛴다. 33차 seed 를 만든 뒤 pending 을 지운다.
  * · 계획 고르기: planDocId 가 있으면 그 문서(반별 판), 없으면 lessonNo 로 찾되 variant 계획은 건너뛴다.
@@ -38,8 +39,8 @@ db.settings({ ignoreUndefinedProperties: true });
 
 const DATE = process.argv[2] ?? "2026-11-25";
 const PLAN_LIST: { period: number; classNo: number; lessonNo: number; planDocId?: string; pending?: string }[] = [
-  { period: 2, classNo: 4, lessonNo: 32, planDocId: "lesson32-c4" },
-  { period: 3, classNo: 2, lessonNo: 32 },
+  { period: 2, classNo: 4, lessonNo: 32, planDocId: "lesson31-32-c4" },
+  { period: 3, classNo: 2, lessonNo: 33 },
   { period: 5, classNo: 1, lessonNo: 33 },
   { period: 6, classNo: 3, lessonNo: 33 },
 ];
