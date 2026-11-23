@@ -79,7 +79,7 @@ const STEP1: WorksheetQuestion[] = [
     key: "mb33_problem",
     phase: "problem",
     label: "① 내가 풀 문제",
-    hint: "누가 · 언제 · 무엇이 불편한지 한두 문장으로 써요.\n예) 쉬는 시간에 교실이 너무 시끄러워 친구 말이 안 들려요.",
+    hint: "집·가족·운동·건강·동네·취미 등 실생활에서 누가 · 언제 · 무엇이 불편한지 한두 문장으로 써요.\n예) 할머니가 약 먹을 시간을 자주 잊으세요 · 줄넘기할 때 몇 번 했는지 헷갈려요.",
     kind: "long",
     prefillTemplate: "{mb32_pa_problem}",
     maxLength: 400,
@@ -196,7 +196,7 @@ const STEP3: WorksheetQuestion[] = [
     rowColumns: [
       { key: "ask", label: "AI 에게 물어본 것", placeholder: "예) 소리가 크면 화난 얼굴" },
       { key: "check", label: "확인하거나 고친 것", placeholder: "예) 기준 숫자 128 이 너무 커서 80 으로" },
-      { key: "why", label: "왜", placeholder: "예) 교실 소리로는 안 바뀌어서" },
+      { key: "why", label: "왜", placeholder: "예) 방 안 소리로는 안 바뀌어서" },
     ],
     maxRows: 8,
     maxLength: 3000,

@@ -5,6 +5,8 @@
  * import 해도 아무것도 쓰지 않는다. 내용 설명은 seed-lesson32.ts 머리말 참조.
  */
 
+import { readFileSync } from "node:fs";
+
 import type { LessonPlan, PhaseContent, WorksheetQuestion } from "../src/lib/types.ts";
 import { LIST_REFACTOR_QUESTIONS, VIBE_QUESTIONS, retarget } from "./lesson32-carryover.ts";
 
@@ -61,11 +63,21 @@ export const RECAP: WorksheetQuestion[] = [
       "출력: LED 5×5, 스피커",
     maxLength: 0,
   },
+];
+
+/*
+ * 성찰 ① (mvp 단계, 성찰 바로 앞) - 써 보고 싶은 입력·출력 고르기.
+ *
+ * 2026-11-23 교사 피드백: 총정리에서 빼서 성찰로 옮긴다. 성찰 화면(reflection)은 활동지 문항을 그리지 못해서
+ * (프론트 변경 + 배포가 필요, 수업 중 배포 금지) 성찰 바로 앞에 '성찰 ①' 단계로 둔다. 키(mb32_want_in·out)와
+ * 활동 ID 는 그대로라 이미 고른 답이 이어지고, 33차 echo 도 그대로 읽는다.
+ */
+export const REFLECT_PICK: WorksheetQuestion[] = [
   {
     key: "mb32_want_in",
-    phase: "problem",
+    phase: "mvp",
     label: "다음 프로젝트에 써 보고 싶은 입력 (여러 개 가능)",
-    hint: "끌리는 것을 골라요. 33차에 다시 보여 줄게요.",
+    hint: "수행평가 안내를 떠올리며 끌리는 것을 골라요. 33차에 다시 보여 줄게요.",
     kind: "multi",
     choices: [
       "버튼 A·B",
@@ -80,7 +92,7 @@ export const RECAP: WorksheetQuestion[] = [
   },
   {
     key: "mb32_want_out",
-    phase: "problem",
+    phase: "mvp",
     label: "써 보고 싶은 출력 (여러 개 가능)",
     hint: "LED 와 스피커 중 골라요. 둘 다 골라도 돼요.",
     kind: "multi",
@@ -89,7 +101,15 @@ export const RECAP: WorksheetQuestion[] = [
   },
 ];
 
-export const WORKSHEET: WorksheetQuestion[] = [...MISSION_LIST, ...MISSION_AI, ...RECAP];
+export const WORKSHEET: WorksheetQuestion[] = [...MISSION_LIST, ...MISSION_AI, ...RECAP, ...REFLECT_PICK];
+
+/**
+ * 수행평가 진행 순서 그림(public/mb32-pa-flow.svg)을 데이터 주소로 싣는다.
+ * 2026-11-23 '학교생활 속' → '실생활 속' 으로 고쳤는데 수업 중이라 배포를 못 해서, 그림을 계획 안에 넣는다.
+ */
+const PA_FLOW_IMAGE =
+  "data:image/svg+xml;charset=utf-8," +
+  encodeURIComponent(readFileSync(new URL("../public/mb32-pa-flow.svg", import.meta.url), "utf8").trim());
 
 /* ── 채점 기준 - 평가 계획 문구 그대로 ── */
 export const RUBRIC_UNDERSTAND = {
@@ -142,7 +162,7 @@ export const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
       {
         label: "한눈에",
         subtitle: "33~34차, 2차시 동안 내 작품 만들기",
-        note: "학교생활 속 불편을 마이크로비트로 해결해요.",
+        note: "집·가족·운동·건강·동네·취미 등 실생활 속 불편을 마이크로비트로 해결해요.",
         rows: [
           { label: "방식", value: "개인 · 실험·실습 · 오픈북 · 포털 AI 도움 허용" },
           { label: "만들기", value: "마이크로비트 실물 + 파이썬 코드 제출" },
@@ -180,7 +200,7 @@ export const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         note: "③ 에서는 AI 답을 그대로 쓰지 말고, 따져 보고 고친 과정을 남겨요.",
         rows: [],
         highlights: [],
-        imageUrl: "/mb32-pa-flow.svg",
+        imageUrl: PA_FLOW_IMAGE,
         imageAlt: "33차: ① 문제 발견·정의, ② 구성요소 설계. 34차: ③ AI로 구현·검토, ④ 성찰. 그다음 제출(포털 자동 기록)",
       },
       {
@@ -200,7 +220,11 @@ export const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
   video: empty(),
 
   // 성찰 - 수행평가로 잇기. 글은 mb32_pa_problem 에도 저장돼 33차에서 다시 보인다.
-  reflectionQuestions: ["마이크로비트로 해결하고 싶은 학교생활 속 불편은 무엇인가요? (한두 줄)"],
+  // 2026-11-23: 학교생활 → 실생활로 넓힘(주제가 겹치지 않게). 예시는 학교 밖 상황을 섞는다.
+  reflectionQuestions: [
+    "마이크로비트로 해결하고 싶은 실생활 속 불편은 무엇인가요? (한두 줄)\n" +
+      "예) 집에서 화분 물 주기를 잊어요 · 운동할 때 횟수를 자꾸 까먹어요 · 밤에 방이 깜깜해 넘어질 뻔해요",
+  ],
   reflectionPublic: false,
   reflectionAnswerKey: PA_PROBLEM_KEY,
 
@@ -211,8 +235,10 @@ export const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     grill: "미션 ② AI로 나만의 기능",
     problem: "마이크로비트 총정리",
     assessment: "수행평가 안내",
+    mvp: "성찰 ① 써 보고 싶은 입력·출력",
+    reflection: "성찰 ② 해결하고 싶은 불편",
   },
-  phaseOrder: ["waiting", "build", "grill", "problem", "assessment", "reflection"],
+  phaseOrder: ["waiting", "build", "grill", "problem", "assessment", "mvp", "reflection"],
   freeNavigation: false,
 
   activity: {
@@ -222,7 +248,7 @@ export const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     worksheetIntro: {
       heading: "똥피하기 마무리 + 수행평가 준비",
       body:
-        "미션① 리스트로 정리 → 미션② AI로 나만의 기능 → 총정리 → 수행평가 안내\n" +
+        "미션① 리스트로 정리 → 미션② AI로 나만의 기능 → 총정리 → 수행평가 안내 → 성찰\n" +
         "다 한 뒤 성찰을 내면 UNO 가 열려요.",
     },
     worksheet: WORKSHEET,

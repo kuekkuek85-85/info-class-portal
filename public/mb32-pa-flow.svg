@@ -10,7 +10,7 @@
   <rect x="4" y="44" width="150" height="120" rx="12" fill="#dceaf6"/>
   <text x="79" y="80" text-anchor="middle" font-size="22" font-weight="700" fill="#23251d">①</text>
   <text x="79" y="108" text-anchor="middle" font-size="14" font-weight="700" fill="#23251d">문제 발견·정의</text>
-  <text x="79" y="130" text-anchor="middle" font-size="12" fill="#23251d">학교생활 속</text>
+  <text x="79" y="130" text-anchor="middle" font-size="12" fill="#23251d">실생활 속</text>
   <text x="79" y="146" text-anchor="middle" font-size="12" fill="#23251d">불편 찾기</text>
 
   <rect x="184" y="44" width="150" height="120" rx="12" fill="#e7d8ee"/>

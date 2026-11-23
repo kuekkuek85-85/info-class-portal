@@ -175,7 +175,7 @@ const SUBMIT: WorksheetQuestion[] = [
     key: "mb34_works",
     phase: "build",
     label: "내 작품은 이렇게 동작해요 (필수, 한 줄)",
-    hint: "예) 교실이 시끄러우면 화난 얼굴과 삐 소리로 알려 줘요.",
+    hint: "예) 방이 어두워지면 LED 가 켜지고 삐 소리로 알려 줘요.",
     kind: "text",
     maxLength: 200,
   },
