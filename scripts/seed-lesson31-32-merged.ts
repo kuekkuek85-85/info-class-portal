@@ -12,13 +12,13 @@
  *
  * ## 흐름 (약 43분)
  *   대기(타자)·마음 체크인 3 → ① 리스트 개념·확인 퀴즈(31차, problem) 6 → ② 리스트로 정리(32차 미션①, build) 8
- *   → ③ AI로 나만의 기능(32차 미션②, grill) 6 → 총정리 + 수행평가 안내(assessment, 탭 7개) 12
+ *   → ③ AI로 나만의 기능(32차 미션②, grill) 6 → 마이크로비트 총정리(mvp, 그림 두 장) 3 → 수행평가 안내(assessment, 탭 5개) 9
  *   → 성찰 한 페이지(reflection: [0] 실생활 속 불편 · [1] 써 보고 싶은 입력·출력) 5 → UNO
  *
  * ## 뺀 것
  *   31차 미션 ①(변수 하나하나 빈칸, 8분) - 그 완성 코드가 32차 미션① 왼쪽 비교 코드로 그대로 보인다.
  *   31차 안내 보드(오늘 할 일 탭)·31차 성찰 질문 - 하나로 합친 안내 글과 32차 성찰로 대신.
- *   32차 총정리 단계(problem) - 같은 그림 두 장을 수행평가 안내의 첫 두 탭으로 옮겼다(단계 하나 절약).
+ *   (총정리는 problem 칸을 리스트 개념이 써서 mvp 칸에 둔다. 32차의 입력·출력 고르기는 성찰 글쓰기 [1] 로 합쳤다.)
  *
  * ## 이어짐
  *   활동 ID 는 31·32차와 같은 microbit-makecode, 키도 mb31_*·mb32_* 그대로 - 33차 echo(mb32_pa_problem·want_in·out)가 이어진다.
@@ -75,29 +75,8 @@ async function buildPlan() {
   if (list31.some((q) => !q)) throw new Error("31차 리스트 개념 문항을 못 찾았습니다.");
   const concept = (list31 as WorksheetQuestion[]).map((q) => ({ ...q, phase: "problem" as const }));
 
-  // 총정리 그림 두 장 → 수행평가 안내 첫 두 탭 (문구는 RECAP 의 안내 글 그대로, 3줄 이내)
-  const recapNote = RECAP.find((q) => q.key === "_mb32_recap_note")!;
-  const partsNote = RECAP.find((q) => q.key === "_mb32_parts_note")!;
-  const recapTabs = [
-    {
-      label: "총정리",
-      subtitle: "입력 → 처리 → 출력",
-      note: recapNote.hint ?? "",
-      rows: [],
-      highlights: [],
-      imageUrl: recapNote.imageUrl,
-      imageAlt: recapNote.imageAlt,
-    },
-    {
-      label: "쓸 수 있는 부품",
-      subtitle: "본체 안의 센서 · 액추에이터",
-      note: partsNote.hint ?? "",
-      rows: [],
-      highlights: [],
-      imageUrl: partsNote.imageUrl,
-      imageAlt: partsNote.imageAlt,
-    },
-  ];
+  // 마이크로비트 총정리(mvp 단계) - 32차 총정리 그림 두 장(안내 글 그대로). 수행평가 안내와 다른 단계로 나눈다(교사 지시 2026-11-23).
+  const recap = RECAP.filter((q) => q.kind === "note").map((q) => ({ ...q, phase: "mvp" as const }));
 
   const plan: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> & { variant: string } = {
     ...PLAN,
@@ -109,19 +88,20 @@ async function buildPlan() {
       problem: "① 리스트 개념",
       build: "② 리스트로 정리",
       grill: "③ AI로 나만의 기능",
-      assessment: "총정리 + 수행평가 안내",
+      mvp: "마이크로비트 총정리",
+      assessment: "수행평가 안내",
     },
-    phaseOrder: ["waiting", "problem", "build", "grill", "assessment", "reflection"],
-    assessment: { ...PLAN.assessment, tabs: [...recapTabs, ...(PLAN.assessment.tabs ?? [])] },
+    phaseOrder: ["waiting", "problem", "build", "grill", "mvp", "assessment", "reflection"],
+    assessment: PLAN.assessment,
     activity: {
       ...PLAN.activity!,
       worksheetIntro: {
         heading: "오늘은 31·32차 합본 - 리스트부터 수행평가 준비까지",
         body:
-          "① 리스트 개념 → ② 리스트로 정리 → ③ AI로 나만의 기능 → 총정리·수행평가 안내 → 성찰\n" +
+          "① 리스트 개념 → ② 리스트로 정리 → ③ AI로 나만의 기능 → 총정리 → 수행평가 안내 → 성찰\n" +
           "다 한 뒤 성찰을 내면 UNO 가 열려요.",
       },
-      worksheet: [...concept, ...MISSION_LIST, ...MISSION_AI],
+      worksheet: [...concept, ...MISSION_LIST, ...MISSION_AI, ...recap],
     },
   };
   return plan;
