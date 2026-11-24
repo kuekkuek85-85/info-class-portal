@@ -30,11 +30,14 @@ export function AiReviewPanel({
   raw,
   onResult,
   disabled,
+  heading,
 }: {
   questionKey: string;
   raw: string;
   onResult: (raw: string) => void;
   disabled?: boolean;
+  /** 결과 칸 제목. 비면 기본(질문만 하는 검토) 문구 */
+  heading?: string;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -81,7 +84,7 @@ export function AiReviewPanel({
     <div className="flex flex-col gap-3">
       {result && (
         <div className="flex flex-col gap-2 rounded-lg bg-cream px-4 py-3">
-          <p className="t-caption">AI가 이런 걸 더 생각해 보라고 물어봐요</p>
+          <p className="t-caption">{heading || "AI가 이런 걸 더 생각해 보라고 물어봐요"}</p>
           {result.questions.map((q, i) => (
             <p key={i} className="t-body-sm">
               <span className="font-semibold">{i + 1}. </span>

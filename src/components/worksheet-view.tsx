@@ -915,6 +915,8 @@ export function WorksheetView({
               raw={value.answers[question.key] ?? ""}
               onResult={(raw) => setAnswer(question.key, raw)}
               disabled={disabled}
+              // 단계 점검 모드(33차, reviewRubric)는 질문만이 아니라 오탈자·분량·문맥 점검이 먼저 와서 제목을 바꾼다
+              heading={question.reviewRubric ? "AI 검토 결과" : undefined}
             />
           ) : question.kind === "rows" ? (
             <RowsField
