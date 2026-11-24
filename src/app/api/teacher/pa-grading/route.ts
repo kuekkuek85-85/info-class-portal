@@ -90,7 +90,7 @@ export async function GET(request: Request) {
         number: s.number,
         temporary: s.temporary === true,
         steps: {
-          problem: filled(a.mb33_problem),
+          problem: filled(a.mb33_problem) || filled(a.mb33_what),
           design: filled(a.mb33_flow) || filled(a.mb33_in) || filled(a.mb33_algo),
           build: filled(a.mb34_vibe) || filled(a.mb33_vibe),
           submit: PA_REQUIRED.every((r) => filled(a[r.key])),

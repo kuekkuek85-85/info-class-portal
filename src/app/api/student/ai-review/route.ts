@@ -78,20 +78,28 @@ export async function POST(request: Request) {
     const options = {
       persona: question.reviewPersona,
       fallback: question.reviewFallback,
+      // 단계 점검 모드(33차): 오탈자 → 분량 → 문맥 → 방향 질문
+      rubric: question.reviewRubric,
     };
 
     /*
      * 부르기 전에 자리를 잡는다. 부르고 나서 세면 연타한 둘이 같은 값을 읽고 통과한다.
      * 실패해도 되돌리지 않는다 — 되돌리는 코드가 곧 무한 재시도의 입구다.
      */
-    // 문항별 상한(reviewLimit, 33차 단계마다 AI 검토)이 있으면 그 문항 몫으로 따로 센다. 없으면 지금 그대로.
-    const claim = await claimAiCall(
-      session.id,
-      me.studentId,
-      question.reviewLimit
-        ? { scope: key, perStudent: question.reviewLimit, perSession: question.reviewLimit * 40 * 4 }
-        : {},
-    );
+    /*
+     * 문항별 상한(reviewLimit)이 있으면 그 문항 몫으로 따로 센다. reviewLimit 0 은 무제한(33차, 교사 결정 -
+     * 유료라 괜찮다): 카운터를 아예 안 거치고 남은 횟수도 안 보낸다. 없으면 지금 그대로(1인 3회).
+     */
+    const unlimited = question.reviewLimit === 0;
+    const claim = unlimited
+      ? { allowed: true, left: -1 }
+      : await claimAiCall(
+          session.id,
+          me.studentId,
+          question.reviewLimit
+            ? { scope: key, perStudent: question.reviewLimit, perSession: question.reviewLimit * 40 * 4 }
+            : {},
+        );
     const result: ReviewResult = claim.allowed
       ? await reviewBuild(fields, count, options)
       : fallbackResult("quota", 0, count, question.reviewFallback);
@@ -116,6 +124,6 @@ export async function POST(request: Request) {
       answers: { ...artifact.answers, [key]: JSON.stringify(stored) },
     });
 
-    return ok({ result: stored, left: claim.left });
+    return ok({ result: stored, left: unlimited ? null : claim.left });
   });
 }

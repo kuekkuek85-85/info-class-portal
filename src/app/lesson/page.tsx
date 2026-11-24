@@ -1252,6 +1252,8 @@ export default function LessonPage() {
               onCut: (event: { preventDefault: () => void }) => event.preventDefault(),
               onPaste: (event: { preventDefault: () => void }) => event.preventDefault(),
               onDrop: (event: { preventDefault: () => void }) => event.preventDefault(),
+              // 우클릭 메뉴(복사·붙여넣기 메뉴)도 닫는다 - 외부 AI 답을 옮기려면 읽고 직접 쳐야 한다(교사 의도)
+              onContextMenu: (event: { preventDefault: () => void }) => event.preventDefault(),
             }
           : {})}
       >

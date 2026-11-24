@@ -1049,9 +1049,16 @@ export interface WorksheetQuestion {
    */
   reviewFields?: { key: string; label: string }[];
   /**
-   * ai_review 를 이 문항 몫으로 학생당 몇 번까지 (33차: 단계마다 검토 버튼). 안 주면 세션 전체 1인 3회(기본).
+   * ai_review 를 이 문항 몫으로 학생당 몇 번까지. 0 이면 무제한(33차, 교사 결정). 안 주면 세션 전체 1인 3회(기본).
    */
   reviewLimit?: number;
+  /**
+   * ai_review 단계 점검 모드(33차). 이 글(최소 분량 기준)을 주면 AI 가 ① 오탈자 ② 분량 ③ 문맥 을 차례로
+   * 짚고 방향 질문을 한다. 답·완성 문장·고친 문장은 주지 않는다. reviewCount 는 5 를 권한다(점검 3 + 질문 2).
+   */
+  reviewRubric?: string;
+  /** list 문항의 칸 추가 단추 글자 (기본 "+ 칸 추가"). 33차 「+ 기능 추가」 */
+  addLabel?: string;
   /**
    * ai_review 가 받아 올 질문 개수. 기본 2.
    *
@@ -1331,7 +1338,8 @@ export interface StepReviewConfig {
   steps: {
     phase: LessonPhase;
     label: string;
-    fields: { key: string; label: string; minChars?: number; minLines?: number }[];
+    /** minLines: 줄(또는 list 칸) 수 · minChars: 전체 글자 · minItemChars: list 칸마다 글자 */
+    fields: { key: string; label: string; minChars?: number; minLines?: number; minItemChars?: number }[];
   }[];
 }
 

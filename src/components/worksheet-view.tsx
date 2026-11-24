@@ -929,6 +929,7 @@ export function WorksheetView({
               value={value.answers[question.key] ?? ""}
               minItems={question.minItems ?? 2}
               maxItems={question.maxItems ?? 6}
+              addLabel={question.addLabel}
               placeholder={question.itemPlaceholder}
               noPaste={question.noPaste}
               onChange={(next) => setAnswer(question.key, next)}

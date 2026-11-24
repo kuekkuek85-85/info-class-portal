@@ -28,6 +28,20 @@ export function countLines(raw: string): number {
   return text.split(/\r?\n/).filter((line) => line.trim().length > 0).length;
 }
 
+/** list 답(문자열 배열 JSON)의 채운 칸들. 배열이 아니면 줄마다 한 칸으로 본다 */
+export function listItems(raw: string): string[] {
+  const text = (raw ?? "").trim();
+  if (text.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(text) as unknown;
+      if (Array.isArray(parsed)) return parsed.filter((v): v is string => typeof v === "string" && v.trim().length > 0);
+    } catch {
+      // 아래로
+    }
+  }
+  return text.split(/\r?\n/).filter((line) => line.trim().length > 0);
+}
+
 /** 공백을 뺀 글자 수 */
 export function countChars(raw: string): number {
   return (raw ?? "").replace(/\s+/g, "").length;
@@ -56,6 +70,13 @@ export function checkSteps(config: StepReviewConfig, answers: Record<string, str
         }
         if (field.minChars && chars < field.minChars) {
           return { key: field.key, label: field.label, need: `${field.minChars}자 이상 (지금 ${chars}자)` };
+        }
+        // list 답(칸마다 하나): 채운 칸마다 최소 글자 (33차 기능 칸 - 각 5자 이상)
+        if (field.minItemChars) {
+          const short = listItems(raw).filter((item) => countChars(item) < field.minItemChars!).length;
+          if (short > 0) {
+            return { key: field.key, label: field.label, need: `칸마다 ${field.minItemChars}자 이상 (모자란 칸 ${short}개)` };
+          }
         }
         return null;
       })

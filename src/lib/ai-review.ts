@@ -107,6 +107,37 @@ const DEFAULT_PERSONA: ReviewPersona = {
 export interface ReviewOptions {
   persona?: Partial<ReviewPersona>;
   fallback?: readonly string[];
+  /**
+   * 단계 점검 모드(33차). 있으면 질문만 하는 대신 ① 오탈자 ② 최소 분량(이 글이 기준) ③ 문맥 을 차례로
+   * 짚고 나서 방향 질문을 한다. 답·완성 문장·코드·고친 문장은 여전히 주지 않는다.
+   */
+  rubric?: string;
+}
+
+/** 단계 점검 프롬프트 (33차 rubric). 앞 셋은 점검, 나머지는 방향 질문 */
+function buildCheckPrompt(fields: ReviewInput[], count: number, persona: ReviewPersona, rubric: string): string {
+  const lines = fields
+    .map(({ label, value }) => value.trim() && `${label}: ${value.trim()}`)
+    .filter(Boolean);
+  const hints = Math.max(1, count - 3);
+  return [
+    `너는 ${persona.role}다.`,
+    `아래는 ${persona.subject}다.`,
+    `정확히 ${count}개의 짧은 문장을 아래 순서로 만들어라.`,
+    "1번 - 오탈자·맞춤법: 틀린 낱말이 있으면 그 낱말만 작은따옴표로 짚고 '다시 볼까요?' 로 끝낸다. 고친 낱말·고친 문장은 절대 쓰지 마라. 없으면 '오탈자는 보이지 않아요.'",
+    `2번 - 분량: 기준(${rubric})을 채웠는지 한 문장. 모자라면 어느 칸이 모자란지만 말한다.`,
+    "3번 - 문맥: 각 칸이 그 질문에 맞게 썼는지, 앞 단계와 이어지는지 한 문장.",
+    `4번부터 ${hints}개 - 더 나아지게 할 방향을 묻는 질문.`,
+    "",
+    "규칙:",
+    "- 답, 완성된 문장, 예시 정답, 코드는 절대 주지 마라. 학생이 스스로 고치게 한다.",
+    "- 점수·등급·칭찬을 하지 마라.",
+    "- 중학교 1학년이 읽을 수 있는 쉬운 말로, 각 문장은 한 문장.",
+    "",
+    `JSON만 출력하세요: {"questions":[${Array(count).fill('"..."').join(",")}]}`,
+    "",
+    ...lines,
+  ].join("\n");
 }
 
 /** 질문이 모자라거나 없을 때 고정 질문으로 채운다. 개수는 항상 맞춰 나간다 */
@@ -164,6 +195,7 @@ async function callOnce(
   fields: ReviewInput[],
   count: number,
   persona: ReviewPersona,
+  rubric?: string,
 ): Promise<{ questions: string[] } | { failed: ReviewReason }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -175,7 +207,7 @@ async function callOnce(
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: buildPrompt(fields, count, persona) }] }],
+          contents: [{ parts: [{ text: rubric ? buildCheckPrompt(fields, count, persona, rubric) : buildPrompt(fields, count, persona) }] }],
           generationConfig: { temperature: 0.4, responseMimeType: "application/json" },
         }),
         signal: controller.signal,
@@ -227,9 +259,9 @@ export async function reviewBuild(
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return fallbackResult("nokey", 0, count, fallback);
 
-  let outcome = await callOnce(apiKey, fields, count, persona);
+  let outcome = await callOnce(apiKey, fields, count, persona, options.rubric);
   if ("failed" in outcome && outcome.failed === "format") {
-    outcome = await callOnce(apiKey, fields, count, persona);
+    outcome = await callOnce(apiKey, fields, count, persona, options.rubric);
   }
 
   const latencyMs = Date.now() - started;

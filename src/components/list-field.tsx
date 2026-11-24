@@ -60,6 +60,7 @@ export function ListField({
   placeholder,
   noPaste,
   disabled,
+  addLabel,
   onChange,
 }: {
   value: string;
@@ -68,6 +69,8 @@ export function ListField({
   placeholder?: string;
   noPaste?: boolean;
   disabled?: boolean;
+  /** 칸 추가 단추 글자. 비면 "+ 칸 추가" */
+  addLabel?: string;
   onChange: (next: string) => void;
 }) {
   /*
@@ -153,7 +156,7 @@ export function ListField({
           disabled={disabled || shown.length >= maxItems}
           className="pill pill-secondary t-body-sm disabled:opacity-35"
         >
-          + 칸 추가
+          {addLabel || "+ 칸 추가"}
         </button>
         {noPaste && (
           <span className="t-caption text-muted">직접 입력하는 활동이에요 — 붙여넣기는 꺼져 있어요.</span>

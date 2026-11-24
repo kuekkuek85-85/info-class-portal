@@ -360,6 +360,9 @@ export default function PaGradingPage() {
                 <Card title="① 문제 발견·정의">
                   <Field label="32차 성찰(불편)"><Text value={t.mb32_pa_problem ?? ""} /></Field>
                   <Field label="한 줄 소개"><Text value={t.mb33_summary ?? ""} /></Field>
+                  <Field label="피지컬 컴퓨팅이란"><Text value={t.mb33_pc_def ?? ""} /></Field>
+                  <Field label="실생활 사례"><Text value={[t.mb33_pc_case1, t.mb33_pc_case2, t.mb33_pc_case3].filter((v) => v?.trim()).join("\n")} /></Field>
+                  <Field label="누가 · 상황 · 불편"><Text value={[t.mb33_who, t.mb33_when, t.mb33_what].filter((v) => v?.trim()).join("\n")} /></Field>
                   <Field label="내가 풀 문제"><Text value={t.mb33_problem ?? ""} /></Field>
                   <Field label="초기 상태"><Text value={t.mb33_state_now ?? ""} /></Field>
                   <Field label="목표 상태"><Text value={t.mb33_state_goal ?? ""} /></Field>

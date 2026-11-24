@@ -75,6 +75,13 @@ export const PA_TEXT_KEYS = [
   "mb33_out",
   "mb33_flow",
   // 2026-11-25 33차 재설계: 문제 정의(초기·목표 상태) · 추상화(꼭 필요한 기능) · 알고리즘
+  "mb33_pc_def",
+  "mb33_pc_case1",
+  "mb33_pc_case2",
+  "mb33_pc_case3",
+  "mb33_who",
+  "mb33_when",
+  "mb33_what",
   "mb33_state_now",
   "mb33_state_goal",
   "mb33_func",

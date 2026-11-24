@@ -85,7 +85,10 @@ const RECALL: WorksheetQuestion[] = [
     kind: "echo",
     echoKeys: [
       { key: "mb33_summary", label: "한 줄 소개" },
-      { key: "mb33_problem", label: "내가 풀 문제" },
+      { key: "mb33_who", label: "누가" },
+      { key: "mb33_when", label: "어떤 상황에서" },
+      { key: "mb33_what", label: "무엇이 불편" },
+      { key: "mb33_problem", label: "내가 풀 문제 (이전 판)" },
       { key: "mb33_in", label: "입력" },
       { key: "mb33_out", label: "출력" },
       { key: "mb33_state_goal", label: "목표 상태" },

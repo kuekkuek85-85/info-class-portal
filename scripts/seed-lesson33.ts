@@ -10,10 +10,10 @@
  *   대기·체크인 → 안내 → ① 문제 발견(problem) → ② 문제 정의(mvp: 초기·목표 상태) → ③ 추상화(build: 센서·액추에이터·꼭 필요한 기능)
  *   → ④ 알고리즘(grill: 자연어 단계) → 마무리(reflection: 성찰 → 선생님께 검토 받기 → 단계별 피드백·잘했어요 → UNO)
  *   단계마다 AI 검토(ai_review, 답 없이 질문만, 단계당 3번), 화면 전체 복사·붙여넣기 막기(noClipboard),
- *   최소 분량(stepReview: 문제 2줄·30자, 상태 15자씩, 기능 2줄·30자, 알고리즘 4줄·40자).
+ *   최소 분량(stepReview, 2026-11-25 2차 피드백): ① 뜻·사례 3·누가·상황·불편 각 1줄 ② 상태 각 1줄·5자 ③ 기능 1개+ 각 5자 ④ 2줄·20자.
  *
  * ## 키 (artifacts/microbit-makecode__학번 - 34차가 echo 로 이어받는다)
- *  mb33_problem · mb33_case · mb33_state_now · mb33_state_goal · mb33_in · mb33_out · mb33_func · mb33_algo
+ *  mb33_pc_def · mb33_pc_case1~3 · mb33_who · mb33_when · mb33_what · mb33_state_now · mb33_state_goal · mb33_in · mb33_out · mb33_func(list) · mb33_algo
  *  · AI 검토 mb33_ai1~4 · mb33_summary(성찰 한 벌 저장). 32차 mb32_pa_problem · mb32_want_in·out 을 echo 한다.
  */
 
@@ -55,7 +55,7 @@ const ACTIVITY_ID = "microbit-makecode";
  *   · 단계마다 「AI에게 검토 받기」(답·완성 문장 없이 방향 질문만, 단계당 3번까지)
  *   · 화면 전체 복사·붙여넣기 막기(noClipboard), 단계마다 최소 분량(stepReview)
  *   · 마무리: 성찰 제출 → 「선생님께 검토 받기」 → 선생님이 단계별 피드백이나 「잘했어요」 → UNO
- * 구현(포털 AI 코드 받기)은 34차로 미룬다. 키는 mb33_problem · mb33_case · mb33_in · mb33_out 그대로,
+ * 구현(포털 AI 코드 받기)은 34차로 미룬다. 2차 피드백: 불편을 누가·상황·무엇 세 칸(mb33_who·when·what)으로, 비슷한 기기 칸 삭제,
  * 새 키 mb33_state_now · mb33_state_goal · mb33_func · mb33_algo · AI 검토 mb33_ai1~4.
  */
 
@@ -100,72 +100,112 @@ const ALGO_IMAGE = svgData(`
   </g>
 </svg>`);
 
-/** 단계마다 「AI에게 검토 받기」 - 답·완성 문장·코드는 주지 않고 방향이 되는 질문만 */
+/**
+ * 단계마다 「AI에게 검토 받기」 - 단계 점검 모드(reviewRubric): ① 오탈자(틀린 곳만 짚고 고친 말은 안 줌)
+ * ② 최소 분량 ③ 문맥(질문에 맞게, 앞 단계와 이어지게) → 방향 질문 2개. 무제한(reviewLimit 0, 교사 결정).
+ */
 function aiReview(
   key: string,
   phase: "problem" | "mvp" | "build" | "grill",
   subject: string,
+  rubric: string,
   fields: { key: string; label: string }[],
-  fallback: string[],
+  hints: [string, string],
 ): WorksheetQuestion {
   return {
     key,
     phase,
     label: "다음 단계로 가기 전에 - AI에게 검토 받기",
-    hint: "AI는 답을 알려 주지 않고, 더 생각해 볼 질문만 해요. (이 단계에서 3번까지)",
+    hint: "AI가 오탈자 · 분량 · 질문에 맞게 썼는지를 짚고, 생각할 질문을 줘요.\n답은 알려 주지 않아요. 몇 번이든 받을 수 있어요.",
     kind: "ai_review",
     reviewFields: fields,
-    reviewCount: 2,
-    reviewLimit: 3,
+    reviewCount: 5,
+    reviewLimit: 0,
+    reviewRubric: rubric,
     reviewPersona: {
       role:
-        "중학교 1학년의 마이크로비트(피지컬 컴퓨팅) 프로젝트 설계를 돕는 조력자. 정답, 완성된 문장, 코드는 절대 주지 않고, 학생이 스스로 고칠 방향이 보이는 질문만 하는 사람",
+        "중학교 1학년의 마이크로비트(피지컬 컴퓨팅) 프로젝트 설계를 돕는 조력자. 정답, 완성된 문장, 고친 문장, 코드는 절대 주지 않고, 학생이 스스로 고칠 곳과 방향만 짚는 사람",
       subject,
     },
-    reviewFallback: fallback,
+    // AI 가 안 될 때 - 점검 세 줄은 스스로 하게 바꿔 묻고, 질문 둘은 단계 것
+    reviewFallback: [
+      "오탈자가 없는지 소리 내어 한 번 읽어 볼까요?",
+      `분량 기준(${rubric})을 채웠는지 칸마다 확인해 볼까요?`,
+      "각 칸이 그 질문에 맞는 답인지, 앞 단계와 이어지는지 다시 볼까요?",
+      ...hints,
+    ],
     maxLength: 0,
   };
 }
 
-/* ── ① 문제 발견 (problem) ── */
+/* ── ① 문제 발견 (problem) ── 피지컬 컴퓨팅 뜻·사례를 스스로 찾고, 불편을 세 칸으로 */
 const STEP1: WorksheetQuestion[] = [
+  {
+    key: "mb33_pc_def",
+    phase: "problem",
+    label: "피지컬 컴퓨팅이란? (스스로 찾아 내 말로)",
+    hint: "인터넷에서 찾아보고, 읽은 뒤 내 말로 한두 줄 써요. (오픈북)",
+    kind: "long",
+    maxLength: 400,
+  },
+  {
+    key: "mb33_pc_case1",
+    phase: "problem",
+    label: "피지컬 컴퓨팅 실생활 사례 1",
+    hint: "센서로 느끼고 스스로 움직이는 물건을 찾아 써요. 무엇을 느끼고 무엇을 하는지도 함께.",
+    kind: "text",
+    maxLength: 150,
+  },
+  { key: "mb33_pc_case2", phase: "problem", label: "실생활 사례 2", hint: "사례 1과 다른 분야에서 찾아봐요.", kind: "text", maxLength: 150 },
+  { key: "mb33_pc_case3", phase: "problem", label: "실생활 사례 3", hint: "집 · 학교 · 거리 · 병원 등 어디서든 좋아요.", kind: "text", maxLength: 150 },
   {
     key: "_mb33_echo32",
     phase: "problem",
-    label: "지난 시간(32차) 성찰에 적은 것",
-    hint: "이걸 출발점으로 삼아도 되고, 새 문제를 골라도 돼요.",
+    label: "참고 - 지난 시간(32차) 성찰에 적은 것",
+    hint: "이걸 출발점으로 삼아도 되고, 새 불편을 찾아도 돼요.",
     kind: "echo",
     echoKeys: [{ key: "mb32_pa_problem", label: "32차 성찰" }],
     maxLength: 0,
   },
   {
-    key: "mb33_problem",
+    key: "mb33_who",
     phase: "problem",
-    label: "① 실생활에서 불편한 점 (2줄 이상)",
-    hint:
-      "누가 · 어떤 상황에서 · 무엇이 불편한지 2줄 이상 써요.\n" +
-      "예) 우리 할머니는 저녁 약 먹을 시간을 자주 잊으세요.\n    약통을 봐도 먹었는지 헷갈리세요.",
-    kind: "long",
-    prefillTemplate: "{mb32_pa_problem}",
-    maxLength: 600,
+    label: "실생활의 불편 - 누가",
+    hint: "예) 우리 할머니",
+    kind: "text",
+    maxLength: 150,
   },
   {
-    key: "mb33_case",
+    key: "mb33_when",
     phase: "problem",
-    label: "비슷한 문제를 푸는 생활 속 물건 하나 (선택)",
-    hint: "센서로 느끼고 스스로 움직이는 물건이에요. 예) 자동문, 가로등, 체온계",
+    label: "어떤 상황에서",
+    hint: "예) 저녁 약 먹을 시간에",
     kind: "text",
-    maxLength: 100,
+    maxLength: 200,
+  },
+  {
+    key: "mb33_what",
+    phase: "problem",
+    label: "무엇이 불편한가",
+    hint: "예) 약 먹을 때를 자주 잊고, 먹었는지도 헷갈리신다",
+    kind: "text",
+    maxLength: 300,
   },
   aiReview(
     "mb33_ai1",
     "problem",
-    "학생이 찾은 실생활 속 불편(누가, 어떤 상황, 무엇이 불편한지)",
+    "학생이 찾은 피지컬 컴퓨팅의 뜻·실생활 사례 3개와, 실생활 속 불편(누가·어떤 상황·무엇이)",
+    "피지컬 컴퓨팅 뜻과 사례 3개, 누가·어떤 상황·무엇이 불편 각각 1줄 이상",
     [
-      { key: "mb33_problem", label: "실생활에서 불편한 점" },
-      { key: "mb33_case", label: "비슷한 생활 속 물건" },
+      { key: "mb33_pc_def", label: "피지컬 컴퓨팅이란" },
+      { key: "mb33_pc_case1", label: "사례 1" },
+      { key: "mb33_pc_case2", label: "사례 2" },
+      { key: "mb33_pc_case3", label: "사례 3" },
+      { key: "mb33_who", label: "누가" },
+      { key: "mb33_when", label: "어떤 상황에서" },
+      { key: "mb33_what", label: "무엇이 불편" },
     ],
-    ["이 불편을 겪는 사람은 정확히 누구이고, 언제 가장 불편할까?", "이 불편이 풀리면 그 사람은 무엇을 덜 하게 될까?"],
+    ["이 불편이 가장 자주 생기는 때는 언제일까?", "이 불편이 풀리면 그 사람은 무엇을 덜 하게 될까?"],
   ),
 ];
 
@@ -184,7 +224,7 @@ const STEP2: WorksheetQuestion[] = [
   {
     key: "mb33_state_now",
     phase: "mvp",
-    label: "초기 상태 - 문제가 해결되지 않은 지금",
+    label: "초기 상태 - 문제가 해결되지 않은 지금 (1줄 이상)",
     hint: "지금 실제로 어떤 일이 벌어지나요? 예) 할머니가 약 먹을 시간을 놓치고, 먹었는지도 헷갈린다.",
     kind: "long",
     maxLength: 400,
@@ -192,7 +232,7 @@ const STEP2: WorksheetQuestion[] = [
   {
     key: "mb33_state_goal",
     phase: "mvp",
-    label: "목표 상태 - 문제가 해결된 모습",
+    label: "목표 상태 - 문제가 해결된 모습 (1줄 이상)",
     hint: "무엇이 어떻게 달라지면 해결된 걸까요? 예) 약 먹을 시간에 알려 주고, 먹었는지 바로 보인다.",
     kind: "long",
     maxLength: 400,
@@ -201,8 +241,11 @@ const STEP2: WorksheetQuestion[] = [
     "mb33_ai2",
     "mvp",
     "학생이 정한 문제의 초기 상태(지금)와 목표 상태(해결된 모습)",
+    "초기 상태·목표 상태 각각 1줄 이상, 5자 이상",
     [
-      { key: "mb33_problem", label: "불편한 점" },
+      { key: "mb33_who", label: "누가" },
+      { key: "mb33_when", label: "어떤 상황에서" },
+      { key: "mb33_what", label: "무엇이 불편" },
       { key: "mb33_state_now", label: "초기 상태" },
       { key: "mb33_state_goal", label: "목표 상태" },
     ],
@@ -257,20 +300,24 @@ const STEP3: WorksheetQuestion[] = [
   {
     key: "mb33_func",
     phase: "build",
-    label: "꼭 들어가야 할 기능과 그 이유 (2줄 이상)",
-    hint: "기능마다 한 줄씩, '이게 없으면 목표 상태가 안 된다' 는 이유를 함께 써요.\n예) 시간 알림 - 없으면 약 먹을 때를 또 놓친다.",
-    kind: "long",
-    maxLength: 600,
+    label: "꼭 들어가야 할 기능 (1개 이상)",
+    hint: "칸마다 기능 하나, 한 줄로 써요. 더 있으면 「+ 기능 추가」.\n예) 약 먹을 시간이 되면 알려 주기",
+    kind: "list",
+    minItems: 1,
+    maxItems: 6,
+    addLabel: "+ 기능 추가",
+    maxLength: 1200,
   },
   aiReview(
     "mb33_ai3",
     "build",
     "학생이 목표 상태로 가려고 고른 입력(센서)·출력(액추에이터)과 꼭 필요한 기능",
+    "입력·출력을 하나 이상 고르고, 기능 1개 이상, 기능마다 5자 이상",
     [
       { key: "mb33_state_goal", label: "목표 상태" },
       { key: "mb33_in", label: "입력(센서)" },
       { key: "mb33_out", label: "출력(액추에이터)" },
-      { key: "mb33_func", label: "꼭 필요한 기능과 이유" },
+      { key: "mb33_func", label: "꼭 필요한 기능" },
     ],
     ["고른 센서가 목표 상태를 정말 알아챌 수 있을까? 어떤 값을 보게 될까?", "빼도 목표 상태가 되는 기능이 있다면 무엇일까?"],
   ),
@@ -291,7 +338,7 @@ const STEP4: WorksheetQuestion[] = [
   {
     key: "mb33_algo",
     phase: "grill",
-    label: "내 작품의 알고리즘 (4줄 이상, 번호를 붙여서)",
+    label: "내 작품의 알고리즘 (2줄 이상, 번호를 붙여서)",
     hint: "1. ... 2. ... 처럼 한 줄에 한 단계씩 써요.",
     kind: "long",
     maxLength: 1500,
@@ -300,10 +347,12 @@ const STEP4: WorksheetQuestion[] = [
     "mb33_ai4",
     "grill",
     "학생이 자연어로 쓴 마이크로비트 작품의 알고리즘(단계별 흐름)",
+    "2줄 이상, 20자 이상",
     [
       { key: "mb33_state_goal", label: "목표 상태" },
       { key: "mb33_in", label: "입력(센서)" },
       { key: "mb33_out", label: "출력(액추에이터)" },
+      { key: "mb33_func", label: "꼭 필요한 기능" },
       { key: "mb33_algo", label: "알고리즘" },
     ],
     ["어떤 단계가 '계속 반복' 되어야 할까? 지금 순서에 그게 드러나 있을까?", "조건이 맞지 않을 때(예: 센서 값이 기준보다 작을 때)는 무엇을 하게 될까?"],
@@ -353,10 +402,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
         subtitle: "네 단계, 단계마다 AI 검토 → 마지막에 선생님 검토",
         note: "복사·붙여넣기는 안 돼요. 내 말로 직접 써요.",
         rows: [
-          { label: "① 문제 발견", value: "누가 · 어떤 상황에서 · 무엇이 불편한지 (2줄 이상)" },
+          { label: "① 문제 발견", value: "피지컬 컴퓨팅 뜻 · 사례 3개 찾기 → 누가 · 어떤 상황 · 무엇이 불편" },
           { label: "② 문제 정의", value: "초기 상태(지금) → 목표 상태(해결된 모습)" },
-          { label: "③ 추상화", value: "꼭 필요한 센서 · 액추에이터 · 기능만 골라내기" },
-          { label: "④ 알고리즘", value: "전체 흐름을 말로, 번호를 붙여 차례대로 (4줄 이상)" },
+          { label: "③ 추상화", value: "꼭 필요한 센서 · 액추에이터 · 기능(1개 이상)만 골라내기" },
+          { label: "④ 알고리즘", value: "전체 흐름을 말로, 번호를 붙여 차례대로 (2줄 이상)" },
         ],
         highlights: [],
       },
@@ -408,13 +457,25 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
     noClipboard: true,
     stepReview: {
       steps: [
-        { phase: "problem", label: "① 문제 발견", fields: [{ key: "mb33_problem", label: "불편한 점", minLines: 2, minChars: 30 }] },
+        {
+          phase: "problem",
+          label: "① 문제 발견",
+          fields: [
+            { key: "mb33_pc_def", label: "피지컬 컴퓨팅이란", minLines: 1 },
+            { key: "mb33_pc_case1", label: "사례 1", minLines: 1 },
+            { key: "mb33_pc_case2", label: "사례 2", minLines: 1 },
+            { key: "mb33_pc_case3", label: "사례 3", minLines: 1 },
+            { key: "mb33_who", label: "누가", minLines: 1 },
+            { key: "mb33_when", label: "어떤 상황에서", minLines: 1 },
+            { key: "mb33_what", label: "무엇이 불편", minLines: 1 },
+          ],
+        },
         {
           phase: "mvp",
           label: "② 문제 정의",
           fields: [
-            { key: "mb33_state_now", label: "초기 상태", minChars: 15 },
-            { key: "mb33_state_goal", label: "목표 상태", minChars: 15 },
+            { key: "mb33_state_now", label: "초기 상태", minLines: 1, minChars: 5 },
+            { key: "mb33_state_goal", label: "목표 상태", minLines: 1, minChars: 5 },
           ],
         },
         {
@@ -423,10 +484,10 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
           fields: [
             { key: "mb33_in", label: "입력" },
             { key: "mb33_out", label: "출력" },
-            { key: "mb33_func", label: "꼭 필요한 기능", minLines: 2, minChars: 30 },
+            { key: "mb33_func", label: "꼭 필요한 기능", minLines: 1, minItemChars: 5 },
           ],
         },
-        { phase: "grill", label: "④ 알고리즘", fields: [{ key: "mb33_algo", label: "알고리즘", minLines: 4, minChars: 40 }] },
+        { phase: "grill", label: "④ 알고리즘", fields: [{ key: "mb33_algo", label: "알고리즘", minLines: 2, minChars: 20 }] },
       ],
     },
   },
