@@ -10,6 +10,7 @@ import { RulesCompilePanel } from "@/components/rules-compile-panel";
 import { TeacherArtifactPanel } from "@/components/teacher-artifact-panel";
 import { TeacherQuizPanel } from "@/components/teacher-quiz-panel";
 import { TeacherReviewPanel } from "@/components/teacher-review-panel";
+import { StepReviewBoard } from "@/components/step-review-board";
 import { VibeCodeReviewPanel } from "@/components/vibe-code-review-panel";
 import { TeacherShell } from "@/components/teacher-shell";
 import { useTeacherDate } from "@/lib/teacher-date";
@@ -187,6 +188,8 @@ interface StudentRow {
   waiting?: boolean;
   /** 교사가 「통과」를 준 학생. 통과 명단 카드가 이것으로 그려진다 */
   passed?: boolean;
+  /** 단계별 교사 검토 차시(33차): 지금 쓰는 단계 번호(-1=아직)와 검토 요청·답한 시각 */
+  step?: { index: number; requestedAt: number | null; reviewedAt: number | null } | null;
   /** 2차 전 자기 점검 답. 검토 패널에 그대로 보여 준다 */
   selfCheck?: string;
   /** 스스로 부족한 곳이 있다고 답했는가. 대기 줄 순서를 정한다 */
@@ -214,6 +217,8 @@ interface DashboardData {
   helpersSaved?: { studentIds: string[]; updatedAt: number } | null;
   /** 진도 체크 스냅샷 (도우미 선발 속도 체크). 그 외 차시는 null */
   progressCheck?: ProgressCheckData | null;
+  /** 단계별 교사 검토 차시(33차)의 단계 이름. 그 외 차시는 null */
+  stepLabels?: string[] | null;
 }
 
 /** 진도 체크 스냅샷 (도우미 선발 속도 체크) */
@@ -1584,6 +1589,17 @@ function Dashboard() {
           */}
           {rows.some((row) => row.linkSubmitted === true || row.linkSubmitted === false) && (
             <LinkPending rows={rows} masked={masked} />
+          )}
+
+          {/* 단계별 교사 검토(33차) - 학생마다 지금 쓰는 단계·검토 요청, 누르면 전 단계 산출물과 단계별 피드백 */}
+          {data?.session && data?.stepLabels && (
+            <StepReviewBoard
+              sessionId={data.session.id}
+              stepLabels={data.stepLabels}
+              rows={rows}
+              who={(row) => whoLabel(row, masked)}
+              onSaved={reload}
+            />
           )}
 
           <ProgressBoard rows={rows} masked={masked} onMasked={setMasked} />

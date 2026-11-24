@@ -1552,6 +1552,21 @@ export async function setAttendanceDisplayName(
     .set({ displayName }, { merge: true });
 }
 
+/**
+ * 단계별 교사 검토(33차) 시각을 그 세션 출석 문서에 얹는다 - 대시보드가 추가 읽기 없이 "검토 요청" 줄을 그린다.
+ * 출석이 없으면 만들지 않는다(인증을 거치지 않은 요청으로 문서가 생기면 안 된다).
+ */
+export async function setAttendanceStepReview(
+  sessionId: string,
+  studentId: string,
+  patch: { stepReviewRequestedAt?: number; stepReviewedAt?: number },
+): Promise<void> {
+  const ref = db().collection(COLLECTIONS.attendance).doc(entryId(sessionId, studentId));
+  const snap = await ref.get();
+  if (!snap.exists) return;
+  await ref.set(patch, { merge: true });
+}
+
 export async function listAttendance(sessionId: string): Promise<Attendance[]> {
   const rows = await collectAll<Attendance>(
     db().collection(COLLECTIONS.attendance).where("sessionId", "==", sessionId),

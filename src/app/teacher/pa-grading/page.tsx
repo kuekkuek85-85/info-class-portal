@@ -361,6 +361,8 @@ export default function PaGradingPage() {
                   <Field label="32차 성찰(불편)"><Text value={t.mb32_pa_problem ?? ""} /></Field>
                   <Field label="한 줄 소개"><Text value={t.mb33_summary ?? ""} /></Field>
                   <Field label="내가 풀 문제"><Text value={t.mb33_problem ?? ""} /></Field>
+                  <Field label="초기 상태"><Text value={t.mb33_state_now ?? ""} /></Field>
+                  <Field label="목표 상태"><Text value={t.mb33_state_goal ?? ""} /></Field>
                   <Field label="생활 속 사례"><Text value={t.mb33_case ?? ""} /></Field>
                   <Field label="사례의 가치"><Text value={t.mb33_case_value ?? ""} /></Field>
                 </Card>
@@ -368,6 +370,8 @@ export default function PaGradingPage() {
                 <Card title="② 구성요소 설계">
                   <Field label="입력"><Text value={t.mb33_in ?? ""} /></Field>
                   <Field label="출력"><Text value={t.mb33_out ?? ""} /></Field>
+                  <Field label="꼭 필요한 기능"><Text value={t.mb33_func ?? ""} /></Field>
+                  <Field label="알고리즘"><Text value={t.mb33_algo ?? ""} /></Field>
                   <Field label="입력 → 처리 → 출력">
                     <RowsTable raw={t.mb33_flow ?? ""} columns={[{ key: "in", label: "입력" }, { key: "proc", label: "처리" }, { key: "out", label: "출력" }]} />
                   </Field>

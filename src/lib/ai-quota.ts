@@ -38,8 +38,10 @@ const COLLECTION = COLLECTIONS.aiQuota;
 
 /** 1인 1차시 상한 */
 export const PER_STUDENT = 3;
+const DEFAULT_PER_STUDENT = PER_STUDENT;
 /** 세션 전체 상한. 22명 × 3회 + 여유 */
 export const PER_SESSION = 80;
+const DEFAULT_PER_SESSION = PER_SESSION;
 
 export interface QuotaClaim {
   /** 불러도 되는가 */
@@ -64,8 +66,20 @@ function studentRef(sessionId: string, studentId: string) {
  * 상한에 걸렸을 때는 올리지 않는다 — 막힌 요청까지 세면 총량이 실제 호출 수를
  * 넘어서고, 교사 화면의 "남은 쿼터" 가 거짓말을 한다.
  */
-export async function claimAiCall(sessionId: string, studentId: string): Promise<QuotaClaim> {
-  const mine = studentRef(sessionId, studentId);
+export async function claimAiCall(
+  sessionId: string,
+  studentId: string,
+  /**
+   * 문항별 상한(33차 단계마다 AI 검토). scope 가 있으면 학생 카운터를 그 문항 몫으로 따로 세고,
+   * 개인·세션 상한을 이 값으로 바꾼다. 안 주면 지금 그대로(1인 3회, 세션 80회).
+   */
+  opts: { scope?: string; perStudent?: number; perSession?: number } = {},
+): Promise<QuotaClaim> {
+  const PER_STUDENT = opts.perStudent ?? DEFAULT_PER_STUDENT;
+  const PER_SESSION = opts.perSession ?? DEFAULT_PER_SESSION;
+  const mine = opts.scope
+    ? db().collection(COLLECTION).doc(`${sessionId}__${studentId}__${opts.scope}`)
+    : studentRef(sessionId, studentId);
   const total = totalRef(sessionId);
 
   return db().runTransaction(async (tx) => {

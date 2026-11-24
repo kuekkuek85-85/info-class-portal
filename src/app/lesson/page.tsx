@@ -29,10 +29,12 @@ import {
   type DrawBackground,
   type LessonPhase,
   type RewardGame,
+  type StepReviewConfig,
   type Stroke,
   type TextItem,
   type WorksheetQuestion,
 } from "@/lib/types";
+import { StepReviewPanel } from "@/components/step-review-panel";
 
 /**
  * 오늘 수업 화면.
@@ -89,6 +91,10 @@ export interface ActivityInfo {
   worksheetTabLabel?: string;
   /** 감상 탭 이름. 비면 "{galleryNoun} 감상" (예: "작품 감상"). 검토 활동에서 "앱 검토" 처럼 바꾼다 */
   galleryTabLabel?: string;
+  /** 단계별 교사 검토(33차). 있으면 성찰에 검토 요청·단계 피드백이 뜨고, 게임은 교사 답으로 열린다 */
+  stepReview?: StepReviewConfig | null;
+  /** 화면 전체 복사·잘라내기·붙여넣기 막기(33차) */
+  noClipboard?: boolean;
 }
 
 interface LessonData {
@@ -334,6 +340,8 @@ export default function LessonPage() {
 
   /** 교사가 "되돌아가기"를 켜 두었는가 */
   const [freeNav, setFreeNav] = useState(false);
+  /** 단계별 교사 피드백(33차)을 받아 고치러 가는 중 - 교사가 되돌아가기를 꺼 둬도 지나온 단계로 갈 수 있다 */
+  const reviewFreeRef = useRef(false);
   /**
    * 학생이 지금 보고 있는 단계.
    *
@@ -508,7 +516,8 @@ export default function LessonPage() {
       previousPhase.current = next;
 
       // 되돌아가기가 꺼지면 모두 교사 단계로 모인다 — 단, 마음 체크인 미완료자는 먼저 'mood' 로 보낸다.
-      const free = Boolean(result.freeNavigation);
+      // 단계별 교사 피드백(33차)을 받은 학생은 고치러 그 단계로 갈 수 있어야 해서 되돌아가기를 연다.
+      const free = Boolean(result.freeNavigation) || reviewFreeRef.current;
       if (!free)
         setViewPhase(
           gatePhase(next, {
@@ -706,6 +715,8 @@ export default function LessonPage() {
    */
   async function handleReflectionSubmit() {
     await saveReflection(answers, true);
+    // 단계별 교사 검토 차시(33차)는 게임을 선생님 답으로 연다(StepReviewPanel) - 여기서는 성찰 저장만.
+    if (session.activity?.stepReview) return;
     const reward = session.rewardGame;
     if (!reward) return;
 
@@ -1229,7 +1240,21 @@ export default function LessonPage() {
         글자가 크게 보이게 하기 위함이다(교사 요청). 과거·현재·미래 모든 수업에 함께 적용된다.
         좌우는 px 로만 숨 쉴 틈을 준다(화면이 넓어질수록 조금 더 벌린다).
       */}
-      <main className="w-full flex-1 px-4 py-5 sm:px-6 lg:px-8">
+      <main
+        className="w-full flex-1 px-4 py-5 sm:px-6 lg:px-8"
+        /*
+          복사·잘라내기·붙여넣기 막기 (33차 noClipboard). 화면 전체에 한 번 건다 - 안의 모든 입력칸이 받는다.
+          안 켠 차시는 빈 객체라 지금과 똑같다.
+        */
+        {...(session.activity?.noClipboard
+          ? {
+              onCopy: (event: { preventDefault: () => void }) => event.preventDefault(),
+              onCut: (event: { preventDefault: () => void }) => event.preventDefault(),
+              onPaste: (event: { preventDefault: () => void }) => event.preventDefault(),
+              onDrop: (event: { preventDefault: () => void }) => event.preventDefault(),
+            }
+          : {})}
+      >
         {/*
           되돌아가기 — 교사가 켰을 때만 나온다.
 
@@ -1910,6 +1935,26 @@ export default function LessonPage() {
           보상 게임 — 성찰을 제출하고 구현 1·2·3단계 제출까지 다 마친 학생에게만 열린다.
           대기 자리에 있던 게임이 여기로 옮겨 와, 활동을 끝낸 상으로 쉬는 시간을 준다 (요청: 17차).
         */}
+        {/*
+          단계별 교사 검토(33차) - 성찰 아래가 아니라 위에 둔다. 선생님 답이 오면 게임 화면으로 바뀌어도
+          단계별 피드백 카드(누르면 그 단계로 이동)가 계속 보여야 고치러 갈 수 있다.
+        */}
+        {viewPhase === "reflection" && session.activity?.stepReview && (
+          <StepReviewPanel
+            config={session.activity.stepReview}
+            answers={worksheet.answers}
+            reflectionDone={reflectionState === "done"}
+            disabled={closed}
+            phaseLabel={(p) => session.phaseLabels?.[p] ?? PHASE_LABELS[p]}
+            onJump={(target) => {
+              reviewFreeRef.current = true;
+              setFreeNav(true);
+              setViewPhase(target);
+            }}
+            onUnlock={() => setRewardUnlocked(true)}
+          />
+        )}
+
         {viewPhase === "reflection" &&
           rewardUnlocked &&
           session.rewardGame &&
@@ -2033,7 +2078,7 @@ export default function LessonPage() {
               }
               className="pill pill-primary pill-block"
             >
-              {session.rewardGame
+              {session.rewardGame && !session.activity?.stepReview
                 ? "제출하고 게임하기"
                 : reflectionState === "done"
                   ? "다시 제출하기"

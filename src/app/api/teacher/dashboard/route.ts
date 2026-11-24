@@ -15,6 +15,7 @@ import {
 import { activityIdFor } from "@/lib/gallery";
 import { getMood } from "@/lib/mood";
 import { pickCurrentSession } from "@/lib/pick-session";
+import { currentStepIndex } from "@/lib/step-review";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
 import { answersOf, hasAnswer } from "@/lib/types";
 import type { ClassSession, LessonPhase } from "@/lib/types";
@@ -214,6 +215,7 @@ export async function GET(request: Request) {
       }
     }
 
+    const stepConfig = session.activity?.stepReview ?? null;
     const rows = attendance.map((entry) => {
       const mood = moodByStudent.get(entry.studentId);
       const reflection = reflectionByStudent.get(entry.studentId);
@@ -284,6 +286,17 @@ export async function GET(request: Request) {
          * 이 값은 출석 문서에 얹혀 와서 **추가 읽기가 0건**이다 (Attendance 의 passed).
          */
         passed: entry.passed === true,
+        /*
+         * 단계별 교사 검토 차시(33차)만: 지금 쓰는 단계(답이 있는 가장 뒤 단계)와 검토 요청·답한 시각.
+         * 출석 문서에 얹혀 와서 추가 읽기가 없다. 다른 차시는 null 이라 화면에서 접힌다.
+         */
+        step: stepConfig
+          ? {
+              index: currentStepIndex(stepConfig, entry.answeredKeys ?? []),
+              requestedAt: entry.stepReviewRequestedAt ?? null,
+              reviewedAt: entry.stepReviewedAt ?? null,
+            }
+          : null,
         /** 자기 점검 답. 교사 화면에 그대로 보여 준다 */
         selfCheck: entry.selfCheck ?? "",
         /**
@@ -463,6 +476,8 @@ export async function GET(request: Request) {
       missing,
       /** 진도 체크 스냅샷 (도우미 선발 속도 체크). 그 외 차시는 null */
       progressCheck,
+      /** 단계별 교사 검토 차시(33차)의 단계 이름들. 그 외 차시는 null */
+      stepLabels: stepConfig ? stepConfig.steps.map((s) => s.label) : null,
       /**
        * 오늘 AI 가 실제로 돌았는가.
        *

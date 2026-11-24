@@ -84,7 +84,14 @@ export async function POST(request: Request) {
      * 부르기 전에 자리를 잡는다. 부르고 나서 세면 연타한 둘이 같은 값을 읽고 통과한다.
      * 실패해도 되돌리지 않는다 — 되돌리는 코드가 곧 무한 재시도의 입구다.
      */
-    const claim = await claimAiCall(session.id, me.studentId);
+    // 문항별 상한(reviewLimit, 33차 단계마다 AI 검토)이 있으면 그 문항 몫으로 따로 센다. 없으면 지금 그대로.
+    const claim = await claimAiCall(
+      session.id,
+      me.studentId,
+      question.reviewLimit
+        ? { scope: key, perStudent: question.reviewLimit, perSession: question.reviewLimit * 40 * 4 }
+        : {},
+    );
     const result: ReviewResult = claim.allowed
       ? await reviewBuild(fields, count, options)
       : fallbackResult("quota", 0, count, question.reviewFallback);

@@ -88,6 +88,10 @@ const RECALL: WorksheetQuestion[] = [
       { key: "mb33_problem", label: "내가 풀 문제" },
       { key: "mb33_in", label: "입력" },
       { key: "mb33_out", label: "출력" },
+      { key: "mb33_state_goal", label: "목표 상태" },
+      { key: "mb33_func", label: "꼭 필요한 기능" },
+      { key: "mb33_algo", label: "알고리즘" },
+      // 2026-11-25 이전 33차 판의 표(남아 있는 학생만 보인다)
       { key: "mb33_flow", label: "입력 → 처리 → 출력" },
     ],
     maxLength: 0,
@@ -101,7 +105,7 @@ const BUILD: WorksheetQuestion[] = [
     phase: "grill",
     label: "③ 구현 완성 - 포털 AI 로 고쳐 가며 완성하기",
     hint:
-      "'마지막으로 받은 코드에서 이어서' 를 고르면 33차 코드에서 이어 가요.\n" +
+      "33차 알고리즘을 보며 AI 에게 한 단계씩 부탁해요(처음 코드에서 시작).\n" +
       "MakeCode 'Python' 에 붙여 실물로 돌려 보고, 안 되는 곳을 고쳐요.\n" +
       "다른 사람 이름·연락처 같은 개인정보는 넣지 않아요.",
     kind: "note",

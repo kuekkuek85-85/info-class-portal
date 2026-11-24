@@ -1049,6 +1049,10 @@ export interface WorksheetQuestion {
    */
   reviewFields?: { key: string; label: string }[];
   /**
+   * ai_review 를 이 문항 몫으로 학생당 몇 번까지 (33차: 단계마다 검토 버튼). 안 주면 세션 전체 1인 3회(기본).
+   */
+  reviewLimit?: number;
+  /**
    * ai_review 가 받아 올 질문 개수. 기본 2.
    *
    * 3 이상이면 프롬프트가 각도까지 지정한다 — 누가 쓰는가 · 정말 필요한가 ·
@@ -1319,7 +1323,37 @@ export type PeerAssignMode = "cyclic" | "random";
  */
 export type DrawBackground = "head";
 
+/**
+ * 단계별 교사 검토 설정 (33차 수행평가). 단계마다 학생이 채울 칸과 최소 분량을 적는다.
+ * 켜진 차시만 성찰 화면에 「선생님께 검토 받기」 가 뜨고, 대시보드에 단계별 진행·검토 칸이 뜬다.
+ */
+export interface StepReviewConfig {
+  steps: {
+    phase: LessonPhase;
+    label: string;
+    fields: { key: string; label: string; minChars?: number; minLines?: number }[];
+  }[];
+}
+
+/** 선생님이 단계마다 남긴 말. steps 의 열쇠는 단계(phase). verdict good = 「잘했어요」 */
+export interface StepFeedback {
+  at: number;
+  verdict: "good" | "revise";
+  steps: Record<string, string>;
+  /** 학생이 마지막으로 검토를 요청한 시각 - 이 요청에 대한 답인지 가른다 */
+  forRequestAt?: number;
+}
+
 export interface ActivityContent {
+  /**
+   * 단계별 교사 검토(33차). 있으면 성찰에 검토 요청·단계 피드백, 대시보드에 단계 진행이 뜬다.
+   * 학생 lesson API 가 이 값을 내려보내야 화면에 닿는다.
+   */
+  stepReview?: StepReviewConfig;
+  /**
+   * 활동지 전체에서 복사·잘라내기·붙여넣기를 막는다(33차). 문항별 noPaste 와 달리 화면 전체에 건다.
+   */
+  noClipboard?: boolean;
   /**
    * 그림을 묶는 열쇠. **2차시와 3차시 차시 계획에 같은 값을 넣는다.**
    *
@@ -2076,6 +2110,9 @@ export interface Attendance {
    * 대시보드가 명렬표 이름 대신 이것을 보여 준다(「임시 90번」 대신).
    */
   displayName?: string;
+  /** 단계별 교사 검토(33차): 학생이 검토를 요청한 시각 · 선생님이 답한 시각 */
+  stepReviewRequestedAt?: number;
+  stepReviewedAt?: number;
 
   /*
    * 이탈(집중 확인) 누적치.
@@ -2376,6 +2413,12 @@ export interface Artifact {
    * 기다리는 동안 학생이 더 고친 것이 그대로 반영된다.
    */
   aiCheck?: { at: number; items: CheckItem[] };
+  /**
+   * 단계별 교사 검토 (activity.stepReview 를 켠 차시, 33차 수행평가). 학생이 검토를 요청한 시각과
+   * 선생님이 단계마다 남긴 말. 선생님이 답을 하면(verdict 무엇이든) 보상 게임이 열린다.
+   */
+  stepReviewRequestedAt?: number;
+  stepFeedback?: StepFeedback;
   /**
    * 교사 피드백. 칩은 보조이고 note 가 본체다.
    *

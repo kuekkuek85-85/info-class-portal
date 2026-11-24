@@ -218,6 +218,9 @@ export async function GET() {
               galleryNoun: session.activity.galleryNoun ?? "",
               // 왼쪽 활동지 탭 이름. 안 실으면 화면이 기본값 "활동지 쓰기" 로 물러난다
               worksheetTabLabel: session.activity.worksheetTabLabel ?? "",
+              // 33차 단계별 교사 검토·복붙 차단 플래그. 위 함정과 같다 - 여기 실어야 학생 화면에 닿는다
+              stepReview: session.activity.stepReview ?? null,
+              noClipboard: session.activity.noClipboard === true,
             }
           : null,
         date: session.date,
