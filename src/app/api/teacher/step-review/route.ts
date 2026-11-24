@@ -101,7 +101,7 @@ export async function POST(request: Request) {
     }
     const verdict = body?.verdict === "good" ? "good" : "revise";
     if (verdict === "revise" && Object.keys(steps).length === 0) {
-      return fail("invalid_input", "고칠 단계에 한 줄이라도 적거나 「잘했어요」를 눌러 주세요.");
+      return fail("invalid_input", "「수정해 주세요」는 고칠 단계에 피드백을 한 줄 이상 적어야 보낼 수 있어요.");
     }
 
     const now = Date.now();
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
       forRequestAt: artifact.stepReviewRequestedAt,
     };
     await updateArtifact(artifact.id, { stepFeedback: feedback });
-    await setAttendanceStepReview(sessionId, studentId, { stepReviewedAt: now });
+    await setAttendanceStepReview(sessionId, studentId, { stepReviewedAt: now, stepVerdict: verdict });
     return ok({ saved: true, feedback });
   });
 }

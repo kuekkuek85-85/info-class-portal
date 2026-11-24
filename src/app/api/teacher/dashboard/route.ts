@@ -295,6 +295,7 @@ export async function GET(request: Request) {
               index: currentStepIndex(stepConfig, entry.answeredKeys ?? []),
               requestedAt: entry.stepReviewRequestedAt ?? null,
               reviewedAt: entry.stepReviewedAt ?? null,
+              verdict: entry.stepVerdict ?? null,
             }
           : null,
         /** 자기 점검 답. 교사 화면에 그대로 보여 준다 */

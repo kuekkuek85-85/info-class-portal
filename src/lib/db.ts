@@ -1559,7 +1559,7 @@ export async function setAttendanceDisplayName(
 export async function setAttendanceStepReview(
   sessionId: string,
   studentId: string,
-  patch: { stepReviewRequestedAt?: number; stepReviewedAt?: number },
+  patch: { stepReviewRequestedAt?: number; stepReviewedAt?: number; stepVerdict?: "good" | "revise" },
 ): Promise<void> {
   const ref = db().collection(COLLECTIONS.attendance).doc(entryId(sessionId, studentId));
   const snap = await ref.get();

@@ -34,7 +34,7 @@ import {
   type TextItem,
   type WorksheetQuestion,
 } from "@/lib/types";
-import { StepReviewPanel } from "@/components/step-review-panel";
+import { StepReviewPanel, StepReviewSubmit, useStepReview } from "@/components/step-review-panel";
 
 /**
  * 오늘 수업 화면.
@@ -342,6 +342,8 @@ export default function LessonPage() {
   const [freeNav, setFreeNav] = useState(false);
   /** 단계별 교사 피드백(33차)을 받아 고치러 가는 중 - 교사가 되돌아가기를 꺼 둬도 지나온 단계로 갈 수 있다 */
   const reviewFreeRef = useRef(false);
+  /** 단계별 교사 검토 상태(33차) - 성찰 위 패널과 성찰 아래 「선생님께 검토 받기」 가 함께 쓴다 */
+  const stepReview = useStepReview(Boolean(data?.session.activity?.stepReview));
   /**
    * 학생이 지금 보고 있는 단계.
    *
@@ -1943,10 +1945,9 @@ export default function LessonPage() {
         */}
         {viewPhase === "reflection" && session.activity?.stepReview && (
           <StepReviewPanel
+            state={stepReview}
             config={session.activity.stepReview}
             answers={worksheet.answers}
-            reflectionDone={reflectionState === "done"}
-            disabled={closed}
             phaseLabel={(p) => session.phaseLabels?.[p] ?? PHASE_LABELS[p]}
             onJump={(target) => {
               reviewFreeRef.current = true;
@@ -2066,6 +2067,17 @@ export default function LessonPage() {
               {reflectionState === "idle" && "쓰는 동안 자동으로 저장돼요"}
             </span>
 
+            {/* 단계별 교사 검토 차시(33차)는 「선생님께 검토 받기」 하나로 성찰 제출 + 검토 요청 */}
+            {session.activity?.stepReview ? (
+              <StepReviewSubmit
+                state={stepReview}
+                config={session.activity.stepReview}
+                answers={worksheet.answers}
+                canSubmit={answered > 0}
+                disabled={closed || reflectionState === "saving"}
+                submitReflection={() => saveReflection(answers, true)}
+              />
+            ) : (
             <button
               type="button"
               onClick={() => void handleReflectionSubmit()}
@@ -2086,6 +2098,7 @@ export default function LessonPage() {
                   ? "다시 제출하기"
                   : "제출하기"}
             </button>
+            )}
 
             {answered < total && answered > 0 && (
               <p className="t-body-sm text-center">

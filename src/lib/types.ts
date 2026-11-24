@@ -2121,6 +2121,8 @@ export interface Attendance {
   /** 단계별 교사 검토(33차): 학생이 검토를 요청한 시각 · 선생님이 답한 시각 */
   stepReviewRequestedAt?: number;
   stepReviewedAt?: number;
+  /** 선생님 마지막 답: good = 고생하셨습니다(통과) · revise = 수정해 주세요(반려) */
+  stepVerdict?: "good" | "revise";
 
   /*
    * 이탈(집중 확인) 누적치.

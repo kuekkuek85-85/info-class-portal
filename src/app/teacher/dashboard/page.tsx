@@ -189,7 +189,7 @@ interface StudentRow {
   /** 교사가 「통과」를 준 학생. 통과 명단 카드가 이것으로 그려진다 */
   passed?: boolean;
   /** 단계별 교사 검토 차시(33차): 지금 쓰는 단계 번호(-1=아직)와 검토 요청·답한 시각 */
-  step?: { index: number; requestedAt: number | null; reviewedAt: number | null } | null;
+  step?: { index: number; requestedAt: number | null; reviewedAt: number | null; verdict?: "good" | "revise" | null } | null;
   /** 2차 전 자기 점검 답. 검토 패널에 그대로 보여 준다 */
   selfCheck?: string;
   /** 스스로 부족한 곳이 있다고 답했는가. 대기 줄 순서를 정한다 */

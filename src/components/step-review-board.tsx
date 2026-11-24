@@ -16,7 +16,7 @@ interface RowLike {
   studentId: string;
   name: string;
   number?: number | null;
-  step?: { index: number; requestedAt: number | null; reviewedAt: number | null } | null;
+  step?: { index: number; requestedAt: number | null; reviewedAt: number | null; verdict?: "good" | "revise" | null } | null;
 }
 
 interface StepDetail {
@@ -64,8 +64,10 @@ function status(row: RowLike): { text: string; className: string; order: number 
   if (step?.requestedAt && (!step.reviewedAt || step.reviewedAt < step.requestedAt)) {
     return { text: "검토 요청", className: "bg-coral font-semibold", order: 0 };
   }
-  if (step?.reviewedAt) return { text: "검토함", className: "bg-lime", order: 2 };
-  return { text: "작성 중", className: "bg-surface", order: 1 };
+  if (step?.reviewedAt && step.verdict === "revise") return { text: "수정 요청됨", className: "bg-cream", order: 1 };
+  if (step?.reviewedAt && step.verdict === "good") return { text: "통과", className: "bg-lime", order: 3 };
+  if (step?.reviewedAt) return { text: "검토함", className: "bg-lime", order: 3 };
+  return { text: "작성 중", className: "bg-surface", order: 2 };
 }
 
 export function StepReviewBoard<T extends RowLike>({
@@ -152,8 +154,9 @@ function StepReviewModal({
       .then((res) => {
         if (!alive) return;
         if (res?.ok) {
+          // 지난 피드백은 참고로만 보여 주고 새 칸은 비운다 - 다시 보낼 때 옛 말이 저절로 실려 가지 않게
           setDetail(res as Detail);
-          setNotes((res as Detail).feedback?.steps ?? {});
+          setNotes({});
         } else setError(res?.message ?? "불러오지 못했어요.");
       });
     return () => {
@@ -204,6 +207,11 @@ function StepReviewModal({
                     <p className="whitespace-pre-wrap text-sm">{readable(field.value) || <span className="text-muted">(안 씀)</span>}</p>
                   </div>
                 ))}
+                {detail.feedback?.steps?.[step.phase] && (
+                  <p className="rounded bg-surface px-2 py-1 text-xs text-muted">
+                    지난 피드백({detail.feedback.verdict === "good" ? "고생하셨습니다" : "수정해 주세요"}): {detail.feedback.steps[step.phase]}
+                  </p>
+                )}
                 <textarea
                   value={notes[step.phase] ?? ""}
                   onChange={(e) => setNotes((n) => ({ ...n, [step.phase]: e.target.value.slice(0, 600) }))}
@@ -224,14 +232,20 @@ function StepReviewModal({
             </section>
             <p className="text-xs text-muted">
               {detail.requestedAt ? "학생이 검토를 요청했어요." : "아직 검토 요청 전이에요(미리 피드백을 보내도 돼요)."}
-              {detail.feedback && " 이미 한 번 보냈어요 - 다시 보내면 덮어써요."} 보내면 학생에게 게임이 열려요.
+              {detail.feedback && " 이미 한 번 보냈어요 - 지난 피드백은 칸 위에 참고로만 보여요."} 「고생하셨습니다」는 통과(학생에게 게임이 열려요), 「수정해 주세요」는 반려(피드백 한 단계 이상 필요).
             </p>
             <div className="flex flex-wrap gap-2">
-              <button type="button" disabled={saving} onClick={() => void send("revise")} className="pill pill-secondary disabled:opacity-60">
-                단계별 피드백 보내기
+              <button
+                type="button"
+                disabled={saving || !Object.values(notes).some((v) => v.trim())}
+                onClick={() => void send("revise")}
+                className="pill pill-secondary disabled:opacity-60"
+                title="피드백을 한 단계 이상 써야 보낼 수 있어요"
+              >
+                수정해 주세요
               </button>
               <button type="button" disabled={saving} onClick={() => void send("good")} className="pill pill-primary disabled:opacity-60">
-                잘했어요 👍
+                고생하셨습니다
               </button>
             </div>
           </>
