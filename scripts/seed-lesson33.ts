@@ -76,7 +76,7 @@ const DEFINE_IMAGE = svgData(`
   <text x="95" y="52" text-anchor="middle" font-size="15" font-weight="700" fill="#171717">초기 상태</text>
   <text x="95" y="80" text-anchor="middle" font-size="12.5" fill="#374151">지금, 문제가</text>
   <text x="95" y="100" text-anchor="middle" font-size="12.5" fill="#374151">아직 그대로인 모습</text>
-  <text x="280" y="70" text-anchor="middle" font-size="13" fill="#374151">내 마이크로비트가</text>
+  <text x="280" y="70" text-anchor="middle" font-size="13" fill="#374151">문제가 해결되면</text>
   <text x="280" y="92" text-anchor="middle" font-size="26" font-weight="700" fill="#94a3b8">→</text>
   <rect x="380" y="20" width="170" height="110" rx="14" fill="#dcfce7" stroke="#34d399" stroke-width="2"/>
   <text x="465" y="52" text-anchor="middle" font-size="15" font-weight="700" fill="#171717">목표 상태</text>
@@ -218,7 +218,7 @@ const STEP2: WorksheetQuestion[] = [
     hint: "문제는 '초기 상태' 와 '목표 상태' 의 차이예요.\n둘을 또렷하게 쓰면, 무엇을 만들어야 할지가 보여요.",
     kind: "note",
     imageUrl: DEFINE_IMAGE,
-    imageAlt: "초기 상태(문제가 아직 그대로인 지금 모습)에서 내 마이크로비트를 거쳐 목표 상태(문제가 풀려 달라진 모습)로 가는 그림",
+    imageAlt: "초기 상태(문제가 아직 그대로인 지금 모습)에서 문제가 해결되면 목표 상태(문제가 풀려 달라진 모습)로 가는 그림",
     maxLength: 0,
   },
   {
