@@ -9,7 +9,7 @@ import {
 } from "@/lib/db";
 import { activityIdFor } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
-import { checkSteps } from "@/lib/step-review";
+import { checkSteps, reviewRound } from "@/lib/step-review";
 
 /**
  * 단계별 교사 검토 - 학생 쪽 (activity.stepReview 를 켠 차시만, 33차 수행평가).
@@ -68,7 +68,12 @@ export async function POST() {
 
     const now = Date.now();
     // 몇 번째 요청인가(교사 대시보드 「2차 검토 요청」). 옛 데이터(차수 없음)는 요청이 있었으면 1차로 본다
-    const before = artifact.stepReviewCount ?? (artifact.stepReviewRequestedAt ? 1 : 0);
+    const before = reviewRound({
+      count: artifact.stepReviewCount,
+      requestedAt: artifact.stepReviewRequestedAt,
+      reviewedAt: artifact.stepFeedback?.at,
+      feedbackForRequestAt: artifact.stepFeedback?.forRequestAt,
+    });
     const count = before + 1;
     await updateArtifact(artifact.id, { stepReviewRequestedAt: now, stepReviewCount: count });
     await setAttendanceStepReview(session.id, me.studentId, { stepReviewRequestedAt: now, stepReviewCount: count });

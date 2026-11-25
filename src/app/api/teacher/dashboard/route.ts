@@ -15,7 +15,7 @@ import {
 import { activityIdFor } from "@/lib/gallery";
 import { getMood } from "@/lib/mood";
 import { pickCurrentSession } from "@/lib/pick-session";
-import { currentStepIndex } from "@/lib/step-review";
+import { currentStepIndex, reviewRound } from "@/lib/step-review";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
 import { answersOf, hasAnswer } from "@/lib/types";
 import type { ClassSession, LessonPhase } from "@/lib/types";
@@ -296,7 +296,11 @@ export async function GET(request: Request) {
               requestedAt: entry.stepReviewRequestedAt ?? null,
               reviewedAt: entry.stepReviewedAt ?? null,
               verdict: entry.stepVerdict ?? null,
-              count: entry.stepReviewCount ?? (entry.stepReviewRequestedAt ? 1 : 0),
+              count: reviewRound({
+                count: entry.stepReviewCount,
+                requestedAt: entry.stepReviewRequestedAt,
+                reviewedAt: entry.stepReviewedAt,
+              }),
             }
           : null,
         /** 자기 점검 답. 교사 화면에 그대로 보여 준다 */

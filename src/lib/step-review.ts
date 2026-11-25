@@ -85,6 +85,28 @@ export function checkSteps(config: StepReviewConfig, answers: Record<string, str
 }
 
 /**
+ * 몇 번째 검토 요청인가 (대시보드 「N차 검토 요청」, 학생 재요청의 다음 차수 계산).
+ *
+ * 차수(count)를 저장하기 전(2026-11-25 12:56 배포 전)의 기록은 count 가 없다. 그때는 추정한다:
+ * 요청이 있고, 그 요청보다 앞서 선생님 답이 있었으면(답 시각 또는 답이 가리킨 요청 시각이 지금 요청보다 이르면)
+ * 한 번 답을 받고 다시 요청한 것이라 2차, 요청만 있으면 1차, 요청이 없으면 0.
+ */
+export function reviewRound(input: {
+  count?: number | null;
+  requestedAt?: number | null;
+  reviewedAt?: number | null;
+  feedbackForRequestAt?: number | null;
+}): number {
+  if (input.count && input.count > 0) return input.count;
+  const requested = input.requestedAt ?? 0;
+  if (!requested) return 0;
+  const answeredBefore =
+    (input.reviewedAt != null && input.reviewedAt < requested) ||
+    (input.feedbackForRequestAt != null && input.feedbackForRequestAt < requested);
+  return answeredBefore ? 2 : 1;
+}
+
+/**
  * 지금 어느 단계를 쓰는 중인가 - 답이 하나라도 있는 가장 뒤 단계(대시보드 표시용).
  * 아무것도 안 썼으면 -1.
  */

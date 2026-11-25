@@ -8,7 +8,7 @@ import {
   updateArtifact,
 } from "@/lib/db";
 import { activityIdFor } from "@/lib/gallery";
-import { checkSteps } from "@/lib/step-review";
+import { checkSteps, reviewRound } from "@/lib/step-review";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
 import type { StepFeedback } from "@/lib/types";
 
@@ -66,7 +66,12 @@ export async function GET(request: Request) {
         draft: reflection?.draft ?? true,
       },
       requestedAt: artifact?.stepReviewRequestedAt ?? null,
-      count: artifact?.stepReviewCount ?? (artifact?.stepReviewRequestedAt ? 1 : 0),
+      count: reviewRound({
+        count: artifact?.stepReviewCount,
+        requestedAt: artifact?.stepReviewRequestedAt,
+        reviewedAt: artifact?.stepFeedback?.at,
+        feedbackForRequestAt: artifact?.stepFeedback?.forRequestAt,
+      }),
       feedback: artifact?.stepFeedback ?? null,
     });
   });
