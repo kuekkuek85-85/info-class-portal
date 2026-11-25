@@ -38,7 +38,7 @@ db.settings({ ignoreUndefinedProperties: true });
 
 const DATE = process.argv[2] ?? "2026-11-26";
 const PLAN_LIST: { period: number; classNo: number; lessonNo: number; planDocId?: string; pending?: string }[] = [
-  { period: 4, classNo: 4, lessonNo: 33 },
+  { period: 4, classNo: 4, lessonNo: 33, planDocId: "YDeZR2PNJz9imPhMcvyZ" },
 ];
 
 async function pickCode(taken: Set<string>): Promise<string> {
@@ -121,7 +121,8 @@ async function main(): Promise<void> {
       phaseOrder: p.phaseOrder ?? [],
       phaseLabels: p.phaseLabels ?? {},
       focusExempt: p.focusExempt ?? [],
-      freeNavigation: p.freeNavigation ?? false,
+      // 되돌아가기는 기본 off (교사 표준). 수업 중 교사가 필요하면 켠다.
+      freeNavigation: false,
     });
 
     const back = (await db.collection("classSessions").doc(sessionId).get()).data() as Record<string, unknown> | undefined;
