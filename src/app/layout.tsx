@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+import { ImeGuard } from "@/components/ime-guard";
+
 export const metadata: Metadata = {
   title: "정보 수업 포털",
   description: "장평중학교 1학년 정보과 수업 포털",
@@ -18,7 +20,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {/* 탭 이탈 때 조합 중이던 한글(밑줄 글자)이 지워지는 것을 모든 입력칸에서 막는다 */}
+        <ImeGuard />
+        {children}
+      </body>
     </html>
   );
 }
