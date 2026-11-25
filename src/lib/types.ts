@@ -2123,6 +2123,8 @@ export interface Attendance {
   stepReviewedAt?: number;
   /** 선생님 마지막 답: good = 고생하셨습니다(통과) · revise = 수정해 주세요(반려) */
   stepVerdict?: "good" | "revise";
+  /** 몇 번째 검토 요청인가 (대시보드 「N차 검토 요청」) */
+  stepReviewCount?: number;
 
   /*
    * 이탈(집중 확인) 누적치.
@@ -2428,6 +2430,8 @@ export interface Artifact {
    * 선생님이 단계마다 남긴 말. 선생님이 답을 하면(verdict 무엇이든) 보상 게임이 열린다.
    */
   stepReviewRequestedAt?: number;
+  /** 몇 번째 검토 요청인가 (1차, 2차 ...). 없으면 요청이 있었을 때 1차 */
+  stepReviewCount?: number;
   stepFeedback?: StepFeedback;
   /**
    * 교사 피드백. 칩은 보조이고 note 가 본체다.

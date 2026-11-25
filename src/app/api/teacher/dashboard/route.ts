@@ -296,6 +296,7 @@ export async function GET(request: Request) {
               requestedAt: entry.stepReviewRequestedAt ?? null,
               reviewedAt: entry.stepReviewedAt ?? null,
               verdict: entry.stepVerdict ?? null,
+              count: entry.stepReviewCount ?? (entry.stepReviewRequestedAt ? 1 : 0),
             }
           : null,
         /** 자기 점검 답. 교사 화면에 그대로 보여 준다 */

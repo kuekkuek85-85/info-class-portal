@@ -66,6 +66,7 @@ export async function GET(request: Request) {
         draft: reflection?.draft ?? true,
       },
       requestedAt: artifact?.stepReviewRequestedAt ?? null,
+      count: artifact?.stepReviewCount ?? (artifact?.stepReviewRequestedAt ? 1 : 0),
       feedback: artifact?.stepFeedback ?? null,
     });
   });

@@ -67,8 +67,11 @@ export async function POST() {
     }
 
     const now = Date.now();
-    await updateArtifact(artifact.id, { stepReviewRequestedAt: now });
-    await setAttendanceStepReview(session.id, me.studentId, { stepReviewRequestedAt: now });
-    return ok({ requestedAt: now, feedback: artifact.stepFeedback ?? null });
+    // 몇 번째 요청인가(교사 대시보드 「2차 검토 요청」). 옛 데이터(차수 없음)는 요청이 있었으면 1차로 본다
+    const before = artifact.stepReviewCount ?? (artifact.stepReviewRequestedAt ? 1 : 0);
+    const count = before + 1;
+    await updateArtifact(artifact.id, { stepReviewRequestedAt: now, stepReviewCount: count });
+    await setAttendanceStepReview(session.id, me.studentId, { stepReviewRequestedAt: now, stepReviewCount: count });
+    return ok({ requestedAt: now, count, feedback: artifact.stepFeedback ?? null });
   });
 }
