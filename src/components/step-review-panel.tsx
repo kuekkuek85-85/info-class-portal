@@ -278,31 +278,72 @@ export function PriorFeedbackBanner({
   const notes = Object.entries(prior.steps)
     .filter(([, v]) => v.trim())
     .sort(([a], [b]) => rank(a) - rank(b));
+
+  /*
+   * 접기·펴기. 처음엔 펼쳐 보이고, 학생이 접으면 같은 기기에서 그 상태를 기억한다(단계를 옮겨도 유지).
+   * 피드백마다(at) 따로 기억해 새 피드백이 오면 다시 펼쳐진다. 저장이 막힌 기기여도 화면은 돈다.
+   */
+  const storeKey = `prior-feedback-collapsed:${prior.at}`;
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem(storeKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggle = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      if (next) window.localStorage.setItem(storeKey, "1");
+      else window.localStorage.removeItem(storeKey);
+    } catch {
+      /* 기억 못 해도 지금 화면에서는 접힌다 */
+    }
+  };
+
+  const card = ([phase, note]: [string, string]) => {
+    const here = phase === viewPhase;
+    return (
+      <button
+        key={phase}
+        type="button"
+        onClick={() => onJump(phase as LessonPhase)}
+        className={`flex flex-col gap-1 rounded-lg border bg-canvas px-3 py-2 text-left ${here ? "border-2 border-ink" : "border-line"}`}
+      >
+        <span className="t-body-sm font-bold">
+          {phaseLabel(phase as LessonPhase)}
+          {here ? " (지금 이 단계)" : passed ? " → 눌러서 보기" : " → 눌러서 고치러 가기"}
+        </span>
+        <span className="t-body-sm whitespace-pre-wrap">{note}</span>
+      </button>
+    );
+  };
+  // 접혀 있어도 지금 보고 있는 단계의 피드백은 보인다
+  const hereNote = notes.find(([phase]) => phase === viewPhase);
+
+  const title = passed ? `선생님: ${no}차 기획, 고생하셨습니다! 👏` : `선생님이 ${no}차 기획에 피드백을 남겼어요`;
+  const summary = passed ? `선생님: ${no}차 기획, 고생하셨습니다!` : `선생님 피드백 (수정 요청 ${notes.length}단계)`;
+
   return (
     <section className={`mb-5 flex flex-col gap-2 rounded-xl border-2 border-ink p-4 ${passed ? "bg-lime" : "bg-coral"}`}>
-      <p className="t-subhead">
-        {passed
-          ? `선생님: ${no}차 기획, 고생하셨습니다! 👏`
-          : `선생님이 ${no}차 기획에 피드백을 남겼어요`}
-      </p>
-      {notes.map(([phase, note]) => {
-        const here = phase === viewPhase;
-        return (
-          <button
-            key={phase}
-            type="button"
-            onClick={() => onJump(phase as LessonPhase)}
-            className={`flex flex-col gap-1 rounded-lg border bg-canvas px-3 py-2 text-left ${here ? "border-2 border-ink" : "border-line"}`}
-          >
-            <span className="t-body-sm font-bold">
-              {phaseLabel(phase as LessonPhase)}
-              {here ? " (지금 이 단계)" : passed ? " → 눌러서 보기" : " → 눌러서 고치러 가기"}
-            </span>
-            <span className="t-body-sm whitespace-pre-wrap">{note}</span>
-          </button>
-        );
-      })}
-      {!passed && <p className="t-caption">카드를 눌러 그 단계를 고친 뒤, ⑤ 구현과 마무리까지 이어서 해요.</p>}
+      <button
+        type="button"
+        onClick={toggle}
+        aria-expanded={!collapsed}
+        className="flex flex-wrap items-center justify-between gap-2 text-left"
+      >
+        <span className="t-subhead">{collapsed ? summary : title}</span>
+        <span className="t-body-sm font-semibold">{collapsed ? "▼ 펼치기" : "▲ 접기"}</span>
+      </button>
+      {collapsed ? (
+        hereNote && card(hereNote)
+      ) : (
+        <>
+          {notes.map(card)}
+          {!passed && <p className="t-caption">카드를 눌러 그 단계를 고친 뒤, ⑤ 구현과 마무리까지 이어서 해요.</p>}
+        </>
+      )}
     </section>
   );
 }
