@@ -113,7 +113,12 @@ export function StepReviewPanel({
     if (unlock) onUnlock();
   }, [unlock, onUnlock]);
 
-  const notes = latest ? Object.entries(latest.steps).filter(([, v]) => v.trim()) : [];
+  const stepOrder = config.steps.map((st) => st.phase as string);
+  const notes = latest
+    ? Object.entries(latest.steps)
+        .filter(([, v]) => v.trim())
+        .sort(([a], [b]) => stepOrder.indexOf(a) - stepOrder.indexOf(b))
+    : [];
 
   return (
     <section className="mb-6 flex flex-col gap-4 rounded-xl border-2 border-ink bg-canvas p-4">
@@ -253,17 +258,26 @@ export function StepReviewSubmit({
 export function PriorFeedbackBanner({
   prior,
   viewPhase,
+  order,
   phaseLabel,
   onJump,
 }: {
   prior: StepFeedback;
   viewPhase: LessonPhase;
+  /** 카드 순서(①→④). 선생님이 쓴 순서가 아니라 단계 순서로 보인다 */
+  order: LessonPhase[];
   phaseLabel: (phase: LessonPhase) => string;
   onJump: (phase: LessonPhase) => void;
 }) {
   const passed = prior.verdict === "good";
   const no = prior.lessonNo ?? 33;
-  const notes = Object.entries(prior.steps).filter(([, v]) => v.trim());
+  const rank = (p: string) => {
+    const i = order.indexOf(p as LessonPhase);
+    return i < 0 ? 99 : i;
+  };
+  const notes = Object.entries(prior.steps)
+    .filter(([, v]) => v.trim())
+    .sort(([a], [b]) => rank(a) - rank(b));
   return (
     <section className={`mb-5 flex flex-col gap-2 rounded-xl border-2 border-ink p-4 ${passed ? "bg-lime" : "bg-coral"}`}>
       <p className="t-subhead">
@@ -282,7 +296,7 @@ export function PriorFeedbackBanner({
           >
             <span className="t-body-sm font-bold">
               {phaseLabel(phase as LessonPhase)}
-              {here ? " (지금 이 단계)" : " → 눌러서 고치러 가기"}
+              {here ? " (지금 이 단계)" : passed ? " → 눌러서 보기" : " → 눌러서 고치러 가기"}
             </span>
             <span className="t-body-sm whitespace-pre-wrap">{note}</span>
           </button>

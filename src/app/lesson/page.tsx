@@ -1276,6 +1276,7 @@ export default function LessonPage() {
             <PriorFeedbackBanner
               prior={stepReview.prior}
               viewPhase={viewPhase}
+              order={session.activity.stepReview.steps.map((st) => st.phase)}
               phaseLabel={(p) => session.phaseLabels?.[p] ?? PHASE_LABELS[p]}
               onJump={(target) => {
                 reviewFreeRef.current = true;
