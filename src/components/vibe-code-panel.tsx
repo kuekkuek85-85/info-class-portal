@@ -248,7 +248,7 @@ export function VibeCodePanel({
         <textarea
           id={`vibe-${questionKey}`}
           value={draft}
-          onChange={(event) => setDraft(event.target.value.slice(0, 500))}
+          onChange={(event) => setDraft(event.target.value.slice(0, 4000))}
           rows={3}
           disabled={disabled || loading}
           placeholder={copy.placeholder}
@@ -260,7 +260,7 @@ export function VibeCodePanel({
           disabled={disabled || loading || !draft.trim()}
           className="pill pill-primary self-start disabled:opacity-60"
         >
-          {loading ? "AI가 코드를 만드는 중…" : sendLabel || "AI에게 코드 받기"}
+          {loading ? "AI가 코드를 만드는 중… (길면 1분쯤 걸려요)" : sendLabel || "AI에게 코드 받기"}
         </button>
       </div>
 

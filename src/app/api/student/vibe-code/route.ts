@@ -9,6 +9,9 @@ import {
 import { activityIdFor } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
 import type { WorksheetQuestion } from "@/lib/types";
+
+/** AI 응답을 90초까지 기다린다(vibe-code.ts TIMEOUT_MS). 함수 시간 상한을 그보다 넉넉히 둔다 */
+export const maxDuration = 120;
 import {
   MICROBIT_MANBOGI_BASE,
   vibeCodeGenerate,
@@ -35,7 +38,8 @@ const PER_STUDENT = 25;
 const PER_DEVICE = 50;
 const WINDOW_MS = 60 * 60_000;
 
-const MAX_PROMPT = 500;
+// vibe-code.ts 의 MAX_PROMPT 와 같다 (2026-11-27 500 → 4000자)
+const MAX_PROMPT = 4000;
 /** 아티팩트에 쌓아 둘 기록 최대 개수 (Firestore 문서 방어). 오래된 것부터 버린다 */
 const MAX_ENTRIES = 12;
 /** '내 코드로 이어서' 에 붙여넣을 수 있는 최대 길이 (vibe-code.ts 의 MAX_BASE_CODE 와 같다) */

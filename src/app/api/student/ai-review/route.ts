@@ -4,6 +4,9 @@ import { fallbackResult, reviewBuild, type ReviewResult } from "@/lib/ai-review"
 import { getArtifact, getSession, logAiCall, updateArtifact } from "@/lib/db";
 import { activityIdFor } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
+
+/** AI 검토를 30초까지 기다린다(ai-review.ts TIMEOUT_MS, 형식 실패면 한 번 더). 함수 시간 상한을 넉넉히 */
+export const maxDuration = 90;
 import type { WorksheetQuestion } from "@/lib/types";
 
 /**
