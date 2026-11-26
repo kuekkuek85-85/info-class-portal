@@ -47,6 +47,19 @@ export async function GET(request: Request) {
     const labels = new Map(
       (session.activity?.worksheet ?? []).map((q) => [q.key, q.label] as const),
     );
+    const kinds = new Map((session.activity?.worksheet ?? []).map((q) => [q.key, q.kind] as const));
+    /** 바이브 코딩 기록(JSON)은 보낸 프롬프트만 번호를 붙여 읽게 (34차 ⑤ 구현) */
+    const shown = (key: string): string => {
+      const raw = String(answers[key] ?? "");
+      if (kinds.get(key) !== "vibe_code" || !raw.trim()) return raw;
+      try {
+        const log = JSON.parse(raw) as { entries?: { prompt?: string; code?: string }[] };
+        const prompts = (log.entries ?? []).map((e, i) => `${i + 1}. ${String(e.prompt ?? "").trim()}${e.code ? "" : " (코드 못 받음)"}`);
+        return prompts.length > 0 ? [`프롬프트 ${prompts.length}개`, ...prompts].join("\n") : "";
+      } catch {
+        return "(기록을 읽지 못했어요)";
+      }
+    };
 
     return ok({
       student: { studentId, name: names.get(studentId)?.name ?? "" },
@@ -57,7 +70,7 @@ export async function GET(request: Request) {
         fields: step.fields.map((f) => ({
           key: f.key,
           label: labels.get(f.key) ?? f.label,
-          value: String(answers[f.key] ?? ""),
+          value: shown(f.key),
         })),
       })),
       reflection: {

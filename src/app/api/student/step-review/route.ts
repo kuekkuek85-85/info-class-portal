@@ -1,6 +1,7 @@
 import { fail, guard, ok } from "@/lib/api";
 import {
   getArtifact,
+  getAttendanceStepRequestedAt,
   getReflection,
   getSession,
   isSessionClosed,
@@ -36,8 +37,14 @@ export async function GET() {
   return guard(async () => {
     const loaded = await load();
     if (loaded.error) return loaded.error;
-    const { artifact } = loaded;
+    const { artifact, me, session } = loaded;
+    // 이 수업에서 요청했는가(34차 instantUnlock 만 쓴다 - 아니면 출석을 읽지 않는다)
+    const requestedHere =
+      session?.activity?.stepReview?.instantUnlock && me
+        ? Boolean(await getAttendanceStepRequestedAt(session.id, me.studentId))
+        : false;
     return ok({
+      requestedHere,
       requestedAt: artifact?.stepReviewRequestedAt ?? null,
       feedback: artifact?.stepFeedback ?? null,
     });

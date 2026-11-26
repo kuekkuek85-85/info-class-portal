@@ -221,6 +221,7 @@ export async function GET() {
               // 33차 단계별 교사 검토·복붙 차단 플래그. 위 함정과 같다 - 여기 실어야 학생 화면에 닿는다
               stepReview: session.activity.stepReview ?? null,
               noClipboard: session.activity.noClipboard === true,
+              noClipboardPhases: session.activity.noClipboardPhases ?? [],
             }
           : null,
         date: session.date,

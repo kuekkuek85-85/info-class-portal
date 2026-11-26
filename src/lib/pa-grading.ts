@@ -56,10 +56,10 @@ export function sanitizePaScores(input: unknown): Record<string, number> {
   return out;
 }
 
-/** 34차 최종 제출의 필수 칸(교사 결정: MakeCode 공유 링크 + 동작 한 줄). */
+/** 34차 최종 제출의 필수 칸(2026-11-27 교사 결정: MakeCode 공유 링크 + 오늘 구현한 내용과 수정한 내용). */
 export const PA_REQUIRED = [
   { key: "mb34_link", label: "MakeCode 공유 링크" },
-  { key: "mb34_works", label: "동작 한 줄 설명" },
+  { key: "mb34_impl", label: "구현·수정 내용" },
 ] as const;
 
 /** 채점 화면이 학생 한 명에게서 읽는 글 칸 (32~34차). 무거운 AI 기록·사진은 따로 다룬다. */
@@ -90,6 +90,9 @@ export const PA_TEXT_KEYS = [
   "mb34_ai_log",
   "mb34_debug",
   "mb34_link",
+  // 2026-11-27 34차 재구성: ⑤ 구현의 구현·수정 내용, 마무리 성찰 한 벌(기대 효과·확장 아이디어·후기)
+  "mb34_impl",
+  "mb34_reflect",
   "mb34_works",
   "mb34_concepts",
   "mb34_concepts_where",

@@ -94,7 +94,7 @@ export async function GET(request: Request) {
           design: filled(a.mb33_flow) || filled(a.mb33_in) || filled(a.mb33_algo),
           build: filled(a.mb34_vibe) || filled(a.mb33_vibe),
           submit: PA_REQUIRED.every((r) => filled(a[r.key])),
-          reflect: filled(a.mb34_effect) || filled(a.mb34_extend),
+          reflect: filled(a.mb34_reflect) || filled(a.mb34_effect) || filled(a.mb34_extend),
         },
         missing: PA_REQUIRED.filter((r) => !filled(a[r.key])).map((r) => r.label),
         scores: e?.scores ?? {},

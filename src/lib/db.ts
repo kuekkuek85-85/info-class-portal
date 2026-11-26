@@ -1572,6 +1572,13 @@ export async function setAttendanceStepReview(
   await ref.set(patch, { merge: true });
 }
 
+/** 이 수업에서 단계 검토를 요청한 시각 (34차 instantUnlock: 이 수업 요청만 게임을 연다). 없으면 null */
+export async function getAttendanceStepRequestedAt(sessionId: string, studentId: string): Promise<number | null> {
+  const snap = await db().collection(COLLECTIONS.attendance).doc(entryId(sessionId, studentId)).get();
+  const at = snap.exists ? (snap.data() as { stepReviewRequestedAt?: number }).stepReviewRequestedAt : undefined;
+  return typeof at === "number" ? at : null;
+}
+
 export async function listAttendance(sessionId: string): Promise<Attendance[]> {
   const rows = await collectAll<Attendance>(
     db().collection(COLLECTIONS.attendance).where("sessionId", "==", sessionId),

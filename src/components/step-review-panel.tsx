@@ -14,6 +14,9 @@ import type { LessonPhase, StepFeedback, StepReviewConfig } from "@/lib/types";
  *
  * 게임(UNO)은 선생님이 「고생하셨습니다」(verdict good)를 눌렀을 때만 열린다. 「수정해 주세요」(revise)면
  * 카드를 눌러 그 단계로 가 고친 뒤 다시 검토를 받는다.
+ *
+ * instantUnlock(34차): 선생님이 구현 피드백을 수업 뒤에 주므로, 이 수업에서 검토를 요청하면 바로 게임이 열린다.
+ * 이때 지난 차시(33차)의 선생님 답은 참고로 보여 주되 게임을 열지는 않는다(이 수업 요청만 연다).
  */
 
 const POLL_MS = 8000;
@@ -25,12 +28,20 @@ export interface StepReviewState {
   waiting: boolean;
   /** 마지막 요청에 대한 답 (요청 전에 받은 옛 답이면 null) */
   latest: StepFeedback | null;
+  /** 이 수업(세션)에서 검토를 요청했는가 - 출석 기록 기준 (instantUnlock 이 이걸로 게임을 연다) */
+  requestedHere: boolean;
+  instant: boolean;
   setRequestedAt: (at: number) => void;
 }
 
-export function useStepReview(enabled: boolean): StepReviewState {
-  const [requestedAt, setRequestedAt] = useState<number | null>(null);
+export function useStepReview(enabled: boolean, instant = false): StepReviewState {
+  const [requestedAt, setRequestedAtState] = useState<number | null>(null);
+  const [requestedHere, setRequestedHere] = useState(false);
   const [feedback, setFeedback] = useState<StepFeedback | null>(null);
+  const setRequestedAt = useCallback((at: number) => {
+    setRequestedAtState(at);
+    setRequestedHere(true);
+  }, []);
 
   const pull = useCallback(() => {
     return fetch("/api/student/step-review")
@@ -38,7 +49,8 @@ export function useStepReview(enabled: boolean): StepReviewState {
       .catch(() => null)
       .then((res) => {
         if (!res?.ok) return;
-        setRequestedAt(res.requestedAt ?? null);
+        setRequestedAtState(res.requestedAt ?? null);
+        setRequestedHere(Boolean(res.requestedHere));
         setFeedback(res.feedback ?? null);
       });
   }, []);
@@ -51,7 +63,8 @@ export function useStepReview(enabled: boolean): StepReviewState {
 
   const waiting = Boolean(requestedAt && (!feedback || (feedback.forRequestAt ?? 0) < requestedAt));
   // 답을 기다리는 중이거나, 「수정해 주세요」를 받은 상태(선생님이 다시 보고 통과를 줄 수 있다)면 8초마다 묻는다
-  const shouldPoll = waiting || feedback?.verdict === "revise";
+  // instantUnlock 은 선생님 답을 기다리지 않으니 묻지 않는다
+  const shouldPoll = !instant && (waiting || feedback?.verdict === "revise");
   useEffect(() => {
     if (!enabled || !shouldPoll) return;
     const id = setInterval(() => void pull(), POLL_MS);
@@ -60,7 +73,7 @@ export function useStepReview(enabled: boolean): StepReviewState {
 
   // 지금 요청에 대한 답만 '최신' 으로 본다. 요청이 없던 시절의 답(옛 테스트 데이터 등)도 그대로 보여 준다
   const latest = feedback && !waiting ? feedback : null;
-  return { requestedAt, feedback, waiting, latest, setRequestedAt };
+  return { requestedAt, feedback, waiting, latest, requestedHere, instant, setRequestedAt };
 }
 
 /** 성찰 위 - 선생님 답과 단계별 분량 점검 */
@@ -82,11 +95,12 @@ export function StepReviewPanel({
   const checks = checkSteps(config, answers);
   const latest = state.latest;
   const passed = latest?.verdict === "good";
-
-  // 통과(고생하셨습니다)일 때만 게임을 연다
+  const instant = state.instant;
+  // 보통은 통과(고생하셨습니다)일 때만, instantUnlock 이면 이 수업에서 요청했을 때 게임을 연다
+  const unlock = instant ? state.requestedHere : passed;
   useEffect(() => {
-    if (passed) onUnlock();
-  }, [passed, onUnlock]);
+    if (unlock) onUnlock();
+  }, [unlock, onUnlock]);
 
   const notes = latest ? Object.entries(latest.steps).filter(([, v]) => v.trim()) : [];
 
@@ -94,11 +108,21 @@ export function StepReviewPanel({
     <section className="mb-6 flex flex-col gap-4 rounded-xl border-2 border-ink bg-canvas p-4">
       <h2 className="t-headline">선생님께 검토 받기</h2>
 
-      {state.waiting && <p className="t-body rounded-lg bg-cream px-4 py-3">선생님이 보고 있어요… 잠시만요</p>}
+      {instant && state.requestedHere && !latest && (
+        <p className="t-body rounded-lg bg-lime px-4 py-3">
+          검토 요청을 보냈어요. 선생님이 수업 뒤에 봐 주실 거예요.
+          <br />
+          게임은 아래에서 할 수 있어요.
+        </p>
+      )}
+      {!instant && state.waiting && <p className="t-body rounded-lg bg-cream px-4 py-3">선생님이 보고 있어요… 잠시만요</p>}
 
       {latest && (
         <div className={`flex flex-col gap-2 rounded-lg px-4 py-3 ${passed ? "bg-lime" : "bg-coral"}`}>
-          <p className="t-subhead">{passed ? "선생님: 고생하셨습니다! 👏" : "선생님이 수정을 부탁했어요"}</p>
+          <p className="t-subhead">
+            {instant && !state.requestedHere && <span className="t-caption block">지난 시간 선생님 검토</span>}
+            {passed ? "선생님: 고생하셨습니다! 👏" : "선생님이 수정을 부탁했어요"}
+          </p>
           {notes.map(([phase, note]) => (
             <button
               key={phase}
@@ -112,7 +136,9 @@ export function StepReviewPanel({
           ))}
           <p className="t-caption">
             {passed
-              ? "게임은 아래에서 할 수 있어요."
+              ? instant
+                ? "오늘 한 것까지 마치고 「선생님께 검토 받기」를 눌러요."
+                : "게임은 아래에서 할 수 있어요."
               : "카드를 눌러 그 단계를 고치고, 마무리로 돌아와 다시 「선생님께 검토 받기」를 눌러요."}
           </p>
         </div>
@@ -163,6 +189,9 @@ export function StepReviewSubmit({
   const [error, setError] = useState("");
   const allDone = checkSteps(config, answers).every((c) => c.missing.length === 0);
   const passed = state.latest?.verdict === "good";
+  const instant = state.instant;
+  // instantUnlock 은 답을 기다리지 않으니 대기로 막지 않는다
+  const blockedByWait = !instant && state.waiting;
 
   async function run() {
     setBusy(true);
@@ -186,12 +215,16 @@ export function StepReviewSubmit({
       <button
         type="button"
         onClick={() => void run()}
-        disabled={disabled || busy || !allDone || !canSubmit || state.waiting}
+        disabled={disabled || busy || !allDone || !canSubmit || blockedByWait}
         className="pill pill-primary pill-block disabled:opacity-60"
       >
         {busy
           ? "보내는 중…"
-          : state.waiting
+          : instant
+            ? state.requestedHere
+              ? "고친 것 다시 선생님께 검토 받기"
+              : "선생님께 검토 받기"
+            : state.waiting
             ? "선생님이 보고 있어요… 잠시만요"
             : state.latest && !passed
               ? "고쳤어요 · 다시 선생님께 검토 받기"

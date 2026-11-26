@@ -777,6 +777,11 @@ export interface WorksheetQuestion {
    */
   echoKeys?: { key: string; label: string; copy?: boolean }[];
   /**
+   * echo 를 작은 글씨로 촘촘히 보이고, 위에 「전부 복사하기」 단추 하나를 둔다 (34차 ⑤ 구현:
+   * ①~④ 에 쓴 것을 보며 프롬프트를 쓰게). 값은 화면의 답(state)에서 읽어 앞 단계를 고치면 바로 바뀐다.
+   */
+  echoCompact?: boolean;
+  /**
    * 문항 아래에 붙는 큰 링크 단추.
    *
    * 캔바 초대 주소처럼 **글자로 보여주면 안 되는** 주소가 있다. 토큰이 붙어 100자가
@@ -1031,6 +1036,10 @@ export interface WorksheetQuestion {
    * microbit 바이브 입력칸의 예시(placeholder) 덮어쓰기. 안 주면 25차 만보기 예시('걸음 수…').
    */
   vibePlaceholder?: string;
+  /** 바이브 코딩 입력칸 위 제목 덮어쓰기 (34차). 없으면 기본 문구 */
+  vibePromptLabel?: string;
+  /** 보내기 단추 글자 덮어쓰기 (34차 「바이브 코딩 하기」). 없으면 「AI에게 코드 받기」 */
+  vibeSendLabel?: string;
   /**
    * vibe_code 전용 - "내 코드로 이어서 부탁하기"(33~34차 수행평가). 켜면 학생이 출발점을 고른다:
    * 처음 코드(vibeBaseCode) / 마지막으로 받은 코드에서 이어서 / 내 코드 붙여넣고 이어서.
@@ -1335,6 +1344,11 @@ export type DrawBackground = "head";
  * 켜진 차시만 성찰 화면에 「선생님께 검토 받기」 가 뜨고, 대시보드에 단계별 진행·검토 칸이 뜬다.
  */
 export interface StepReviewConfig {
+  /**
+   * 34차: 「선생님께 검토 받기」를 누르면 선생님 답을 기다리지 않고 바로 게임을 연다
+   * (교사가 구현 피드백을 수업 뒤에 준다). 이 수업에서 요청했는지(출석 기록)로 연다.
+   */
+  instantUnlock?: boolean;
   steps: {
     phase: LessonPhase;
     label: string;
@@ -1362,6 +1376,11 @@ export interface ActivityContent {
    * 활동지 전체에서 복사·잘라내기·붙여넣기를 막는다(33차). 문항별 noPaste 와 달리 화면 전체에 건다.
    */
   noClipboard?: boolean;
+  /**
+   * noClipboard 를 이 단계들에서만 건다 (34차: ①~④·마무리는 막고 ⑤ 구현은 링크·코드 붙여넣기를 위해 연다).
+   * 비어 있으면 모든 단계에서 막는다(33차 그대로).
+   */
+  noClipboardPhases?: LessonPhase[];
   /**
    * 그림을 묶는 열쇠. **2차시와 3차시 차시 계획에 같은 값을 넣는다.**
    *

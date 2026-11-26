@@ -408,9 +408,12 @@ export default function PaGradingPage() {
                       <span className="rounded bg-pink px-2 py-0.5">빠짐</span>
                     )}
                   </Field>
-                  <Field label="동작 한 줄 (필수)">
-                    {t.mb34_works?.trim() ? <Text value={t.mb34_works} /> : <span className="rounded bg-pink px-2 py-0.5">빠짐</span>}
+                  <Field label="구현·수정 내용 (필수)">
+                    {t.mb34_impl?.trim() ? <Text value={t.mb34_impl} /> : <span className="rounded bg-pink px-2 py-0.5">빠짐</span>}
                   </Field>
+                  {t.mb34_works?.trim() && (
+                    <Field label="동작 한 줄 (이전 판)"><Text value={t.mb34_works} /></Field>
+                  )}
                   <Field label="넣은 개념">
                     {chips(t.mb34_concepts ?? "").length ? (
                       <span className="flex flex-wrap gap-1">
@@ -432,6 +435,7 @@ export default function PaGradingPage() {
                 </Card>
 
                 <Card title="④ 성찰">
+                  <Field label="마무리 성찰 (기대 효과 · 확장 아이디어 · 후기)"><Text value={t.mb34_reflect ?? ""} /></Field>
                   <Field label="기대 효과·장점"><Text value={t.mb34_effect ?? ""} /></Field>
                   <Field label="확장·개선 아이디어"><Text value={t.mb34_extend ?? ""} /></Field>
                 </Card>

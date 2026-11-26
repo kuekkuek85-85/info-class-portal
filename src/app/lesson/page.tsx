@@ -95,6 +95,8 @@ export interface ActivityInfo {
   stepReview?: StepReviewConfig | null;
   /** 화면 전체 복사·잘라내기·붙여넣기 막기(33차) */
   noClipboard?: boolean;
+  /** noClipboard 를 이 단계에서만 (34차). 비면 모든 단계 */
+  noClipboardPhases?: LessonPhase[];
 }
 
 interface LessonData {
@@ -343,7 +345,10 @@ export default function LessonPage() {
   /** 단계별 교사 피드백(33차)을 받아 고치러 가는 중 - 교사가 되돌아가기를 꺼 둬도 지나온 단계로 갈 수 있다 */
   const reviewFreeRef = useRef(false);
   /** 단계별 교사 검토 상태(33차) - 성찰 위 패널과 성찰 아래 「선생님께 검토 받기」 가 함께 쓴다 */
-  const stepReview = useStepReview(Boolean(data?.session.activity?.stepReview));
+  const stepReview = useStepReview(
+    Boolean(data?.session.activity?.stepReview),
+    data?.session.activity?.stepReview?.instantUnlock === true,
+  );
   /**
    * 학생이 지금 보고 있는 단계.
    *
@@ -1248,7 +1253,9 @@ export default function LessonPage() {
           복사·잘라내기·붙여넣기 막기 (33차 noClipboard). 화면 전체에 한 번 건다 - 안의 모든 입력칸이 받는다.
           안 켠 차시는 빈 객체라 지금과 똑같다.
         */
-        {...(session.activity?.noClipboard
+        {...(session.activity?.noClipboard &&
+        (!(session.activity.noClipboardPhases ?? []).length ||
+          (session.activity.noClipboardPhases ?? []).includes(viewPhase))
           ? {
               onCopy: (event: { preventDefault: () => void }) => event.preventDefault(),
               onCut: (event: { preventDefault: () => void }) => event.preventDefault(),

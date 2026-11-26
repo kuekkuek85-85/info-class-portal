@@ -819,6 +819,49 @@ export function WorksheetView({
                 </div>
               );
             })()
+          ) : question.kind === "echo" && question.echoCompact ? (
+            /*
+              앞 단계 답 모아 보기 - 작은 글씨 + 「전부 복사하기」 (34차 ⑤ 구현).
+              화면의 답(value.answers)에서 바로 읽어서, 앞 단계로 가 고치면 여기도 곧바로 바뀐다.
+            */
+            (() => {
+              const rows = (question.echoKeys ?? []).map((row) => ({
+                label: row.label,
+                text: listDisplay((value.answers[row.key] ?? "").trim()),
+              }));
+              const all = rows.filter((r) => r.text).map((r) => `${r.label}: ${r.text}`).join("\n");
+              const mark = `${question.key}__echoall`;
+              return (
+                <div className="flex flex-col gap-2 rounded-lg bg-cream px-3 py-2">
+                  <ul className="flex flex-col gap-0.5">
+                    {rows.map((r) => (
+                      <li key={r.label} className="t-caption whitespace-pre-wrap">
+                        <span className="font-semibold">{r.label}: </span>
+                        {r.text || <span className="text-muted">(아직 안 썼어요)</span>}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void copy(mark, all, `ws-echoall-${question.key}`)}
+                      disabled={!all}
+                      className="pill pill-secondary t-body-sm disabled:opacity-40"
+                    >
+                      {copied === mark ? "복사됐어요" : copied === `${mark}__manual` ? "골라 뒀어요 - Ctrl+C" : "전부 복사하기"}
+                    </button>
+                  </div>
+                  <textarea
+                    id={`ws-echoall-${question.key}`}
+                    readOnly
+                    value={all}
+                    tabIndex={-1}
+                    aria-hidden
+                    className="sr-only"
+                  />
+                </div>
+              );
+            })()
           ) : question.kind === "echo" ? (
             /*
               앞 단계에서 쓴 답. 고치는 칸이 아니라 **보고 옮겨 적으라고** 띄운다.
@@ -1034,6 +1077,8 @@ export function WorksheetView({
               target={question.vibeTarget}
               projectNoun={question.vibeNoun}
               examplePrompt={question.vibePlaceholder}
+              promptLabel={question.vibePromptLabel}
+              sendLabel={question.vibeSendLabel}
               continueEnabled={question.vibeContinue === true}
               continueRaw={
                 question.vibeContinueFromKey ? value.answers[question.vibeContinueFromKey] ?? "" : ""

@@ -102,6 +102,8 @@ export function VibeCodePanel({
   target = "turtle",
   projectNoun,
   examplePrompt,
+  promptLabel,
+  sendLabel,
   continueEnabled = false,
   continueRaw = "",
 }: {
@@ -119,6 +121,10 @@ export function VibeCodePanel({
   projectNoun?: string;
   /** microbit 입력칸 예시(placeholder) 덮어쓰기 — 안 주면 25차 만보기 예시. turtle 에선 안 쓴다. */
   examplePrompt?: string;
+  /** 입력칸 제목 덮어쓰기 (34차) */
+  promptLabel?: string;
+  /** 보내기 단추 글자 덮어쓰기 (34차 「바이브 코딩 하기」) */
+  sendLabel?: string;
 }) {
   const copy =
     target === "microbit"
@@ -237,7 +243,7 @@ export function VibeCodePanel({
 
       <div className="flex flex-col gap-2">
         <label htmlFor={`vibe-${questionKey}`} className="t-body-sm font-semibold">
-          {copy.promptLabel}
+          {promptLabel || copy.promptLabel}
         </label>
         <textarea
           id={`vibe-${questionKey}`}
@@ -254,7 +260,7 @@ export function VibeCodePanel({
           disabled={disabled || loading || !draft.trim()}
           className="pill pill-primary self-start disabled:opacity-60"
         >
-          {loading ? "AI가 코드를 만드는 중…" : "AI에게 코드 받기"}
+          {loading ? "AI가 코드를 만드는 중…" : sendLabel || "AI에게 코드 받기"}
         </button>
       </div>
 
