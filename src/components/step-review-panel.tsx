@@ -31,13 +31,16 @@ export interface StepReviewState {
   /** 이 수업(세션)에서 검토를 요청했는가 - 출석 기록 기준 (instantUnlock 이 이걸로 게임을 연다) */
   requestedHere: boolean;
   instant: boolean;
+  /** 지난 차시(예: 33차) 선생님 피드백 - instantUnlock 차시에서 맨 위 배너로 보인다 */
+  prior: StepFeedback | null;
   setRequestedAt: (at: number) => void;
 }
 
-export function useStepReview(enabled: boolean, instant = false): StepReviewState {
+export function useStepReview(enabled: boolean, instant = false, lessonNo = 0): StepReviewState {
   const [requestedAt, setRequestedAtState] = useState<number | null>(null);
   const [requestedHere, setRequestedHere] = useState(false);
   const [feedback, setFeedback] = useState<StepFeedback | null>(null);
+  const [history, setHistory] = useState<StepFeedback[]>([]);
   const setRequestedAt = useCallback((at: number) => {
     setRequestedAtState(at);
     setRequestedHere(true);
@@ -52,6 +55,7 @@ export function useStepReview(enabled: boolean, instant = false): StepReviewStat
         setRequestedAtState(res.requestedAt ?? null);
         setRequestedHere(Boolean(res.requestedHere));
         setFeedback(res.feedback ?? null);
+        setHistory(Array.isArray(res.history) ? res.history : []);
       });
   }, []);
 
@@ -72,8 +76,15 @@ export function useStepReview(enabled: boolean, instant = false): StepReviewStat
   }, [enabled, shouldPoll, pull]);
 
   // 지금 요청에 대한 답만 '최신' 으로 본다. 요청이 없던 시절의 답(옛 테스트 데이터 등)도 그대로 보여 준다
-  const latest = feedback && !waiting ? feedback : null;
-  return { requestedAt, feedback, waiting, latest, requestedHere, instant, setRequestedAt };
+  /*
+   * instantUnlock(34차): 이 차시 피드백과 지난 차시 피드백을 가른다. 차시 표시가 없는 옛 피드백은 지난 차시(33차) 것이다.
+   * 마무리 패널은 이 차시 피드백만, 맨 위 배너는 지난 차시 피드백만 보인다 - 둘이 섞이지 않게.
+   */
+  const newestFirst = [...history].reverse();
+  const current = instant ? (newestFirst.find((f) => f.lessonNo === lessonNo) ?? null) : null;
+  const prior = instant ? (newestFirst.find((f) => f.lessonNo !== lessonNo) ?? null) : null;
+  const latest = instant ? current : feedback && !waiting ? feedback : null;
+  return { requestedAt, feedback, waiting, latest, requestedHere, instant, prior, setRequestedAt };
 }
 
 /** 성찰 위 - 선생님 답과 단계별 분량 점검 */
@@ -120,7 +131,7 @@ export function StepReviewPanel({
       {latest && (
         <div className={`flex flex-col gap-2 rounded-lg px-4 py-3 ${passed ? "bg-lime" : "bg-coral"}`}>
           <p className="t-subhead">
-            {instant && !state.requestedHere && <span className="t-caption block">지난 시간 선생님 검토</span>}
+            {instant && latest?.lessonNo ? `${latest.lessonNo}차 검토 - ` : ""}
             {passed ? "선생님: 고생하셨습니다! 👏" : "선생님이 수정을 부탁했어요"}
           </p>
           {notes.map(([phase, note]) => (
@@ -232,5 +243,52 @@ export function StepReviewSubmit({
       </button>
       {error && <p className="t-body-sm rounded-md bg-pink px-3 py-2">{error}</p>}
     </div>
+  );
+}
+
+/**
+ * 지난 차시(33차) 선생님 피드백 배너 - 34차 화면 맨 위 (instantUnlock 차시).
+ * 카드를 누르면 그 단계로 간다(되돌아가기가 꺼져 있어도). 지금 보고 있는 단계의 카드는 강조한다.
+ */
+export function PriorFeedbackBanner({
+  prior,
+  viewPhase,
+  phaseLabel,
+  onJump,
+}: {
+  prior: StepFeedback;
+  viewPhase: LessonPhase;
+  phaseLabel: (phase: LessonPhase) => string;
+  onJump: (phase: LessonPhase) => void;
+}) {
+  const passed = prior.verdict === "good";
+  const no = prior.lessonNo ?? 33;
+  const notes = Object.entries(prior.steps).filter(([, v]) => v.trim());
+  return (
+    <section className={`mb-5 flex flex-col gap-2 rounded-xl border-2 border-ink p-4 ${passed ? "bg-lime" : "bg-coral"}`}>
+      <p className="t-subhead">
+        {passed
+          ? `선생님: ${no}차 기획, 고생하셨습니다! 👏`
+          : `선생님이 ${no}차 기획에 피드백을 남겼어요`}
+      </p>
+      {notes.map(([phase, note]) => {
+        const here = phase === viewPhase;
+        return (
+          <button
+            key={phase}
+            type="button"
+            onClick={() => onJump(phase as LessonPhase)}
+            className={`flex flex-col gap-1 rounded-lg border bg-canvas px-3 py-2 text-left ${here ? "border-2 border-ink" : "border-line"}`}
+          >
+            <span className="t-body-sm font-bold">
+              {phaseLabel(phase as LessonPhase)}
+              {here ? " (지금 이 단계)" : " → 눌러서 고치러 가기"}
+            </span>
+            <span className="t-body-sm whitespace-pre-wrap">{note}</span>
+          </button>
+        );
+      })}
+      {!passed && <p className="t-caption">카드를 눌러 그 단계를 고친 뒤, ⑤ 구현과 마무리까지 이어서 해요.</p>}
+    </section>
   );
 }

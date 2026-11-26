@@ -10,7 +10,7 @@ import {
 } from "@/lib/db";
 import { activityIdFor } from "@/lib/gallery";
 import { readStudentSession } from "@/lib/session";
-import { checkSteps, reviewRound } from "@/lib/step-review";
+import { checkSteps, feedbackHistory, reviewRound } from "@/lib/step-review";
 
 /**
  * 단계별 교사 검토 - 학생 쪽 (activity.stepReview 를 켠 차시만, 33차 수행평가).
@@ -47,6 +47,7 @@ export async function GET() {
       requestedHere,
       requestedAt: artifact?.stepReviewRequestedAt ?? null,
       feedback: artifact?.stepFeedback ?? null,
+      history: artifact ? feedbackHistory(artifact) : [],
     });
   });
 }

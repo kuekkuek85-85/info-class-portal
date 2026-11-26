@@ -5,7 +5,17 @@
  * 서버(검토 요청 API)와 학생 화면이 같은 규칙으로 세야 "화면엔 다 됐다는데 서버가 거절" 이 안 생긴다.
  */
 
-import type { LessonPhase, StepReviewConfig } from "./types";
+import type { LessonPhase, StepFeedback, StepReviewConfig } from "./types";
+
+/**
+ * 피드백 기록을 시간순으로 모은다. 기록(history)이 생기기 전의 피드백(stepFeedback 하나)도 앞에 넣는다.
+ */
+export function feedbackHistory(input: { stepFeedback?: StepFeedback | null; stepFeedbackHistory?: StepFeedback[] | null }): StepFeedback[] {
+  const list = [...(input.stepFeedbackHistory ?? [])];
+  const last = input.stepFeedback;
+  if (last && !list.some((f) => f.at === last.at)) list.push(last);
+  return list.sort((a, b) => a.at - b.at);
+}
 
 /** 빈 줄을 뺀 줄 수. list/rows 답(JSON 배열)이면 채운 항목 수를 줄로 센다 */
 export function countLines(raw: string): number {

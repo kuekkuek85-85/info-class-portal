@@ -34,7 +34,7 @@ import {
   type TextItem,
   type WorksheetQuestion,
 } from "@/lib/types";
-import { StepReviewPanel, StepReviewSubmit, useStepReview } from "@/components/step-review-panel";
+import { PriorFeedbackBanner, StepReviewPanel, StepReviewSubmit, useStepReview } from "@/components/step-review-panel";
 
 /**
  * 오늘 수업 화면.
@@ -348,6 +348,7 @@ export default function LessonPage() {
   const stepReview = useStepReview(
     Boolean(data?.session.activity?.stepReview),
     data?.session.activity?.stepReview?.instantUnlock === true,
+    data?.session.lessonNo ?? 0,
   );
   /**
    * 학생이 지금 보고 있는 단계.
@@ -1266,6 +1267,24 @@ export default function LessonPage() {
             }
           : {})}
       >
+        {/*
+          지난 차시(33차) 선생님 피드백 - 34차 단계 화면 맨 위. 카드를 누르면 그 단계로 간다(되돌아가기가 꺼져 있어도).
+        */}
+        {stepReview.prior &&
+          session.activity?.stepReview &&
+          (viewPhase === "reflection" || session.activity.stepReview.steps.some((st) => st.phase === viewPhase)) && (
+            <PriorFeedbackBanner
+              prior={stepReview.prior}
+              viewPhase={viewPhase}
+              phaseLabel={(p) => session.phaseLabels?.[p] ?? PHASE_LABELS[p]}
+              onJump={(target) => {
+                reviewFreeRef.current = true;
+                setFreeNav(true);
+                setViewPhase(target);
+                window.scrollTo({ top: 0 });
+              }}
+            />
+          )}
         {/*
           되돌아가기 — 교사가 켰을 때만 나온다.
 

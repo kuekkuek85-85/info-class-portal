@@ -1,6 +1,7 @@
 import { fail, guard, ok, readJson } from "@/lib/api";
 import {
   getArtifact,
+  getAttendanceStepRequestedAt,
   getReflection,
   getSession,
   setAttendanceStepReview,
@@ -8,7 +9,7 @@ import {
   updateArtifact,
 } from "@/lib/db";
 import { activityIdFor } from "@/lib/gallery";
-import { checkSteps, reviewRound } from "@/lib/step-review";
+import { checkSteps, reviewRound, feedbackHistory } from "@/lib/step-review";
 import { isTeacher, requireTeacher } from "@/lib/teacher-guard";
 import type { StepFeedback } from "@/lib/types";
 
@@ -86,6 +87,8 @@ export async function GET(request: Request) {
         feedbackForRequestAt: artifact?.stepFeedback?.forRequestAt,
       }),
       feedback: artifact?.stepFeedback ?? null,
+      // 차시를 넘은 피드백 기록 (34차 팝업에서 33차 피드백도 보이게)
+      history: artifact ? feedbackHistory(artifact) : [],
     });
   });
 }
@@ -124,13 +127,18 @@ export async function POST(request: Request) {
     }
 
     const now = Date.now();
+    // 이 세션에서 한 요청에 답한다(차시가 넘어가 다른 세션 요청이 더 최근일 수 있다)
+    const requestedHere = await getAttendanceStepRequestedAt(sessionId, studentId);
     const feedback: StepFeedback = {
       at: now,
       verdict,
       steps,
-      forRequestAt: artifact.stepReviewRequestedAt,
+      forRequestAt: requestedHere ?? artifact.stepReviewRequestedAt,
+      lessonNo: session.lessonNo,
+      sessionId,
     };
-    await updateArtifact(artifact.id, { stepFeedback: feedback });
+    const history = [...feedbackHistory(artifact), feedback].slice(-10);
+    await updateArtifact(artifact.id, { stepFeedback: feedback, stepFeedbackHistory: history });
     await setAttendanceStepReview(sessionId, studentId, { stepReviewedAt: now, stepVerdict: verdict });
     return ok({ saved: true, feedback });
   });

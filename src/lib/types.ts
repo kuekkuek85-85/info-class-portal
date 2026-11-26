@@ -1365,6 +1365,9 @@ export interface StepFeedback {
   steps: Record<string, string>;
   /** 학생이 마지막으로 검토를 요청한 시각 - 이 요청에 대한 답인지 가른다 */
   forRequestAt?: number;
+  /** 어느 차시·세션에서 준 피드백인가 (2026-11-27~). 없으면 그 전의 33차 피드백 */
+  lessonNo?: number;
+  sessionId?: string;
 }
 
 export interface ActivityContent {
@@ -2453,6 +2456,8 @@ export interface Artifact {
   /** 몇 번째 검토 요청인가 (1차, 2차 ...). 없으면 요청이 있었을 때 1차 */
   stepReviewCount?: number;
   stepFeedback?: StepFeedback;
+  /** 차시를 넘어 쌓은 피드백 기록 (33차 피드백을 34차에서도 따로 보이게). 최근 10개 */
+  stepFeedbackHistory?: StepFeedback[];
   /**
    * 교사 피드백. 칩은 보조이고 note 가 본체다.
    *

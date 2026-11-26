@@ -40,6 +40,8 @@ interface Detail {
   requestedAt: number | null;
   count?: number;
   feedback: { at: number; verdict: "good" | "revise"; steps: Record<string, string> } | null;
+  /** 차시를 넘은 피드백 기록 (오래된 것부터). lessonNo 가 없으면 33차 */
+  history?: { at: number; verdict: "good" | "revise"; steps: Record<string, string>; lessonNo?: number }[];
 }
 
 /** 「N차 검토 요청」 - 1차는 그냥 「검토 요청」 */
@@ -277,11 +279,19 @@ function StepReviewModal({
                     <p className="whitespace-pre-wrap text-sm">{readable(field.value) || <span className="text-muted">(안 씀)</span>}</p>
                   </div>
                 ))}
-                {detail.feedback?.steps?.[step.phase] && (
-                  <p className="rounded bg-surface px-2 py-1 text-xs text-muted">
-                    지난 피드백({detail.feedback.verdict === "good" ? "고생하셨습니다" : "수정해 주세요"}): {detail.feedback.steps[step.phase]}
-                  </p>
-                )}
+                {(detail.history && detail.history.length > 0
+                  ? detail.history
+                  : detail.feedback
+                    ? [detail.feedback]
+                    : []
+                )
+                  .filter((fb) => fb.steps?.[step.phase])
+                  .map((fb) => (
+                    <p key={fb.at} className="rounded bg-surface px-2 py-1 text-xs text-muted">
+                      {"lessonNo" in fb && fb.lessonNo ? `${fb.lessonNo}차 ` : detail.history?.length ? "33차 " : "지난 "}
+                      피드백({fb.verdict === "good" ? "고생하셨습니다" : "수정해 주세요"}): {fb.steps[step.phase]}
+                    </p>
+                  ))}
                 <textarea
                   value={notes[step.phase] ?? ""}
                   onChange={(e) => setNotes((n) => ({ ...n, [step.phase]: e.target.value.slice(0, 600) }))}
