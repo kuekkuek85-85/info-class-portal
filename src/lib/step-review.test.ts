@@ -29,3 +29,21 @@ test("학생 재요청: 옛 2차 학생이 다시 요청하면 다음은 3차 (b
   const before = reviewRound({ requestedAt: 200, reviewedAt: 150, feedbackForRequestAt: 100 });
   assert.equal(before + 1, 3);
 });
+
+test("optional 칸은 비어도 모자람으로 세지 않는다", async () => {
+  const { checkSteps } = await import("./step-review.ts");
+  const config = {
+    steps: [
+      {
+        phase: "worksheet" as const,
+        label: "⑤ 구현",
+        fields: [
+          { key: "v", label: "바이브", optional: true },
+          { key: "l", label: "링크", minLines: 1 },
+        ],
+      },
+    ],
+  };
+  assert.equal(checkSteps(config, { l: "https://x" })[0].missing.length, 0);
+  assert.equal(checkSteps(config, {})[0].missing.length, 1);
+});

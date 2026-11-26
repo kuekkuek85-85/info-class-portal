@@ -1353,7 +1353,8 @@ export interface StepReviewConfig {
     phase: LessonPhase;
     label: string;
     /** minLines: 줄(또는 list 칸) 수 · minChars: 전체 글자 · minItemChars: list 칸마다 글자 */
-    fields: { key: string; label: string; minChars?: number; minLines?: number; minItemChars?: number }[];
+    /** optional: 교사 팝업에만 보이고 검토 요청 조건에서는 뺀다 (34차 바이브 코딩 기록 - 외부 AI 를 쓴 학생도 있다) */
+    fields: { key: string; label: string; minChars?: number; minLines?: number; minItemChars?: number; optional?: boolean }[];
   }[];
 }
 

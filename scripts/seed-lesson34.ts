@@ -197,7 +197,8 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
           phase: "worksheet",
           label: "⑤ 구현",
           fields: [
-            { key: "mb34_vibe", label: "바이브 코딩 프롬프트" },
+            // 있으면 교사 팝업에 보이고, 없어도 검토 요청은 된다(포털 AI 가 막히면 외부 AI 를 쓰게 안내 - 교사 결정 2026-11-27)
+            { key: "mb34_vibe", label: "바이브 코딩 프롬프트", optional: true },
             { key: "mb34_link", label: "MakeCode 공유 링크", minLines: 1 },
             { key: "mb34_impl", label: "구현·수정 내용", minLines: 1, minChars: 10 },
           ],

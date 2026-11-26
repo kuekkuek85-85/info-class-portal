@@ -60,6 +60,7 @@ export function checkSteps(config: StepReviewConfig, answers: Record<string, str
     phase: step.phase,
     label: step.label,
     missing: step.fields
+      .filter((field) => !field.optional)
       .map((field) => {
         const raw = String(answers[field.key] ?? "");
         const lines = countLines(raw);
