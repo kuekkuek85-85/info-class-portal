@@ -89,9 +89,10 @@ const RECALL: WorksheetQuestion[] = [
       { key: "mb33_when", label: "어떤 상황에서" },
       { key: "mb33_what", label: "무엇이 불편" },
       { key: "mb33_problem", label: "내가 풀 문제 (이전 판)" },
+      { key: "mb33_state_now", label: "지금 상태" },
+      { key: "mb33_state_goal", label: "목표 상태" },
       { key: "mb33_in", label: "입력" },
       { key: "mb33_out", label: "출력" },
-      { key: "mb33_state_goal", label: "목표 상태" },
       { key: "mb33_func", label: "꼭 필요한 기능" },
       { key: "mb33_algo", label: "알고리즘" },
       // 2026-11-25 이전 33차 판의 표(남아 있는 학생만 보인다)
