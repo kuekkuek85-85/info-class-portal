@@ -411,6 +411,7 @@ export default function PaGradingPage() {
                   <Field label="구현·수정 내용 (필수)">
                     {t.mb34_impl?.trim() ? <Text value={t.mb34_impl} /> : <span className="rounded bg-pink px-2 py-0.5">빠짐</span>}
                   </Field>
+                  <Field label="구현하지 못한 내용 (선택)"><Text value={t.mb34_missed ?? ""} /></Field>
                   {t.mb34_works?.trim() && (
                     <Field label="동작 한 줄 (이전 판)"><Text value={t.mb34_works} /></Field>
                   )}

@@ -92,6 +92,7 @@ export const PA_TEXT_KEYS = [
   "mb34_link",
   // 2026-11-27 34차 재구성: ⑤ 구현의 구현·수정 내용, 마무리 성찰 한 벌(기대 효과·확장 아이디어·후기)
   "mb34_impl",
+  "mb34_missed",
   "mb34_reflect",
   "mb34_works",
   "mb34_concepts",

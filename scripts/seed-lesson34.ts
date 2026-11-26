@@ -122,6 +122,14 @@ const STEP5: WorksheetQuestion[] = [
     kind: "long",
     maxLength: 1000,
   },
+  {
+    key: "mb34_missed",
+    phase: "worksheet",
+    label: "구현하지 못한 내용 (선택)",
+    hint: "아이디어나 알고리즘에는 있었는데 구현이 안 된 것, 시간이 부족해 못한 것을 적어요.\n다 구현했다면 비워 둬도 돼요.",
+    kind: "long",
+    maxLength: 1000,
+  },
 ];
 
 const WORKSHEET: WorksheetQuestion[] = [...WORKSHEET33, ...STEP5];
@@ -201,6 +209,7 @@ const PLAN: Omit<LessonPlan, "id" | "createdAt" | "updatedAt"> = {
             { key: "mb34_vibe", label: "바이브 코딩 프롬프트", optional: true },
             { key: "mb34_link", label: "MakeCode 공유 링크", minLines: 1 },
             { key: "mb34_impl", label: "구현·수정 내용", minLines: 1, minChars: 10 },
+            { key: "mb34_missed", label: "구현하지 못한 내용", optional: true },
           ],
         },
       ],
