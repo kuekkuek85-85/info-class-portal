@@ -249,6 +249,8 @@ export interface PhaseContent {
    * 안 되는 경우가 많아, 학생 절반이 검은 화면 앞에서 손을 든다.
    */
   openInNewTab?: boolean;
+  /** 대기 화면 "link:" 카드의 단추 글자 (없으면 「파이썬 타자 도우미 열기」) - 1-3 자유학기제 만족도 조사(2026-11-27) */
+  linkLabel?: string;
 }
 
 export function emptyPhaseContent(): PhaseContent {

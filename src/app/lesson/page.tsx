@@ -1409,7 +1409,7 @@ export default function LessonPage() {
                   rel="noreferrer"
                   className="pill pill-primary pill-block mt-4 text-center text-lg"
                 >
-                  ▶ 파이썬 타자 도우미 열기 (새 탭)
+                  ▶ {session.game.linkLabel || "파이썬 타자 도우미"} 열기 (새 탭)
                 </a>
                 <p className="t-caption mt-3">수업이 시작되면 이 화면은 저절로 넘어가요.</p>
               </div>

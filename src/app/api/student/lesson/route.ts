@@ -39,6 +39,7 @@ function present(content: PhaseContent | undefined) {
     cards: content?.cards ?? [],
     tabs: content?.tabs ?? [],
     openInNewTab: newTab,
+    linkLabel: content?.linkLabel ?? "",
   };
 }
 

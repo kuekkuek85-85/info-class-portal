@@ -19,6 +19,8 @@ export interface Content {
   tabs?: ContentTab[];
   /** 카메라·마이크를 쓰는 사이트는 iframe 안에서 권한이 막힌다. 새 창으로 연다 */
   openInNewTab?: boolean;
+  /** 대기 화면 "link:" 카드 단추 글자 */
+  linkLabel?: string;
 }
 
 export function ContentView({ content, fallback }: { content: Content; fallback: string }) {
